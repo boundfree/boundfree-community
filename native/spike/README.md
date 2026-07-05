@@ -4,7 +4,8 @@
 
 - Date: 2026-07-05
 - Host: WSL2 Ubuntu 22.04 on Linux `6.18.33.2-microsoft-standard-WSL2`
-- CPU/compiler: `g++ 11.4.0`
+- System compiler: `g++ 11.4.0`
+- Spike compiler: Conda `x86_64-conda-linux-gnu-c++ 15.2.0`
 - System CMake: `3.22.1`
 - Spike CMake: `4.2.3` from Conda env `bf-qt6-spike`
 - Python: `3.10.12`
@@ -24,4 +25,12 @@ Build commands should be run through:
 ```bash
 conda run -n bf-qt6-spike cmake -B build -S . -DCMAKE_PREFIX_PATH=/home/vsonic12138/miniconda3/envs/bf-qt6-spike
 conda run -n bf-qt6-spike cmake --build build
+```
+
+When configuring from a clean checkout, pass the Conda C++ compiler explicitly:
+
+```bash
+conda run -n bf-qt6-spike cmake --fresh -B build -S . \
+  -DCMAKE_PREFIX_PATH=/home/vsonic12138/miniconda3/envs/bf-qt6-spike \
+  -DCMAKE_CXX_COMPILER=/home/vsonic12138/miniconda3/envs/bf-qt6-spike/bin/x86_64-conda-linux-gnu-c++
 ```
