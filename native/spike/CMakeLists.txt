@@ -14,3 +14,10 @@ add_executable(bf_spike
     waveform_gl.h
 )
 target_link_libraries(bf_spike PRIVATE Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
+
+add_executable(ipc_bench
+    ipc_client.cpp
+    ipc_client.h
+    ipc_bench_main.cpp
+)
+target_link_libraries(ipc_bench PRIVATE Qt6::Core)

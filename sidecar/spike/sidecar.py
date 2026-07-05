@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import struct
 import sys
 
@@ -20,6 +21,33 @@ from eeg_io.readers import read_file_lazy  # noqa: E402
 
 
 _reader = None
+
+
+class SyntheticReader:
+    def __init__(self, n_channels, fs, duration):
+        self.fs = float(fs)
+        self.n_channels = int(n_channels)
+        self.duration = float(duration)
+        self.ch_names = [f"Ch{i + 1}" for i in range(self.n_channels)]
+        self.markers = []
+
+    def get_slice(self, t_start, t_end):
+        t_start = max(0.0, float(t_start))
+        t_end = min(self.duration, float(t_end))
+        if t_end <= t_start:
+            return np.zeros((self.n_channels, 0), dtype=np.float32)
+        n_samp = int(np.ceil((t_end - t_start) * self.fs))
+        x = np.linspace(t_start, t_end, n_samp, endpoint=False, dtype=np.float32)
+        ch = np.arange(self.n_channels, dtype=np.float32)[:, None]
+        return 50.0 * np.sin(2.0 * np.pi * (8.0 + ch * 0.01) * x[None, :])
+
+
+def _open_reader(path):
+    match = re.fullmatch(r"synthetic://(\d+)x(\d+)x(\d+(?:\.\d+)?)", path)
+    if match:
+        n_channels, fs, duration = match.groups()
+        return SyntheticReader(int(n_channels), float(fs), float(duration))
+    return read_file_lazy(path)
 
 
 def _read_frame():
@@ -65,7 +93,7 @@ def _handle(req):
 
     method = req.get("method")
     if method == "open":
-        _reader = read_file_lazy(req["path"])
+        _reader = _open_reader(req["path"])
         _write_json(
             {
                 "fs": _reader.fs,

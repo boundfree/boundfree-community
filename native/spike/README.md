@@ -58,3 +58,36 @@ This confirms the spike executable and OpenGL rendering path are buildable and
 runnable under a virtual display, but it is not a valid hardware GPU go/no-go
 measurement. Real 64/128/256-channel FPS must be rerun on a machine with an
 actual display/GPU context.
+
+## Spike-2 IPC Result
+
+Bench command:
+
+```bash
+LD_LIBRARY_PATH=/home/vsonic12138/miniconda3/envs/bf-qt6-spike/lib:$LD_LIBRARY_PATH \
+  ./build/ipc_bench \
+  /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-eeg-upper-computer/.venv_build/bin/python \
+  /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-eeg-native/sidecar/spike/sidecar.py \
+  /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-eeg-upper-computer/samples/mark.edf
+```
+
+`mark.edf` result:
+
+- Metadata: 1024 Hz, 3 channels, 1492 s, 2 markers.
+- `open`: 18728 ms. This includes Python/MNE cold-start and EDF open cost.
+- `get_slice(1s)`: average 0.26 ms over 100 iterations.
+- Payload: 0.012 MiB per 1 s slice.
+- Effective throughput: 45.07 MiB/s.
+
+Synthetic bulk IPC result with `synthetic://256x1000x200`:
+
+- Metadata: 1000 Hz, 256 channels, 200 s.
+- `open`: 133 ms.
+- `get_slice(1s)`: average 4.82 ms over 100 iterations.
+- Payload: 0.977 MiB per 1 s slice.
+- Effective throughput: 202.61 MiB/s.
+
+The 256-channel 1 s payload is under the 30 ms soft-real-time target, so the
+stdio + length-prefixed binary protocol is acceptable for M0. The cold `open`
+cost should be hidden behind UI progress in M2 and does not affect steady-state
+playback latency.
