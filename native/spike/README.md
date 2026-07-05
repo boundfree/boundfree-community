@@ -82,10 +82,10 @@ LD_LIBRARY_PATH=/home/vsonic12138/miniconda3/envs/bf-qt6-spike/lib:$LD_LIBRARY_P
 Synthetic bulk IPC result with `synthetic://256x1000x200`:
 
 - Metadata: 1000 Hz, 256 channels, 200 s.
-- `open`: 133 ms.
-- `get_slice(1s)`: average 4.82 ms over 100 iterations.
+- `open`: 133-3136 ms observed, depending on process cold-start/cache state.
+- `get_slice(1s)`: 2.94-4.82 ms average over 100 iterations.
 - Payload: 0.977 MiB per 1 s slice.
-- Effective throughput: 202.61 MiB/s.
+- Effective throughput: 202.61-332.16 MiB/s.
 
 The 256-channel 1 s payload is under the 30 ms soft-real-time target, so the
 stdio + length-prefixed binary protocol is acceptable for M0. The cold `open`
