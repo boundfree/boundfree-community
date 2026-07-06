@@ -1,3 +1,12 @@
+---
+title: Milestone 4：频谱分析四视图实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M4
+---
+
 # Milestone 4：频谱分析四视图 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development / executing-plans。

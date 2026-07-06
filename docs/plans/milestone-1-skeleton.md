@@ -1,3 +1,12 @@
+---
+title: Milestone 1：工程骨架实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M1
+---
+
 # Milestone 1：工程骨架 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans。Steps 用 `- [ ]` 跟踪。

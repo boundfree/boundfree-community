@@ -1,3 +1,12 @@
+---
+title: Milestone 8：打包与验收实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M8
+---
+
 # Milestone 8：打包与验收 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development / executing-plans。

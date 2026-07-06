@@ -1,3 +1,12 @@
+---
+title: Milestone 2：打开文件与波形静态浏览实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M2
+---
+
 # Milestone 2：打开文件与波形静态浏览 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development / executing-plans。

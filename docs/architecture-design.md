@@ -1,7 +1,10 @@
 ---
 id: review-010
 title: C++/Qt6 原生主程序 + Python 编解码边车 架构设计
+doc_type: architecture
 status: approved
+owner: BoundFree
+last_updated: 2026-07-06
 reviewed_at: 2026-07-04
 reference_repo: ../boundfree-eeg-upper-computer  # 旧 Python 版，仅作参考与黄金文件来源
 supersedes_decision:

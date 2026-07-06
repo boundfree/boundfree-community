@@ -1,3 +1,11 @@
+---
+title: Git 开发与版本管理规范
+doc_type: process
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+---
+
 # Git 开发与版本管理规范
 
 本文定义 `boundfree-eeg-native` 的分支、版本号、发布和热修复规则。目标是让开发分支容易并行，发布版本可追溯，程序界面、安装包、Git tag 与授权版本保持一致。

@@ -1,3 +1,12 @@
+---
+title: 功能对齐验收清单
+doc_type: checklist
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+reference_repo: ../boundfree-eeg-upper-computer
+---
+
 # 功能对齐验收清单
 
 新 C++/Qt6 版**功能不变**的验收依据。逐条对照旧 Python 版（`../boundfree-eeg-upper-computer`）行为与数值。

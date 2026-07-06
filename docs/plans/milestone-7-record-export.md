@@ -1,3 +1,12 @@
+---
+title: Milestone 7：录制与导出实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M7
+---
+
 # Milestone 7：录制与导出 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development / executing-plans。

@@ -1,3 +1,12 @@
+---
+title: Milestone 5：回放控制与事件标注实施计划
+doc_type: plan
+status: active
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M5
+---
+
 # Milestone 5：回放控制与事件标注 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development / executing-plans。

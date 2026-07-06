@@ -1,3 +1,12 @@
+---
+title: Milestone 0：技术验证 Spike 实施计划
+doc_type: plan
+status: completed
+owner: BoundFree
+last_updated: 2026-07-06
+milestone: M0
+---
+
 # Milestone 0：技术验证 Spike 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
