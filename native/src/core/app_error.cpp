@@ -1,6 +1,11 @@
 #include "core/app_error.h"
 
 #include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 namespace bf {
 namespace {
@@ -10,11 +15,26 @@ int nextTraceId() {
     return ++counter;
 }
 
+QJsonArray loadErrorCodes() {
+    QFile file(QDir(QStringLiteral(BF_REPO_ROOT)).filePath("contracts/error_codes.json"));
+    if (!file.open(QIODevice::ReadOnly)) {
+        return {};
+    }
+    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    return doc.object().value("error_codes").toArray();
+}
+
 }  // namespace
 
 bool isRetryableError(const QString& code) {
-    return code == "ipc.sidecar_start_failed" || code == "ipc.sidecar_timeout" ||
-           code == "ipc.sidecar_exited" || code == "sidecar.initialization_failed";
+    const QJsonArray codes = loadErrorCodes();
+    for (const QJsonValue& value : codes) {
+        const QJsonObject entry = value.toObject();
+        if (entry.value("code").toString() == code) {
+            return entry.value("retryable").toBool(false);
+        }
+    }
+    return false;
 }
 
 AppError makeError(const QString& code, const QJsonObject& params, bool retryable) {

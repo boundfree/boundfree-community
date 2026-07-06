@@ -133,7 +133,15 @@ cmake --preset wsl2-qt6-conda
 cmake --build --preset wsl2-qt6-conda
 ```
 
+以上命令从 `native/` 目录执行。
+
 当前 WSL2 开发环境使用稳定工具链入口 `/home/vsonic12138/workspace/BoundFree_Workspace/toolchains/qt6`。该路径指向实际 Qt6/conda 环境，避免在日常命令中直接依赖 conda 内部路径。
+
+M1-A 基础验证可运行：
+
+```bash
+scripts/verify_m1_foundation.sh
+```
 
 Python 边车变更应运行：
 

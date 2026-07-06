@@ -70,3 +70,35 @@ def test_sidecar_missing_field_returns_error_envelope():
     assert response["error"]["code"] == "protocol.missing_field"
     assert response["error"]["params"] == {"field": "method"}
     assert response["error"]["retryable"] is False
+
+
+def test_sidecar_stdio_process_handles_hello_and_unknown_method():
+    process = subprocess.Popen(
+        [sys.executable, "-m", "boundfree_sidecar", "--stdio"],
+        cwd=ROOT,
+        env=SIDECAR_ENV,
+        text=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert process.stdin is not None
+    assert process.stdout is not None
+
+    process.stdin.write(json.dumps({"id": "stdio-1", "method": "hello", "params": {}}) + "\n")
+    process.stdin.flush()
+    hello = json.loads(process.stdout.readline())
+    assert hello["id"] == "stdio-1"
+    assert hello["ok"] is True
+    assert hello["result"]["product_version"] == "0.1.0-dev"
+    assert hello["result"]["ipc_protocol_version"] == 1
+
+    process.stdin.write(json.dumps({"id": "stdio-2", "method": "bad_method", "params": {}}) + "\n")
+    process.stdin.flush()
+    bad_method = json.loads(process.stdout.readline())
+    assert bad_method["id"] == "stdio-2"
+    assert bad_method["ok"] is False
+    assert bad_method["error"]["code"] == "protocol.unknown_method"
+
+    process.stdin.close()
+    assert process.wait(timeout=3) == 0

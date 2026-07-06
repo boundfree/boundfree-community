@@ -18,6 +18,7 @@ last_updated: 2026-07-06
 | [`phase-1-foundation.md`](phase-1-foundation.md) | 当前计划 | M1-A 基础契约与可启动骨架执行计划 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
+| [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
 | [`architecture-design.md`](architecture-design.md) | 架构设计 | C++/Qt6 主程序与 Python 边车总体架构 |
 | [`feature-parity-checklist.md`](feature-parity-checklist.md) | 验收清单 | 新旧上位机功能对齐和黄金文件验收条目 |
 

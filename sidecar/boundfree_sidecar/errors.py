@@ -1,20 +1,22 @@
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import count
+from pathlib import Path
 from typing import Any
 
 
-ERROR_CODES: dict[str, bool] = {
-    "protocol.invalid_json": False,
-    "protocol.missing_field": False,
-    "protocol.unknown_method": False,
-    "protocol.version_mismatch": False,
-    "ipc.sidecar_start_failed": True,
-    "ipc.sidecar_timeout": True,
-    "ipc.sidecar_exited": True,
-    "sidecar.initialization_failed": True,
-    "internal.unexpected": False,
-}
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def load_error_retryability() -> dict[str, bool]:
+    registry_path = _repo_root() / "contracts" / "error_codes.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    return {
+        str(entry["code"]): bool(entry["retryable"])
+        for entry in registry["error_codes"]
+    }
 
 _trace_counter = count(1)
 
@@ -28,7 +30,7 @@ class SidecarError:
 
 
 def make_error(code: str, params: dict[str, Any] | None = None) -> SidecarError:
-    retryable = ERROR_CODES.get(code, False)
+    retryable = load_error_retryability().get(code, False)
     stamp = datetime.utcnow().strftime("%Y%m%d")
     trace_id = f"{stamp}-{next(_trace_counter):06d}"
     return SidecarError(code=code, params=params or {}, retryable=retryable, trace_id=trace_id)

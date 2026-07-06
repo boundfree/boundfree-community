@@ -40,3 +40,9 @@ def test_bf_app_smoke_ui_starts_offscreen():
     )
 
     assert "smoke-ui-ok" in result.stdout
+
+
+def test_bf_app_smoke_sidecar_handshake():
+    result = _run([str(APP), "--smoke-sidecar"])
+
+    assert result.stdout.strip() == "smoke-sidecar-ok product_version=0.1.0-dev ipc_protocol_version=1"

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "error_codes": [
+    {
+      "code": "protocol.invalid_json",
+      "params": [],
+      "retryable": false,
+      "description": "Request JSON cannot be parsed."
+    },
+    {
+      "code": "protocol.missing_field",
+      "params": ["field"],
+      "retryable": false,
+      "description": "Request is missing a required field."
+    },
+    {
+      "code": "protocol.unknown_method",
+      "params": ["method"],
+      "retryable": false,
+      "description": "Request method is not supported."
+    },
+    {
+      "code": "protocol.version_mismatch",
+      "params": ["expected", "actual"],
+      "retryable": false,
+      "description": "Native app and sidecar IPC protocol versions differ."
+    },
+    {
+      "code": "ipc.sidecar_start_failed",
+      "params": ["reason"],
+      "retryable": true,
+      "description": "Native app could not start the sidecar process."
+    },
+    {
+      "code": "ipc.sidecar_timeout",
+      "params": ["operation", "timeout_ms"],
+      "retryable": true,
+      "description": "Sidecar operation timed out."
+    },
+    {
+      "code": "ipc.sidecar_exited",
+      "params": ["exit_code"],
+      "retryable": true,
+      "description": "Sidecar process exited unexpectedly."
+    },
+    {
+      "code": "sidecar.initialization_failed",
+      "params": ["reason"],
+      "retryable": true,
+      "description": "Sidecar initialization failed."
+    },
+    {
+      "code": "internal.unexpected",
+      "params": ["operation"],
+      "retryable": false,
+      "description": "Unexpected internal error."
+    }
+  ]
+}
