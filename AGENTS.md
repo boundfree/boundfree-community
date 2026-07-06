@@ -1,6 +1,6 @@
 # AGENTS.md
 
-本文件为 `boundfree-eeg-native` 仓库的开发指导。所有自动化代码代理和协作开发者在修改本仓库前应先阅读本文件。
+本文件为 `boundfree-eeg-native` 仓库的开发指导。自动化代码代理和协作开发者在修改本仓库前必须先阅读本文件。
 
 ## Communication
 
@@ -17,26 +17,31 @@
 
 ## Required Reading
 
-开始实现前，按任务类型阅读对应文档：
+日常开发优先阅读以下当前有效文档：
 
 | 任务类型 | 必读文档 |
 | --- | --- |
+| 当前阶段实施 | `docs/phase-1-foundation.md` |
+| 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
+| 分支、版本、文档、验证规范 | `docs/development-guide.md` |
 | 架构或模块边界 | `docs/architecture-design.md` |
-| 分支、版本、发布 | `docs/git-development.md` |
-| 文档新增或改写 | `docs/documentation-style.md` |
-| 里程碑实施 | `docs/plans/README.md` 与对应 `docs/plans/milestone-*.md` |
+| 路线图和阶段门禁 | `docs/roadmap.md` |
 | 功能迁移与验收 | `docs/feature-parity-checklist.md` |
+
+`docs/archive/` 仅用于历史追溯，不作为日常实施入口。
 
 ## Development Stage
 
-- 当前阶段为 `0.1.0-dev`。
+- 当前版本为 `0.1.0-dev`。
 - M0 技术验证已完成，结论为 conditional go。
-- M1 是下一阶段重点：正式 CMake/Qt6 工程骨架、Python 边车生命周期、IPC、授权、i18n 和空主窗口。
+- 当前执行阶段为 M1-A：基础契约与可启动骨架。
+- M1-A 不实现真实文件打开、波形渲染、DSP、完整授权校验、录制和导出。
 - 进入 M2 波形浏览前，必须在真实 GPU/显示环境复测 M0 渲染 spike。
 
 ## Branch And Version Rules
 
 - 日常开发基于 `master`。
+- 当前第一阶段分支使用 `feature/m1-foundation`。
 - `release` 是稳定发布分支；当前可作为占位分支，但首个 `rc` 或 `stable` 版本前不得打正式 tag。
 - 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`。
 - 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
@@ -51,18 +56,19 @@
 - 文件格式读写全部经 Python 边车完成，主程序不直接解析科研文件格式。
 - IPC 初版使用 JSON 控制消息和长度前缀二进制 EEG payload。
 - 正式 IPC payload 字节序使用小端。
-- EEG 数据形状为 `[n_channels, n_samples]`，单位为 `μV`。
+- EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
 - DSP 使用 Eigen 与 pocketfft。禁止引入 FFTW 或 KFR 等 GPL 风险依赖。
 - 授权校验保留在 C++ 原生侧，并兼容旧版密钥语义。
-- i18n 使用 Qt Linguist `.ts/.qm`，边车只返回 `error_code` 和结构化参数。
+- i18n 使用 Qt Linguist `.ts/.qm`，边车和后端只返回错误码与结构化参数。
 
 ## Implementation Rules
 
-- 优先遵循现有架构文档和里程碑计划。
+- 优先遵循 `docs/phase-1-foundation.md` 和 `docs/contracts.md`。
 - controller/service 不依赖 UI；UI 不承担文件解析、DSP 算法或 IPC 细节。
-- 边车不返回用户可见的本地化文案。
-- 新增共享接口时，同步更新相关文档和测试计划。
-- 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/git-development.md`。
+- 后端不得返回用户可见的本地化文案；统一返回 `code + params`。
+- UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
+- 新增共享接口时，同步更新相关契约文档和测试计划。
+- 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/development-guide.md`。
 - 代码和文档应保持小步提交，提交信息使用明确前缀，例如 `feat:`、`fix:`、`docs:`、`spike:`、`chore:`。
 
 ## Verification

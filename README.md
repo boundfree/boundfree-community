@@ -1,10 +1,8 @@
 # BoundFree EEG Native
 
-BoundFree EEG Native 是 BoundFree 脑机接口上位机的 C++/Qt6 原生重写项目。本仓库用于承载新的原生主程序、Python 文件编解码边车、工程规范、里程碑计划和后续发布资产。
+BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目。新架构采用原生主程序承载 UI、渲染、DSP、授权和国际化，用 Python 编解码边车保留 MNE、pyedflib、h5py、pandas 等科研文件格式能力。
 
-## Project Status
-
-当前阶段：M0 技术验证完成，M1 工程骨架准备实施。
+## Current Status
 
 当前版本源：[version.json](version.json)
 
@@ -18,23 +16,41 @@ BoundFree EEG Native 是 BoundFree 脑机接口上位机的 C++/Qt6 原生重写
 }
 ```
 
-M0 结论为 conditional go：
+当前阶段：M0 技术验证已完成，下一步进入 M1-A 基础契约与可启动骨架。
 
-- IPC 验证通过，M1/M2 初版采用 stdio + JSON 控制 + 长度前缀二进制数据。
-- 渲染路径已在 Xvfb/Mesa 软件 OpenGL 下验证，但尚未完成真实 GPU 验收。
-- 进入 M2 波形浏览前，必须在真实 Windows/Linux GPU 环境复测 64/128/256 通道渲染帧率。
+M0 结论：
 
-## Architecture
+- IPC 可进入 M1：初版采用 stdio + JSON 控制消息 + 长度前缀二进制 payload。
+- 渲染为 conditional go：Xvfb/Mesa 软件 OpenGL 已验证代码路径，但真实 GPU 验收仍是 M2 前硬门禁。
+- 旧 Python 版继续作为参考实现、性能基线和黄金文件来源。
 
-项目采用 C++/Qt6 原生主程序 + Python 编解码边车架构。
+## First Phase
 
-| 模块 | 职责 |
+M1-A 只实现基础骨架，不进入业务功能：
+
+- `bf_app --version` 从 `version.json` 输出版本。
+- Qt6 空主窗口可启动，显示版本、状态栏和语言菜单。
+- i18n 框架落地，支持 `zh_CN`、`en_US`、`pseudo` 实际切换。
+- 错误码框架落地，后端统一返回 `code + params`，UI 负责本地化文案。
+- Python 边车正式包支持 `--version`、`--stdio`、`hello`。
+- C++ 主程序可启动边车、握手、超时处理，并在关闭时停止边车。
+
+不在 M1-A 做真实文件打开、波形渲染、DSP、完整授权校验、录制和导出。
+
+## Documentation
+
+日常开发优先阅读：
+
+| 文档 | 用途 |
 | --- | --- |
-| C++/Qt6 主程序 | UI、GPU 波形渲染、DSP、实时管线、授权校验、国际化 |
-| Python 边车 | 通过 MNE、pyedflib、h5py、pandas 等库负责所有文件格式读写 |
-| IPC 协议 | 控制消息使用 JSON，批量 EEG 数据使用长度前缀二进制 payload |
+| [docs/roadmap.md](docs/roadmap.md) | M0 结论、M1-M8 路线和阶段门禁 |
+| [docs/phase-1-foundation.md](docs/phase-1-foundation.md) | M1-A 第一阶段执行计划 |
+| [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
+| [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
+| [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |
+| [docs/feature-parity-checklist.md](docs/feature-parity-checklist.md) | 新旧版本功能对齐验收清单 |
 
-完整架构见 [docs/architecture-design.md](docs/architecture-design.md)。
+历史计划和旧规范已归档到 [docs/archive/](docs/archive/)。
 
 ## Repository Layout
 
@@ -43,69 +59,16 @@ boundfree-eeg-native/
 ├── AGENTS.md                    # 仓库级开发指导
 ├── README.md                    # 项目入口说明
 ├── version.json                 # 产品版本与 IPC 协议版本源
-├── docs/                        # 架构、流程、计划和验收文档
+├── docs/                        # 当前核心文档与历史归档
 ├── native/                      # C++/Qt6 主程序
 ├── sidecar/                     # Python 编解码边车
 └── tests/                       # 黄金文件、回归和冒烟测试
 ```
 
-## Documentation
+## Branch And Version Model
 
-文档入口见 [docs/README.md](docs/README.md)。`docs/` 下 Markdown 文件应遵循 [docs/documentation-style.md](docs/documentation-style.md)。
-
-关键文档：
-
-| 文档 | 用途 |
-| --- | --- |
-| [docs/architecture-design.md](docs/architecture-design.md) | 架构设计与关键技术决策 |
-| [docs/git-development.md](docs/git-development.md) | 分支、版本号、发布和 hotfix 规范 |
-| [docs/feature-parity-checklist.md](docs/feature-parity-checklist.md) | 新旧版本功能对齐验收清单 |
-| [docs/plans/README.md](docs/plans/README.md) | M0-M8 里程碑计划索引 |
-
-## Development Workflow
-
-本仓库采用 `master` 日常开发、`release` 稳定发布、短功能分支并行开发的模型。
-
-- `master`：开发集成分支，默认版本号为 `X.Y.Z-dev`。
-- `release`：稳定发布分支，正式 tag 只在该分支创建。
-- `feature/*`：从 `master` 切出，用于功能或里程碑开发。
-- `fix/*`：从 `master` 切出，用于开发期修复。
-- `hotfix/*`：从 `release` 或正式 tag 切出，用于已发布版本的紧急修复。
-
-详细规则见 [docs/git-development.md](docs/git-development.md)。
-
-## Versioning
-
-产品版本遵循 SemVer。`version.json` 是唯一需要人工维护的版本源。后续 C++ 主程序、Python 边车、安装包脚本和程序界面应从该文件读取或生成版本信息。
-
-版本展示要求：
-
-- 开发版示例：`BoundFree EEG 0.1.0-dev+g578f1d3`
-- 正式版示例：`BoundFree EEG 1.0.0`
-- IPC 协议版本使用 `ipc_protocol_version`，不得与产品版本混用。
-
-## Reference Repository
-
-旧 Python/PySide6 上位机仓库：
-
-```text
-../boundfree-eeg-upper-computer
-```
-
-该仓库仅作为参考实现、边车迁移来源、性能基线和黄金文件来源。新功能开发和长期演进应在本仓库进行。
-
-## Build Roadmap
-
-| Milestone | Target |
-| --- | --- |
-| M0 | 技术验证：GPU 波形渲染、C++/Python IPC、旧版性能画像 |
-| M1 | 工程骨架：CMake/Qt6、主窗口、边车生命周期、IPC、授权、i18n |
-| M2 | 打开文件与波形静态浏览 |
-| M3 | DSP 与滤波数值对齐 |
-| M4 | PSD、STFT、频段趋势、相干性分析 |
-| M5 | 回放控制与事件标注 |
-| M6 | 视频同步 |
-| M7 | 录制与片段导出 |
-| M8 | Windows 打包、代码签名与发布验收 |
-
-详细计划见 [docs/plans/README.md](docs/plans/README.md)。
+- 日常开发基于 `master`。
+- 当前第一阶段开发分支为 `feature/m1-foundation`。
+- `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
+- 普通功能分支不修改 `version.json` 的产品版本号。
+- 产品版本和 `ipc_protocol_version` 分开维护。

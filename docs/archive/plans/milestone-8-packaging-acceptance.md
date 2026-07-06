@@ -51,7 +51,7 @@ milestone: M8
 - **DoD:** 签名有效、SmartScreen 友好。
 
 ### Task 5：全量功能对齐验收
-- **Deliverable:** 按 [`../feature-parity-checklist.md`](../feature-parity-checklist.md) 逐条勾验；黄金文件比对全绿。
+- **Deliverable:** 按 [`../../feature-parity-checklist.md`](../../feature-parity-checklist.md) 逐条勾验；黄金文件比对全绿。
 - **DoD:** 清单 100% 通过；遗留项登记并评估。
 
 ## Acceptance Criteria

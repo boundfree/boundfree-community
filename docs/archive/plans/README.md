@@ -8,7 +8,7 @@ last_updated: 2026-07-06
 
 # 实施计划索引（Roadmap）
 
-本目录把 [`../architecture-design.md`](../architecture-design.md) 拆分为可执行的分里程碑计划。
+本目录把 [`../../architecture-design.md`](../../architecture-design.md) 拆分为可执行的分里程碑计划。
 
 ## 规划方式：滚动式（Rolling-Wave）
 

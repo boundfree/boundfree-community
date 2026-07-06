@@ -17,7 +17,7 @@ last_updated: 2026-07-06
 - 功能开发从 `master` 切短分支，完成后合回 `master`。
 - 正式发布 tag 只打在 `release` 分支上。
 - 版本号不随每个功能分支变化，只在开启新版本周期、准备发布、hotfix 发布时变化。
-- 版本号的单一人工维护来源是根目录 [`version.json`](../version.json)。
+- 版本号的单一人工维护来源是根目录 [`version.json`](../../version.json)。
 
 ## 版本号规则
 

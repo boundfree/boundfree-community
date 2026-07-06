@@ -84,4 +84,4 @@ milestone: M1
 - IPC 数值与旧版逐位一致；授权判定与旧版一致；i18n 缺 key 有 CI 拦截。
 
 ## Parity Gate
-- 对照 [`../feature-parity-checklist.md`](../feature-parity-checklist.md) 勾验：授权、i18n 切换、边车 open 各格式。
+- 对照 [`../../feature-parity-checklist.md`](../../feature-parity-checklist.md) 勾验：授权、i18n 切换、边车 open 各格式。
