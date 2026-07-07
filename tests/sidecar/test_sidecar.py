@@ -102,3 +102,72 @@ def test_sidecar_stdio_process_handles_hello_and_unknown_method():
 
     process.stdin.close()
     assert process.wait(timeout=3) == 0
+
+
+def test_sidecar_open_requires_path_param():
+    from boundfree_sidecar.protocol import handle_request
+
+    response = handle_request({"id": "open-1", "method": "open", "params": {}})
+
+    assert response["id"] == "open-1"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "protocol.invalid_params"
+    assert response["error"]["params"] == {"field": "path", "reason": "required string"}
+
+
+def test_sidecar_open_missing_file_returns_file_not_found(tmp_path):
+    from boundfree_sidecar.protocol import handle_request
+
+    missing = tmp_path / "missing.edf"
+    response = handle_request({"id": "open-2", "method": "open", "params": {"path": str(missing)}})
+
+    assert response["id"] == "open-2"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "file.not_found"
+    assert response["error"]["params"] == {"path": str(missing)}
+
+
+def test_sidecar_open_existing_unsupported_file_returns_reader_error(tmp_path):
+    from boundfree_sidecar.protocol import handle_request
+
+    sample = tmp_path / "sample.xyz"
+    sample.write_text("not an eeg file", encoding="utf-8")
+    response = handle_request({"id": "open-3", "method": "open", "params": {"path": str(sample)}})
+
+    assert response["id"] == "open-3"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "reader.unsupported_format"
+    assert response["error"]["params"] == {"path": str(sample), "suffix": ".xyz"}
+
+
+def test_sidecar_get_slice_validates_params():
+    from boundfree_sidecar.protocol import handle_request
+
+    response = handle_request({"id": "slice-1", "method": "get_slice", "params": {"handle": "h1", "t0": 2.0, "t1": 1.0}})
+
+    assert response["id"] == "slice-1"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "protocol.invalid_params"
+    assert response["error"]["params"] == {"field": "t1", "reason": "must be greater than t0"}
+
+
+def test_sidecar_get_slice_unknown_handle_returns_reader_error():
+    from boundfree_sidecar.protocol import handle_request
+
+    response = handle_request({"id": "slice-2", "method": "get_slice", "params": {"handle": "missing", "t0": 0.0, "t1": 1.0}})
+
+    assert response["id"] == "slice-2"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "reader.session_not_found"
+    assert response["error"]["params"] == {"handle": "missing"}
+
+
+def test_sidecar_close_unknown_handle_returns_reader_error():
+    from boundfree_sidecar.protocol import handle_request
+
+    response = handle_request({"id": "close-1", "method": "close", "params": {"handle": "missing"}})
+
+    assert response["id"] == "close-1"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "reader.session_not_found"
+    assert response["error"]["params"] == {"handle": "missing"}

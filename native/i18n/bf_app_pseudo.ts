@@ -22,10 +22,18 @@
     <message><source>error.protocol.missing_field</source><translation>[!! Prootocol meessaage is miissing fiield: {field} !!]</translation></message>
     <message><source>error.protocol.unknown_method</source><translation>[!! Uunknoown prootocol meethod: {method} !!]</translation></message>
     <message><source>error.protocol.version_mismatch</source><translation>[!! Prootocol veersiion miismaatch, eexpected {expected}, goot {actual} !!]</translation></message>
+    <message><source>error.protocol.invalid_params</source><translation>[!! Invalid protocol parameter: {field}, {reason} !!]</translation></message>
+    <message><source>error.file.not_found</source><translation>[!! File does not exist: {path} !!]</translation></message>
+    <message><source>error.reader.unsupported_format</source><translation>[!! Unsupported file format: {path}, suffix {suffix} !!]</translation></message>
+    <message><source>error.reader.session_not_found</source><translation>[!! File session does not exist: {handle} !!]</translation></message>
+    <message><source>error.reader.slice_out_of_range</source><translation>[!! Slice is outside file duration: {handle}, {t0}-{t1}, duration {duration} !!]</translation></message>
     <message><source>error.ipc.sidecar_start_failed</source><translation>[!! Coould noot staart siidecaar: {reason} !!]</translation></message>
     <message><source>error.ipc.sidecar_timeout</source><translation>[!! Siidecaar ooperatiion tiimed oout: {operation}, {timeout_ms} ms !!]</translation></message>
     <message><source>error.ipc.sidecar_exited</source><translation>[!! Siidecaar eexiited uneexpectedly wiith coode: {exit_code} !!]</translation></message>
     <message><source>error.sidecar.initialization_failed</source><translation>[!! Siidecaar iinitiialiizaatiion faailed: {reason} !!]</translation></message>
+    <message><source>error.license.missing</source><translation>[!! Offline license file is missing: {path} !!]</translation></message>
+    <message><source>error.license.invalid_signature</source><translation>[!! Offline license signature is invalid: {reason} !!]</translation></message>
+    <message><source>error.license.expired</source><translation>[!! Offline license expired at: {expires_at} !!]</translation></message>
     <message><source>error.internal.unexpected</source><translation>[!! Iinternal eerror: {operation} !!]</translation></message>
   </context>
 </TS>

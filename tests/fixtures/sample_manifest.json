@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "v1_required_parity": [
+    {"format": "EDF/EDF+", "extensions": [".edf"], "sample_status": "required_before_v1_release"},
+    {"format": "BDF", "extensions": [".bdf"], "sample_status": "required_before_v1_release"},
+    {"format": "HDF5", "extensions": [".h5", ".hdf5"], "sample_status": "required_before_v1_release"},
+    {"format": "CSV", "extensions": [".csv"], "sample_status": "generated_fixture_available"},
+    {"format": "BrainVision", "extensions": [".vhdr"], "sample_status": "required_before_v1_release"},
+    {"format": "EEGLAB", "extensions": [".set"], "sample_status": "required_before_v1_release"},
+    {"format": "MNE FIF", "extensions": [".fif"], "sample_status": "required_before_v1_release"},
+    {"format": "Intan RHS", "extensions": [".rhs"], "sample_status": "required_before_v1_release"},
+    {"format": "BBK/DAT/LSD", "extensions": [".dat", ".bbk", ".lsd"], "sample_status": "required_before_v1_release"}
+  ],
+  "v1_target_real_sample_gate": [
+    {"format": "Intan RHD/RHS", "extensions": [".rhd", ".rhs"], "minimum_claim": "continuous_signal_metadata_ttl_if_sampled"},
+    {"format": "Open Ephys", "extensions": [".oebin", ".dat", ".nwb"], "minimum_claim": "continuous_signal_metadata_ttl_if_sampled"},
+    {"format": "Plexon", "extensions": [".plx", ".pl2"], "minimum_claim": "continuous_signal_metadata_events_if_sampled"},
+    {"format": "Blackrock", "extensions": [".nsx", ".nev"], "minimum_claim": "continuous_signal_metadata_events_if_sampled"}
+  ]
+}

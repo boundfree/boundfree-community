@@ -36,3 +36,22 @@ def test_error_code_registry_params_match_translation_placeholders():
         key = f'error.{entry["code"]}'
         placeholders = set(re.findall(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}", translations[key]))
         assert placeholders == set(entry["params"])
+
+
+def test_m1b_error_codes_are_registered():
+    registry = json.loads(ERROR_CODES_PATH.read_text(encoding="utf-8"))
+    by_code = {entry["code"]: entry for entry in registry["error_codes"]}
+
+    expected = {
+        "protocol.invalid_params": ["field", "reason"],
+        "file.not_found": ["path"],
+        "reader.unsupported_format": ["path", "suffix"],
+        "reader.session_not_found": ["handle"],
+        "reader.slice_out_of_range": ["handle", "t0", "t1", "duration"],
+        "license.missing": ["path"],
+        "license.invalid_signature": ["reason"],
+        "license.expired": ["expires_at"],
+    }
+    for code, params in expected.items():
+        assert code in by_code
+        assert by_code[code]["params"] == params

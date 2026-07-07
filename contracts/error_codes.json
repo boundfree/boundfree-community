@@ -26,6 +26,36 @@
       "description": "Native app and sidecar IPC protocol versions differ."
     },
     {
+      "code": "protocol.invalid_params",
+      "params": ["field", "reason"],
+      "retryable": false,
+      "description": "Request parameters are invalid."
+    },
+    {
+      "code": "file.not_found",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Requested file does not exist."
+    },
+    {
+      "code": "reader.unsupported_format",
+      "params": ["path", "suffix"],
+      "retryable": false,
+      "description": "No sidecar reader is available for the requested file format."
+    },
+    {
+      "code": "reader.session_not_found",
+      "params": ["handle"],
+      "retryable": false,
+      "description": "Requested file session handle does not exist."
+    },
+    {
+      "code": "reader.slice_out_of_range",
+      "params": ["handle", "t0", "t1", "duration"],
+      "retryable": false,
+      "description": "Requested data slice is outside the opened file duration."
+    },
+    {
       "code": "ipc.sidecar_start_failed",
       "params": ["reason"],
       "retryable": true,
@@ -48,6 +78,24 @@
       "params": ["reason"],
       "retryable": true,
       "description": "Sidecar initialization failed."
+    },
+    {
+      "code": "license.missing",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Offline license file is missing."
+    },
+    {
+      "code": "license.invalid_signature",
+      "params": ["reason"],
+      "retryable": false,
+      "description": "Offline license signature verification failed."
+    },
+    {
+      "code": "license.expired",
+      "params": ["expires_at"],
+      "retryable": false,
+      "description": "Offline license is expired."
     },
     {
       "code": "internal.unexpected",
