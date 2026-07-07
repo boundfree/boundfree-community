@@ -1,13 +1,15 @@
+import importlib.util
 from pathlib import Path
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-mne = pytest.importorskip("mne")
+HAS_MNE = importlib.util.find_spec("mne") is not None
 EDF_SAMPLE = ROOT.parent / "boundfree-eeg-upper-computer" / "samples" / "mark.edf"
 
 
+@pytest.mark.skipif(not HAS_MNE, reason="mne is not installed")
 @pytest.mark.skipif(not EDF_SAMPLE.exists(), reason="old-repo mark.edf sample is unavailable")
 def test_mne_edf_reader_opens_old_repo_sample():
     from boundfree_sidecar.protocol import handle_request
@@ -24,6 +26,7 @@ def test_mne_edf_reader_opens_old_repo_sample():
     assert response["result"]["unit"] == "uV"
 
 
+@pytest.mark.skipif(not HAS_MNE, reason="mne is not installed")
 @pytest.mark.skipif(not EDF_SAMPLE.exists(), reason="old-repo mark.edf sample is unavailable")
 def test_mne_edf_reader_get_slice_returns_uv_window():
     from boundfree_sidecar.protocol import handle_request
