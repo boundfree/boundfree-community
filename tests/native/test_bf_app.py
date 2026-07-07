@@ -82,6 +82,14 @@ def test_bf_app_smoke_open_generated_csv_fixture():
     )
 
 
+def test_bf_app_smoke_open_slice_generated_csv_fixture():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run([str(APP), "--smoke-open-slice", str(sample), "0.02", "0.05"])
+
+    assert result.stdout.strip() == "smoke-open-slice-ok shape=2x3 first=2 last=14 unit=uV"
+
+
 def test_bf_app_smoke_minmax_decimator():
     result = _run([str(APP), "--smoke-minmax-decimator"])
 

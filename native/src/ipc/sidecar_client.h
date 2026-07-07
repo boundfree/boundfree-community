@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <vector>
+
 namespace bf {
 
 struct SidecarHelloResult {
@@ -35,6 +37,19 @@ struct SidecarOpenResult {
     AppError error;
 };
 
+struct SidecarSliceResult {
+    bool ok = false;
+    QString handle;
+    double t0 = 0.0;
+    double t1 = 0.0;
+    double fs = 0.0;
+    int nChannels = 0;
+    int nSamples = 0;
+    QString unit;
+    std::vector<std::vector<float>> data;
+    AppError error;
+};
+
 class SidecarClient {
 public:
     explicit SidecarClient(QString repoRoot);
@@ -43,6 +58,7 @@ public:
     SidecarHelloResult startAndHello(const VersionInfo& version, int timeoutMs = 3000);
     SidecarResponse request(const QString& method, const QJsonObject& params, int timeoutMs = 3000);
     SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000);
+    SidecarSliceResult getSlice(const QString& handle, double t0, double t1, int timeoutMs = 3000);
     void stop();
 
 private:

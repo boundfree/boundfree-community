@@ -103,6 +103,35 @@ int main(int argc, char** argv) {
                       << " channels=" << bf::formatChannelList(opened.chNames).toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-open-slice" && i + 3 < argc) {
+            QCoreApplication app(argc, argv);
+            bf::SidecarClient sidecar(repoRoot);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            if (!hello.ok) {
+                std::cerr << "smoke-open-slice-failed code=" << hello.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
+            if (!opened.ok) {
+                sidecar.stop();
+                std::cerr << "smoke-open-slice-failed code=" << opened.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const double t0 = QString::fromLocal8Bit(argv[i + 2]).toDouble();
+            const double t1 = QString::fromLocal8Bit(argv[i + 3]).toDouble();
+            const bf::SidecarSliceResult slice = sidecar.getSlice(opened.handle, t0, t1);
+            sidecar.stop();
+            if (!slice.ok || slice.data.empty() || slice.data.front().empty()) {
+                std::cerr << "smoke-open-slice-failed code=" << slice.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const float first = slice.data.front().front();
+            const float last = slice.data.back().back();
+            std::cout << "smoke-open-slice-ok shape=" << slice.nChannels << "x" << slice.nSamples
+                      << " first=" << first << " last=" << last
+                      << " unit=" << slice.unit.toStdString() << "\n";
+            return 0;
+        }
         if (arg == "--smoke-minmax-decimator") {
             QCoreApplication app(argc, argv);
             const std::vector<float> samples{0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f};

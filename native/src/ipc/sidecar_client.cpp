@@ -143,6 +143,41 @@ SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
     return result;
 }
 
+SidecarSliceResult SidecarClient::getSlice(const QString& handle, double t0, double t1, int timeoutMs) {
+    SidecarSliceResult result;
+    const SidecarResponse response = request("get_slice", {{"handle", handle}, {"t0", t0}, {"t1", t1}}, timeoutMs);
+    if (!response.ok) {
+        result.error = response.error;
+        return result;
+    }
+
+    const QJsonObject payload = response.result;
+    result.handle = payload.value("handle").toString();
+    result.t0 = payload.value("t0").toDouble();
+    result.t1 = payload.value("t1").toDouble();
+    result.fs = payload.value("fs").toDouble();
+    result.unit = payload.value("unit").toString();
+
+    const QJsonArray shape = payload.value("shape").toArray();
+    result.nChannels = shape.size() > 0 ? shape.at(0).toInt() : 0;
+    result.nSamples = shape.size() > 1 ? shape.at(1).toInt() : 0;
+
+    const QJsonArray rows = payload.value("data").toArray();
+    result.data.reserve(rows.size());
+    for (const QJsonValue& rowValue : rows) {
+        const QJsonArray values = rowValue.toArray();
+        std::vector<float> row;
+        row.reserve(values.size());
+        for (const QJsonValue& value : values) {
+            row.push_back(static_cast<float>(value.toDouble()));
+        }
+        result.data.push_back(std::move(row));
+    }
+
+    result.ok = true;
+    return result;
+}
+
 void SidecarClient::stop() {
     if (process_.state() == QProcess::NotRunning) {
         return;
