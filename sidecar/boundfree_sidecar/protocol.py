@@ -49,7 +49,10 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
             {"path": raw_path, "suffix": path.suffix.lower()},
         )
 
-    meta = reader.metadata()
+    try:
+        meta = reader.metadata()
+    except Exception as exc:  # noqa: BLE001 - reader failures must cross IPC as data.
+        return error_response(request_id, "reader.open_failed", {"path": raw_path, "reason": str(exc)})
     session = _sessions.add(path, meta.fs, meta.n_channels, meta.n_samples, meta.ch_names, reader)
     return success_response(
         request_id,
@@ -90,17 +93,20 @@ def _handle_get_slice(request_id: Any, params: dict[str, Any]) -> dict[str, Any]
             {"handle": handle, "t0": t0, "t1": t1, "duration": session.duration},
         )
 
-    data = session.reader.get_slice(t0, t1)
+    try:
+        data = session.reader.get_slice(t0, t1)
+    except Exception as exc:  # noqa: BLE001 - reader failures must cross IPC as data.
+        return error_response(request_id, "reader.open_failed", {"path": str(session.path), "reason": str(exc)})
     return success_response(
         request_id,
         {
             "handle": handle,
-            "t0": t0,
-            "t1": t1,
-            "fs": session.fs,
-            "shape": [session.n_channels, len(data[0]) if data else 0],
-            "unit": "uV",
-            "data": data,
+            "t0": data.t0,
+            "t1": data.t1,
+            "fs": data.fs,
+            "shape": data.shape,
+            "unit": data.unit,
+            "data": data.data,
         },
     )
 
