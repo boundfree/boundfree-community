@@ -10,6 +10,8 @@
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QFile>
+#include <QJsonDocument>
 #include <QTimer>
 
 #include <iostream>
@@ -130,6 +132,29 @@ int main(int argc, char** argv) {
             std::cout << "smoke-open-slice-ok shape=" << slice.nChannels << "x" << slice.nSamples
                       << " first=" << first << " last=" << last
                       << " unit=" << slice.unit.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-parse-slice-payload" && i + 1 < argc) {
+            QCoreApplication app(argc, argv);
+            QFile file(QString::fromLocal8Bit(argv[i + 1]));
+            if (!file.open(QIODevice::ReadOnly)) {
+                std::cout << "smoke-parse-slice-payload-error code=protocol.invalid_params field=path reason=unreadable\n";
+                return 1;
+            }
+            QJsonParseError parseError;
+            const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+            if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+                std::cout << "smoke-parse-slice-payload-error code=protocol.invalid_json\n";
+                return 1;
+            }
+            const bf::SidecarSliceResult slice = bf::parseSlicePayload(doc.object());
+            if (!slice.ok) {
+                std::cout << "smoke-parse-slice-payload-error code=" << slice.error.code.toStdString()
+                          << " field=" << slice.error.params.value("field").toString().toStdString()
+                          << " reason=" << slice.error.params.value("reason").toString().toStdString() << "\n";
+                return 1;
+            }
+            std::cout << "smoke-parse-slice-payload-ok shape=" << slice.nChannels << "x" << slice.nSamples << "\n";
             return 0;
         }
         if (arg == "--smoke-minmax-decimator") {

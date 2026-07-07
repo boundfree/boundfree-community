@@ -1,10 +1,14 @@
 #include "ipc/sidecar_client.h"
 
 #include <QDir>
+#include <QJsonValue>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcessEnvironment>
+
+#include <cmath>
+#include <limits>
 
 namespace bf {
 namespace {
@@ -14,6 +18,23 @@ AppError appErrorFromJson(const QJsonObject& error) {
         error.value("code").toString("internal.unexpected"),
         error.value("params").toObject(),
         error.value("retryable").toBool(false));
+}
+
+AppError invalidSlicePayload(const QString& field, const QString& reason) {
+    return makeError("protocol.invalid_params", {{"field", field}, {"reason", reason}});
+}
+
+bool jsonValueToNonNegativeInt(const QJsonValue& value, int* out) {
+    if (!value.isDouble()) {
+        return false;
+    }
+    const double number = value.toDouble();
+    if (!std::isfinite(number) || number < 0.0 || std::floor(number) != number ||
+        number > static_cast<double>(std::numeric_limits<int>::max())) {
+        return false;
+    }
+    *out = static_cast<int>(number);
+    return true;
 }
 
 }  // namespace
@@ -144,14 +165,18 @@ SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
 }
 
 SidecarSliceResult SidecarClient::getSlice(const QString& handle, double t0, double t1, int timeoutMs) {
-    SidecarSliceResult result;
     const SidecarResponse response = request("get_slice", {{"handle", handle}, {"t0", t0}, {"t1", t1}}, timeoutMs);
     if (!response.ok) {
+        SidecarSliceResult result;
         result.error = response.error;
         return result;
     }
 
-    const QJsonObject payload = response.result;
+    return parseSlicePayload(response.result);
+}
+
+SidecarSliceResult parseSlicePayload(const QJsonObject& payload) {
+    SidecarSliceResult result;
     result.handle = payload.value("handle").toString();
     result.t0 = payload.value("t0").toDouble();
     result.t1 = payload.value("t1").toDouble();
@@ -159,13 +184,40 @@ SidecarSliceResult SidecarClient::getSlice(const QString& handle, double t0, dou
     result.unit = payload.value("unit").toString();
 
     const QJsonArray shape = payload.value("shape").toArray();
-    result.nChannels = shape.size() > 0 ? shape.at(0).toInt() : 0;
-    result.nSamples = shape.size() > 1 ? shape.at(1).toInt() : 0;
+    if (shape.size() < 2) {
+        result.error = invalidSlicePayload("shape", "expected at least 2 integers");
+        return result;
+    }
+    if (!jsonValueToNonNegativeInt(shape.at(0), &result.nChannels) ||
+        !jsonValueToNonNegativeInt(shape.at(1), &result.nSamples)) {
+        result.error = invalidSlicePayload("shape", "expected non-negative integers");
+        return result;
+    }
 
     const QJsonArray rows = payload.value("data").toArray();
+    if (rows.size() != result.nChannels) {
+        result.error = invalidSlicePayload(
+            "shape",
+            QString("expected %1 rows, got %2").arg(result.nChannels).arg(rows.size()));
+        return result;
+    }
     result.data.reserve(rows.size());
-    for (const QJsonValue& rowValue : rows) {
+    for (int rowIndex = 0; rowIndex < rows.size(); ++rowIndex) {
+        const QJsonValue& rowValue = rows.at(rowIndex);
+        if (!rowValue.isArray()) {
+            result.error = invalidSlicePayload("shape", QString("row %1 must be an array").arg(rowIndex));
+            return result;
+        }
         const QJsonArray values = rowValue.toArray();
+        if (values.size() != result.nSamples) {
+            result.error = invalidSlicePayload(
+                "shape",
+                QString("row %1 expected %2 samples, got %3")
+                    .arg(rowIndex)
+                    .arg(result.nSamples)
+                    .arg(values.size()));
+            return result;
+        }
         std::vector<float> row;
         row.reserve(values.size());
         for (const QJsonValue& value : values) {

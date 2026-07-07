@@ -50,6 +50,8 @@ struct SidecarSliceResult {
     AppError error;
 };
 
+SidecarSliceResult parseSlicePayload(const QJsonObject& payload);
+
 class SidecarClient {
 public:
     explicit SidecarClient(QString repoRoot);

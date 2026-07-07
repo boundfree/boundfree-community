@@ -3,6 +3,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = ROOT / "native" / "build"
@@ -88,6 +90,67 @@ def test_bf_app_smoke_open_slice_generated_csv_fixture():
     result = _run([str(APP), "--smoke-open-slice", str(sample), "0.02", "0.05"])
 
     assert result.stdout.strip() == "smoke-open-slice-ok shape=2x3 first=2 last=14 unit=uV"
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason_fragment"),
+    [
+        (
+            {
+                "handle": "demo",
+                "t0": 0.0,
+                "t1": 0.03,
+                "fs": 100.0,
+                "shape": [2],
+                "unit": "uV",
+                "data": [[1.0, 2.0, 3.0], [11.0, 12.0, 13.0]],
+            },
+            "expected at least 2 integers",
+        ),
+        (
+            {
+                "handle": "demo",
+                "t0": 0.0,
+                "t1": 0.03,
+                "fs": 100.0,
+                "shape": [2, 3],
+                "unit": "uV",
+                "data": [[1.0, 2.0, 3.0]],
+            },
+            "expected 2 rows, got 1",
+        ),
+        (
+            {
+                "handle": "demo",
+                "t0": 0.0,
+                "t1": 0.03,
+                "fs": 100.0,
+                "shape": [2, 3],
+                "unit": "uV",
+                "data": [[1.0, 2.0], [11.0, 12.0, 13.0]],
+            },
+            "row 0 expected 3 samples, got 2",
+        ),
+    ],
+)
+def test_bf_app_smoke_parse_slice_payload_rejects_shape_data_mismatch(tmp_path, payload, reason_fragment):
+    payload_path = tmp_path / "slice.json"
+    payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = subprocess.run(
+        [str(APP), "--smoke-parse-slice-payload", str(payload_path)],
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "sidecar")},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=2,
+    )
+
+    assert result.returncode == 1
+    assert result.stdout.strip() == (
+        f"smoke-parse-slice-payload-error code=protocol.invalid_params field=shape reason={reason_fragment}"
+    )
 
 
 def test_bf_app_smoke_minmax_decimator():
