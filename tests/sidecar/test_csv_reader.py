@@ -5,6 +5,17 @@ ROOT = Path(__file__).resolve().parents[2]
 SAMPLE = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
 
 
+def test_csv_reader_metadata_does_not_cache_all_rows():
+    from boundfree_sidecar.readers.csv_reader import CsvReader
+
+    reader = CsvReader(SAMPLE)
+
+    meta = reader.metadata()
+
+    assert meta.n_samples == 10
+    assert reader._rows is None
+
+
 def test_csv_reader_open_returns_metadata_only():
     from boundfree_sidecar.protocol import handle_request
 

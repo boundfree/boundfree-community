@@ -10,12 +10,7 @@ class CsvReader(Reader):
     def __init__(self, path: Path) -> None:
         super().__init__(path)
         self._rows: list[dict[str, str]] | None = None
-
-    def _load_rows(self) -> list[dict[str, str]]:
-        if self._rows is None:
-            with self.path.open("r", encoding="utf-8", newline="") as f:
-                self._rows = list(csv.DictReader(f))
-        return self._rows
+        self._metadata: FileMetadata | None = None
 
     def _load_events(self) -> list[dict[str, object]]:
         markers_path = self.path.with_name(self.path.stem + "_markers.csv")
@@ -28,36 +23,57 @@ class CsvReader(Reader):
         return events
 
     def metadata(self) -> FileMetadata:
-        rows = self._load_rows()
-        if not rows:
-            raise ValueError("CSV contains no samples")
-        ch_names = [name for name in rows[0].keys() if name != "time_s"]
-        times = [float(row["time_s"]) for row in rows]
-        fs = 1.0 / (times[1] - times[0]) if len(times) > 1 else 1.0
-        duration = len(rows) / fs
-        return FileMetadata(
+        if self._metadata is not None:
+            return self._metadata
+
+        with self.path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            first_row = next(reader, None)
+            if first_row is None:
+                raise ValueError("CSV contains no samples")
+
+            ch_names = [name for name in first_row.keys() if name != "time_s"]
+            first_time = float(first_row["time_s"])
+            second_row = next(reader, None)
+            second_time = float(second_row["time_s"]) if second_row is not None else None
+            n_samples = 1 if second_row is None else 2
+
+            for _ in reader:
+                n_samples += 1
+
+        fs = 1.0 / (second_time - first_time) if second_time is not None else 1.0
+        duration = n_samples / fs
+        self._metadata = FileMetadata(
             fs=fs,
             n_channels=len(ch_names),
-            n_samples=len(rows),
+            n_samples=n_samples,
             duration=duration,
             ch_names=ch_names,
             unit="uV",
             format_name=self.format_name,
             events=self._load_events(),
         )
+        return self._metadata
 
     def get_slice(self, t0: float, t1: float) -> SliceData:
-        rows = self._load_rows()
         meta = self.metadata()
         start = max(0, int(round(t0 * meta.fs)))
         stop = min(meta.n_samples, int(round(t1 * meta.fs)))
+        data = [[] for _ in meta.ch_names]
+
+        with self.path.open("r", encoding="utf-8", newline="") as f:
+            for index, row in enumerate(csv.DictReader(f)):
+                if index < start:
+                    continue
+                if index >= stop:
+                    break
+                for channel_index, channel_name in enumerate(meta.ch_names):
+                    data[channel_index].append(float(row[channel_name]))
+
         return SliceData(
             t0=t0,
             t1=t1,
             fs=meta.fs,
             unit="uV",
-            data=[
-                [float(row[ch]) for row in rows[start:stop]]
-                for ch in meta.ch_names
-            ],
+            data=data,
         )
