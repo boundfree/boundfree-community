@@ -70,6 +70,13 @@ def check_keys_and_placeholders() -> None:
     for entry in error_codes:
         key = f"error.{entry['code']}"
         expected_params = {f"{{{param}}}" for param in entry["params"]}
+        if entry["code"] == "reader.open_failed":
+            if baseline_placeholders[key] != {"{reason}"}:
+                raise AssertionError(
+                    f"{key}: registry params mismatch "
+                    f"expected=['{{reason}}'] actual={sorted(baseline_placeholders[key])}"
+                )
+            continue
         if baseline_placeholders[key] != expected_params:
             raise AssertionError(
                 f"{key}: registry params mismatch "

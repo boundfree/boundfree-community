@@ -25,6 +25,7 @@
     <message><source>error.protocol.invalid_params</source><translation>协议参数无效：{field}，{reason}</translation></message>
     <message><source>error.file.not_found</source><translation>文件不存在：{path}</translation></message>
     <message><source>error.reader.unsupported_format</source><translation>暂不支持该文件格式：{path}，后缀 {suffix}</translation></message>
+    <message><source>error.reader.open_failed</source><translation>读取器失败：{reason}</translation></message>
     <message><source>error.reader.session_not_found</source><translation>文件会话不存在：{handle}</translation></message>
     <message><source>error.reader.slice_out_of_range</source><translation>切片超出文件时长：{handle}，{t0}-{t1}，时长 {duration}</translation></message>
     <message><source>error.ipc.sidecar_start_failed</source><translation>无法启动边车：{reason}</translation></message>

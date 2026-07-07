@@ -44,6 +44,12 @@
       "description": "No sidecar reader is available for the requested file format."
     },
     {
+      "code": "reader.open_failed",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Sidecar reader failed while opening or reading the requested file."
+    },
+    {
       "code": "reader.session_not_found",
       "params": ["handle"],
       "retryable": false,

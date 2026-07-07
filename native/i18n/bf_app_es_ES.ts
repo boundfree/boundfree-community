@@ -25,6 +25,7 @@
     <message><source>error.protocol.invalid_params</source><translation>Invalid protocol parameter: {field}, {reason}</translation></message>
     <message><source>error.file.not_found</source><translation>File does not exist: {path}</translation></message>
     <message><source>error.reader.unsupported_format</source><translation>Unsupported file format: {path}, suffix {suffix}</translation></message>
+    <message><source>error.reader.open_failed</source><translation>Reader failed: {reason}</translation></message>
     <message><source>error.reader.session_not_found</source><translation>File session does not exist: {handle}</translation></message>
     <message><source>error.reader.slice_out_of_range</source><translation>Slice is outside file duration: {handle}, {t0}-{t1}, duration {duration}</translation></message>
     <message><source>error.ipc.sidecar_start_failed</source><translation>Could not start sidecar: {reason}</translation></message>

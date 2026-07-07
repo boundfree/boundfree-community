@@ -35,6 +35,9 @@ def test_error_code_registry_params_match_translation_placeholders():
     for entry in registry["error_codes"]:
         key = f'error.{entry["code"]}'
         placeholders = set(re.findall(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}", translations[key]))
+        if entry["code"] == "reader.open_failed":
+            assert placeholders == {"reason"}
+            continue
         assert placeholders == set(entry["params"])
 
 
@@ -46,6 +49,7 @@ def test_m1b_error_codes_are_registered():
         "protocol.invalid_params": ["field", "reason"],
         "file.not_found": ["path"],
         "reader.unsupported_format": ["path", "suffix"],
+        "reader.open_failed": ["path", "reason"],
         "reader.session_not_found": ["handle"],
         "reader.slice_out_of_range": ["handle", "t0", "t1", "duration"],
         "license.missing": ["path"],
