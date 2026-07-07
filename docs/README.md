@@ -3,18 +3,20 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-07-06
+last_updated: 2026-07-08
 ---
 
 # 文档索引
 
 本目录保存 BoundFree EEG Native 的当前核心文档和历史归档。日常开发只应优先阅读当前核心文档；`archive/` 下内容用于追溯旧计划和旧规范。
 
+当前 v1 stable 的上位边界来自 `../BoundFree_EEG_System_Requirements_Spec.md`：v1 先完成通用 EEG/LFP/电生理文件分析，自研硬件采集闭环进入 v1.1/v2。
+
 ## 当前核心文档
 
 | 文档 | 类型 | 用途 |
 | --- | --- | --- |
-| [`roadmap.md`](roadmap.md) | 路线图 | M0 结论、M1-M8 路线和阶段门禁 |
+| [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、M0 结论、M1-M8 路线和阶段门禁 |
 | [`phase-1-foundation.md`](phase-1-foundation.md) | 当前计划 | M1-A 基础契约与可启动骨架执行计划 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
@@ -30,6 +32,7 @@ last_updated: 2026-07-06
 | [`archive/plans/`](archive/plans/) | M0-M8 旧里程碑计划 |
 | [`archive/git-development.md`](archive/git-development.md) | 旧 Git 开发与版本管理规范 |
 | [`archive/documentation-style.md`](archive/documentation-style.md) | 旧文档格式规范 |
+| [`superpowers/plans/`](superpowers/plans/) | 当前执行计划，不作为主规格入口 |
 
 ## 文档状态
 

@@ -16,7 +16,11 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 }
 ```
 
-当前阶段：M0 技术验证已完成，下一步进入 M1-A 基础契约与可启动骨架。
+当前阶段：M0 技术验证已完成，M1-A 基础契约与可启动骨架已具备可验证基础。
+
+v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
+
+自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时采集长稳测试不作为 v1 stable 门槛，进入 v1.1/v2。v1 仅保留数据源、Session、录制和实时管线的扩展边界。
 
 M0 结论：
 
@@ -43,7 +47,7 @@ M1-A 只实现基础骨架，不进入业务功能：
 
 | 文档 | 用途 |
 | --- | --- |
-| [docs/roadmap.md](docs/roadmap.md) | M0 结论、M1-M8 路线和阶段门禁 |
+| [docs/roadmap.md](docs/roadmap.md) | v1 边界、M0 结论、M1-M8 路线和阶段门禁 |
 | [docs/phase-1-foundation.md](docs/phase-1-foundation.md) | M1-A 第一阶段执行计划 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
@@ -68,7 +72,7 @@ boundfree-eeg-native/
 ## Branch And Version Model
 
 - 日常开发基于 `master`。
-- 当前第一阶段开发分支为 `feature/m1-foundation`。
+- 当前第一阶段开发以 M1-A 骨架为基础继续演进；后续功能分支按 `feature/*`、`fix/*`、`docs/*` 拆分。
 - `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
 - 普通功能分支不修改 `version.json` 的产品版本号。
 - 产品版本和 `ipc_protocol_version` 分开维护。

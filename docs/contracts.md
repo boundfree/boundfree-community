@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-07-06
+last_updated: 2026-07-08
 ---
 
 # 基础契约
@@ -120,26 +120,37 @@ M1-A 初始错误码：
 | `sidecar.initialization_failed` | `reason` | `true` | 边车初始化失败 |
 | `internal.unexpected` | `operation` | `false` | 未分类异常兜底 |
 
+M1-B 扩展：
+
+- 参数校验：`protocol.invalid_params`。
+- 文件会话：`file.*`、`reader.*`。
+- 授权骨架：`license.*`。
+
 后续阶段按功能扩展：
 
-- 文件读取：`file.*`、`reader.*`、`hdf5.*`、`csv.*`、`rhs.*`、`bbk.*`。
-- 授权：`license.*`。
+- 具体读取器：`hdf5.*`、`csv.*`、`rhs.*`、`bbk.*`。
 - 分析：`analysis.*`。
 - 录制和导出：`record.*`、`export.*`。
 
 ## i18n Contract
 
-i18n 使用 Qt Linguist `.ts/.qm`。目标语言按以下 locale 维护：
+i18n 使用 Qt Linguist `.ts/.qm`。v1 stable 必达语言为：
 
 - `zh_CN`
-- `zh_TW`
 - `en_US`
+
+开发和静态检查保留：
+
+- `pseudo`
+
+以下 locale 文件可继续保留，用于架构扩展和 key 完整性检查，但不作为 v1 stable 验收项：
+
+- `zh_TW`
 - `ja_JP`
 - `ko_KR`
 - `de_DE`
 - `fr_FR`
 - `es_ES`
-- `pseudo`
 
 M1-A 实际验证 `zh_CN`、`en_US`、`pseudo`，其他目标语言保持文件结构和 key 完整性。
 

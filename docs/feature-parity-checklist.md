@@ -3,16 +3,41 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-07-06
+last_updated: 2026-07-08
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
 # 功能对齐验收清单
 
-新 C++/Qt6 版**功能不变**的验收依据。逐条对照旧 Python 版（`../boundfree-eeg-upper-computer`）行为与数值。
-标注负责里程碑（M#）。数值类项须通过黄金文件比对（容差已在对应测试记录）。
+新 C++/Qt6 版 v1 stable 的验收依据。逐条对照旧 Python 版（`../boundfree-eeg-upper-computer`）行为与数值。
+标注负责里程碑（M#）。数值类项须通过黄金文件比对，容差写入对应测试记录。
+
+## 范围分层
+
+v1 stable 必达：
+
+- 通用 EEG/LFP/电生理文件分析。
+- 文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频文件同步、片段导出。
+- 录制与 Session 骨架，可通过文件回放源或模拟源验证写盘链路。
+- 离线机器授权、Windows 10/11 安装包、简体中文和英文界面。
+
+v1 目标但需真实样本门禁：
+
+- Intan RHD/RHS、Open Ephys、Plexon、Blackrock。
+- 只有真实样本和测试覆盖后，才能在界面、发布说明或销售材料中宣称“已支持”。
+- 如果样本缺少 TTL 或事件，只能验收连续信号和基础元数据，不能宣称事件支持完成。
+
+v1.1/v2：
+
+- 自研 `ADS1299-4 + ESP32-C3`。
+- BLE 真实设备采集。
+- 真实设备录制闭环。
+- 设备状态监控。
+- 12 小时以上采集长稳测试。
 
 ## 文件读取（边车）— M1/M2
+
+### v1 必达对齐格式
 
 - [ ] EDF / BDF 打开（元数据 fs/通道/时长一致）
 - [ ] BrainVision (.vhdr) 打开
@@ -26,15 +51,25 @@ reference_repo: ../boundfree-eeg-upper-computer
 - [ ] 单位统一换算为 μV
 - [ ] 后台异步加载不阻塞 UI
 
+### v1 目标格式与样本门禁
+
+- [ ] Intan RHD/RHS：连续信号、基础元数据、TTL/刺激事件按样本覆盖验收
+- [ ] Open Ephys：连续信号、基础元数据、TTL/事件按样本覆盖验收
+- [ ] Plexon：连续信号、基础元数据、事件按样本覆盖验收
+- [ ] Blackrock：连续信号、基础元数据、事件按样本覆盖验收
+- [ ] 每个对外宣称支持的格式均有真实样本和验收记录
+
 ## 波形显示 — M2
 
 - [ ] 多通道波形（垂直滚动）
 - [ ] 通道显隐
 - [ ] 时间窗 1–120s（默认 10s）
 - [ ] 幅值缩放（默认 ±200μV）
-- [ ] 实时刷新（帧率达 M0 基线）
+- [ ] 静态浏览和回放刷新（帧率达 M0 基线）
 - [ ] 回放/静态双模式
 - [ ] 时间轴/顶点缓冲复用（相同窗口不重建）
+- [ ] 大窗口或高采样率数据使用 MinMax、LTTB 或等价抽稀策略
+- [ ] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
 
 ## 信号处理 — M3
 
@@ -84,12 +119,14 @@ reference_repo: ../boundfree-eeg-upper-computer
 
 ## 录制 — M7
 
+- [ ] 录制与 Session 骨架可通过文件回放源或模拟源验证
 - [ ] 双格式同时录制（EDF + HDF5）
 - [ ] 后台写 + 有界队列背压 + 丢弃计数
 - [ ] 录制元数据对话框（animal_id/exp_type/notes/dir）
 - [ ] REC 闪烁 / 耗时计时 / 磁盘监控（<500MB 警告）
 - [ ] 录制中事件追加 HDF5 events（单一写句柄）
 - [ ] HDF5 maxshape 可扩展 / float32 / 按秒 chunk
+- [ ] 不把 BLE 真实设备采集录制作为 v1 验收项
 
 ## 片段导出 — M7
 
@@ -104,16 +141,26 @@ reference_repo: ../boundfree-eeg-upper-computer
 - [ ] 可折叠面板（通道/滤波/标注）
 - [ ] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
 - [ ] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）
-- [ ] i18n：zh_CN/zh_TW/en_US/ja_JP/ko_KR/de_DE/fr_FR/es_ES 运行时切换
-- [ ] i18n：数字/日期/单位区域格式化（德/法小数逗号）
+- [ ] i18n：zh_CN/en_US 运行时切换
+- [ ] i18n：pseudo 用于布局与缺 key 检查
+- [ ] i18n：其他 locale 文件保持 key 完整性，不作为 v1 stable 验收项
+- [ ] i18n：数字/日期/单位区域格式化覆盖 v1 必达语言
 - [ ] i18n：边车 error_code → UI 本地化
 - [ ] i18n：缺 key CI 拦截 + 伪本地化
 - [ ] 离线授权：机器码 SHA256(MachineGuid+MAC) 一致
 - [ ] 离线授权：RSA-2048 PSS 校验与旧版判定一致、密钥格式兼容
-- [ ] 数据源抽象保留（BLE 源接口占位）
-- [ ] 采样率 256/512/1024、ADS1299 配置
+- [ ] 数据源抽象、Session 和实时管线扩展边界保留
 - [ ] PyInstaller 边车 + Inno Setup 安装包（DisableDirPage=no、法务文件）
 - [ ] Windows 代码签名
+
+## v1.1/v2 硬件采集 — 后续路线
+
+- [ ] BLE 源接口接入真实设备
+- [ ] 自研 `ADS1299-4 + ESP32-C3` 协议解析
+- [ ] 设备 ID、固件版本、采样率、通道数、电池电量、连接状态、丢包计数、接收速率
+- [ ] 真实设备连续采集、显示和录制 12 小时以上
+- [ ] 无线断开、重连和采集异常状态记录
+- [ ] 采集数据进入 v1 浏览、分析、标注、视频同步和导出流程
 
 ## 已解决 bug 复现防护（来自旧版 AGENTS.md）— 全程
 
