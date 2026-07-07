@@ -1,6 +1,9 @@
+#include "controller/file_session.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
+#include "license/machine_id.h"
+#include "render/minmax_decimator.h"
 #include "ui/main_window.h"
 
 #include <QApplication>
@@ -10,6 +13,7 @@
 #include <QTimer>
 
 #include <iostream>
+#include <vector>
 
 int main(int argc, char** argv) {
     const QString repoRoot = bf::VersionService::detectRepoRoot();
@@ -41,6 +45,71 @@ int main(int argc, char** argv) {
                       << " ipc_protocol_version=" << hello.ipcProtocolVersion << "\n";
             return 0;
         }
+        if (arg == "--smoke-sidecar-open" && i + 1 < argc) {
+            QCoreApplication app(argc, argv);
+            bf::SidecarClient sidecar(repoRoot);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            if (!hello.ok) {
+                std::cerr << "smoke-sidecar-open-failed code=" << hello.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const QString path = QString::fromLocal8Bit(argv[i + 1]);
+            const bf::SidecarOpenResult opened = sidecar.openFile(path);
+            sidecar.stop();
+            if (!opened.ok) {
+                std::cout << "smoke-sidecar-open-error code=" << opened.error.code.toStdString()
+                          << " path=" << opened.error.params.value("path").toString().toStdString() << "\n";
+                return 0;
+            }
+            std::cout << "smoke-sidecar-open-ok handle=" << opened.handle.toStdString()
+                      << " fs=" << opened.fs << " n_channels=" << opened.nChannels << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-machine-id" && i + 4 < argc) {
+            QCoreApplication app(argc, argv);
+            QString machineGuid;
+            QString mac;
+            for (int j = i + 1; j + 1 < argc; j += 2) {
+                const QString key = QString::fromLocal8Bit(argv[j]);
+                const QString value = QString::fromLocal8Bit(argv[j + 1]);
+                if (key == "--machine-guid") {
+                    machineGuid = value;
+                } else if (key == "--mac") {
+                    mac = value;
+                }
+            }
+            std::cout << "smoke-machine-id " << bf::machineIdFromInputs(machineGuid, mac).toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-open-file" && i + 1 < argc) {
+            QCoreApplication app(argc, argv);
+            bf::SidecarClient sidecar(repoRoot);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            if (!hello.ok) {
+                std::cerr << "smoke-open-file-failed code=" << hello.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
+            sidecar.stop();
+            if (!opened.ok) {
+                std::cerr << "smoke-open-file-failed code=" << opened.error.code.toStdString() << "\n";
+                return 1;
+            }
+            std::cout << "smoke-open-file-ok format=" << opened.format.toStdString()
+                      << " fs=" << opened.fs
+                      << " n_channels=" << opened.nChannels
+                      << " n_samples=" << opened.nSamples
+                      << " duration=" << opened.duration
+                      << " channels=" << bf::formatChannelList(opened.chNames).toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-minmax-decimator") {
+            QCoreApplication app(argc, argv);
+            const std::vector<float> samples{0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+            std::cout << "smoke-minmax-decimator "
+                      << bf::formatMinMaxBuckets(bf::minMaxDecimate(samples, 2)).toStdString() << "\n";
+            return 0;
+        }
     }
 
     QApplication app(argc, argv);
@@ -50,9 +119,10 @@ int main(int argc, char** argv) {
     parser.addHelpOption();
     const QCommandLineOption versionOpt("version", "Print product version.");
     const QCommandLineOption smokeSidecarOpt("smoke-sidecar", "Start sidecar, run hello, and exit.");
+    const QCommandLineOption smokeSidecarOpenOpt("smoke-sidecar-open", "Start sidecar, open a file, and exit.", "path");
     const QCommandLineOption smokeOpt("smoke-ui", "Start UI and exit automatically.");
     const QCommandLineOption languageOpt("language", "Set startup locale.", "locale", "zh_CN");
-    parser.addOptions({versionOpt, smokeSidecarOpt, smokeOpt, languageOpt});
+    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt});
     parser.process(app);
 
     bf::I18nService i18n(repoRoot);

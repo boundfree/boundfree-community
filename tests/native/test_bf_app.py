@@ -46,3 +46,43 @@ def test_bf_app_smoke_sidecar_handshake():
     result = _run([str(APP), "--smoke-sidecar"])
 
     assert result.stdout.strip() == "smoke-sidecar-ok product_version=0.1.0-dev ipc_protocol_version=1"
+
+
+def test_bf_app_smoke_sidecar_open_missing_file_reports_file_error(tmp_path):
+    missing = tmp_path / "missing.edf"
+
+    result = _run([str(APP), "--smoke-sidecar-open", str(missing)])
+
+    assert result.stdout.strip() == f"smoke-sidecar-open-error code=file.not_found path={missing}"
+
+
+def test_bf_app_smoke_machine_id_from_fixed_inputs():
+    result = _run(
+        [
+            str(APP),
+            "--smoke-machine-id",
+            "--machine-guid",
+            "GUID-001",
+            "--mac",
+            "AA:BB:CC:DD:EE:FF",
+        ]
+    )
+
+    assert result.stdout.strip() == "smoke-machine-id 53C42CBF-B2AE90CE-65593CDA-87F80560"
+
+
+def test_bf_app_smoke_open_generated_csv_fixture():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run([str(APP), "--smoke-open-file", str(sample)])
+
+    assert result.stdout.strip() == (
+        "smoke-open-file-ok format=CSV fs=100 n_channels=2 "
+        "n_samples=10 duration=0.1 channels=ch1,ch2"
+    )
+
+
+def test_bf_app_smoke_minmax_decimator():
+    result = _run([str(APP), "--smoke-minmax-decimator"])
+
+    assert result.stdout.strip() == "smoke-minmax-decimator 0:0,1 1:2,3 2:4,5"

@@ -10,6 +10,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 add_executable(bf_app
     src/app/main.cpp
+    src/controller/file_session.cpp
+    src/controller/file_session.h
     src/core/app_error.cpp
     src/core/app_error.h
     src/core/version.cpp
@@ -18,6 +20,10 @@ add_executable(bf_app
     src/i18n/i18n_service.h
     src/ipc/sidecar_client.cpp
     src/ipc/sidecar_client.h
+    src/license/machine_id.cpp
+    src/license/machine_id.h
+    src/render/minmax_decimator.cpp
+    src/render/minmax_decimator.h
     src/ui/main_window.cpp
     src/ui/main_window.h
 )

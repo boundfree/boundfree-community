@@ -1,11 +1,22 @@
 #include "ipc/sidecar_client.h"
 
 #include <QDir>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcessEnvironment>
 
 namespace bf {
+namespace {
+
+AppError appErrorFromJson(const QJsonObject& error) {
+    return makeError(
+        error.value("code").toString("internal.unexpected"),
+        error.value("params").toObject(),
+        error.value("retryable").toBool(false));
+}
+
+}  // namespace
 
 SidecarClient::SidecarClient(QString repoRoot) : repoRoot_(std::move(repoRoot)) {}
 
@@ -48,9 +59,36 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
         return result;
     }
 
-    const QJsonObject request{{"id", "hello-1"}, {"method", "hello"}, {"params", QJsonObject{}}};
+    const SidecarResponse response = request("hello", {}, timeoutMs);
+    if (!response.ok) {
+        result.error = response.error;
+        return result;
+    }
+
+    const QJsonObject payload = response.result;
+    result.productVersion = payload.value("product_version").toString();
+    result.ipcProtocolVersion = payload.value("ipc_protocol_version").toInt();
+    if (result.ipcProtocolVersion != version.ipcProtocolVersion) {
+        result.error = makeError(
+            "protocol.version_mismatch",
+            {{"expected", version.ipcProtocolVersion}, {"actual", result.ipcProtocolVersion}});
+        return result;
+    }
+
+    result.ok = true;
+    return result;
+}
+
+SidecarResponse SidecarClient::request(const QString& method, const QJsonObject& params, int timeoutMs) {
+    SidecarResponse result;
+    if (process_.state() == QProcess::NotRunning) {
+        result.error = makeError("ipc.sidecar_exited", {{"exit_code", process_.exitCode()}});
+        return result;
+    }
+
+    const QJsonObject request{{"id", method + "-1"}, {"method", method}, {"params", params}};
     if (!writeJsonLine(request, timeoutMs)) {
-        result.error = makeError("ipc.sidecar_timeout", {{"operation", "hello_write"}, {"timeout_ms", timeoutMs}});
+        result.error = makeError("ipc.sidecar_timeout", {{"operation", method + "_write"}, {"timeout_ms", timeoutMs}});
         return result;
     }
 
@@ -59,7 +97,7 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
         if (process_.state() == QProcess::NotRunning) {
             result.error = makeError("ipc.sidecar_exited", {{"exit_code", process_.exitCode()}});
         } else {
-            result.error = makeError("ipc.sidecar_timeout", {{"operation", "hello_read"}, {"timeout_ms", timeoutMs}});
+            result.error = makeError("ipc.sidecar_timeout", {{"operation", method + "_read"}, {"timeout_ms", timeoutMs}});
         }
         return result;
     }
@@ -73,24 +111,34 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
 
     const QJsonObject response = doc.object();
     if (!response.value("ok").toBool(false)) {
-        const QJsonObject error = response.value("error").toObject();
-        result.error = makeError(
-            error.value("code").toString("internal.unexpected"),
-            error.value("params").toObject(),
-            error.value("retryable").toBool(false));
+        result.error = appErrorFromJson(response.value("error").toObject());
         return result;
     }
 
-    const QJsonObject payload = response.value("result").toObject();
-    result.productVersion = payload.value("product_version").toString();
-    result.ipcProtocolVersion = payload.value("ipc_protocol_version").toInt();
-    if (result.ipcProtocolVersion != version.ipcProtocolVersion) {
-        result.error = makeError(
-            "protocol.version_mismatch",
-            {{"expected", version.ipcProtocolVersion}, {"actual", result.ipcProtocolVersion}});
+    result.ok = true;
+    result.result = response.value("result").toObject();
+    return result;
+}
+
+SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
+    SidecarOpenResult result;
+    const SidecarResponse response = request("open", {{"path", path}}, timeoutMs);
+    if (!response.ok) {
+        result.error = response.error;
         return result;
     }
 
+    const QJsonObject payload = response.result;
+    result.handle = payload.value("handle").toString();
+    result.fs = payload.value("fs").toDouble();
+    result.nChannels = payload.value("n_channels").toInt();
+    result.nSamples = payload.value("n_samples").toInt();
+    result.duration = payload.value("duration").toDouble();
+    result.format = payload.value("format").toString();
+    const QJsonArray channels = payload.value("ch_names").toArray();
+    for (const QJsonValue& value : channels) {
+        result.chNames.push_back(value.toString());
+    }
     result.ok = true;
     return result;
 }
