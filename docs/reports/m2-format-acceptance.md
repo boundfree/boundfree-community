@@ -4,9 +4,9 @@ Last updated: 2026-07-08
 
 ## Environment Notes
 
-- Current environment does not have `mne==1.12.1` installed, so `tests/sidecar/test_mne_reader.py` is dependency-gated and skips here.
-- Current environment does not have `h5py` installed, so HDF5 reader checks remain dependency-gated and skip here.
-- Skipped dependency-gated tests are not format acceptance evidence; EDF/MNE support must not be read as accepted from a skip alone.
+- `h5py` dependency-gated tests skip in this environment when `h5py==3.16.0` is not installed.
+- `mne` dependency-gated tests skip in this environment when `mne==1.12.1` is not installed.
+- Skipped dependency-gated tests are not format acceptance evidence.
 - The acceptance statuses below describe the documented project state, not proof from this environment when a required dependency is missing.
 
 | Format | Status | Evidence |

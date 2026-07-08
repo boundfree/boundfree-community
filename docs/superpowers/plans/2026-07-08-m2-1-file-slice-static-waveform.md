@@ -1474,7 +1474,7 @@ git commit -m "feat: add async static file browser entry"
 - Consumes: completed Tasks 1-7.
 - Produces: explicit M2-1 status and a verified branch ready for review or merge.
 
-- [ ] **Step 1: Update feature checklist status narrowly**
+- [x] **Step 1: Update feature checklist status narrowly**
 
 In `docs/feature-parity-checklist.md`, under "文件读取（边车）— M1/M2", mark only these completed subitems if their tests passed:
 
@@ -1494,7 +1494,7 @@ Under "波形显示 — M2", mark only this if Task 6 and Task 7 passed:
 
 Keep real GPU acceptance unchecked until `docs/reports/m2-rendering-gpu-gate.md` contains a real GPU/display result.
 
-- [ ] **Step 2: Update roadmap current phase**
+- [x] **Step 2: Update roadmap current phase**
 
 In `docs/roadmap.md`, update "当前阶段" to say M2-1 is in progress or completed according to verification:
 
@@ -1502,7 +1502,7 @@ In `docs/roadmap.md`, update "当前阶段" to say M2-1 is in progress or comple
 当前阶段进入 M2-1：文件切片契约、依赖门禁格式读取和静态波形浏览入口。M2-1 不代表完整 M2 验收；真实 GPU 渲染门禁、全格式真实样本验收、通道交互浏览仍需后续完成。
 ```
 
-- [ ] **Step 3: Run full verification**
+- [x] **Step 3: Run full verification**
 
 Run:
 
@@ -1522,7 +1522,7 @@ M1 foundation verification passed
 git diff --check exits 0
 ```
 
-- [ ] **Step 4: Record dependency-gated skips**
+- [x] **Step 4: Record dependency-gated skips**
 
 If `h5py` or `mne` is missing, add an "Environment notes" section to `docs/reports/m2-format-acceptance.md`:
 
@@ -1534,7 +1534,7 @@ If `h5py` or `mne` is missing, add an "Environment notes" section to `docs/repor
 - Skipped dependency-gated tests are not format acceptance evidence.
 ```
 
-- [ ] **Step 5: Commit documentation and verification status**
+- [x] **Step 5: Commit documentation and verification status**
 
 Run:
 
