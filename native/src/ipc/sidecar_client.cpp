@@ -184,8 +184,8 @@ SidecarSliceResult parseSlicePayload(const QJsonObject& payload) {
     result.unit = payload.value("unit").toString();
 
     const QJsonArray shape = payload.value("shape").toArray();
-    if (shape.size() < 2) {
-        result.error = invalidSlicePayload("shape", "expected at least 2 integers");
+    if (shape.size() != 2) {
+        result.error = invalidSlicePayload("shape", "expected exactly 2 integers");
         return result;
     }
     if (!jsonValueToNonNegativeInt(shape.at(0), &result.nChannels) ||

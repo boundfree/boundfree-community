@@ -101,11 +101,23 @@ def test_bf_app_smoke_open_slice_generated_csv_fixture():
                 "t0": 0.0,
                 "t1": 0.03,
                 "fs": 100.0,
+                "shape": [2, 3, 99],
+                "unit": "uV",
+                "data": [[1.0, 2.0, 3.0], [11.0, 12.0, 13.0]],
+            },
+            "expected exactly 2 integers",
+        ),
+        (
+            {
+                "handle": "demo",
+                "t0": 0.0,
+                "t1": 0.03,
+                "fs": 100.0,
                 "shape": [2],
                 "unit": "uV",
                 "data": [[1.0, 2.0, 3.0], [11.0, 12.0, 13.0]],
             },
-            "expected at least 2 integers",
+            "expected exactly 2 integers",
         ),
         (
             {
