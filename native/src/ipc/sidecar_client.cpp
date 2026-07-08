@@ -71,7 +71,9 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     const QString sidecarPath = QDir(repoRoot_).filePath("sidecar");
     const QString existingPythonPath = env.value("PYTHONPATH");
-    env.insert("PYTHONPATH", existingPythonPath.isEmpty() ? sidecarPath : sidecarPath + ":" + existingPythonPath);
+    env.insert(
+        "PYTHONPATH",
+        existingPythonPath.isEmpty() ? sidecarPath : sidecarPath + QDir::listSeparator() + existingPythonPath);
     process_.setProcessEnvironment(env);
 
     process_.start();
@@ -220,7 +222,14 @@ SidecarSliceResult parseSlicePayload(const QJsonObject& payload) {
         }
         std::vector<float> row;
         row.reserve(values.size());
-        for (const QJsonValue& value : values) {
+        for (int sampleIndex = 0; sampleIndex < values.size(); ++sampleIndex) {
+            const QJsonValue& value = values.at(sampleIndex);
+            if (!value.isDouble()) {
+                result.error = invalidSlicePayload(
+                    "data",
+                    QString("sample %1,%2 must be a JSON number").arg(rowIndex).arg(sampleIndex));
+                return result;
+            }
             row.push_back(static_cast<float>(value.toDouble()));
         }
         result.data.push_back(std::move(row));

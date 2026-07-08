@@ -3,6 +3,19 @@ from pathlib import Path
 from .base import FileMetadata, Reader, SliceData
 
 
+def _normalize_channel_names(raw_names: object, n_channels: int) -> list[str]:
+    if isinstance(raw_names, bytes):
+        names = [raw_names.decode()]
+    elif isinstance(raw_names, str):
+        names = [raw_names]
+    else:
+        names = [name.decode() if isinstance(name, bytes) else str(name) for name in raw_names]
+
+    if len(names) != n_channels:
+        raise ValueError(f"channel name count {len(names)} does not match n_channels {n_channels}")
+    return names
+
+
 class Hdf5Reader(Reader):
     format_name = "HDF5"
 
@@ -25,7 +38,7 @@ class Hdf5Reader(Reader):
             n_samples = int(ds.shape[1])
             fs = float(ds.attrs.get("fs", f.attrs.get("fs", 256.0)))
             raw_names = ds.attrs.get("ch_names", [f"Ch{i + 1}" for i in range(n_channels)])
-            ch_names = [name.decode() if isinstance(name, bytes) else str(name) for name in raw_names]
+            ch_names = _normalize_channel_names(raw_names, n_channels)
             unit = str(ds.attrs.get("unit", f.attrs.get("unit", "uV")))
 
         return FileMetadata(

@@ -151,6 +151,17 @@ def test_sidecar_get_slice_validates_params():
     assert response["error"]["params"] == {"field": "t1", "reason": "must be greater than t0"}
 
 
+def test_sidecar_get_slice_rejects_boolean_number_param():
+    from boundfree_sidecar.protocol import handle_request
+
+    response = handle_request({"id": "slice-bool", "method": "get_slice", "params": {"handle": "h1", "t0": True, "t1": 2.0}})
+
+    assert response["id"] == "slice-bool"
+    assert response["ok"] is False
+    assert response["error"]["code"] == "protocol.invalid_params"
+    assert response["error"]["params"] == {"field": "t0", "reason": "required number"}
+
+
 def test_sidecar_get_slice_unknown_handle_returns_reader_error():
     from boundfree_sidecar.protocol import handle_request
 

@@ -29,7 +29,7 @@ def _required_string(params: dict[str, Any], field: str) -> str | None:
 
 def _required_number(params: dict[str, Any], field: str) -> float | None:
     value = params.get(field)
-    return float(value) if isinstance(value, (int, float)) else None
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
 
 def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:

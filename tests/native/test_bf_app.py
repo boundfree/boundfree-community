@@ -225,6 +225,36 @@ def test_bf_app_smoke_parse_slice_payload_rejects_shape_data_mismatch(tmp_path, 
     )
 
 
+@pytest.mark.parametrize("bad_value", ["bad", None, True])
+def test_bf_app_smoke_parse_slice_payload_rejects_non_numeric_samples(tmp_path, bad_value):
+    payload = {
+        "handle": "demo",
+        "t0": 0.0,
+        "t1": 0.03,
+        "fs": 100.0,
+        "shape": [2, 3],
+        "unit": "uV",
+        "data": [[1.0, bad_value, 3.0], [11.0, 12.0, 13.0]],
+    }
+    payload_path = tmp_path / "slice.json"
+    payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = subprocess.run(
+        [str(APP), "--smoke-parse-slice-payload", str(payload_path)],
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "sidecar")},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=2,
+    )
+
+    assert result.returncode == 1
+    assert result.stdout.strip().startswith(
+        "smoke-parse-slice-payload-error code=protocol.invalid_params field=data reason="
+    )
+
+
 def test_bf_app_smoke_minmax_decimator():
     result = _run([str(APP), "--smoke-minmax-decimator"])
 
