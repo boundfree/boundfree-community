@@ -17,6 +17,7 @@
 #include <QImage>
 #include <QJsonDocument>
 #include <QPainter>
+#include <QStatusBar>
 #include <QTimer>
 
 #include <iostream>
@@ -177,6 +178,56 @@ int main(int argc, char** argv) {
             });
             app.exec();
             return exitCode;
+        }
+        if (arg == "--smoke-ui-open-file-dispose" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::FileOpenController controller(repoRoot, version);
+            controller.openInitialWindow(QString::fromLocal8Bit(argv[i + 1]));
+            std::cout << "smoke-ui-open-file-dispose-ok\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-file-open-status") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+
+            bf::MainWindow window(version, &i18n);
+            window.showFileOpenLoading("demo.csv");
+            const QString loadingEn = window.statusBar()->currentMessage();
+            if (!i18n.loadLocale("pseudo", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            window.retranslateUi();
+            const QString loadingPseudo = window.statusBar()->currentMessage();
+
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 2;
+            result.waveform.fs = 100.0;
+            result.waveform.channelNames = {"ch1", "ch2"};
+            result.waveform.data = {{0.0f, 1.0f}, {1.0f, 0.0f}};
+            window.showFileOpenResult(result);
+            const QString openedPseudo = window.statusBar()->currentMessage();
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            window.retranslateUi();
+            const QString openedEn = window.statusBar()->currentMessage();
+
+            std::cout << "smoke-ui-file-open-status-ok"
+                      << " loading_en=" << loadingEn.toStdString()
+                      << " loading_pseudo=" << loadingPseudo.toStdString()
+                      << " opened_pseudo=" << openedPseudo.toStdString()
+                      << " opened_en=" << openedEn.toStdString() << "\n";
+            return 0;
         }
         if (arg == "--smoke-parse-slice-payload" && i + 1 < argc) {
             QCoreApplication app(argc, argv);

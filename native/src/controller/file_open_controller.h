@@ -7,7 +7,9 @@
 
 #include <QObject>
 #include <QString>
+#include <QVector>
 #include <atomic>
+#include <memory>
 
 namespace bf {
 
@@ -22,6 +24,7 @@ class FileOpenController : public QObject {
 
 public:
     FileOpenController(QString repoRoot, VersionInfo version, QObject* parent = nullptr);
+    ~FileOpenController() override;
 
     void openInitialWindow(const QString& path);
 
@@ -32,7 +35,8 @@ signals:
 private:
     QString repoRoot_;
     VersionInfo version_;
-    std::atomic<int> requestSerial_{0};
+    std::shared_ptr<std::atomic<int>> requestSerial_;
+    QVector<QThread*> threads_;
 };
 
 }  // namespace bf

@@ -103,6 +103,46 @@ def test_bf_app_smoke_ui_open_generated_csv_fixture():
     assert "smoke-ui-open-file-ok format=CSV n_channels=2 n_samples=10" in result.stdout
 
 
+def test_bf_app_smoke_ui_open_missing_file_reports_failure(tmp_path):
+    missing = tmp_path / "missing.csv"
+
+    result = subprocess.run(
+        [str(APP), "--smoke-ui-open-file", str(missing), "--language", "en_US"],
+        cwd=ROOT,
+        env={**os.environ, "QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=6,
+    )
+
+    assert result.returncode == 1
+    assert "smoke-ui-open-file-failed code=file.not_found" in result.stderr
+
+
+def test_bf_app_smoke_ui_open_dispose_controller_does_not_crash():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-ui-open-file-dispose", str(sample), "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert result.stdout.strip() == "smoke-ui-open-file-dispose-ok"
+
+
+def test_bf_app_smoke_ui_file_open_status_survives_retranslate():
+    result = _run(
+        [str(APP), "--smoke-ui-file-open-status", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "loading_en=Opening demo.csv" in result.stdout
+    assert "loading_pseudo=[!! Opeeniing demo.csv !!]" in result.stdout
+    assert "opened_pseudo=[!! CSV | 100 Hz | 2 chaanneels !!]" in result.stdout
+    assert "opened_en=CSV | 100 Hz | 2 channels" in result.stdout
+
+
 def test_bf_app_smoke_waveform_render_offscreen():
     result = _run(
         [str(APP), "--smoke-waveform-render"],

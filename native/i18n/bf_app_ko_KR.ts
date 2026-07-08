@@ -9,6 +9,8 @@
     <message><source>app.status.sidecar_connecting</source><translation>Connecting sidecar</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>Sidecar connected</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>Sidecar connection failed: {error}</translation></message>
+    <message><source>app.status.file_opening</source><translation>Opening {path}</translation></message>
+    <message><source>app.status.file_opened</source><translation>{format} | {fs} Hz | {n_channels} channels</translation></message>
     <message><source>app.language.zh_CN</source><translation>Simplified Chinese</translation></message>
     <message><source>app.language.zh_TW</source><translation>Traditional Chinese</translation></message>
     <message><source>app.language.en_US</source><translation>English</translation></message>

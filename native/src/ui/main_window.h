@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
+#include <QJsonObject>
 #include <QStackedWidget>
 #include <QVector>
 
@@ -38,6 +39,7 @@ private:
     QMenu* languageMenu_ = nullptr;
     QVector<QAction*> languageActions_;
     QString statusKey_ = "app.status.ready";
+    QJsonObject statusParams_;
     AppError lastError_;
 };
 

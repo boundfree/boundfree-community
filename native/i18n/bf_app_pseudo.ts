@@ -9,6 +9,8 @@
     <message><source>app.status.sidecar_connecting</source><translation>[!! Coonneectiing siidecaar !!]</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>[!! Siidecaar coonneected !!]</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>[!! Siidecaar coonneectiion faailed: {error} !!]</translation></message>
+    <message><source>app.status.file_opening</source><translation>[!! Opeeniing {path} !!]</translation></message>
+    <message><source>app.status.file_opened</source><translation>[!! {format} | {fs} Hz | {n_channels} chaanneels !!]</translation></message>
     <message><source>app.language.zh_CN</source><translation>[!! Siimplified Chiinese !!]</translation></message>
     <message><source>app.language.zh_TW</source><translation>[!! Traaditiional Chiinese !!]</translation></message>
     <message><source>app.language.en_US</source><translation>[!! Eenglish !!]</translation></message>

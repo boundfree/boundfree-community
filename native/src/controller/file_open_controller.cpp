@@ -3,29 +3,52 @@
 #include "render/waveform_slice.h"
 
 #include <QMetaObject>
+#include <QPointer>
 #include <QThread>
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 namespace bf {
 
 FileOpenController::FileOpenController(QString repoRoot, VersionInfo version, QObject* parent)
-    : QObject(parent), repoRoot_(std::move(repoRoot)), version_(std::move(version)) {}
+    : QObject(parent),
+      repoRoot_(std::move(repoRoot)),
+      version_(std::move(version)),
+      requestSerial_(std::make_shared<std::atomic<int>>(0)) {}
+
+FileOpenController::~FileOpenController() {
+    requestSerial_->store(std::numeric_limits<int>::max());
+    const QVector<QThread*> threads = threads_;
+    for (QThread* thread : threads) {
+        if (thread != nullptr && thread->isRunning()) {
+            thread->wait();
+        }
+    }
+}
 
 void FileOpenController::openInitialWindow(const QString& path) {
-    const int serial = ++requestSerial_;
-    auto* thread = QThread::create([this, serial, path]() {
-        auto emitFailure = [this, serial](const AppError& error) {
-            QMetaObject::invokeMethod(this, [this, serial, error]() {
-                if (serial == requestSerial_.load()) {
-                    emit failed(error);
+    const QString repoRoot = repoRoot_;
+    const VersionInfo version = version_;
+    const std::shared_ptr<std::atomic<int>> requestSerial = requestSerial_;
+    const int serial = requestSerial->fetch_add(1) + 1;
+    const QPointer<FileOpenController> controller(this);
+
+    auto* thread = QThread::create([controller, requestSerial, repoRoot, version, serial, path]() {
+        auto emitFailure = [controller, requestSerial, serial](const AppError& error) {
+            if (controller.isNull()) {
+                return;
+            }
+            QMetaObject::invokeMethod(controller.data(), [controller, requestSerial, serial, error]() {
+                if (!controller.isNull() && serial == requestSerial->load()) {
+                    emit controller->failed(error);
                 }
             }, Qt::QueuedConnection);
         };
 
-        SidecarClient sidecar(repoRoot_);
-        const SidecarHelloResult hello = sidecar.startAndHello(version_);
+        SidecarClient sidecar(repoRoot);
+        const SidecarHelloResult hello = sidecar.startAndHello(version);
         if (!hello.ok) {
             sidecar.stop();
             emitFailure(hello.error);
@@ -48,11 +71,18 @@ void FileOpenController::openInitialWindow(const QString& path) {
         }
 
         FileOpenResult result{opened, slice, waveformSliceFromSidecar(opened, slice)};
-        QMetaObject::invokeMethod(this, [this, serial, result]() {
-            if (serial == requestSerial_.load()) {
-                emit loaded(result);
+        if (controller.isNull()) {
+            return;
+        }
+        QMetaObject::invokeMethod(controller.data(), [controller, requestSerial, serial, result]() {
+            if (!controller.isNull() && serial == requestSerial->load()) {
+                emit controller->loaded(result);
             }
         }, Qt::QueuedConnection);
+    });
+    threads_.append(thread);
+    connect(thread, &QThread::finished, this, [this, thread]() {
+        threads_.removeAll(thread);
     });
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
     thread->start();

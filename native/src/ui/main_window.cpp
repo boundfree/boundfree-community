@@ -53,38 +53,46 @@ void MainWindow::retranslateUi() {
         statusBar()->showMessage(i18n_->text(
             statusKey_,
             {{"error", i18n_->text(QString("error.%1").arg(lastError_.code), lastError_.params)}}));
-    } else {
-        statusBar()->showMessage(i18n_->text(statusKey_));
+        return;
     }
+    statusBar()->showMessage(i18n_->text(statusKey_, statusParams_));
 }
 
 void MainWindow::setSidecarConnecting() {
     statusKey_ = "app.status.sidecar_connecting";
+    statusParams_ = {};
     retranslateUi();
 }
 
 void MainWindow::setSidecarConnected() {
     statusKey_ = "app.status.sidecar_connected";
+    statusParams_ = {};
     retranslateUi();
 }
 
 void MainWindow::setSidecarFailed(const AppError& error) {
     statusKey_ = "app.status.sidecar_failed";
     lastError_ = error;
+    statusParams_ = {};
     retranslateUi();
 }
 
 void MainWindow::showFileOpenLoading(const QString& path) {
-    statusBar()->showMessage(QString("Opening %1").arg(path));
+    statusKey_ = "app.status.file_opening";
+    statusParams_ = {{"path", path}};
+    retranslateUi();
 }
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     waveformWidget_->setSlice(result.waveform);
     centralStack_->setCurrentWidget(waveformWidget_);
-    statusBar()->showMessage(QString("%1 | %2 Hz | %3 channels")
-                                 .arg(result.session.format)
-                                 .arg(result.session.fs)
-                                 .arg(result.session.nChannels));
+    statusKey_ = "app.status.file_opened";
+    statusParams_ = {
+        {"format", result.session.format},
+        {"fs", result.session.fs},
+        {"n_channels", result.session.nChannels},
+    };
+    retranslateUi();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {

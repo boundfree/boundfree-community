@@ -9,6 +9,8 @@
     <message><source>app.status.sidecar_connecting</source><translation>正在连接边车</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>边车已连接</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>边车连接失败：{error}</translation></message>
+    <message><source>app.status.file_opening</source><translation>正在打开 {path}</translation></message>
+    <message><source>app.status.file_opened</source><translation>{format} | {fs} Hz | {n_channels} 通道</translation></message>
     <message><source>app.language.zh_CN</source><translation>简体中文</translation></message>
     <message><source>app.language.zh_TW</source><translation>繁体中文</translation></message>
     <message><source>app.language.en_US</source><translation>English</translation></message>
