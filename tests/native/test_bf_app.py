@@ -92,6 +92,17 @@ def test_bf_app_smoke_open_slice_generated_csv_fixture():
     assert result.stdout.strip() == "smoke-open-slice-ok shape=2x3 first=2 last=14 unit=uV"
 
 
+def test_bf_app_smoke_ui_open_generated_csv_fixture():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-ui-open-file", str(sample), "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "smoke-ui-open-file-ok format=CSV n_channels=2 n_samples=10" in result.stdout
+
+
 def test_bf_app_smoke_waveform_render_offscreen():
     result = _run(
         [str(APP), "--smoke-waveform-render"],

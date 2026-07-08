@@ -1,3 +1,4 @@
+#include "controller/file_open_controller.h"
 #include "controller/file_session.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
@@ -137,6 +138,45 @@ int main(int argc, char** argv) {
                       << " first=" << first << " last=" << last
                       << " unit=" << slice.unit.toStdString() << "\n";
             return 0;
+        }
+        if (arg == "--smoke-ui-open-file" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+
+            bf::MainWindow window(version, &i18n);
+            bf::FileOpenController controller(repoRoot, version);
+            int exitCode = 1;
+
+            QObject::connect(&controller, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
+                window.showFileOpenResult(result);
+                std::cout << "smoke-ui-open-file-ok format=" << result.session.format.toStdString()
+                          << " n_channels=" << result.session.nChannels
+                          << " n_samples=" << result.session.nSamples << "\n";
+                exitCode = 0;
+                app.quit();
+            });
+            QObject::connect(&controller, &bf::FileOpenController::failed, &window, [&](const bf::AppError& error) {
+                window.showFileOpenError(error);
+                std::cerr << "smoke-ui-open-file-failed code=" << error.code.toStdString() << "\n";
+                exitCode = 1;
+                app.quit();
+            });
+
+            window.show();
+            window.showFileOpenLoading(QString::fromLocal8Bit(argv[i + 1]));
+            controller.openInitialWindow(QString::fromLocal8Bit(argv[i + 1]));
+            QTimer::singleShot(5000, &app, [&]() {
+                std::cerr << "smoke-ui-open-file-failed code=timeout\n";
+                exitCode = 1;
+                app.quit();
+            });
+            app.exec();
+            return exitCode;
         }
         if (arg == "--smoke-parse-slice-payload" && i + 1 < argc) {
             QCoreApplication app(argc, argv);

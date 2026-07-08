@@ -8,9 +8,13 @@ namespace bf {
 
 MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* parent)
     : QMainWindow(parent), version_(version), i18n_(i18n) {
+    centralStack_ = new QStackedWidget(this);
     centralLabel_ = new QLabel(this);
     centralLabel_->setAlignment(Qt::AlignCenter);
-    setCentralWidget(centralLabel_);
+    waveformWidget_ = new WaveformWidget(this);
+    centralStack_->addWidget(centralLabel_);
+    centralStack_->addWidget(waveformWidget_);
+    setCentralWidget(centralStack_);
     buildLanguageMenu();
     resize(900, 560);
     retranslateUi();
@@ -68,6 +72,23 @@ void MainWindow::setSidecarFailed(const AppError& error) {
     statusKey_ = "app.status.sidecar_failed";
     lastError_ = error;
     retranslateUi();
+}
+
+void MainWindow::showFileOpenLoading(const QString& path) {
+    statusBar()->showMessage(QString("Opening %1").arg(path));
+}
+
+void MainWindow::showFileOpenResult(const FileOpenResult& result) {
+    waveformWidget_->setSlice(result.waveform);
+    centralStack_->setCurrentWidget(waveformWidget_);
+    statusBar()->showMessage(QString("%1 | %2 Hz | %3 channels")
+                                 .arg(result.session.format)
+                                 .arg(result.session.fs)
+                                 .arg(result.session.nChannels));
+}
+
+void MainWindow::showFileOpenError(const AppError& error) {
+    setSidecarFailed(error);
 }
 
 }  // namespace bf

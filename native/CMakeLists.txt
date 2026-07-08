@@ -10,6 +10,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 add_executable(bf_app
     src/app/main.cpp
+    src/controller/file_open_controller.cpp
+    src/controller/file_open_controller.h
     src/controller/file_session.cpp
     src/controller/file_session.h
     src/core/app_error.cpp
