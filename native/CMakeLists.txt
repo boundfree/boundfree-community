@@ -24,8 +24,12 @@ add_executable(bf_app
     src/license/machine_id.h
     src/render/minmax_decimator.cpp
     src/render/minmax_decimator.h
+    src/render/waveform_slice.cpp
+    src/render/waveform_slice.h
     src/ui/main_window.cpp
     src/ui/main_window.h
+    src/ui/waveform_widget.cpp
+    src/ui/waveform_widget.h
 )
 
 target_include_directories(bf_app PRIVATE src)

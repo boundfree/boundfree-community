@@ -4,14 +4,18 @@
 #include "ipc/sidecar_client.h"
 #include "license/machine_id.h"
 #include "render/minmax_decimator.h"
+#include "render/waveform_slice.h"
 #include "ui/main_window.h"
+#include "ui/waveform_widget.h"
 
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QFile>
+#include <QImage>
 #include <QJsonDocument>
+#include <QPainter>
 #include <QTimer>
 
 #include <iostream>
@@ -163,6 +167,36 @@ int main(int argc, char** argv) {
             std::cout << "smoke-minmax-decimator "
                       << bf::formatMinMaxBuckets(bf::minMaxDecimate(samples, 2)).toStdString() << "\n";
             return 0;
+        }
+        if (arg == "--smoke-waveform-render") {
+            QApplication app(argc, argv);
+            bf::WaveformWidget widget;
+            bf::WaveformSlice slice;
+            slice.fs = 100.0;
+            slice.t0 = 0.0;
+            slice.t1 = 0.06;
+            slice.channelNames = {"ch1", "ch2"};
+            slice.data = {{0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f},
+                          {1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f}};
+            widget.resize(640, 320);
+            widget.setSlice(slice);
+
+            QImage image(widget.size(), QImage::Format_ARGB32);
+            image.fill(QColor("#111827"));
+            widget.render(&image);
+
+            int nonBackground = 0;
+            const QRgb background = QColor("#111827").rgba();
+            for (int y = 0; y < image.height(); ++y) {
+                for (int x = 0; x < image.width(); ++x) {
+                    if (image.pixel(x, y) != background) {
+                        ++nonBackground;
+                    }
+                }
+            }
+
+            std::cout << "smoke-waveform-render-ok image=640x320 non_background_pixels=" << nonBackground << "\n";
+            return nonBackground > 0 ? 0 : 1;
         }
     }
 

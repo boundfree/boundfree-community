@@ -92,6 +92,15 @@ def test_bf_app_smoke_open_slice_generated_csv_fixture():
     assert result.stdout.strip() == "smoke-open-slice-ok shape=2x3 first=2 last=14 unit=uV"
 
 
+def test_bf_app_smoke_waveform_render_offscreen():
+    result = _run(
+        [str(APP), "--smoke-waveform-render"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert result.stdout.strip().startswith("smoke-waveform-render-ok image=640x320 non_background_pixels=")
+
+
 @pytest.mark.parametrize(
     ("payload", "reason_fragment"),
     [
