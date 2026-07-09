@@ -1,5 +1,6 @@
 #pragma once
 
+#include "controller/request_generation.h"
 #include "core/app_error.h"
 #include "core/version.h"
 #include "ipc/sidecar_client.h"
@@ -8,7 +9,6 @@
 #include <QObject>
 #include <QString>
 #include <QVector>
-#include <atomic>
 #include <memory>
 
 namespace bf {
@@ -26,7 +26,7 @@ public:
     FileOpenController(QString repoRoot, VersionInfo version, QObject* parent = nullptr);
     ~FileOpenController() override;
 
-    void openInitialWindow(const QString& path);
+    void openInitialWindow(const QString& path, double windowSeconds = 10.0);
 
 signals:
     void loaded(const bf::FileOpenResult& result);
@@ -35,7 +35,7 @@ signals:
 private:
     QString repoRoot_;
     VersionInfo version_;
-    std::shared_ptr<std::atomic<int>> requestSerial_;
+    std::shared_ptr<RequestGeneration> requestGeneration_;
     QVector<QThread*> threads_;
 };
 

@@ -14,6 +14,8 @@ add_executable(bf_app
     src/controller/file_open_controller.h
     src/controller/file_session.cpp
     src/controller/file_session.h
+    src/controller/request_generation.cpp
+    src/controller/request_generation.h
     src/core/app_error.cpp
     src/core/app_error.h
     src/core/version.cpp

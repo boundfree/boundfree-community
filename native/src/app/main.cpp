@@ -1,5 +1,6 @@
 #include "controller/file_open_controller.h"
 #include "controller/file_session.h"
+#include "controller/request_generation.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
@@ -257,6 +258,22 @@ int main(int argc, char** argv) {
             const std::vector<float> samples{0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
             std::cout << "smoke-minmax-decimator "
                       << bf::formatMinMaxBuckets(bf::minMaxDecimate(samples, 2)).toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-request-generation") {
+            QCoreApplication app(argc, argv);
+            bf::RequestGeneration generation;
+            const int first = generation.next();
+            const int second = generation.next();
+            const bool firstCurrent = generation.isCurrent(first);
+            const bool secondCurrent = generation.isCurrent(second);
+            generation.invalidate();
+            const bool afterInvalidate = generation.isCurrent(second);
+            std::cout << "smoke-request-generation-ok first=" << first
+                      << " second=" << second
+                      << " first_current=" << (firstCurrent ? "true" : "false")
+                      << " second_current=" << (secondCurrent ? "true" : "false")
+                      << " after_invalidate=" << (afterInvalidate ? "true" : "false") << "\n";
             return 0;
         }
         if (arg == "--smoke-waveform-render") {

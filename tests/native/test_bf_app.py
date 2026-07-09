@@ -259,3 +259,12 @@ def test_bf_app_smoke_minmax_decimator():
     result = _run([str(APP), "--smoke-minmax-decimator"])
 
     assert result.stdout.strip() == "smoke-minmax-decimator 0:0,1 1:2,3 2:4,5"
+
+
+def test_bf_app_smoke_request_generation_latest_wins():
+    result = _run([str(APP), "--smoke-request-generation"])
+
+    assert result.stdout.strip() == (
+        "smoke-request-generation-ok first=1 second=2 "
+        "first_current=false second_current=true after_invalidate=false"
+    )
