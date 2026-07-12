@@ -1,0 +1,134 @@
+import importlib.util
+import json
+from pathlib import Path
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = ROOT / "scripts" / "collect_m2_gpu_gate_evidence.py"
+
+spec = importlib.util.spec_from_file_location("collect_m2_gpu_gate_evidence", SCRIPT)
+gpu_gate = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+sys.modules[spec.name] = gpu_gate
+spec.loader.exec_module(gpu_gate)
+
+
+def _result(channels: int, fps: float):
+    return gpu_gate.BenchmarkResult(
+        channels=channels,
+        fs=1000,
+        seconds=4,
+        frames=120,
+        fps=fps,
+        producer_gate="development-signal-only",
+        command=f"bf_app --smoke-waveform-benchmark --channels {channels}",
+    )
+
+
+def _metadata(**overrides):
+    values = {
+        "date": "2026-07-12",
+        "environment_label": "real-linux-gpu",
+        "os_display": "Ubuntu 24.04 Wayland",
+        "gpu_model": "NVIDIA RTX 4060",
+        "driver_version": "555.42",
+        "qt_version": "6.6.3",
+        "cpu_observation": "12% via system monitor",
+        "gpu_observation": "38% via nvidia-smi",
+        "scroll_note": "smooth",
+        "zoom_note": "smooth",
+        "channel_visibility_note": "smooth",
+    }
+    values.update(overrides)
+    return gpu_gate.EvidenceMetadata(**values)
+
+
+def test_parse_benchmark_json_reads_required_fields():
+    parsed = gpu_gate.parse_benchmark_json(
+        json.dumps(
+            {
+                "channels": 256,
+                "fs": 1000,
+                "seconds": 4,
+                "frames": 120,
+                "fps": 58.5,
+                "gate": "development-signal-only",
+            }
+        )
+    )
+
+    assert parsed.channels == 256
+    assert parsed.fs == 1000
+    assert parsed.seconds == 4
+    assert parsed.frames == 120
+    assert parsed.fps == 58.5
+    assert parsed.producer_gate == "development-signal-only"
+
+
+def test_classify_gate_passed_when_256_channel_fps_is_at_least_55():
+    gate = gpu_gate.classify_gate(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 55.0)],
+        _metadata(),
+        [],
+    )
+
+    assert gate == "Passed"
+
+
+def test_classify_gate_accepts_with_note_between_30_and_55_fps():
+    gate = gpu_gate.classify_gate(
+        [_result(64, 90.0), _result(128, 62.0), _result(256, 31.0)],
+        _metadata(),
+        [],
+    )
+
+    assert gate == "Accepted with note"
+
+
+def test_classify_gate_blocks_below_30_fps_or_stalls():
+    low_fps_gate = gpu_gate.classify_gate(
+        [_result(64, 90.0), _result(128, 60.0), _result(256, 29.9)],
+        _metadata(),
+        [],
+    )
+    stall_gate = gpu_gate.classify_gate(
+        [_result(64, 90.0), _result(128, 60.0), _result(256, 45.0)],
+        _metadata(scroll_note="visible stall during scroll"),
+        [],
+    )
+
+    assert low_fps_gate == "Blocked"
+    assert stall_gate == "Blocked"
+
+
+def test_classify_gate_open_for_development_environment_or_missing_metadata():
+    development_gate = gpu_gate.classify_gate(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 70.0)],
+        _metadata(),
+        ["QT_QPA_PLATFORM=offscreen"],
+    )
+    missing_metadata_gate = gpu_gate.classify_gate(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 70.0)],
+        _metadata(gpu_observation="not recorded"),
+        [],
+    )
+
+    assert development_gate == "Open"
+    assert missing_metadata_gate == "Accepted with note"
+
+
+def test_format_markdown_evidence_preserves_metadata_and_scenarios():
+    block = gpu_gate.format_markdown_evidence(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 55.0)],
+        _metadata(),
+        "Passed",
+        [],
+    )
+
+    assert "### 2026-07-12 real-linux-gpu" in block
+    assert "- Gate: Passed" in block
+    assert "- OS/display: Ubuntu 24.04 Wayland" in block
+    assert "- GPU: NVIDIA RTX 4060, driver 555.42" in block
+    assert "| 256 | 1000 | 4 | 120 | 55.00 |" in block
+    assert "- Channel visibility: smooth" in block
