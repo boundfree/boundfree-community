@@ -27,6 +27,7 @@ public:
     ~FileOpenController() override;
 
     void openInitialWindow(const QString& path, double windowSeconds = 10.0);
+    void openWindow(const QString& path, double t0, double windowSeconds);
 
 signals:
     void loaded(const bf::FileOpenResult& result);

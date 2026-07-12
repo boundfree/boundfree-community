@@ -296,3 +296,14 @@ def test_bf_app_smoke_ui_browser_controls_show_window_and_scale():
 
     assert "smoke-ui-browser-controls-ok" in result.stdout
     assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
+
+
+def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-ui-open-latest", str(sample), "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "smoke-ui-open-latest-ok t0=0.02 t1=0.05" in result.stdout

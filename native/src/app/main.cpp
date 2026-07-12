@@ -255,6 +255,42 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-browser-controls-ok status=" << window.browserStatusText().toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-open-latest" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            bf::MainWindow window(version, &i18n);
+            bf::FileOpenController controller(repoRoot, version);
+            int exitCode = 1;
+            QObject::connect(&controller, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
+                window.showFileOpenResult(result);
+                if (result.waveform.t0 == 0.02 && result.waveform.t1 == 0.05) {
+                    std::cout << "smoke-ui-open-latest-ok t0=" << result.waveform.t0
+                              << " t1=" << result.waveform.t1 << "\n";
+                    exitCode = 0;
+                    app.quit();
+                }
+            });
+            QObject::connect(&controller, &bf::FileOpenController::failed, &window, [&](const bf::AppError& error) {
+                std::cerr << "smoke-ui-open-latest-failed code=" << error.code.toStdString() << "\n";
+                exitCode = 1;
+                app.quit();
+            });
+            const QString path = QString::fromLocal8Bit(argv[i + 1]);
+            controller.openWindow(path, 0.0, 0.03);
+            controller.openWindow(path, 0.02, 0.03);
+            QTimer::singleShot(5000, &app, [&]() {
+                std::cerr << "smoke-ui-open-latest-failed code=timeout\n";
+                exitCode = 1;
+                app.quit();
+            });
+            app.exec();
+            return exitCode;
+        }
         if (arg == "--smoke-parse-slice-payload" && i + 1 < argc) {
             QCoreApplication app(argc, argv);
             QFile file(QString::fromLocal8Bit(argv[i + 1]));

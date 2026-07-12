@@ -29,14 +29,20 @@ FileOpenController::~FileOpenController() {
 }
 
 void FileOpenController::openInitialWindow(const QString& path, double windowSeconds) {
+    openWindow(path, 0.0, windowSeconds);
+}
+
+void FileOpenController::openWindow(const QString& path, double t0, double windowSeconds) {
     const QString repoRoot = repoRoot_;
     const VersionInfo version = version_;
     const std::shared_ptr<RequestGeneration> requestGeneration = requestGeneration_;
     const int generation = requestGeneration->next();
-    const double requestedWindowSeconds = std::clamp(windowSeconds, 1.0, 120.0);
+    const double requestedT0 = std::max(0.0, t0);
+    const double requestedWindowSeconds = std::min(std::max(windowSeconds, 0.0), 120.0);
+    const double requestedT1 = requestedT0 + requestedWindowSeconds;
     const QPointer<FileOpenController> controller(this);
 
-    auto* thread = QThread::create([controller, requestGeneration, repoRoot, version, generation, path, requestedWindowSeconds]() {
+    auto* thread = QThread::create([controller, requestGeneration, repoRoot, version, generation, path, requestedT0, requestedT1]() {
         auto emitFailure = [controller, requestGeneration, generation](const AppError& error) {
             if (controller.isNull()) {
                 return;
@@ -63,8 +69,20 @@ void FileOpenController::openInitialWindow(const QString& path, double windowSec
             return;
         }
 
-        const double t1 = std::min(requestedWindowSeconds, opened.duration);
-        SidecarSliceResult slice = sidecar.getSlice(opened.handle, 0.0, t1, 30000);
+        const double sliceT0 = std::min(requestedT0, opened.duration);
+        const double sliceT1 = std::min(requestedT1, opened.duration);
+        if (sliceT1 <= sliceT0) {
+            sidecar.stop();
+            emitFailure(makeError("reader.slice_out_of_range", {
+                {"handle", opened.handle},
+                {"t0", sliceT0},
+                {"t1", sliceT1},
+                {"duration", opened.duration},
+            }));
+            return;
+        }
+
+        SidecarSliceResult slice = sidecar.getSlice(opened.handle, sliceT0, sliceT1, 30000);
         sidecar.stop();
         if (!slice.ok) {
             emitFailure(slice.error);
