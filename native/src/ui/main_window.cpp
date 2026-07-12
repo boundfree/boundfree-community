@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <utility>
 
 namespace bf {
 
@@ -85,6 +86,9 @@ void MainWindow::buildBrowserControls() {
         }
         viewState_.setWindowSeconds(value);
         applyBrowserStateToWaveform();
+        if (hasCurrentFile_ && windowRequestHandler_) {
+            windowRequestHandler_(currentFile_.session.path, currentFile_.waveform.t0, viewState_.windowSeconds);
+        }
     });
     connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
         if (refreshingBrowserControls_) {
@@ -240,6 +244,19 @@ void MainWindow::setFirstVisibleChannelForBrowser(int channel) {
 void MainWindow::setChannelVisibleForBrowser(int channel, bool visible) {
     viewState_.setChannelVisible(channel, visible);
     refreshBrowserControls();
+    applyBrowserStateToWaveform();
+}
+
+void MainWindow::setWindowRequestHandler(std::function<void(const QString&, double, double)> handler) {
+    windowRequestHandler_ = std::move(handler);
+}
+
+void MainWindow::setBrowserWindowSecondsForBrowser(double seconds) {
+    if (timeWindowSpin_ != nullptr) {
+        timeWindowSpin_->setValue(seconds);
+        return;
+    }
+    viewState_.setWindowSeconds(seconds);
     applyBrowserStateToWaveform();
 }
 

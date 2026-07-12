@@ -309,6 +309,17 @@ def test_bf_app_smoke_ui_channel_browser_updates_visible_channels():
     assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
 
 
+def test_bf_app_smoke_ui_window_request_reports_requested_interval():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-ui-window-request", str(sample), "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert f"smoke-ui-window-request-ok path={sample} t0=0 window=4" in result.stdout
+
+
 def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
     sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
 

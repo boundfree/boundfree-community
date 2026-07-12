@@ -21,6 +21,8 @@
 #include <QVector>
 #include <QVBoxLayout>
 
+#include <functional>
+
 namespace bf {
 
 class MainWindow : public QMainWindow {
@@ -39,6 +41,8 @@ public:
     void setFirstVisibleChannelForBrowser(int channel);
     void setChannelVisibleForBrowser(int channel, bool visible);
     QString browserControlSummary() const;
+    void setWindowRequestHandler(std::function<void(const QString&, double, double)> handler);
+    void setBrowserWindowSecondsForBrowser(double seconds);
 
 private:
     void buildLanguageMenu();
@@ -66,6 +70,7 @@ private:
     QVBoxLayout* channelListLayout_ = nullptr;
     QVector<QCheckBox*> channelChecks_;
     bool refreshingBrowserControls_ = false;
+    std::function<void(const QString&, double, double)> windowRequestHandler_;
     WaveformViewState viewState_;
     FileOpenResult currentFile_;
     bool hasCurrentFile_ = false;

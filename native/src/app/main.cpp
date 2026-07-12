@@ -486,6 +486,43 @@ int main(int argc, char** argv) {
                       << " status=" << window.browserStatusText().toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-window-request" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            const QString path = QString::fromLocal8Bit(argv[i + 1]);
+            bf::MainWindow window(version, &i18n);
+            QString requestedPath;
+            double requestedT0 = -1.0;
+            double requestedWindow = -1.0;
+            window.setWindowRequestHandler([&](const QString& activePath, double t0, double windowSeconds) {
+                requestedPath = activePath;
+                requestedT0 = t0;
+                requestedWindow = windowSeconds;
+            });
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.path = path;
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 2;
+            result.session.nSamples = 1000;
+            result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.0;
+            result.waveform.t1 = 10.0;
+            result.waveform.channelNames = {"ch1", "ch2"};
+            result.waveform.data = {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, -1.0f}};
+            window.showFileOpenResult(result);
+            window.setBrowserWindowSecondsForBrowser(4.0);
+            std::cout << "smoke-ui-window-request-ok path=" << requestedPath.toStdString()
+                      << " t0=" << requestedT0
+                      << " window=" << requestedWindow << "\n";
+            return requestedPath == path && requestedT0 == 0.0 && requestedWindow == 4.0 ? 0 : 1;
+        }
         if (arg == "--smoke-waveform-render") {
             QApplication app(argc, argv);
             bf::WaveformWidget widget;

@@ -145,6 +145,7 @@ SidecarResponse SidecarClient::request(const QString& method, const QJsonObject&
 
 SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
     SidecarOpenResult result;
+    result.path = path;
     const SidecarResponse response = request("open", {{"path", path}}, timeoutMs);
     if (!response.ok) {
         result.error = response.error;

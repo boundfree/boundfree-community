@@ -28,6 +28,7 @@ struct SidecarResponse {
 struct SidecarOpenResult {
     bool ok = false;
     QString handle;
+    QString path;
     double fs = 0.0;
     int nChannels = 0;
     int nSamples = 0;
