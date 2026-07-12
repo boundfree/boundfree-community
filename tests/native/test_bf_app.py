@@ -328,3 +328,30 @@ def test_bf_app_smoke_waveform_benchmark_reports_development_result():
 
     assert "smoke-waveform-benchmark-ok channels=64 fs=1000 seconds=4 frames=3" in result.stdout
     assert "gate=development-signal-only" in result.stdout
+
+
+def test_bf_app_smoke_waveform_benchmark_json_reports_gate_status():
+    result = _run(
+        [
+            str(APP),
+            "--smoke-waveform-benchmark",
+            "--channels",
+            "64",
+            "--fs",
+            "1000",
+            "--seconds",
+            "4",
+            "--frames",
+            "2",
+            "--json",
+        ],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    data = json.loads(result.stdout)
+    assert data["channels"] == 64
+    assert data["fs"] == 1000
+    assert data["seconds"] == 4
+    assert data["frames"] == 2
+    assert data["fps"] > 0
+    assert data["gate"] == "development-signal-only"

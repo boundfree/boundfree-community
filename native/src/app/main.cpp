@@ -19,6 +19,7 @@
 #include <QFile>
 #include <QImage>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QPainter>
 #include <QStatusBar>
 #include <QTimer>
@@ -44,6 +45,15 @@ int main(int argc, char** argv) {
             }
         }
         return fallback;
+    };
+
+    auto hasFlag = [&](int start, const QString& key) {
+        for (int j = start; j < argc; ++j) {
+            if (QString::fromLocal8Bit(argv[j]) == key) {
+                return true;
+            }
+        }
+        return false;
     };
 
     for (int i = 1; i < argc; ++i) {
@@ -392,6 +402,7 @@ int main(int argc, char** argv) {
             const int fs = valueAfter(i + 1, "--fs", "1000").toInt();
             const int seconds = valueAfter(i + 1, "--seconds", "4").toInt();
             const int frames = valueAfter(i + 1, "--frames", "30").toInt();
+            const bool jsonOutput = hasFlag(i + 1, "--json");
             bf::WaveformWidget widget;
             bf::WaveformSlice slice;
             slice.fs = fs;
@@ -422,12 +433,24 @@ int main(int argc, char** argv) {
             }
             const double elapsedSeconds = std::max(0.001, timer.elapsed() / 1000.0);
             const double fps = frames / elapsedSeconds;
-            std::cout << "smoke-waveform-benchmark-ok channels=" << channels
-                      << " fs=" << fs
-                      << " seconds=" << seconds
-                      << " frames=" << frames
-                      << " fps=" << fps
-                      << " gate=development-signal-only\n";
+            if (jsonOutput) {
+                const QJsonObject payload{
+                    {"channels", channels},
+                    {"fs", fs},
+                    {"seconds", seconds},
+                    {"frames", frames},
+                    {"fps", fps},
+                    {"gate", "development-signal-only"},
+                };
+                std::cout << QJsonDocument(payload).toJson(QJsonDocument::Compact).toStdString() << "\n";
+            } else {
+                std::cout << "smoke-waveform-benchmark-ok channels=" << channels
+                          << " fs=" << fs
+                          << " seconds=" << seconds
+                          << " frames=" << frames
+                          << " fps=" << fps
+                          << " gate=development-signal-only\n";
+            }
             return 0;
         }
         if (arg == "--smoke-waveform-render") {

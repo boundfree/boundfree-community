@@ -32,6 +32,12 @@ Development smoke command:
 QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-waveform-benchmark --channels 256 --fs 1000 --seconds 4 --frames 30
 ```
 
+Machine-readable development smoke command:
+
+```bash
+QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-waveform-benchmark --channels 256 --fs 1000 --seconds 4 --frames 30 --json
+```
+
 This command is a development signal only when run offscreen, under WSL, Xvfb, or Mesa software rendering. It does not close the real GPU/display gate.
 
 Real GPU gate command template:
@@ -39,6 +45,15 @@ Real GPU gate command template:
 ```bash
 native/build/bf_app --smoke-waveform-benchmark --channels 256 --fs 1000 --seconds 4 --frames 120
 ```
+
+Real GPU result rows must include:
+
+- OS and display environment.
+- GPU model and driver version.
+- Qt version and command.
+- FPS for 64, 128, and 256 channels.
+- CPU and GPU utilization source.
+- Scroll, zoom, and channel-visibility subjective notes.
 
 ## Result Log
 
