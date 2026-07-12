@@ -1,5 +1,7 @@
+import os
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import sys
 
@@ -132,3 +134,129 @@ def test_format_markdown_evidence_preserves_metadata_and_scenarios():
     assert "- GPU: NVIDIA RTX 4060, driver 555.42" in block
     assert "| 256 | 1000 | 4 | 120 | 55.00 |" in block
     assert "- Channel visibility: smooth" in block
+
+
+def test_cli_dry_run_reports_open_and_commands():
+    result = subprocess.run(
+        ["python3", str(SCRIPT), "--dry-run"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+
+    data = json.loads(result.stdout)
+    assert data["gate"] == "Open"
+    assert data["development_reasons"] == ["dry-run"]
+    assert [item["channels"] for item in data["results"]] == [64, 128, 256]
+    assert "--channels 256" in data["markdown"]
+
+
+def test_cli_from_json_refuses_offscreen_acceptance(tmp_path):
+    payload = tmp_path / "benchmarks.json"
+    payload.write_text(
+        json.dumps(
+            [
+                {"channels": 64, "fs": 1000, "seconds": 4, "frames": 120, "fps": 120.0, "gate": "development-signal-only"},
+                {"channels": 128, "fs": 1000, "seconds": 4, "frames": 120, "fps": 90.0, "gate": "development-signal-only"},
+                {"channels": 256, "fs": 1000, "seconds": 4, "frames": 120, "fps": 70.0, "gate": "development-signal-only"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(SCRIPT),
+            "--from-json",
+            str(payload),
+            "--acceptance-run",
+            "--environment-label",
+            "offscreen-dev",
+            "--os-display",
+            "WSL offscreen",
+            "--gpu-model",
+            "Mesa",
+            "--driver-version",
+            "software",
+            "--qt-version",
+            "6.6.3",
+            "--cpu-observation",
+            "not recorded",
+            "--gpu-observation",
+            "not recorded",
+            "--scroll-note",
+            "smooth",
+            "--zoom-note",
+            "smooth",
+            "--channel-visibility-note",
+            "smooth",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+
+    data = json.loads(result.stdout)
+    assert data["gate"] == "Open"
+    assert "QT_QPA_PLATFORM=offscreen" in data["development_reasons"]
+    assert "Development-only reasons: QT_QPA_PLATFORM=offscreen" in data["markdown"]
+
+
+def test_cli_from_json_without_acceptance_run_stays_open(tmp_path):
+    payload = tmp_path / "benchmarks.json"
+    payload.write_text(
+        json.dumps(
+            [
+                {"channels": 64, "fs": 1000, "seconds": 4, "frames": 120, "fps": 120.0, "gate": "development-signal-only"},
+                {"channels": 128, "fs": 1000, "seconds": 4, "frames": 120, "fps": 90.0, "gate": "development-signal-only"},
+                {"channels": 256, "fs": 1000, "seconds": 4, "frames": 120, "fps": 56.0, "gate": "development-signal-only"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(SCRIPT),
+            "--from-json",
+            str(payload),
+            "--environment-label",
+            "real-linux-gpu",
+            "--os-display",
+            "Ubuntu 24.04 Wayland",
+            "--gpu-model",
+            "NVIDIA RTX 4060",
+            "--driver-version",
+            "555.42",
+            "--qt-version",
+            "6.6.3",
+            "--cpu-observation",
+            "12% via system monitor",
+            "--gpu-observation",
+            "38% via nvidia-smi",
+            "--scroll-note",
+            "smooth",
+            "--zoom-note",
+            "smooth",
+            "--channel-visibility-note",
+            "smooth",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "QT_QPA_PLATFORM": ""},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+
+    data = json.loads(result.stdout)
+    assert data["gate"] == "Open"
+    assert data["development_reasons"] == ["dry-run"]
+    assert "Development-only reasons: dry-run" in data["markdown"]
