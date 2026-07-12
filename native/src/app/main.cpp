@@ -224,6 +224,8 @@ int main(int argc, char** argv) {
             result.session.fs = 100.0;
             result.session.nChannels = 2;
             result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.0;
+            result.waveform.t1 = 0.01;
             result.waveform.channelNames = {"ch1", "ch2"};
             result.waveform.data = {{0.0f, 1.0f}, {1.0f, 0.0f}};
             window.showFileOpenResult(result);

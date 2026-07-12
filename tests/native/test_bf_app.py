@@ -139,8 +139,8 @@ def test_bf_app_smoke_ui_file_open_status_survives_retranslate():
 
     assert "loading_en=Opening demo.csv" in result.stdout
     assert "loading_pseudo=[!! Opeeniing demo.csv !!]" in result.stdout
-    assert "opened_pseudo=[!! CSV | 100 Hz | 2 chaanneels !!]" in result.stdout
-    assert "opened_en=CSV | 100 Hz | 2 channels" in result.stdout
+    assert "opened_pseudo=[!! CSV | 0-0.01 s | +/-200 uV | 2 viisiiblee chaanneels !!]" in result.stdout
+    assert "opened_en=CSV | 0-0.01 s | +/-200 uV | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_waveform_render_offscreen():
