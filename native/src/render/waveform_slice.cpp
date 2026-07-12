@@ -1,5 +1,7 @@
 #include "render/waveform_slice.h"
 
+#include <algorithm>
+
 namespace bf {
 
 WaveformSlice waveformSliceFromSidecar(const SidecarOpenResult& session, const SidecarSliceResult& slice) {
@@ -11,6 +13,34 @@ WaveformSlice waveformSliceFromSidecar(const SidecarOpenResult& session, const S
     result.channelNames = session.chNames;
     result.data = slice.data;
     return result;
+}
+
+WaveformDisplayModel waveformDisplayModel(
+    const WaveformSlice& slice,
+    const WaveformViewState& state,
+    int maxVisibleChannels) {
+    WaveformDisplayModel model;
+    model.fs = slice.fs;
+    model.t0 = slice.t0;
+    model.t1 = slice.t1;
+    model.unit = slice.unit;
+    model.amplitudeUv = state.amplitudeUv;
+
+    const int nChannels = static_cast<int>(slice.data.size());
+    const int first = std::min(std::max(0, state.firstVisibleChannel), nChannels);
+    const int limit = maxVisibleChannels <= 0 ? nChannels : maxVisibleChannels;
+    for (int channel = first; channel < nChannels && static_cast<int>(model.data.size()) < limit; ++channel) {
+        if (!state.isChannelVisible(channel)) {
+            continue;
+        }
+        model.data.push_back(slice.data[channel]);
+        if (channel < slice.channelNames.size()) {
+            model.channelNames.push_back(slice.channelNames[channel]);
+        } else {
+            model.channelNames.push_back(QString("Ch%1").arg(channel + 1));
+        }
+    }
+    return model;
 }
 
 }  // namespace bf

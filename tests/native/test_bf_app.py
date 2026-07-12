@@ -277,3 +277,12 @@ def test_bf_app_smoke_waveform_view_state_clamps_and_toggles():
         "smoke-waveform-view-state-ok window=120 amplitude=50 "
         "first_channel=3 visible=0,2,3"
     )
+
+
+def test_bf_app_smoke_waveform_display_model_filters_visible_channels():
+    result = _run([str(APP), "--smoke-waveform-display-model"])
+
+    assert result.stdout.strip() == (
+        "smoke-waveform-display-model-ok channels=ch3 samples=4 "
+        "window=0-0.04 amplitude=200"
+    )

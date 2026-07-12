@@ -288,6 +288,31 @@ int main(int argc, char** argv) {
                       << bf::formatWaveformViewState(state, 4).toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-waveform-display-model") {
+            QCoreApplication app(argc, argv);
+            bf::WaveformSlice slice;
+            slice.fs = 100.0;
+            slice.t0 = 0.0;
+            slice.t1 = 0.04;
+            slice.unit = "uV";
+            slice.channelNames = {"ch1", "ch2", "ch3"};
+            slice.data = {
+                {0.0f, 1.0f, 2.0f, 3.0f},
+                {10.0f, 11.0f, 12.0f, 13.0f},
+                {20.0f, 21.0f, 22.0f, 23.0f},
+            };
+            bf::WaveformViewState state;
+            state.setFirstVisibleChannel(1);
+            state.setChannelVisible(1, false);
+            state.setAmplitudeUv(200.0);
+            const bf::WaveformDisplayModel model = bf::waveformDisplayModel(slice, state, 4);
+            std::cout << "smoke-waveform-display-model-ok channels="
+                      << model.channelNames.join(",").toStdString()
+                      << " samples=" << (model.data.empty() ? 0 : model.data.front().size())
+                      << " window=" << model.t0 << "-" << model.t1
+                      << " amplitude=" << model.amplitudeUv << "\n";
+            return 0;
+        }
         if (arg == "--smoke-waveform-render") {
             QApplication app(argc, argv);
             bf::WaveformWidget widget;
