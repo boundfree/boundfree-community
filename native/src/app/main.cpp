@@ -1,6 +1,7 @@
 #include "controller/file_open_controller.h"
 #include "controller/file_session.h"
 #include "controller/request_generation.h"
+#include "controller/waveform_view_state.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
@@ -274,6 +275,17 @@ int main(int argc, char** argv) {
                       << " first_current=" << (firstCurrent ? "true" : "false")
                       << " second_current=" << (secondCurrent ? "true" : "false")
                       << " after_invalidate=" << (afterInvalidate ? "true" : "false") << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-waveform-view-state") {
+            QCoreApplication app(argc, argv);
+            bf::WaveformViewState state;
+            state.setWindowSeconds(500.0);
+            state.setAmplitudeUv(10.0);
+            state.setFirstVisibleChannel(3);
+            state.setChannelVisible(1, false);
+            std::cout << "smoke-waveform-view-state-ok "
+                      << bf::formatWaveformViewState(state, 4).toStdString() << "\n";
             return 0;
         }
         if (arg == "--smoke-waveform-render") {

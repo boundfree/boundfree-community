@@ -268,3 +268,12 @@ def test_bf_app_smoke_request_generation_latest_wins():
         "smoke-request-generation-ok first=1 second=2 "
         "first_current=false second_current=true after_invalidate=false"
     )
+
+
+def test_bf_app_smoke_waveform_view_state_clamps_and_toggles():
+    result = _run([str(APP), "--smoke-waveform-view-state"])
+
+    assert result.stdout.strip() == (
+        "smoke-waveform-view-state-ok window=120 amplitude=50 "
+        "first_channel=3 visible=0,2,3"
+    )
