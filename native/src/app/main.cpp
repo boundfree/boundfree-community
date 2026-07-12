@@ -523,6 +523,59 @@ int main(int argc, char** argv) {
                       << " window=" << requestedWindow << "\n";
             return requestedPath == path && requestedT0 == 0.0 && requestedWindow == 4.0 ? 0 : 1;
         }
+        if (arg == "--smoke-ui-window-latest" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            const QString path = QString::fromLocal8Bit(argv[i + 1]);
+            bf::MainWindow window(version, &i18n);
+            bf::FileOpenController controller(repoRoot, version);
+            int exitCode = 1;
+            window.setWindowRequestHandler([&](const QString& activePath, double t0, double windowSeconds) {
+                controller.openWindow(activePath, t0, windowSeconds);
+            });
+            QObject::connect(&controller, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
+                window.showFileOpenResult(result);
+                if (result.waveform.t0 == 0.02 && result.waveform.t1 == 0.1) {
+                    std::cout << "smoke-ui-window-latest-ok t0=" << result.waveform.t0
+                              << " t1=" << result.waveform.t1
+                              << " status=" << window.browserStatusText().toStdString() << "\n";
+                    exitCode = 0;
+                    app.quit();
+                }
+            });
+            QObject::connect(&controller, &bf::FileOpenController::failed, &window, [&](const bf::AppError& error) {
+                std::cerr << "smoke-ui-window-latest-failed code=" << error.code.toStdString() << "\n";
+                exitCode = 1;
+                app.quit();
+            });
+            controller.openWindow(path, 0.0, 0.03);
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.path = path;
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 2;
+            result.session.nSamples = 1000;
+            result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.02;
+            result.waveform.t1 = 0.05;
+            result.waveform.channelNames = {"ch1", "ch2"};
+            result.waveform.data = {{2.0f, 3.0f, 4.0f}, {12.0f, 13.0f, 14.0f}};
+            window.showFileOpenResult(result);
+            window.setBrowserWindowSecondsForBrowser(4.0);
+            QTimer::singleShot(5000, &app, [&]() {
+                std::cerr << "smoke-ui-window-latest-failed code=timeout\n";
+                exitCode = 1;
+                app.quit();
+            });
+            app.exec();
+            return exitCode;
+        }
         if (arg == "--smoke-waveform-render") {
             QApplication app(argc, argv);
             bf::WaveformWidget widget;
