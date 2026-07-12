@@ -307,3 +307,24 @@ def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
     )
 
     assert "smoke-ui-open-latest-ok t0=0.02 t1=0.05" in result.stdout
+
+
+def test_bf_app_smoke_waveform_benchmark_reports_development_result():
+    result = _run(
+        [
+            str(APP),
+            "--smoke-waveform-benchmark",
+            "--channels",
+            "64",
+            "--fs",
+            "1000",
+            "--seconds",
+            "4",
+            "--frames",
+            "3",
+        ],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "smoke-waveform-benchmark-ok channels=64 fs=1000 seconds=4 frames=3" in result.stdout
+    assert "gate=development-signal-only" in result.stdout

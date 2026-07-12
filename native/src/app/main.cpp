@@ -15,6 +15,7 @@
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QImage>
 #include <QJsonDocument>
@@ -22,6 +23,7 @@
 #include <QStatusBar>
 #include <QTimer>
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -34,6 +36,15 @@ int main(int argc, char** argv) {
         std::cerr << "failed to load version.json: " << versionError.toStdString() << "\n";
         return 1;
     }
+
+    auto valueAfter = [&](int start, const QString& key, const QString& fallback) {
+        for (int j = start; j + 1 < argc; ++j) {
+            if (QString::fromLocal8Bit(argv[j]) == key) {
+                return QString::fromLocal8Bit(argv[j + 1]);
+            }
+        }
+        return fallback;
+    };
 
     for (int i = 1; i < argc; ++i) {
         const QString arg = QString::fromLocal8Bit(argv[i]);
@@ -371,6 +382,50 @@ int main(int argc, char** argv) {
                       << " samples=" << (model.data.empty() ? 0 : model.data.front().size())
                       << " window=" << model.t0 << "-" << model.t1
                       << " amplitude=" << model.amplitudeUv << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-waveform-benchmark") {
+            QApplication app(argc, argv);
+            const int channels = valueAfter(i + 1, "--channels", "256").toInt();
+            const int fs = valueAfter(i + 1, "--fs", "1000").toInt();
+            const int seconds = valueAfter(i + 1, "--seconds", "4").toInt();
+            const int frames = valueAfter(i + 1, "--frames", "30").toInt();
+            bf::WaveformWidget widget;
+            bf::WaveformSlice slice;
+            slice.fs = fs;
+            slice.t0 = 0.0;
+            slice.t1 = seconds;
+            for (int ch = 0; ch < channels; ++ch) {
+                slice.channelNames.push_back(QString("Ch%1").arg(ch + 1));
+                std::vector<float> samples;
+                samples.reserve(fs * seconds);
+                for (int sample = 0; sample < fs * seconds; ++sample) {
+                    samples.push_back(static_cast<float>(((sample + ch) % 200) - 100));
+                }
+                slice.data.push_back(std::move(samples));
+            }
+            bf::WaveformViewState state;
+            state.setWindowSeconds(seconds);
+            state.setAmplitudeUv(200.0);
+            widget.resize(1280, 720);
+            widget.setViewState(state);
+            widget.setSlice(slice);
+
+            QImage image(widget.size(), QImage::Format_ARGB32);
+            QElapsedTimer timer;
+            timer.start();
+            for (int frame = 0; frame < frames; ++frame) {
+                image.fill(QColor("#111827"));
+                widget.render(&image);
+            }
+            const double elapsedSeconds = std::max(0.001, timer.elapsed() / 1000.0);
+            const double fps = frames / elapsedSeconds;
+            std::cout << "smoke-waveform-benchmark-ok channels=" << channels
+                      << " fs=" << fs
+                      << " seconds=" << seconds
+                      << " frames=" << frames
+                      << " fps=" << fps
+                      << " gate=development-signal-only\n";
             return 0;
         }
         if (arg == "--smoke-waveform-render") {
