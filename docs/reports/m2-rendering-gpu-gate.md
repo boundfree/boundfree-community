@@ -67,4 +67,38 @@ Offscreen benchmark smoke passed in development, but this does not close the rea
 
 M2-3 adds machine-readable benchmark output and browser interaction smokes. These are still development evidence unless run on a real GPU/display environment.
 
+## M2-4 Runbook
+
+M2-4 uses `scripts/collect_m2_gpu_gate_evidence.py` to run or format the 64/128/256 channel benchmark set.
+
+Development dry-run:
+
+```bash
+python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
+```
+
+Real GPU/display run template:
+
+```bash
+python3 scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run \
+  --environment-label "real-windows-gpu" \
+  --os-display "Windows 11 desktop" \
+  --gpu-model "record GPU model" \
+  --driver-version "record driver version" \
+  --qt-version "record Qt version" \
+  --cpu-observation "record CPU usage and source" \
+  --gpu-observation "record GPU usage and source" \
+  --scroll-note "record scroll interaction" \
+  --zoom-note "record zoom interaction" \
+  --channel-visibility-note "record channel visibility interaction"
+```
+
+The script runs these required scenarios:
+
+- 64 channels, 1 kHz, 4 s window, 120 frames.
+- 128 channels, 1 kHz, 4 s window, 120 frames.
+- 256 channels, 1 kHz, 4 s window, 120 frames.
+
+Development/offscreen results must not be copied as acceptance evidence. If the run happens under WSL, Xvfb, Mesa software rendering, or `QT_QPA_PLATFORM=offscreen`, the gate remains `Open`.
+
 Current gate status: Open.

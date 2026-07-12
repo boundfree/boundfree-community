@@ -371,3 +371,12 @@ def test_cli_from_json_acceptance_run_marks_mesa_software_renderer_as_open(tmp_p
     assert "from-json-import" in data["development_reasons"]
     assert any("Mesa/software" in reason for reason in data["development_reasons"])
     assert any("Mesa/software" in line for line in data["markdown"].splitlines())
+
+
+def test_gpu_gate_report_documents_m2_4_runner_and_open_gate():
+    report = (ROOT / "docs" / "reports" / "m2-rendering-gpu-gate.md").read_text(encoding="utf-8")
+
+    assert "## M2-4 Runbook" in report
+    assert "scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report
+    assert "Current gate status: Open." in report
+    assert "Development/offscreen results must not be copied as acceptance evidence." in report

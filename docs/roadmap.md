@@ -28,7 +28,7 @@ v1 stable 不承诺自研硬件采集闭环。自研 `ADS1299-4 + ESP32-C3`、BL
 
 ## 当前阶段
 
-当前阶段进入 M2-3：真实 GPU/显示门禁、静态浏览交互加固和 M2 验收证据收口。M2-3 仍不代表完整 M2 验收；只有 `docs/reports/m2-rendering-gpu-gate.md` 记录真实 GPU/显示环境通过后，M2 波形浏览门禁才能关闭。
+当前阶段进入 M2-4：真实 GPU/显示门禁证据包、64/128/256 通道 benchmark 聚合、gate 分类和报告格式收口。M2-4 仍不代表完整 M2 验收；只有 `docs/reports/m2-rendering-gpu-gate.md` 记录真实 GPU/显示环境通过或带说明接受后，M2 波形浏览门禁才能关闭。
 
 ## 阶段路线
 
