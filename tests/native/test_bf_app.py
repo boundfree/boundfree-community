@@ -286,3 +286,13 @@ def test_bf_app_smoke_waveform_display_model_filters_visible_channels():
         "smoke-waveform-display-model-ok channels=ch3 samples=4 "
         "window=0-0.04 amplitude=200"
     )
+
+
+def test_bf_app_smoke_ui_browser_controls_show_window_and_scale():
+    result = _run(
+        [str(APP), "--smoke-ui-browser-controls", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "smoke-ui-browser-controls-ok" in result.stdout
+    assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout

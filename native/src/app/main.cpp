@@ -231,6 +231,30 @@ int main(int argc, char** argv) {
                       << " opened_en=" << openedEn.toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-browser-controls") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            bf::MainWindow window(version, &i18n);
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 2;
+            result.session.nSamples = 1000;
+            result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.0;
+            result.waveform.t1 = 10.0;
+            result.waveform.channelNames = {"ch1", "ch2"};
+            result.waveform.data = {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, -1.0f}};
+            window.showFileOpenResult(result);
+            std::cout << "smoke-ui-browser-controls-ok status=" << window.browserStatusText().toStdString() << "\n";
+            return 0;
+        }
         if (arg == "--smoke-parse-slice-payload" && i + 1 < argc) {
             QCoreApplication app(argc, argv);
             QFile file(QString::fromLocal8Bit(argv[i + 1]));

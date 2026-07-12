@@ -1,8 +1,12 @@
 #include "ui/main_window.h"
 
+#include "render/waveform_slice.h"
+
+#include <QDoubleSpinBox>
 #include <QJsonObject>
 #include <QMenuBar>
 #include <QStatusBar>
+#include <QToolBar>
 
 namespace bf {
 
@@ -16,6 +20,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     centralStack_->addWidget(waveformWidget_);
     setCentralWidget(centralStack_);
     buildLanguageMenu();
+    buildBrowserControls();
     resize(900, 560);
     retranslateUi();
 }
@@ -34,6 +39,40 @@ void MainWindow::buildLanguageMenu() {
             }
         });
         languageActions_.append(action);
+    }
+}
+
+void MainWindow::buildBrowserControls() {
+    browserToolbar_ = addToolBar("Browser");
+    timeWindowSpin_ = new QDoubleSpinBox(this);
+    timeWindowSpin_->setRange(1.0, 120.0);
+    timeWindowSpin_->setDecimals(0);
+    timeWindowSpin_->setValue(viewState_.windowSeconds);
+
+    amplitudeSpin_ = new QDoubleSpinBox(this);
+    amplitudeSpin_->setRange(50.0, 5000.0);
+    amplitudeSpin_->setDecimals(0);
+    amplitudeSpin_->setValue(viewState_.amplitudeUv);
+
+    browserToolbar_->addWidget(timeWindowSpin_);
+    browserToolbar_->addWidget(amplitudeSpin_);
+
+    connect(timeWindowSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
+        viewState_.setWindowSeconds(value);
+        applyBrowserStateToWaveform();
+    });
+    connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
+        viewState_.setAmplitudeUv(value);
+        applyBrowserStateToWaveform();
+    });
+}
+
+void MainWindow::refreshBrowserControls() {
+    if (timeWindowSpin_ != nullptr) {
+        timeWindowSpin_->setValue(viewState_.windowSeconds);
+    }
+    if (amplitudeSpin_ != nullptr) {
+        amplitudeSpin_->setValue(viewState_.amplitudeUv);
     }
 }
 
@@ -84,19 +123,44 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 }
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
+    currentFile_ = result;
+    hasCurrentFile_ = true;
     waveformWidget_->setSlice(result.waveform);
     centralStack_->setCurrentWidget(waveformWidget_);
-    statusKey_ = "app.status.file_opened";
-    statusParams_ = {
-        {"format", result.session.format},
-        {"fs", result.session.fs},
-        {"n_channels", result.session.nChannels},
-    };
-    retranslateUi();
+    refreshBrowserControls();
+    applyBrowserStateToWaveform();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
     setSidecarFailed(error);
+}
+
+void MainWindow::setBrowserViewState(const WaveformViewState& state) {
+    viewState_ = state;
+    refreshBrowserControls();
+    applyBrowserStateToWaveform();
+}
+
+void MainWindow::applyBrowserStateToWaveform() {
+    waveformWidget_->setViewState(viewState_);
+    if (!hasCurrentFile_) {
+        return;
+    }
+
+    const WaveformDisplayModel model = waveformDisplayModel(currentFile_.waveform, viewState_, 32);
+    statusKey_ = "app.status.file_window";
+    statusParams_ = {
+        {"format", currentFile_.session.format},
+        {"t0", currentFile_.waveform.t0},
+        {"t1", currentFile_.waveform.t1},
+        {"amplitude", viewState_.amplitudeUv},
+        {"n_visible", static_cast<int>(model.data.size())},
+    };
+    retranslateUi();
+}
+
+QString MainWindow::browserStatusText() const {
+    return statusBar()->currentMessage();
 }
 
 }  // namespace bf
