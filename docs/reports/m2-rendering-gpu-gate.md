@@ -62,3 +62,9 @@ Real GPU result rows must include:
 | 2026-07-12 | Not yet run on real GPU/display | 256 | 1000 Hz | 4 s | not recorded | not recorded | not recorded | not recorded | Open |
 
 Offscreen benchmark smoke passed in development, but this does not close the real GPU/display gate.
+
+## M2-3 Status
+
+M2-3 adds machine-readable benchmark output and browser interaction smokes. These are still development evidence unless run on a real GPU/display environment.
+
+Current gate status: Open.

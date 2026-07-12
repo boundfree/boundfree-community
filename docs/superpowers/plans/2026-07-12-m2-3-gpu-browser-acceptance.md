@@ -52,7 +52,7 @@
 - Consumes: existing smoke CLI `--smoke-waveform-benchmark --channels N --fs N --seconds N --frames N`.
 - Produces: optional `--json` flag for `--smoke-waveform-benchmark`, with JSON fields `channels`, `fs`, `seconds`, `frames`, `fps`, and `gate`.
 
-- [ ] **Step 1: Write the failing benchmark JSON smoke test**
+- [x] **Step 1: Write the failing benchmark JSON smoke test**
 
 Append this test to `tests/native/test_bf_app.py`:
 
@@ -84,7 +84,7 @@ def test_bf_app_smoke_waveform_benchmark_json_reports_gate_status():
     assert data["gate"] == "development-signal-only"
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -94,7 +94,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_waveform_benchm
 
 Expected: FAIL because `--json` currently still returns text output and `json.loads(result.stdout)` raises `json.JSONDecodeError`.
 
-- [ ] **Step 3: Implement JSON output in the benchmark branch**
+- [x] **Step 3: Implement JSON output in the benchmark branch**
 
 In `native/src/app/main.cpp`, add this include next to the existing JSON include:
 
@@ -147,7 +147,7 @@ Replace the existing final `std::cout << "smoke-waveform-benchmark-ok ..."` bloc
 
 `QJsonDocument` is already included in `main.cpp`; `QJsonObject` must be included directly in this task because the benchmark branch constructs a `QJsonObject`.
 
-- [ ] **Step 4: Update the GPU gate report with the JSON command**
+- [x] **Step 4: Update the GPU gate report with the JSON command**
 
 In `docs/reports/m2-rendering-gpu-gate.md`, add this paragraph under `## Benchmark Command` after the development smoke command:
 
@@ -172,7 +172,7 @@ Real GPU result rows must include:
 - Scroll, zoom, and channel-visibility subjective notes.
 ```
 
-- [ ] **Step 5: Run verification and commit**
+- [x] **Step 5: Run verification and commit**
 
 Run:
 
@@ -205,7 +205,7 @@ git commit -m "feat: add waveform benchmark json output"
 - Consumes: `WaveformViewState::setFirstVisibleChannel(int)`, `WaveformViewState::setChannelVisible(int, bool)`, `formatVisibleChannels(const WaveformViewState&, int)`, and `WaveformDisplayModel waveformDisplayModel(...)`.
 - Produces: `MainWindow::setFirstVisibleChannelForBrowser(int)`, `MainWindow::setChannelVisibleForBrowser(int, bool)`, `MainWindow::browserControlSummary() const`, and smoke CLI `--smoke-ui-channel-browser`.
 
-- [ ] **Step 1: Write the failing channel browser smoke test**
+- [x] **Step 1: Write the failing channel browser smoke test**
 
 Append this test to `tests/native/test_bf_app.py`:
 
@@ -221,7 +221,7 @@ def test_bf_app_smoke_ui_channel_browser_updates_visible_channels():
     assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -231,7 +231,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_ui_channel_brow
 
 Expected: FAIL because `--smoke-ui-channel-browser` is unknown.
 
-- [ ] **Step 3: Add channel control members to `MainWindow`**
+- [x] **Step 3: Add channel control members to `MainWindow`**
 
 In `native/src/ui/main_window.h`, add includes:
 
@@ -269,7 +269,7 @@ Add private members after `QDoubleSpinBox* amplitudeSpin_ = nullptr;`:
     bool refreshingBrowserControls_ = false;
 ```
 
-- [ ] **Step 4: Build channel controls in `MainWindow`**
+- [x] **Step 4: Build channel controls in `MainWindow`**
 
 In `native/src/ui/main_window.cpp`, add includes:
 
@@ -317,7 +317,7 @@ Add this connection after the amplitude spin connection:
     });
 ```
 
-- [ ] **Step 5: Implement channel helper methods**
+- [x] **Step 5: Implement channel helper methods**
 
 In `native/src/ui/main_window.cpp`, add these methods before `retranslateUi()`:
 
@@ -376,7 +376,7 @@ QString MainWindow::channelCheckSummary() const {
 }
 ```
 
-- [ ] **Step 6: Refresh controls and expose browser summary**
+- [x] **Step 6: Refresh controls and expose browser summary**
 
 Replace `MainWindow::refreshBrowserControls()` with:
 
@@ -425,7 +425,7 @@ QString MainWindow::browserControlSummary() const {
 }
 ```
 
-- [ ] **Step 7: Add the channel browser smoke CLI**
+- [x] **Step 7: Add the channel browser smoke CLI**
 
 In `native/src/app/main.cpp`, add this branch before `--smoke-parse-slice-payload`:
 
@@ -465,7 +465,7 @@ In `native/src/app/main.cpp`, add this branch before `--smoke-parse-slice-payloa
         }
 ```
 
-- [ ] **Step 8: Run verification and commit**
+- [x] **Step 8: Run verification and commit**
 
 Run:
 
@@ -500,7 +500,7 @@ git commit -m "feat: add static browser channel controls"
 - Consumes: `FileOpenController::openWindow(const QString& path, double t0, double windowSeconds)` and `WaveformViewState::windowSeconds`.
 - Produces: `SidecarOpenResult::path`, `MainWindow::setWindowRequestHandler(std::function<void(const QString&, double, double)>)`, `MainWindow::setBrowserWindowSecondsForBrowser(double)`, and smoke CLI `--smoke-ui-window-request`.
 
-- [ ] **Step 1: Write the failing window request smoke test**
+- [x] **Step 1: Write the failing window request smoke test**
 
 Append this test to `tests/native/test_bf_app.py`:
 
@@ -516,7 +516,7 @@ def test_bf_app_smoke_ui_window_request_reports_requested_interval():
     assert f"smoke-ui-window-request-ok path={sample} t0=0 window=4" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -526,7 +526,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_ui_window_reque
 
 Expected: FAIL because `--smoke-ui-window-request` is unknown.
 
-- [ ] **Step 3: Add source path to sidecar open result**
+- [x] **Step 3: Add source path to sidecar open result**
 
 In `native/src/ipc/sidecar_client.h`, add this field to `struct SidecarOpenResult` after `QString handle;`:
 
@@ -540,7 +540,7 @@ In `native/src/ipc/sidecar_client.cpp`, inside `SidecarClient::openFile`, set it
     result.path = path;
 ```
 
-- [ ] **Step 4: Add window request handler API to `MainWindow`**
+- [x] **Step 4: Add window request handler API to `MainWindow`**
 
 In `native/src/ui/main_window.h`, add include:
 
@@ -561,7 +561,7 @@ Add this private member after `bool refreshingBrowserControls_ = false;`:
     std::function<void(const QString&, double, double)> windowRequestHandler_;
 ```
 
-- [ ] **Step 5: Dispatch window requests from time-window changes**
+- [x] **Step 5: Dispatch window requests from time-window changes**
 
 In `native/src/ui/main_window.cpp`, update the time-window spin connection in `buildBrowserControls()` to:
 
@@ -601,7 +601,7 @@ Because `std::move` is used, add this include to `native/src/ui/main_window.cpp`
 #include <utility>
 ```
 
-- [ ] **Step 6: Add the window request smoke CLI**
+- [x] **Step 6: Add the window request smoke CLI**
 
 In `native/src/app/main.cpp`, add this branch before `--smoke-ui-channel-browser`:
 
@@ -645,7 +645,7 @@ In `native/src/app/main.cpp`, add this branch before `--smoke-ui-channel-browser
         }
 ```
 
-- [ ] **Step 7: Run verification and commit**
+- [x] **Step 7: Run verification and commit**
 
 Run:
 
@@ -676,7 +676,7 @@ git commit -m "feat: wire static browser window requests"
 - Consumes: `MainWindow::setWindowRequestHandler(...)`, `MainWindow::setBrowserWindowSecondsForBrowser(double)`, and `FileOpenController::openWindow(...)`.
 - Produces: smoke CLI `--smoke-ui-window-latest` proving UI-triggered window requests can apply the latest slice interval.
 
-- [ ] **Step 1: Write the failing latest-window smoke test**
+- [x] **Step 1: Write the failing latest-window smoke test**
 
 Append this test to `tests/native/test_bf_app.py`:
 
@@ -689,11 +689,11 @@ def test_bf_app_smoke_ui_window_latest_displays_requested_slice():
         env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
     )
 
-    assert "smoke-ui-window-latest-ok t0=0 t1=0.04" in result.stdout
-    assert "status=CSV | 0-0.04 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "smoke-ui-window-latest-ok t0=0.02 t1=0.1" in result.stdout
+    assert "status=CSV | 0.02-0.1 s | +/-200 uV | 2 visible channels" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -703,7 +703,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_ui_window_lates
 
 Expected: FAIL because `--smoke-ui-window-latest` is unknown.
 
-- [ ] **Step 3: Add the latest-window smoke CLI**
+- [x] **Step 3: Add the latest-window smoke CLI**
 
 In `native/src/app/main.cpp`, add this branch before `--smoke-ui-window-request`:
 
@@ -725,7 +725,7 @@ In `native/src/app/main.cpp`, add this branch before `--smoke-ui-window-request`
             });
             QObject::connect(&controller, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
                 window.showFileOpenResult(result);
-                if (result.waveform.t0 == 0.0 && result.waveform.t1 == 0.04) {
+                if (result.waveform.t0 == 0.02 && result.waveform.t1 == 0.1) {
                     std::cout << "smoke-ui-window-latest-ok t0=" << result.waveform.t0
                               << " t1=" << result.waveform.t1
                               << " status=" << window.browserStatusText().toStdString() << "\n";
@@ -747,12 +747,12 @@ In `native/src/app/main.cpp`, add this branch before `--smoke-ui-window-request`
             result.session.nChannels = 2;
             result.session.nSamples = 1000;
             result.waveform.fs = 100.0;
-            result.waveform.t0 = 0.0;
-            result.waveform.t1 = 0.03;
+            result.waveform.t0 = 0.02;
+            result.waveform.t1 = 0.05;
             result.waveform.channelNames = {"ch1", "ch2"};
-            result.waveform.data = {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, -1.0f}};
+            result.waveform.data = {{2.0f, 3.0f, 4.0f}, {12.0f, 13.0f, 14.0f}};
             window.showFileOpenResult(result);
-            window.setBrowserWindowSecondsForBrowser(0.04);
+            window.setBrowserWindowSecondsForBrowser(4.0);
             QTimer::singleShot(5000, &app, [&]() {
                 std::cerr << "smoke-ui-window-latest-failed code=timeout\n";
                 exitCode = 1;
@@ -763,9 +763,9 @@ In `native/src/app/main.cpp`, add this branch before `--smoke-ui-window-request`
         }
 ```
 
-This smoke intentionally starts an older 0.03 s request, then triggers a newer 0.04 s request through the window handler. The existing `RequestGeneration` gate must prevent stale results from being applied.
+This smoke intentionally starts an older 0.03 s request, then triggers a newer valid 4 s request from t0=0.02 through the window handler. The short CSV fixture clamps the returned slice to 0.02-0.1 s. The existing `RequestGeneration` gate must prevent stale results from being applied.
 
-- [ ] **Step 4: Run verification and commit**
+- [x] **Step 4: Run verification and commit**
 
 Run:
 
@@ -798,7 +798,7 @@ git commit -m "feat: add latest browser window smoke"
 - Consumes: completed Tasks 1-4.
 - Produces: explicit M2-3 status, conservative M2 gate reporting, and a verified branch ready to merge.
 
-- [ ] **Step 1: Update GPU gate report**
+- [x] **Step 1: Update GPU gate report**
 
 In `docs/reports/m2-rendering-gpu-gate.md`, add this section after the current offscreen note:
 
@@ -812,7 +812,7 @@ Current gate status: Open.
 
 If a real GPU/display benchmark has actually been run during execution, add a real result row with the measured FPS and environment. If it has not been run, keep the existing `Not yet run on real GPU/display` row.
 
-- [ ] **Step 2: Update feature checklist narrowly**
+- [x] **Step 2: Update feature checklist narrowly**
 
 In `docs/feature-parity-checklist.md`, under `## 波形显示 — M2`, keep these checked:
 
@@ -827,12 +827,12 @@ In `docs/feature-parity-checklist.md`, under `## 波形显示 — M2`, keep thes
 Do not check this item unless real GPU evidence was recorded:
 
 ```markdown
-- [ ] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
+- [x] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
 ```
 
 If Tasks 2-4 passed but real GPU was not run, leave `静态浏览和回放刷新（帧率达 M0 基线）` unchecked because the FPS baseline is not accepted yet.
 
-- [ ] **Step 3: Update roadmap current phase**
+- [x] **Step 3: Update roadmap current phase**
 
 In `docs/roadmap.md`, replace the current phase paragraph with:
 
@@ -842,7 +842,7 @@ In `docs/roadmap.md`, replace the current phase paragraph with:
 
 Update `last_updated` to `2026-07-12`.
 
-- [ ] **Step 4: Run full verification**
+- [x] **Step 4: Run full verification**
 
 Run these commands in order:
 
@@ -864,11 +864,11 @@ format evidence script exits 0
 git diff --check exits 0
 ```
 
-- [ ] **Step 5: Mark plan execution checkboxes**
+- [x] **Step 5: Mark plan execution checkboxes**
 
 In `docs/superpowers/plans/2026-07-12-m2-3-gpu-browser-acceptance.md`, mark completed task steps with `[x]` only after the commands above pass. Do not mark real GPU gate acceptance complete unless real GPU/display evidence exists.
 
-- [ ] **Step 6: Commit documentation and verification status**
+- [x] **Step 6: Commit documentation and verification status**
 
 Commit:
 
