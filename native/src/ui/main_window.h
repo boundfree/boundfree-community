@@ -8,14 +8,18 @@
 #include "ui/waveform_widget.h"
 
 #include <QAction>
+#include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QJsonObject>
+#include <QScrollArea>
 #include <QStackedWidget>
+#include <QSpinBox>
 #include <QToolBar>
 #include <QVector>
+#include <QVBoxLayout>
 
 namespace bf {
 
@@ -32,12 +36,19 @@ public:
     void showFileOpenError(const AppError& error);
     void setBrowserViewState(const WaveformViewState& state);
     QString browserStatusText() const;
+    void setFirstVisibleChannelForBrowser(int channel);
+    void setChannelVisibleForBrowser(int channel, bool visible);
+    QString browserControlSummary() const;
 
 private:
     void buildLanguageMenu();
     void buildBrowserControls();
     void refreshBrowserControls();
     void applyBrowserStateToWaveform();
+    void rebuildChannelControls();
+    QString channelCheckSummary() const;
+    QString visibleDisplayChannelSummary() const;
+    int channelCount() const;
 
     VersionInfo version_;
     I18nService* i18n_ = nullptr;
@@ -49,6 +60,12 @@ private:
     QToolBar* browserToolbar_ = nullptr;
     QDoubleSpinBox* timeWindowSpin_ = nullptr;
     QDoubleSpinBox* amplitudeSpin_ = nullptr;
+    QSpinBox* firstChannelSpin_ = nullptr;
+    QScrollArea* channelScroll_ = nullptr;
+    QWidget* channelListWidget_ = nullptr;
+    QVBoxLayout* channelListLayout_ = nullptr;
+    QVector<QCheckBox*> channelChecks_;
+    bool refreshingBrowserControls_ = false;
     WaveformViewState viewState_;
     FileOpenResult currentFile_;
     bool hasCurrentFile_ = false;

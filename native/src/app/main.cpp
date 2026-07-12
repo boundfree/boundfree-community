@@ -453,6 +453,39 @@ int main(int argc, char** argv) {
             }
             return 0;
         }
+        if (arg == "--smoke-ui-channel-browser") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            bf::MainWindow window(version, &i18n);
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 4;
+            result.session.nSamples = 1000;
+            result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.0;
+            result.waveform.t1 = 10.0;
+            result.waveform.channelNames = {"ch1", "ch2", "ch3", "ch4"};
+            result.waveform.data = {
+                {0.0f, 1.0f, 0.0f},
+                {1.0f, 0.0f, -1.0f},
+                {2.0f, 1.0f, 0.0f},
+                {3.0f, 2.0f, 1.0f},
+            };
+            window.showFileOpenResult(result);
+            window.setChannelVisibleForBrowser(1, false);
+            window.setFirstVisibleChannelForBrowser(2);
+            std::cout << "smoke-ui-channel-browser-ok summary="
+                      << window.browserControlSummary().toStdString()
+                      << " status=" << window.browserStatusText().toStdString() << "\n";
+            return 0;
+        }
         if (arg == "--smoke-waveform-render") {
             QApplication app(argc, argv);
             bf::WaveformWidget widget;
