@@ -16,14 +16,14 @@ sys.modules[spec.name] = gpu_gate
 spec.loader.exec_module(gpu_gate)
 
 
-def _result(channels: int, fps: float):
+def _result(channels: int, fps: float, *, frames: int = 120, producer_gate: str = "display-candidate"):
     return gpu_gate.BenchmarkResult(
         channels=channels,
         fs=1000,
         seconds=4,
-        frames=120,
+        frames=frames,
         fps=fps,
-        producer_gate="development-signal-only",
+        producer_gate=producer_gate,
         command=f"bf_app --smoke-waveform-benchmark --channels {channels}",
     )
 
@@ -118,6 +118,40 @@ def test_classify_gate_open_for_development_environment_or_missing_metadata():
 
     assert development_gate == "Open"
     assert missing_metadata_gate == "Accepted with note"
+
+
+def test_classify_gate_opens_when_required_scenario_reports_development_signal_only():
+    gate = gpu_gate.classify_gate(
+        [
+            _result(64, 120.0),
+            _result(128, 90.0),
+            _result(256, 70.0, producer_gate="development-signal-only"),
+        ],
+        _metadata(),
+        [],
+    )
+
+    assert gate == "Open"
+
+
+def test_classify_gate_blocks_when_required_scenario_frames_are_not_120():
+    gate = gpu_gate.classify_gate(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 70.0, frames=119)],
+        _metadata(),
+        [],
+    )
+
+    assert gate == "Blocked"
+
+
+def test_classify_gate_opens_when_required_metadata_is_not_recorded():
+    gate = gpu_gate.classify_gate(
+        [_result(64, 120.0), _result(128, 90.0), _result(256, 70.0)],
+        _metadata(scroll_note="not recorded"),
+        [],
+    )
+
+    assert gate == "Open"
 
 
 def test_format_markdown_evidence_preserves_metadata_and_scenarios():
@@ -371,6 +405,16 @@ def test_cli_from_json_acceptance_run_marks_mesa_software_renderer_as_open(tmp_p
     assert "from-json-import" in data["development_reasons"]
     assert any("Mesa/software" in reason for reason in data["development_reasons"])
     assert any("Mesa/software" in line for line in data["markdown"].splitlines())
+
+
+def test_detect_development_reasons_marks_display_99_as_xvfb():
+    reasons = gpu_gate.detect_development_reasons(
+        {"DISPLAY": ":99"},
+        gpu_model="NVIDIA",
+        driver_version="555",
+    )
+
+    assert "Xvfb" in reasons
 
 
 def test_gpu_gate_report_documents_m2_4_runner_and_open_gate():

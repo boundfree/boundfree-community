@@ -403,6 +403,11 @@ int main(int argc, char** argv) {
             const int seconds = valueAfter(i + 1, "--seconds", "4").toInt();
             const int frames = valueAfter(i + 1, "--frames", "30").toInt();
             const bool jsonOutput = hasFlag(i + 1, "--json");
+            const QString platformName = QApplication::platformName().trimmed().toLower();
+            const QString gate =
+                (platformName == "offscreen" || platformName == "minimal")
+                    ? "development-signal-only"
+                    : "display-candidate";
             bf::WaveformWidget widget;
             bf::WaveformSlice slice;
             slice.fs = fs;
@@ -440,7 +445,7 @@ int main(int argc, char** argv) {
                     {"seconds", seconds},
                     {"frames", frames},
                     {"fps", fps},
-                    {"gate", "development-signal-only"},
+                    {"gate", gate},
                 };
                 std::cout << QJsonDocument(payload).toJson(QJsonDocument::Compact).toStdString() << "\n";
             } else {
@@ -449,7 +454,7 @@ int main(int argc, char** argv) {
                           << " seconds=" << seconds
                           << " frames=" << frames
                           << " fps=" << fps
-                          << " gate=development-signal-only\n";
+                          << " gate=" << gate.toStdString() << "\n";
             }
             return 0;
         }

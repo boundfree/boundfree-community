@@ -78,13 +78,14 @@ def _missing_required_metadata(metadata: EvidenceMetadata) -> bool:
         metadata.gpu_model,
         metadata.driver_version,
         metadata.qt_version,
-        metadata.cpu_observation,
-        metadata.gpu_observation,
         metadata.scroll_note,
         metadata.zoom_note,
         metadata.channel_visibility_note,
     ]
-    return any(not value.strip() for value in required)
+    return any(
+        not value.strip() or value.strip().lower() == "not recorded"
+        for value in required
+    )
 
 
 def _has_unrecorded_utilization(metadata: EvidenceMetadata) -> bool:
@@ -112,6 +113,13 @@ def classify_gate(
         for channel in REQUIRED_CHANNELS
     ):
         return "Blocked"
+    if any(scenarios[channel].frames != 120 for channel in REQUIRED_CHANNELS):
+        return "Blocked"
+    if any(
+        scenarios[channel].producer_gate.strip().lower() == "development-signal-only"
+        for channel in REQUIRED_CHANNELS
+    ):
+        return "Open"
     if _has_stall(metadata):
         return "Blocked"
 
@@ -183,7 +191,15 @@ def detect_development_reasons(
         reasons.append("WSL")
     display = env.get("DISPLAY", "")
     wayland = env.get("WAYLAND_DISPLAY", "")
-    if display.startswith(":") and not wayland and env.get("XDG_SESSION_TYPE", "").lower() == "xvfb":
+    env_values = " ".join(env.values()).lower()
+    session_type = env.get("XDG_SESSION_TYPE", "").lower()
+    current_desktop = env.get("XDG_CURRENT_DESKTOP", "").lower()
+    if (
+        display == ":99"
+        or "xvfb" in session_type
+        or "xvfb" in current_desktop
+        or (display.startswith(":") and not wayland and "xvfb" in env_values)
+    ):
         reasons.append("Xvfb")
     if "mesa" in gpu_model.strip().lower() or "software" in driver_version.strip().lower():
         reasons.append("Mesa/software renderer")
