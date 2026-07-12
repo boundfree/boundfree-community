@@ -171,7 +171,11 @@ def format_markdown_evidence(
     return "\n".join(lines)
 
 
-def detect_development_reasons(env: dict[str, str]) -> list[str]:
+def detect_development_reasons(
+    env: dict[str, str],
+    gpu_model: str = "",
+    driver_version: str = "",
+) -> list[str]:
     reasons: list[str] = []
     if env.get("QT_QPA_PLATFORM", "").lower() == "offscreen":
         reasons.append("QT_QPA_PLATFORM=offscreen")
@@ -181,6 +185,8 @@ def detect_development_reasons(env: dict[str, str]) -> list[str]:
     wayland = env.get("WAYLAND_DISPLAY", "")
     if display.startswith(":") and not wayland and env.get("XDG_SESSION_TYPE", "").lower() == "xvfb":
         reasons.append("Xvfb")
+    if "mesa" in gpu_model.strip().lower() or "software" in driver_version.strip().lower():
+        reasons.append("Mesa/software renderer")
     return reasons
 
 
@@ -305,13 +311,19 @@ def main() -> int:
     metadata = default_metadata(args)
     development_reasons = ["dry-run"]
     if args.acceptance_run:
-        development_reasons = detect_development_reasons(os.environ)
+        development_reasons = detect_development_reasons(
+            os.environ,
+            args.gpu_model,
+            args.driver_version,
+        )
 
     if args.dry_run:
         results = dry_run_results(args.app, args.frames)
         development_reasons = ["dry-run"]
     elif args.from_json is not None:
         results = load_results(args.from_json)
+        if args.acceptance_run:
+            development_reasons.append("from-json-import")
     else:
         results = run_benchmarks(args.app, args.frames)
 
