@@ -72,7 +72,7 @@
 - Consumes: existing `FileOpenController::openInitialWindow(const QString& path)` behavior.
 - Produces: `bf::RequestGeneration`, `FileOpenController::openInitialWindow(const QString& path, double windowSeconds)`, and smoke CLI `--smoke-request-generation`.
 
-- [ ] **Step 1: Write the failing request generation smoke test**
+- [x] **Step 1: Write the failing request generation smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -86,7 +86,7 @@ def test_bf_app_smoke_request_generation_latest_wins():
     )
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -96,7 +96,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_request_generat
 
 Expected: FAIL because `--smoke-request-generation` does not exist.
 
-- [ ] **Step 3: Add the request generation primitive**
+- [x] **Step 3: Add the request generation primitive**
 
 Create `native/src/controller/request_generation.h`:
 
@@ -155,7 +155,7 @@ Register both new files in `native/CMakeLists.txt`:
     src/controller/request_generation.h
 ```
 
-- [ ] **Step 4: Wire `FileOpenController` to the primitive**
+- [x] **Step 4: Wire `FileOpenController` to the primitive**
 
 In `native/src/controller/file_open_controller.h`, include the new header and replace the atomic member:
 
@@ -213,7 +213,7 @@ Use the requested window:
 const double t1 = std::min(requestedWindowSeconds, opened.duration);
 ```
 
-- [ ] **Step 5: Add the smoke CLI**
+- [x] **Step 5: Add the smoke CLI**
 
 Add this include to `native/src/app/main.cpp`:
 
@@ -242,7 +242,7 @@ if (arg == "--smoke-request-generation") {
 }
 ```
 
-- [ ] **Step 6: Run verification and commit**
+- [x] **Step 6: Run verification and commit**
 
 Run:
 
@@ -275,7 +275,7 @@ git commit -m "feat: add request generation gate"
 - Consumes: no prior browser state model.
 - Produces: `bf::WaveformViewState`, `bf::formatWaveformViewState(const WaveformViewState&)`, and smoke CLI `--smoke-waveform-view-state`.
 
-- [ ] **Step 1: Write the failing view state smoke test**
+- [x] **Step 1: Write the failing view state smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -289,7 +289,7 @@ def test_bf_app_smoke_waveform_view_state_clamps_and_toggles():
     )
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -299,7 +299,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_waveform_view_s
 
 Expected: FAIL because `--smoke-waveform-view-state` does not exist.
 
-- [ ] **Step 3: Add `WaveformViewState`**
+- [x] **Step 3: Add `WaveformViewState`**
 
 Create `native/src/controller/waveform_view_state.h`:
 
@@ -390,7 +390,7 @@ QString formatWaveformViewState(const WaveformViewState& state, int nChannels) {
 
 Register both new files in `native/CMakeLists.txt`.
 
-- [ ] **Step 4: Add the smoke CLI**
+- [x] **Step 4: Add the smoke CLI**
 
 Add this include to `native/src/app/main.cpp`:
 
@@ -414,7 +414,7 @@ if (arg == "--smoke-waveform-view-state") {
 }
 ```
 
-- [ ] **Step 5: Run verification and commit**
+- [x] **Step 5: Run verification and commit**
 
 Run:
 
@@ -448,7 +448,7 @@ git commit -m "feat: add waveform view state"
 - Consumes: `bf::WaveformViewState` from Task 2 and existing `bf::WaveformSlice`.
 - Produces: `bf::WaveformDisplayModel`, `bf::waveformDisplayModel(const WaveformSlice&, const WaveformViewState&, int maxVisibleChannels)`, `WaveformWidget::setViewState(const WaveformViewState&)`, and smoke CLI `--smoke-waveform-display-model`.
 
-- [ ] **Step 1: Write the failing display model smoke test**
+- [x] **Step 1: Write the failing display model smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -462,7 +462,7 @@ def test_bf_app_smoke_waveform_display_model_filters_visible_channels():
     )
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -472,7 +472,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_waveform_displa
 
 Expected: FAIL because the smoke CLI does not exist.
 
-- [ ] **Step 3: Add the display model interface**
+- [x] **Step 3: Add the display model interface**
 
 In `native/src/render/waveform_slice.h`, include the view state header:
 
@@ -499,7 +499,7 @@ WaveformDisplayModel waveformDisplayModel(
     int maxVisibleChannels);
 ```
 
-- [ ] **Step 4: Implement visible channel filtering**
+- [x] **Step 4: Implement visible channel filtering**
 
 Add this to `native/src/render/waveform_slice.cpp`:
 
@@ -533,7 +533,7 @@ WaveformDisplayModel waveformDisplayModel(
 }
 ```
 
-- [ ] **Step 5: Update `WaveformWidget` to consume view state**
+- [x] **Step 5: Update `WaveformWidget` to consume view state**
 
 In `native/src/ui/waveform_widget.h`, include view state and add:
 
@@ -575,7 +575,7 @@ if (ch < model.channelNames.size()) {
 painter.setPen(QPen(QColor("#6EE7B7"), 1));
 ```
 
-- [ ] **Step 6: Add the display model smoke CLI**
+- [x] **Step 6: Add the display model smoke CLI**
 
 In `native/src/app/main.cpp`, add:
 
@@ -607,7 +607,7 @@ if (arg == "--smoke-waveform-display-model") {
 }
 ```
 
-- [ ] **Step 7: Run verification and commit**
+- [x] **Step 7: Run verification and commit**
 
 Run:
 
@@ -649,7 +649,7 @@ git commit -m "feat: add waveform display model"
 - Consumes: `WaveformViewState` and `WaveformWidget::setViewState`.
 - Produces: visible browser controls, status format `app.status.file_window`, and smoke CLI `--smoke-ui-browser-controls`.
 
-- [ ] **Step 1: Write the failing browser controls smoke test**
+- [x] **Step 1: Write the failing browser controls smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -664,7 +664,7 @@ def test_bf_app_smoke_ui_browser_controls_show_window_and_scale():
     assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -674,7 +674,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_ui_browser_cont
 
 Expected: FAIL because `--smoke-ui-browser-controls` does not exist.
 
-- [ ] **Step 3: Add browser state and controls to `MainWindow`**
+- [x] **Step 3: Add browser state and controls to `MainWindow`**
 
 In `native/src/ui/main_window.h`, include the view state header and Qt controls:
 
@@ -711,7 +711,7 @@ FileOpenResult currentFile_;
 bool hasCurrentFile_ = false;
 ```
 
-- [ ] **Step 4: Implement the controls**
+- [x] **Step 4: Implement the controls**
 
 In `native/src/ui/main_window.cpp`, include:
 
@@ -788,7 +788,7 @@ QString MainWindow::browserStatusText() const {
 
 Update `showFileOpenResult` to set `currentFile_`, `hasCurrentFile_`, and call `applyBrowserStateToWaveform()` after `setSlice`.
 
-- [ ] **Step 5: Add i18n keys**
+- [x] **Step 5: Add i18n keys**
 
 Add this key to every `native/i18n/bf_app_*.ts` file:
 
@@ -808,7 +808,7 @@ For `native/i18n/bf_app_pseudo.ts`, use:
 <message><source>app.status.file_window</source><translation>[!! {format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} viisiiblee chaanneels !!]</translation></message>
 ```
 
-- [ ] **Step 6: Add the browser controls smoke CLI**
+- [x] **Step 6: Add the browser controls smoke CLI**
 
 Add this branch to `native/src/app/main.cpp`:
 
@@ -839,7 +839,7 @@ if (arg == "--smoke-ui-browser-controls") {
 }
 ```
 
-- [ ] **Step 7: Run verification and commit**
+- [x] **Step 7: Run verification and commit**
 
 Run:
 
@@ -871,7 +871,7 @@ git commit -m "feat: add static browser controls"
 - Consumes: `RequestGeneration` and `WaveformViewState`.
 - Produces: `FileOpenController::openWindow(const QString& path, double t0, double windowSeconds)` and smoke CLI `--smoke-ui-open-latest`.
 
-- [ ] **Step 1: Write the failing latest-result smoke test**
+- [x] **Step 1: Write the failing latest-result smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -887,7 +887,7 @@ def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
     assert "smoke-ui-open-latest-ok t0=0.02 t1=0.05" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -897,7 +897,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_ui_open_latest_
 
 Expected: FAIL because `--smoke-ui-open-latest` does not exist.
 
-- [ ] **Step 3: Add explicit window request API**
+- [x] **Step 3: Add explicit window request API**
 
 In `native/src/controller/file_open_controller.h`, add:
 
@@ -945,7 +945,7 @@ Then call:
 SidecarSliceResult slice = sidecar.getSlice(opened.handle, sliceT0, sliceT1, 30000);
 ```
 
-- [ ] **Step 4: Add latest-result smoke CLI**
+- [x] **Step 4: Add latest-result smoke CLI**
 
 Add this branch to `native/src/app/main.cpp`:
 
@@ -988,7 +988,7 @@ if (arg == "--smoke-ui-open-latest" && i + 1 < argc) {
 }
 ```
 
-- [ ] **Step 5: Run verification and commit**
+- [x] **Step 5: Run verification and commit**
 
 Run:
 
@@ -1019,7 +1019,7 @@ git commit -m "feat: harden static browser window requests"
 - Consumes: `WaveformWidget`, `WaveformSlice`, and `WaveformViewState`.
 - Produces: smoke CLI `--smoke-waveform-benchmark --channels N --fs N --seconds N --frames N`.
 
-- [ ] **Step 1: Write the failing benchmark smoke test**
+- [x] **Step 1: Write the failing benchmark smoke test**
 
 Add this test to `tests/native/test_bf_app.py`:
 
@@ -1045,7 +1045,7 @@ def test_bf_app_smoke_waveform_benchmark_reports_development_result():
     assert "gate=development-signal-only" in result.stdout
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -1055,7 +1055,7 @@ python3 -m pytest tests/native/test_bf_app.py::test_bf_app_smoke_waveform_benchm
 
 Expected: FAIL because the benchmark CLI does not exist.
 
-- [ ] **Step 3: Add the benchmark CLI**
+- [x] **Step 3: Add the benchmark CLI**
 
 In `native/src/app/main.cpp`, add:
 
@@ -1125,7 +1125,7 @@ if (arg == "--smoke-waveform-benchmark") {
 }
 ```
 
-- [ ] **Step 4: Update the GPU gate report**
+- [x] **Step 4: Update the GPU gate report**
 
 Append this section to `docs/reports/m2-rendering-gpu-gate.md`:
 
@@ -1153,7 +1153,7 @@ native/build/bf_app --smoke-waveform-benchmark --channels 256 --fs 1000 --second
 | 2026-07-09 | Not yet run on real GPU/display | 256 | 1000 Hz | 4 s | not recorded | not recorded | not recorded | not recorded | Open |
 ```
 
-- [ ] **Step 5: Run verification and commit**
+- [x] **Step 5: Run verification and commit**
 
 Run:
 
@@ -1184,7 +1184,7 @@ git commit -m "feat: add waveform render benchmark smoke"
 - Consumes: optional dependencies `h5py==3.16.0`, `mne==1.12.1`, and existing format tests.
 - Produces: CLI `python3 scripts/collect_m2_format_evidence.py --dry-run` and explicit evidence status values `accepted`, `dependency-skipped`, `sample-skipped`, `not-implemented`.
 
-- [ ] **Step 1: Write the failing evidence script test**
+- [x] **Step 1: Write the failing evidence script test**
 
 Create `tests/sidecar/test_format_evidence_script.py`:
 
@@ -1216,7 +1216,7 @@ def test_collect_m2_format_evidence_dry_run_reports_skips_as_non_evidence():
     assert data["EDF"]["skip_is_acceptance_evidence"] is False
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -1226,7 +1226,7 @@ python3 -m pytest tests/sidecar/test_format_evidence_script.py -q
 
 Expected: FAIL because `scripts/collect_m2_format_evidence.py` does not exist.
 
-- [ ] **Step 3: Add the evidence script**
+- [x] **Step 3: Add the evidence script**
 
 Create `scripts/collect_m2_format_evidence.py`:
 
@@ -1293,7 +1293,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Update the format acceptance report**
+- [x] **Step 4: Update the format acceptance report**
 
 Add this section to `docs/reports/m2-format-acceptance.md`:
 
@@ -1307,7 +1307,7 @@ python3 scripts/collect_m2_format_evidence.py --dry-run
 The script reports dependency and sample skips as non-evidence. Only `accepted` rows with recorded tests or manual evidence can be reflected as completed checklist items.
 ```
 
-- [ ] **Step 5: Run verification and commit**
+- [x] **Step 5: Run verification and commit**
 
 Run:
 
@@ -1339,7 +1339,7 @@ git commit -m "docs: add m2 format evidence collection"
 - Consumes: completed Tasks 1-7.
 - Produces: explicit M2-2 status, no overclaiming of full M2, and a verified branch ready for review or merge.
 
-- [ ] **Step 1: Update feature checklist narrowly**
+- [x] **Step 1: Update feature checklist narrowly**
 
 In `docs/feature-parity-checklist.md`, under "波形显示 — M2", mark only items whose tests and implementation passed:
 
@@ -1358,7 +1358,7 @@ Keep this unchecked unless real GPU/display evidence is recorded and meets the g
 
 Do not mark DSP, playback, annotations, video, export, recording, hardware acquisition, or sample-gated formats complete.
 
-- [ ] **Step 2: Update roadmap current phase**
+- [x] **Step 2: Update roadmap current phase**
 
 In `docs/roadmap.md`, update "当前阶段" to:
 
@@ -1366,7 +1366,7 @@ In `docs/roadmap.md`, update "当前阶段" to:
 当前阶段进入 M2-2：静态波形浏览交互、latest-request-wins 加固、渲染基准入口和格式验收证据收口。M2-2 仍不代表完整 M2 验收；真实 GPU/显示环境门禁只有在 `docs/reports/m2-rendering-gpu-gate.md` 记录通过后才能关闭。
 ```
 
-- [ ] **Step 3: Record verification status in reports**
+- [x] **Step 3: Record verification status in reports**
 
 In `docs/reports/m2-rendering-gpu-gate.md`, keep the gate `Open` unless a real GPU/display result was recorded. If only offscreen smoke ran, add:
 
@@ -1380,7 +1380,7 @@ In `docs/reports/m2-format-acceptance.md`, copy the evidence script result summa
 Skipped dependency-gated tests are not format acceptance evidence.
 ```
 
-- [ ] **Step 4: Run full verification**
+- [x] **Step 4: Run full verification**
 
 Run:
 
@@ -1402,11 +1402,11 @@ format evidence script exits 0
 git diff --check exits 0
 ```
 
-- [ ] **Step 5: Mark plan execution checkboxes**
+- [x] **Step 5: Mark plan execution checkboxes**
 
 In this plan file, mark completed task steps with `[x]` only after their commands pass. Do not mark real GPU acceptance complete unless the real environment result exists.
 
-- [ ] **Step 6: Commit documentation and verification status**
+- [x] **Step 6: Commit documentation and verification status**
 
 Commit:
 

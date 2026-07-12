@@ -28,3 +28,19 @@ python3 scripts/collect_m2_format_evidence.py --dry-run
 ```
 
 The script reports dependency and sample skips as non-evidence. Only `accepted` rows with recorded tests or manual evidence can be reflected as completed checklist items.
+
+## 2026-07-12 Dry Run Summary
+
+`python3 scripts/collect_m2_format_evidence.py --dry-run` reported:
+
+| Format | Status | Acceptance Evidence |
+| --- | --- | --- |
+| CSV | accepted | generated fixture tests |
+| HDF5 | dependency-skipped | none in this environment |
+| EDF | dependency-skipped | none in this environment |
+| BDF | sample-skipped | none |
+| BrainVision | sample-skipped | none |
+| EEGLAB | sample-skipped | none |
+| MNE FIF | sample-skipped | none |
+| Intan RHS | not-implemented | none |
+| BBK/DAT/LSD | not-implemented | none |

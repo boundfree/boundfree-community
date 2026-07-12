@@ -45,3 +45,5 @@ native/build/bf_app --smoke-waveform-benchmark --channels 256 --fs 1000 --second
 | Date | Environment | Channels | fs | Window | FPS | CPU | GPU | Interaction Notes | Gate |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-07-12 | Not yet run on real GPU/display | 256 | 1000 Hz | 4 s | not recorded | not recorded | not recorded | not recorded | Open |
+
+Offscreen benchmark smoke passed in development, but this does not close the real GPU/display gate.

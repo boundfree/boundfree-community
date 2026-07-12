@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-07-08
+last_updated: 2026-07-12
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -61,10 +61,10 @@ v1.1/v2：
 
 ## 波形显示 — M2
 
-- [ ] 多通道波形（垂直滚动）
-- [ ] 通道显隐
-- [ ] 时间窗 1–120s（默认 10s）
-- [ ] 幅值缩放（默认 ±200μV）
+- [x] 多通道波形（垂直滚动）
+- [x] 通道显隐
+- [x] 时间窗 1–120s（默认 10s）
+- [x] 幅值缩放（默认 ±200μV）
 - [ ] 静态浏览和回放刷新（帧率达 M0 基线）
 - [ ] 回放/静态双模式
 - [ ] 时间轴/顶点缓冲复用（相同窗口不重建）
