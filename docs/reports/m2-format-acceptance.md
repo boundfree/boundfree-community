@@ -1,6 +1,6 @@
 # M2 Format Acceptance Record
 
-Last updated: 2026-07-08
+Last updated: 2026-07-12
 
 ## Environment Notes
 
@@ -20,3 +20,11 @@ Last updated: 2026-07-08
 | MNE FIF | Reader path exists through MNE, public support claim remains gated by a real or generated acceptance sample | not accepted in this task |
 | Intan RHS | Not implemented in Native sidecar in this task | not accepted in this task |
 | BBK/DAT/LSD | Not implemented in Native sidecar in this task | not accepted in this task |
+
+## Evidence Collection Command
+
+```bash
+python3 scripts/collect_m2_format_evidence.py --dry-run
+```
+
+The script reports dependency and sample skips as non-evidence. Only `accepted` rows with recorded tests or manual evidence can be reflected as completed checklist items.
