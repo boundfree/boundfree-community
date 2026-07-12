@@ -57,6 +57,7 @@ Create `tests/scripts/test_m2_gpu_gate_evidence.py` with this content:
 import importlib.util
 import json
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -65,6 +66,7 @@ SCRIPT = ROOT / "scripts" / "collect_m2_gpu_gate_evidence.py"
 spec = importlib.util.spec_from_file_location("collect_m2_gpu_gate_evidence", SCRIPT)
 gpu_gate = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
+sys.modules[spec.name] = gpu_gate
 spec.loader.exec_module(gpu_gate)
 
 
@@ -481,7 +483,7 @@ def test_cli_from_json_refuses_offscreen_acceptance(tmp_path):
     assert "Development-only reasons: QT_QPA_PLATFORM=offscreen" in data["markdown"]
 
 
-def test_cli_from_json_can_classify_real_gpu_acceptance(tmp_path):
+def test_cli_from_json_without_acceptance_run_stays_open(tmp_path):
     payload = tmp_path / "benchmarks.json"
     payload.write_text(
         json.dumps(
@@ -500,7 +502,6 @@ def test_cli_from_json_can_classify_real_gpu_acceptance(tmp_path):
             str(SCRIPT),
             "--from-json",
             str(payload),
-            "--acceptance-run",
             "--environment-label",
             "real-linux-gpu",
             "--os-display",
@@ -531,9 +532,9 @@ def test_cli_from_json_can_classify_real_gpu_acceptance(tmp_path):
     )
 
     data = json.loads(result.stdout)
-    assert data["gate"] == "Passed"
-    assert data["development_reasons"] == []
-    assert "### 2026-07-12 real-linux-gpu" in data["markdown"]
+    assert data["gate"] == "Open"
+    assert data["development_reasons"] == ["dry-run"]
+    assert "Development-only reasons: dry-run" in data["markdown"]
 ```
 
 - [ ] **Step 2: Run tests and verify they fail**
