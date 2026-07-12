@@ -49,7 +49,7 @@
 - Produces: `BenchmarkResult`, `EvidenceMetadata`, `parse_benchmark_json(text: str) -> BenchmarkResult`, `classify_gate(results: list[BenchmarkResult], metadata: EvidenceMetadata, development_reasons: list[str]) -> str`, and `format_markdown_evidence(results: list[BenchmarkResult], metadata: EvidenceMetadata, gate: str, development_reasons: list[str]) -> str`.
 - Later tasks consume these functions from the same script for CLI behavior and report formatting.
 
-- [ ] **Step 1: Write failing model/classification tests**
+- [x] **Step 1: Write failing model/classification tests**
 
 Create `tests/scripts/test_m2_gpu_gate_evidence.py` with this content:
 
@@ -190,7 +190,7 @@ def test_format_markdown_evidence_preserves_metadata_and_scenarios():
     assert "- Channel visibility: smooth" in block
 ```
 
-- [ ] **Step 2: Run tests and verify they fail**
+- [x] **Step 2: Run tests and verify they fail**
 
 Run:
 
@@ -200,7 +200,7 @@ python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py -q
 
 Expected: FAIL because `scripts/collect_m2_gpu_gate_evidence.py` does not exist.
 
-- [ ] **Step 3: Implement model, parsing, classification, and Markdown formatting**
+- [x] **Step 3: Implement model, parsing, classification, and Markdown formatting**
 
 Create `scripts/collect_m2_gpu_gate_evidence.py` with this content:
 
@@ -370,7 +370,7 @@ def format_markdown_evidence(
     return "\n".join(lines)
 ```
 
-- [ ] **Step 4: Run tests and verify they pass**
+- [x] **Step 4: Run tests and verify they pass**
 
 Run:
 
@@ -380,7 +380,7 @@ python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py -q
 
 Expected: `6 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -402,7 +402,7 @@ git commit -m "feat: add m2 gpu gate evidence model"
 - Consumes: Task 1 model functions.
 - Produces: CLI options `--dry-run`, `--from-json`, `--run`, `--acceptance-run`, `--app`, `--frames`, `--environment-label`, `--os-display`, `--gpu-model`, `--driver-version`, `--qt-version`, `--cpu-observation`, `--gpu-observation`, `--scroll-note`, `--zoom-note`, `--channel-visibility-note`, and JSON output with `gate`, `development_reasons`, `results`, and `markdown`.
 
-- [ ] **Step 1: Write failing CLI tests**
+- [x] **Step 1: Write failing CLI tests**
 
 Append these tests to `tests/scripts/test_m2_gpu_gate_evidence.py`:
 
@@ -537,7 +537,7 @@ def test_cli_from_json_without_acceptance_run_stays_open(tmp_path):
     assert "Development-only reasons: dry-run" in data["markdown"]
 ```
 
-- [ ] **Step 2: Run tests and verify they fail**
+- [x] **Step 2: Run tests and verify they fail**
 
 Run:
 
@@ -547,7 +547,7 @@ python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py -q
 
 Expected: FAIL because the script has no CLI yet.
 
-- [ ] **Step 3: Implement CLI helpers and scenario runner**
+- [x] **Step 3: Implement CLI helpers and scenario runner**
 
 Replace `scripts/collect_m2_gpu_gate_evidence.py` with this complete content:
 
@@ -878,7 +878,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run CLI and native benchmark tests**
+- [x] **Step 4: Run CLI and native benchmark tests**
 
 Run:
 
@@ -889,7 +889,7 @@ python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
 
 Expected: pytest exits 0; dry-run exits 0 and prints JSON with `"gate": "Open"` and `"development_reasons": ["dry-run"]`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -912,7 +912,7 @@ git commit -m "feat: add m2 gpu gate evidence cli"
 - Consumes: `scripts/collect_m2_gpu_gate_evidence.py --dry-run` and `--from-json`.
 - Produces: documented M2-4 runbook and evidence block format. The feature checklist remains unchecked unless real evidence is recorded.
 
-- [ ] **Step 1: Write failing documentation consistency test**
+- [x] **Step 1: Write failing documentation consistency test**
 
 Append this test to `tests/scripts/test_m2_gpu_gate_evidence.py`:
 
@@ -926,7 +926,7 @@ def test_gpu_gate_report_documents_m2_4_runner_and_open_gate():
     assert "Development/offscreen results must not be copied as acceptance evidence." in report
 ```
 
-- [ ] **Step 2: Run focused test and verify it fails**
+- [x] **Step 2: Run focused test and verify it fails**
 
 Run:
 
@@ -936,7 +936,7 @@ python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py::test_gpu_gate_repo
 
 Expected: FAIL because `docs/reports/m2-rendering-gpu-gate.md` does not yet contain the M2-4 runbook section.
 
-- [ ] **Step 3: Update GPU gate report**
+- [x] **Step 3: Update GPU gate report**
 
 In `docs/reports/m2-rendering-gpu-gate.md`, add this section after `## M2-3 Status`:
 
@@ -978,7 +978,7 @@ Development/offscreen results must not be copied as acceptance evidence. If the 
 Current gate status: Open.
 ```
 
-- [ ] **Step 4: Update roadmap current phase**
+- [x] **Step 4: Update roadmap current phase**
 
 In `docs/roadmap.md`, replace the current phase paragraph with:
 
@@ -988,17 +988,17 @@ In `docs/roadmap.md`, replace the current phase paragraph with:
 
 Keep `last_updated: 2026-07-12`.
 
-- [ ] **Step 5: Confirm checklist remains conservative**
+- [x] **Step 5: Confirm checklist remains conservative**
 
 In `docs/feature-parity-checklist.md`, keep this row unchecked unless a real GPU/display result is recorded as `Passed` or `Accepted with note`:
 
 ```markdown
-- [ ] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
+- [x] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
 ```
 
 If no real GPU run was performed during M2-4 implementation, do not change this file.
 
-- [ ] **Step 6: Run documentation tests and commit**
+- [x] **Step 6: Run documentation tests and commit**
 
 Run:
 
@@ -1027,7 +1027,7 @@ git commit -m "docs: add m2 gpu gate runbook"
 - Consumes: completed Tasks 1-3.
 - Produces: verified M2-4 evidence flow on `master` or a feature branch ready to merge. Real GPU gate remains open unless real evidence has been recorded.
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 Run:
 
@@ -1051,7 +1051,7 @@ GPU gate dry-run exits 0 and reports Open
 git diff --check exits 0
 ```
 
-- [ ] **Step 2: Run a development benchmark sample**
+- [x] **Step 2: Run a development benchmark sample**
 
 Run:
 
@@ -1061,11 +1061,11 @@ QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-waveform-benchmark --chann
 
 Expected: command exits 0 and prints compact JSON with `"channels":64` and `"gate":"development-signal-only"`. Do not record this as acceptance evidence.
 
-- [ ] **Step 3: Mark plan execution checkboxes**
+- [x] **Step 3: Mark plan execution checkboxes**
 
 In `docs/superpowers/plans/2026-07-12-m2-4-real-gpu-gate.md`, mark completed task steps with `[x]` only after the commands above pass. Leave any real GPU acceptance wording conservative unless a real host run was actually recorded.
 
-- [ ] **Step 4: Commit verification status**
+- [x] **Step 4: Commit verification status**
 
 Run:
 
