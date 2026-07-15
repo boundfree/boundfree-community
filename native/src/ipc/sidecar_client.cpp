@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcessEnvironment>
+#include <QtGlobal>
 
 #include <cmath>
 #include <limits>
@@ -22,6 +23,18 @@ AppError appErrorFromJson(const QJsonObject& error) {
 
 AppError invalidSlicePayload(const QString& field, const QString& reason) {
     return makeError("protocol.invalid_params", {{"field", field}, {"reason", reason}});
+}
+
+QString sidecarPythonProgram() {
+    const QString configured = qEnvironmentVariable("BF_PYTHON_EXECUTABLE");
+    if (!configured.isEmpty()) {
+        return configured;
+    }
+#ifdef Q_OS_WIN
+    return "python";
+#else
+    return "python3";
+#endif
 }
 
 bool jsonValueToNonNegativeInt(const QJsonValue& value, int* out) {
@@ -63,7 +76,7 @@ QByteArray SidecarClient::readJsonLine(int timeoutMs) {
 SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int timeoutMs) {
     SidecarHelloResult result;
 
-    process_.setProgram("python3");
+    process_.setProgram(sidecarPythonProgram());
     process_.setArguments({"-m", "boundfree_sidecar", "--stdio"});
     process_.setWorkingDirectory(repoRoot_);
     process_.setProcessChannelMode(QProcess::SeparateChannels);
@@ -74,6 +87,8 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
     env.insert(
         "PYTHONPATH",
         existingPythonPath.isEmpty() ? sidecarPath : sidecarPath + QDir::listSeparator() + existingPythonPath);
+    env.insert("PYTHONIOENCODING", "utf-8");
+    env.insert("PYTHONUTF8", "1");
     process_.setProcessEnvironment(env);
 
     process_.start();

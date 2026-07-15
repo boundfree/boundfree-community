@@ -10,12 +10,27 @@
         "CMAKE_PREFIX_PATH": "${sourceDir}/../../toolchains/qt6",
         "CMAKE_CXX_COMPILER": "${sourceDir}/../../toolchains/qt6/bin/x86_64-conda-linux-gnu-c++"
       }
+    },
+    {
+      "name": "windows-msvc-release",
+      "displayName": "Windows MSVC 2022 Release",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build-windows",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT}"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "wsl2-qt6-conda",
       "configurePreset": "wsl2-qt6-conda"
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release",
+      "configuration": "Release"
     }
   ]
 }

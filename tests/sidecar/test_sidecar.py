@@ -100,6 +100,16 @@ def test_sidecar_stdio_process_handles_hello_and_unknown_method():
     assert bad_method["ok"] is False
     assert bad_method["error"]["code"] == "protocol.unknown_method"
 
+    process.stdin.write(json.dumps(
+        {"id": "stdio-3", "method": "未知方法", "params": {}},
+        ensure_ascii=False,
+    ) + "\n")
+    process.stdin.flush()
+    unicode_method = json.loads(process.stdout.readline())
+
+    assert unicode_method["id"] == "stdio-3"
+    assert unicode_method["error"]["params"]["method"] == "未知方法"
+
     process.stdin.close()
     assert process.wait(timeout=3) == 0
 
