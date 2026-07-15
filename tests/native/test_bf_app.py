@@ -44,6 +44,17 @@ def test_bf_app_smoke_ui_starts_offscreen():
     assert "smoke-ui-ok" in result.stdout
 
 
+def test_bf_app_normal_ui_flow_opens_generated_csv():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-ui", "--open-file", str(sample), "--language", "zh_CN"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert result.stdout.strip() == "smoke-ui-file-flow-ok format=CSV n_channels=2 t0=0 t1=0.1"
+
+
 def test_bf_app_smoke_sidecar_handshake():
     result = _run([str(APP), "--smoke-sidecar"])
 

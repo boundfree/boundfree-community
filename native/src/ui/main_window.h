@@ -9,11 +9,13 @@
 
 #include <QAction>
 #include <QCheckBox>
+#include <QDockWidget>
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QJsonObject>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QStackedWidget>
 #include <QSpinBox>
@@ -41,12 +43,18 @@ public:
     void setFirstVisibleChannelForBrowser(int channel);
     void setChannelVisibleForBrowser(int channel, bool visible);
     QString browserControlSummary() const;
+    void setOpenFileHandler(std::function<void(const QString&)> handler);
     void setWindowRequestHandler(std::function<void(const QString&, double, double)> handler);
     void setBrowserWindowSecondsForBrowser(double seconds);
+    void openPathForBrowser(const QString& path);
 
 private:
+    void buildFileMenu();
     void buildLanguageMenu();
     void buildBrowserControls();
+    void chooseFile();
+    void requestWindow(double t0);
+    void setLoading(bool loading);
     void refreshBrowserControls();
     void applyBrowserStateToWaveform();
     void rebuildChannelControls();
@@ -57,25 +65,41 @@ private:
     VersionInfo version_;
     I18nService* i18n_ = nullptr;
     QStackedWidget* centralStack_ = nullptr;
+    QWidget* emptyPage_ = nullptr;
     QLabel* centralLabel_ = nullptr;
+    QPushButton* openButton_ = nullptr;
     WaveformWidget* waveformWidget_ = nullptr;
+    QMenu* fileMenu_ = nullptr;
+    QAction* openAction_ = nullptr;
+    QAction* quitAction_ = nullptr;
     QMenu* languageMenu_ = nullptr;
     QVector<QAction*> languageActions_;
     QToolBar* browserToolbar_ = nullptr;
+    QAction* previousWindowAction_ = nullptr;
+    QAction* nextWindowAction_ = nullptr;
+    QLabel* positionLabel_ = nullptr;
+    QDoubleSpinBox* positionSpin_ = nullptr;
+    QLabel* timeWindowLabel_ = nullptr;
     QDoubleSpinBox* timeWindowSpin_ = nullptr;
+    QLabel* amplitudeLabel_ = nullptr;
     QDoubleSpinBox* amplitudeSpin_ = nullptr;
+    QLabel* firstChannelLabel_ = nullptr;
     QSpinBox* firstChannelSpin_ = nullptr;
+    QDockWidget* channelDock_ = nullptr;
     QScrollArea* channelScroll_ = nullptr;
     QWidget* channelListWidget_ = nullptr;
     QVBoxLayout* channelListLayout_ = nullptr;
     QVector<QCheckBox*> channelChecks_;
     bool refreshingBrowserControls_ = false;
+    std::function<void(const QString&)> openFileHandler_;
     std::function<void(const QString&, double, double)> windowRequestHandler_;
     WaveformViewState viewState_;
     FileOpenResult currentFile_;
     bool hasCurrentFile_ = false;
     QString statusKey_ = "app.status.ready";
     QJsonObject statusParams_;
+    QString emptyStateKey_ = "app.main.empty_state";
+    QJsonObject emptyStateParams_;
     AppError lastError_;
 };
 

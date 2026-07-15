@@ -3,13 +3,26 @@
   <context>
     <name>app</name>
     <message><source>app.window_title</source><translation>[!! {product_name} {version} !!]</translation></message>
-    <message><source>app.main.empty_state</source><translation>[!! {product_name} {version} is ruunnning !!]</translation></message>
+    <message><source>app.main.empty_state</source><translation>[!! Noo fiilee oopen !!]</translation></message>
+    <message><source>app.menu.file</source><translation>[!! Fiilee !!]</translation></message>
     <message><source>app.menu.language</source><translation>[!! Laanguaage !!]</translation></message>
+    <message><source>app.action.open</source><translation>[!! Oopeen Fiilee !!]</translation></message>
+    <message><source>app.action.quit</source><translation>[!! Quiit !!]</translation></message>
+    <message><source>app.dialog.open_title</source><translation>[!! Oopeen EEG Fiilee !!]</translation></message>
+    <message><source>app.dialog.open_filter</source><translation>[!! EEG fiilees (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;Aall fiilees (*) !!]</translation></message>
+    <message><source>app.browser.previous</source><translation>[!! Preevioous wiindoow !!]</translation></message>
+    <message><source>app.browser.next</source><translation>[!! Neext wiindoow !!]</translation></message>
+    <message><source>app.browser.position</source><translation>[!! Staart !!]</translation></message>
+    <message><source>app.browser.window</source><translation>[!! Wiindoow !!]</translation></message>
+    <message><source>app.browser.amplitude</source><translation>[!! Aampliitudee !!]</translation></message>
+    <message><source>app.browser.first_channel</source><translation>[!! Fiirst chaanneel !!]</translation></message>
+    <message><source>app.browser.channels</source><translation>[!! Chaanneels !!]</translation></message>
     <message><source>app.status.ready</source><translation>[!! Reaady !!]</translation></message>
     <message><source>app.status.sidecar_connecting</source><translation>[!! Coonneectiing siidecaar !!]</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>[!! Siidecaar coonneected !!]</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>[!! Siidecaar coonneectiion faailed: {error} !!]</translation></message>
     <message><source>app.status.file_opening</source><translation>[!! Opeeniing {path} !!]</translation></message>
+    <message><source>app.status.file_failed</source><translation>[!! Coould noot oopen fiilee: {error} !!]</translation></message>
     <message><source>app.status.file_opened</source><translation>[!! {format} | {fs} Hz | {n_channels} chaanneels !!]</translation></message>
     <message><source>app.status.file_window</source><translation>[!! {format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} viisiiblee chaanneels !!]</translation></message>
     <message><source>app.language.zh_CN</source><translation>[!! Siimplified Chiinese !!]</translation></message>

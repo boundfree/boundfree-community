@@ -3,13 +3,26 @@
   <context>
     <name>app</name>
     <message><source>app.window_title</source><translation>{product_name} {version}</translation></message>
-    <message><source>app.main.empty_state</source><translation>{product_name} {version} is running</translation></message>
+    <message><source>app.main.empty_state</source><translation>No file open</translation></message>
+    <message><source>app.menu.file</source><translation>File</translation></message>
     <message><source>app.menu.language</source><translation>Language</translation></message>
+    <message><source>app.action.open</source><translation>Open File</translation></message>
+    <message><source>app.action.quit</source><translation>Quit</translation></message>
+    <message><source>app.dialog.open_title</source><translation>Open EEG File</translation></message>
+    <message><source>app.dialog.open_filter</source><translation>EEG files (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;All files (*)</translation></message>
+    <message><source>app.browser.previous</source><translation>Previous window</translation></message>
+    <message><source>app.browser.next</source><translation>Next window</translation></message>
+    <message><source>app.browser.position</source><translation>Start</translation></message>
+    <message><source>app.browser.window</source><translation>Window</translation></message>
+    <message><source>app.browser.amplitude</source><translation>Amplitude</translation></message>
+    <message><source>app.browser.first_channel</source><translation>First channel</translation></message>
+    <message><source>app.browser.channels</source><translation>Channels</translation></message>
     <message><source>app.status.ready</source><translation>Ready</translation></message>
     <message><source>app.status.sidecar_connecting</source><translation>Connecting sidecar</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>Sidecar connected</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>Sidecar connection failed: {error}</translation></message>
     <message><source>app.status.file_opening</source><translation>Opening {path}</translation></message>
+    <message><source>app.status.file_failed</source><translation>Could not open file: {error}</translation></message>
     <message><source>app.status.file_opened</source><translation>{format} | {fs} Hz | {n_channels} channels</translation></message>
     <message><source>app.status.file_window</source><translation>{format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} visible channels</translation></message>
     <message><source>app.language.zh_CN</source><translation>Simplified Chinese</translation></message>

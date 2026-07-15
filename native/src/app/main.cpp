@@ -623,7 +623,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption smokeSidecarOpenOpt("smoke-sidecar-open", "Start sidecar, open a file, and exit.", "path");
     const QCommandLineOption smokeOpt("smoke-ui", "Start UI and exit automatically.");
     const QCommandLineOption languageOpt("language", "Set startup locale.", "locale", "zh_CN");
-    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt});
+    const QCommandLineOption openFileOpt("open-file", "Open an EEG file after startup.", "path");
+    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt, openFileOpt});
     parser.process(app);
 
     bf::I18nService i18n(repoRoot);
@@ -635,6 +636,30 @@ int main(int argc, char** argv) {
 
     bf::MainWindow window(version, &i18n);
     bf::SidecarClient sidecar(repoRoot);
+    bf::FileOpenController fileController(repoRoot, version);
+    window.setOpenFileHandler([&](const QString& path) {
+        fileController.openInitialWindow(path);
+    });
+    window.setWindowRequestHandler([&](const QString& path, double t0, double windowSeconds) {
+        fileController.openWindow(path, t0, windowSeconds);
+    });
+    QObject::connect(&fileController, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
+        window.showFileOpenResult(result);
+        if (parser.isSet(smokeOpt) && parser.isSet(openFileOpt)) {
+            std::cout << "smoke-ui-file-flow-ok format=" << result.session.format.toStdString()
+                      << " n_channels=" << result.session.nChannels
+                      << " t0=" << result.waveform.t0
+                      << " t1=" << result.waveform.t1 << "\n";
+            QTimer::singleShot(0, &app, &QCoreApplication::quit);
+        }
+    });
+    QObject::connect(&fileController, &bf::FileOpenController::failed, &window, [&](const bf::AppError& error) {
+        window.showFileOpenError(error);
+        if (parser.isSet(smokeOpt) && parser.isSet(openFileOpt)) {
+            std::cerr << "smoke-ui-file-flow-failed code=" << error.code.toStdString() << "\n";
+            QTimer::singleShot(0, &app, [&]() { app.exit(1); });
+        }
+    });
     window.show();
     window.setSidecarConnecting();
 
@@ -642,14 +667,23 @@ int main(int argc, char** argv) {
         const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
         if (hello.ok) {
             window.setSidecarConnected();
+            if (parser.isSet(openFileOpt)) {
+                window.openPathForBrowser(parser.value(openFileOpt));
+            }
         } else {
             window.setSidecarFailed(hello.error);
         }
     });
 
     if (parser.isSet(smokeOpt)) {
-        QTimer::singleShot(500, &app, [&]() {
+        const int smokeTimeoutMs = parser.isSet(openFileOpt) ? 30000 : 500;
+        QTimer::singleShot(smokeTimeoutMs, &app, [&]() {
             sidecar.stop();
+            if (parser.isSet(openFileOpt)) {
+                std::cerr << "smoke-ui-file-flow-failed code=timeout\n";
+                app.exit(1);
+                return;
+            }
             std::cout << "smoke-ui-ok\n";
             app.quit();
         });

@@ -4,12 +4,16 @@
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
+#include <QHBoxLayout>
 #include <QJsonObject>
+#include <QKeySequence>
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QMenuBar>
 #include <QStatusBar>
+#include <QStyle>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -21,16 +25,37 @@ namespace bf {
 MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* parent)
     : QMainWindow(parent), version_(version), i18n_(i18n) {
     centralStack_ = new QStackedWidget(this);
-    centralLabel_ = new QLabel(this);
+    emptyPage_ = new QWidget(centralStack_);
+    auto* emptyLayout = new QVBoxLayout(emptyPage_);
+    emptyLayout->setAlignment(Qt::AlignCenter);
+    centralLabel_ = new QLabel(emptyPage_);
     centralLabel_->setAlignment(Qt::AlignCenter);
+    openButton_ = new QPushButton(emptyPage_);
+    openButton_->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
+    openButton_->setMinimumWidth(140);
+    emptyLayout->addWidget(centralLabel_, 0, Qt::AlignCenter);
+    emptyLayout->addWidget(openButton_, 0, Qt::AlignCenter);
     waveformWidget_ = new WaveformWidget(this);
-    centralStack_->addWidget(centralLabel_);
+    centralStack_->addWidget(emptyPage_);
     centralStack_->addWidget(waveformWidget_);
     setCentralWidget(centralStack_);
+    buildFileMenu();
     buildLanguageMenu();
     buildBrowserControls();
+    connect(openButton_, &QPushButton::clicked, this, &MainWindow::chooseFile);
     resize(900, 560);
     retranslateUi();
+}
+
+void MainWindow::buildFileMenu() {
+    fileMenu_ = menuBar()->addMenu(QString());
+    openAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), QString());
+    openAction_->setShortcut(QKeySequence::Open);
+    connect(openAction_, &QAction::triggered, this, &MainWindow::chooseFile);
+    fileMenu_->addSeparator();
+    quitAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogCloseButton), QString());
+    quitAction_->setShortcut(QKeySequence::Quit);
+    connect(quitAction_, &QAction::triggered, this, &QWidget::close);
 }
 
 void MainWindow::buildLanguageMenu() {
@@ -52,33 +77,75 @@ void MainWindow::buildLanguageMenu() {
 
 void MainWindow::buildBrowserControls() {
     browserToolbar_ = addToolBar("Browser");
+    browserToolbar_->setMovable(false);
+
+    previousWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowBack), QString());
+    connect(previousWindowAction_, &QAction::triggered, this, [this]() {
+        requestWindow(currentFile_.waveform.t0 - viewState_.windowSeconds);
+    });
+    nextWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
+    connect(nextWindowAction_, &QAction::triggered, this, [this]() {
+        requestWindow(currentFile_.waveform.t0 + viewState_.windowSeconds);
+    });
+
+    positionLabel_ = new QLabel(this);
+    positionSpin_ = new QDoubleSpinBox(this);
+    positionSpin_->setRange(0.0, 0.0);
+    positionSpin_->setDecimals(3);
+    positionSpin_->setSingleStep(1.0);
+    positionSpin_->setSuffix(" s");
+    positionSpin_->setMinimumWidth(100);
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(positionLabel_);
+    browserToolbar_->addWidget(positionSpin_);
+    connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
+        if (!refreshingBrowserControls_) {
+            requestWindow(positionSpin_->value());
+        }
+    });
+
+    timeWindowLabel_ = new QLabel(this);
     timeWindowSpin_ = new QDoubleSpinBox(this);
     timeWindowSpin_->setRange(1.0, 120.0);
     timeWindowSpin_->setDecimals(0);
     timeWindowSpin_->setValue(viewState_.windowSeconds);
+    timeWindowSpin_->setSuffix(" s");
 
+    amplitudeLabel_ = new QLabel(this);
     amplitudeSpin_ = new QDoubleSpinBox(this);
     amplitudeSpin_->setRange(50.0, 5000.0);
     amplitudeSpin_->setDecimals(0);
     amplitudeSpin_->setValue(viewState_.amplitudeUv);
+    amplitudeSpin_->setSuffix(" uV");
 
+    firstChannelLabel_ = new QLabel(this);
     firstChannelSpin_ = new QSpinBox(this);
     firstChannelSpin_->setRange(0, 0);
     firstChannelSpin_->setValue(viewState_.firstVisibleChannel);
 
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(timeWindowLabel_);
     browserToolbar_->addWidget(timeWindowSpin_);
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(amplitudeLabel_);
     browserToolbar_->addWidget(amplitudeSpin_);
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(firstChannelLabel_);
     browserToolbar_->addWidget(firstChannelSpin_);
 
-    channelScroll_ = new QScrollArea(this);
+    channelDock_ = new QDockWidget(this);
+    channelDock_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    channelScroll_ = new QScrollArea(channelDock_);
     channelScroll_->setWidgetResizable(true);
-    channelScroll_->setMaximumWidth(180);
     channelListWidget_ = new QWidget(channelScroll_);
     channelListLayout_ = new QVBoxLayout(channelListWidget_);
     channelListLayout_->setContentsMargins(4, 4, 4, 4);
     channelListLayout_->setSpacing(2);
     channelScroll_->setWidget(channelListWidget_);
-    browserToolbar_->addWidget(channelScroll_);
+    channelDock_->setWidget(channelScroll_);
+    addDockWidget(Qt::LeftDockWidgetArea, channelDock_);
+    channelDock_->hide();
+    browserToolbar_->hide();
 
     connect(timeWindowSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
         if (refreshingBrowserControls_) {
@@ -87,7 +154,7 @@ void MainWindow::buildBrowserControls() {
         viewState_.setWindowSeconds(value);
         applyBrowserStateToWaveform();
         if (hasCurrentFile_ && windowRequestHandler_) {
-            windowRequestHandler_(currentFile_.session.path, currentFile_.waveform.t0, viewState_.windowSeconds);
+            requestWindow(currentFile_.waveform.t0);
         }
     });
     connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
@@ -106,6 +173,49 @@ void MainWindow::buildBrowserControls() {
     });
 }
 
+void MainWindow::chooseFile() {
+    const QString path = QFileDialog::getOpenFileName(
+        this,
+        i18n_->text("app.dialog.open_title"),
+        QString(),
+        i18n_->text("app.dialog.open_filter"));
+    if (!path.isEmpty()) {
+        openPathForBrowser(path);
+    }
+}
+
+void MainWindow::openPathForBrowser(const QString& path) {
+    if (path.isEmpty() || !openFileHandler_) {
+        return;
+    }
+    showFileOpenLoading(path);
+    openFileHandler_(path);
+}
+
+void MainWindow::requestWindow(double t0) {
+    if (!hasCurrentFile_ || !windowRequestHandler_) {
+        return;
+    }
+    double requestedT0 = std::max(0.0, t0);
+    if (currentFile_.session.duration > 0.0) {
+        const double maxT0 = std::max(0.0, currentFile_.session.duration - viewState_.windowSeconds);
+        requestedT0 = std::min(requestedT0, maxT0);
+    }
+    statusKey_ = "app.status.file_opening";
+    statusParams_ = {{"path", currentFile_.session.path}};
+    retranslateUi();
+    windowRequestHandler_(currentFile_.session.path, requestedT0, viewState_.windowSeconds);
+}
+
+void MainWindow::setLoading(bool loading) {
+    if (openAction_ != nullptr) {
+        openAction_->setEnabled(!loading);
+    }
+    if (openButton_ != nullptr) {
+        openButton_->setEnabled(!loading);
+    }
+}
+
 void MainWindow::refreshBrowserControls() {
     refreshingBrowserControls_ = true;
     if (timeWindowSpin_ != nullptr) {
@@ -121,6 +231,11 @@ void MainWindow::refreshBrowserControls() {
         const int maxFirst = std::max(0, channelCount() - 1);
         firstChannelSpin_->setRange(0, maxFirst);
         firstChannelSpin_->setValue(std::min(viewState_.firstVisibleChannel, maxFirst));
+    }
+    if (positionSpin_ != nullptr) {
+        QSignalBlocker blocker(positionSpin_);
+        positionSpin_->setRange(0.0, std::max(0.0, currentFile_.session.duration - viewState_.windowSeconds));
+        positionSpin_->setValue(currentFile_.waveform.t0);
     }
     refreshingBrowserControls_ = false;
     rebuildChannelControls();
@@ -172,9 +287,11 @@ void MainWindow::rebuildChannelControls() {
 
 void MainWindow::retranslateUi() {
     setWindowTitle(i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}}));
-    centralLabel_->setText(i18n_->text(
-        "app.main.empty_state",
-        {{"product_name", version_.productName}, {"version", version_.version}}));
+    centralLabel_->setText(i18n_->text(emptyStateKey_, emptyStateParams_));
+    fileMenu_->setTitle(i18n_->text("app.menu.file"));
+    openAction_->setText(i18n_->text("app.action.open"));
+    openButton_->setText(i18n_->text("app.action.open"));
+    quitAction_->setText(i18n_->text("app.action.quit"));
     languageMenu_->setTitle(i18n_->text("app.menu.language"));
     for (QAction* action : languageActions_) {
         const QString locale = action->data().toString();
@@ -182,7 +299,15 @@ void MainWindow::retranslateUi() {
         action->setChecked(locale == i18n_->locale());
     }
 
-    if (statusKey_ == "app.status.sidecar_failed") {
+    previousWindowAction_->setToolTip(i18n_->text("app.browser.previous"));
+    nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
+    positionLabel_->setText(i18n_->text("app.browser.position"));
+    timeWindowLabel_->setText(i18n_->text("app.browser.window"));
+    amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
+    firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
+    channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
+
+    if (statusKey_ == "app.status.sidecar_failed" || statusKey_ == "app.status.file_failed") {
         statusBar()->showMessage(i18n_->text(
             statusKey_,
             {{"error", i18n_->text(QString("error.%1").arg(lastError_.code), lastError_.params)}}));
@@ -211,22 +336,35 @@ void MainWindow::setSidecarFailed(const AppError& error) {
 }
 
 void MainWindow::showFileOpenLoading(const QString& path) {
+    setLoading(true);
     statusKey_ = "app.status.file_opening";
     statusParams_ = {{"path", path}};
     retranslateUi();
 }
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
+    setLoading(false);
     currentFile_ = result;
     hasCurrentFile_ = true;
     waveformWidget_->setSlice(result.waveform);
     centralStack_->setCurrentWidget(waveformWidget_);
+    browserToolbar_->show();
+    channelDock_->show();
     refreshBrowserControls();
     applyBrowserStateToWaveform();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
-    setSidecarFailed(error);
+    setLoading(false);
+    statusKey_ = "app.status.file_failed";
+    lastError_ = error;
+    statusParams_ = {};
+    if (!hasCurrentFile_) {
+        emptyStateKey_ = QString("error.%1").arg(error.code);
+        emptyStateParams_ = error.params;
+        centralStack_->setCurrentWidget(emptyPage_);
+    }
+    retranslateUi();
 }
 
 void MainWindow::setBrowserViewState(const WaveformViewState& state) {
@@ -245,6 +383,10 @@ void MainWindow::setChannelVisibleForBrowser(int channel, bool visible) {
     viewState_.setChannelVisible(channel, visible);
     refreshBrowserControls();
     applyBrowserStateToWaveform();
+}
+
+void MainWindow::setOpenFileHandler(std::function<void(const QString&)> handler) {
+    openFileHandler_ = std::move(handler);
 }
 
 void MainWindow::setWindowRequestHandler(std::function<void(const QString&, double, double)> handler) {

@@ -3,13 +3,26 @@
   <context>
     <name>app</name>
     <message><source>app.window_title</source><translation>{product_name} {version}</translation></message>
-    <message><source>app.main.empty_state</source><translation>{product_name} {version} 已启动</translation></message>
+    <message><source>app.main.empty_state</source><translation>未打开文件</translation></message>
+    <message><source>app.menu.file</source><translation>文件</translation></message>
     <message><source>app.menu.language</source><translation>语言</translation></message>
+    <message><source>app.action.open</source><translation>打开文件</translation></message>
+    <message><source>app.action.quit</source><translation>退出</translation></message>
+    <message><source>app.dialog.open_title</source><translation>打开脑电文件</translation></message>
+    <message><source>app.dialog.open_filter</source><translation>脑电文件 (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;所有文件 (*)</translation></message>
+    <message><source>app.browser.previous</source><translation>上一窗口</translation></message>
+    <message><source>app.browser.next</source><translation>下一窗口</translation></message>
+    <message><source>app.browser.position</source><translation>起始</translation></message>
+    <message><source>app.browser.window</source><translation>窗口</translation></message>
+    <message><source>app.browser.amplitude</source><translation>幅值</translation></message>
+    <message><source>app.browser.first_channel</source><translation>首通道</translation></message>
+    <message><source>app.browser.channels</source><translation>通道</translation></message>
     <message><source>app.status.ready</source><translation>就绪</translation></message>
     <message><source>app.status.sidecar_connecting</source><translation>正在连接边车</translation></message>
     <message><source>app.status.sidecar_connected</source><translation>边车已连接</translation></message>
     <message><source>app.status.sidecar_failed</source><translation>边车连接失败：{error}</translation></message>
     <message><source>app.status.file_opening</source><translation>正在打开 {path}</translation></message>
+    <message><source>app.status.file_failed</source><translation>打开文件失败：{error}</translation></message>
     <message><source>app.status.file_opened</source><translation>{format} | {fs} Hz | {n_channels} 通道</translation></message>
     <message><source>app.status.file_window</source><translation>{format} | {t0}-{t1} 秒 | +/-{amplitude} uV | {n_visible} 个可见通道</translation></message>
     <message><source>app.language.zh_CN</source><translation>简体中文</translation></message>
