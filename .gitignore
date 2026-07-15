@@ -1,4 +1,8 @@
 native/build/
+native/build-windows/
+native/spike/build-windows/
+local-samples/public/data/
+*.egg-info/
 __pycache__/
 .pytest_cache/
 *.pyc
