@@ -8,6 +8,17 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
+set(BF_DSP_SOURCES
+    src/dsp/biquad.cpp
+    src/dsp/filter_design.cpp
+    src/dsp/npy_io.cpp
+    src/dsp/pipeline.cpp
+    src/dsp/reference.cpp
+)
+
+add_library(bf_dsp STATIC ${BF_DSP_SOURCES})
+target_include_directories(bf_dsp PUBLIC src)
+
 add_executable(bf_app
     src/app/main.cpp
     src/controller/file_open_controller.cpp
@@ -40,4 +51,8 @@ add_executable(bf_app
 
 target_include_directories(bf_app PRIVATE src)
 target_compile_definitions(bf_app PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets)
+target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets bf_dsp)
+
+add_executable(m3_dsp_test src/dsp/m3_dsp_test.cpp)
+target_include_directories(m3_dsp_test PRIVATE src)
+target_link_libraries(m3_dsp_test PRIVATE bf_dsp)

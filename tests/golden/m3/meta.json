@@ -1,0 +1,50 @@
+{
+  "fs": 1000.0,
+  "seed": 20260721,
+  "shape": [
+    4,
+    2048
+  ],
+  "config": {
+    "fs": 1000.0,
+    "n_channels": 4,
+    "reference_mode": "car",
+    "notch_freqs": [
+      50.0,
+      100.0,
+      150.0
+    ],
+    "bandpass": [
+      {
+        "enabled": true,
+        "low": 0.5,
+        "high": 40.0
+      },
+      {
+        "enabled": false,
+        "low": 1.0,
+        "high": 30.0
+      },
+      {
+        "enabled": true,
+        "low": 1.0,
+        "high": 70.0
+      },
+      {
+        "enabled": true,
+        "low": 5.0,
+        "high": 20.0
+      }
+    ]
+  },
+  "tolerances": {
+    "coeff_rtol": 1e-09,
+    "coeff_atol": 1e-12,
+    "offline_rtol": 1e-06,
+    "offline_atol": 1e-08,
+    "realtime_rtol": 1e-05,
+    "realtime_atol": 1e-07
+  },
+  "generator": "scripts/generate_m3_golden.py",
+  "product_version_note": "Product version stays 0.1.0-dev; do not bump for M3."
+}
