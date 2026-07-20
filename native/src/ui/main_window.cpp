@@ -1,8 +1,10 @@
 #include "ui/main_window.h"
 
+#include "controller/processing_view_state.h"
 #include "render/waveform_slice.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QHBoxLayout>
@@ -42,6 +44,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildFileMenu();
     buildLanguageMenu();
     buildBrowserControls();
+    buildProcessingControls();
     connect(openButton_, &QPushButton::clicked, this, &MainWindow::chooseFile);
     resize(900, 560);
     retranslateUi();
@@ -171,6 +174,86 @@ void MainWindow::buildBrowserControls() {
         viewState_.setFirstVisibleChannel(value);
         applyBrowserStateToWaveform();
     });
+}
+
+
+void MainWindow::buildProcessingControls() {
+    referenceLabel_ = new QLabel(this);
+    referenceCombo_ = new QComboBox(this);
+    referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Raw));
+    referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Car));
+    referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Bipolar));
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(referenceLabel_);
+    browserToolbar_->addWidget(referenceCombo_);
+
+    notchEnableCheck_ = new QCheckBox(this);
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(notchEnableCheck_);
+    notchBandChecks_.clear();
+    notchBandSpins_.clear();
+    for (const NotchBandUi& band : processingState_.notchBands) {
+        auto* chk = new QCheckBox(this);
+        chk->setChecked(band.enabled);
+        auto* spin = new QDoubleSpinBox(this);
+        spin->setRange(1.0, 500.0);
+        spin->setDecimals(1);
+        spin->setValue(band.frequency);
+        spin->setSuffix(" Hz");
+        spin->setMaximumWidth(90);
+        notchBandChecks_.push_back(chk);
+        notchBandSpins_.push_back(spin);
+        browserToolbar_->addWidget(chk);
+        browserToolbar_->addWidget(spin);
+    }
+    notchHarmonicsCheck_ = new QCheckBox(this);
+    notchHarmonicsSpin_ = new QSpinBox(this);
+    notchHarmonicsSpin_->setRange(2, 20);
+    notchHarmonicsSpin_->setValue(processingState_.notchHarmonicMultiple);
+    notchHarmonicsSpin_->setMaximumWidth(70);
+    browserToolbar_->addWidget(notchHarmonicsCheck_);
+    browserToolbar_->addWidget(notchHarmonicsSpin_);
+
+    bandpassEnableCheck_ = new QCheckBox(this);
+    bandpassLowSpin_ = new QDoubleSpinBox(this);
+    bandpassLowSpin_->setRange(0.1, 400.0);
+    bandpassLowSpin_->setDecimals(1);
+    bandpassLowSpin_->setValue(processingState_.bandpassLow);
+    bandpassLowSpin_->setSuffix(" Hz");
+    bandpassLowSpin_->setMaximumWidth(90);
+    bandpassHighSpin_ = new QDoubleSpinBox(this);
+    bandpassHighSpin_->setRange(0.5, 500.0);
+    bandpassHighSpin_->setDecimals(1);
+    bandpassHighSpin_->setValue(processingState_.bandpassHigh);
+    bandpassHighSpin_->setSuffix(" Hz");
+    bandpassHighSpin_->setMaximumWidth(90);
+    browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(bandpassEnableCheck_);
+    browserToolbar_->addWidget(bandpassLowSpin_);
+    browserToolbar_->addWidget(bandpassHighSpin_);
+
+    auto connectChanged = [this](auto* widget) {
+        using W = std::remove_pointer_t<decltype(widget)>;
+        if constexpr (std::is_same_v<W, QComboBox>) {
+            connect(widget, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int) { onProcessingUiChanged(); });
+        }
+    };
+    connect(referenceCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int) {
+        onProcessingUiChanged();
+    });
+    connect(notchEnableCheck_, &QCheckBox::toggled, this, [this](bool) { onProcessingUiChanged(); });
+    for (QCheckBox* chk : notchBandChecks_) {
+        connect(chk, &QCheckBox::toggled, this, [this](bool) { onProcessingUiChanged(); });
+    }
+    for (QDoubleSpinBox* spin : notchBandSpins_) {
+        connect(spin, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double) { onProcessingUiChanged(); });
+    }
+    connect(notchHarmonicsCheck_, &QCheckBox::toggled, this, [this](bool) { onProcessingUiChanged(); });
+    connect(notchHarmonicsSpin_, qOverload<int>(&QSpinBox::valueChanged), this, [this](int) { onProcessingUiChanged(); });
+    connect(bandpassEnableCheck_, &QCheckBox::toggled, this, [this](bool) { onProcessingUiChanged(); });
+    connect(bandpassLowSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double) { onProcessingUiChanged(); });
+    connect(bandpassHighSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double) { onProcessingUiChanged(); });
+    refreshProcessingControls();
 }
 
 void MainWindow::chooseFile() {
@@ -306,6 +389,15 @@ void MainWindow::retranslateUi() {
     amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
     channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
+    if (referenceLabel_ != nullptr) {
+        referenceLabel_->setText(i18n_->text("app.processing.reference"));
+        referenceCombo_->setItemText(0, i18n_->text("app.processing.ref.raw"));
+        referenceCombo_->setItemText(1, i18n_->text("app.processing.ref.car"));
+        referenceCombo_->setItemText(2, i18n_->text("app.processing.ref.bipolar"));
+        notchEnableCheck_->setText(i18n_->text("app.processing.notch"));
+        notchHarmonicsCheck_->setText(i18n_->text("app.processing.harmonics"));
+        bandpassEnableCheck_->setText(i18n_->text("app.processing.bandpass"));
+    }
 
     if (statusKey_ == "app.status.sidecar_failed" || statusKey_ == "app.status.file_failed") {
         statusBar()->showMessage(i18n_->text(
@@ -345,13 +437,14 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     setLoading(false);
     currentFile_ = result;
+    rawWaveform_ = result.waveform;
     hasCurrentFile_ = true;
-    waveformWidget_->setSlice(result.waveform);
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
     channelDock_->show();
     refreshBrowserControls();
-    applyBrowserStateToWaveform();
+    refreshProcessingControls();
+    applyProcessingAndDisplay();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
@@ -418,6 +511,73 @@ void MainWindow::applyBrowserStateToWaveform() {
         {"n_visible", static_cast<int>(model.data.size())},
     };
     retranslateUi();
+}
+
+void MainWindow::refreshProcessingControls() {
+    if (referenceCombo_ == nullptr) {
+        return;
+    }
+    refreshingProcessingControls_ = true;
+    const int refIndex = referenceCombo_->findData(static_cast<int>(processingState_.referenceMode));
+    referenceCombo_->setCurrentIndex(refIndex >= 0 ? refIndex : 0);
+    notchEnableCheck_->setChecked(processingState_.notchEnabled);
+    for (int i = 0; i < notchBandChecks_.size() && i < static_cast<int>(processingState_.notchBands.size()); ++i) {
+        notchBandChecks_[i]->setChecked(processingState_.notchBands[static_cast<std::size_t>(i)].enabled);
+        notchBandSpins_[i]->setValue(processingState_.notchBands[static_cast<std::size_t>(i)].frequency);
+        const bool enableBand = processingState_.notchEnabled;
+        notchBandChecks_[i]->setEnabled(enableBand);
+        notchBandSpins_[i]->setEnabled(enableBand);
+    }
+    notchHarmonicsCheck_->setChecked(processingState_.notchHarmonics);
+    notchHarmonicsSpin_->setValue(processingState_.notchHarmonicMultiple);
+    notchHarmonicsCheck_->setEnabled(processingState_.notchEnabled);
+    notchHarmonicsSpin_->setEnabled(processingState_.notchEnabled && processingState_.notchHarmonics);
+    bandpassEnableCheck_->setChecked(processingState_.globalBandpassEnabled);
+    bandpassLowSpin_->setValue(processingState_.bandpassLow);
+    bandpassHighSpin_->setValue(processingState_.bandpassHigh);
+    bandpassLowSpin_->setEnabled(processingState_.globalBandpassEnabled);
+    bandpassHighSpin_->setEnabled(processingState_.globalBandpassEnabled);
+    refreshingProcessingControls_ = false;
+}
+
+void MainWindow::onProcessingUiChanged() {
+    if (refreshingProcessingControls_) {
+        return;
+    }
+    processingState_.referenceMode = static_cast<dsp::ReferenceMode>(referenceCombo_->currentData().toInt());
+    processingState_.notchEnabled = notchEnableCheck_->isChecked();
+    processingState_.notchBands.resize(static_cast<std::size_t>(notchBandChecks_.size()));
+    for (int i = 0; i < notchBandChecks_.size(); ++i) {
+        processingState_.notchBands[static_cast<std::size_t>(i)].enabled = notchBandChecks_[i]->isChecked();
+        processingState_.notchBands[static_cast<std::size_t>(i)].frequency = notchBandSpins_[i]->value();
+    }
+    processingState_.notchHarmonics = notchHarmonicsCheck_->isChecked();
+    processingState_.notchHarmonicMultiple = notchHarmonicsSpin_->value();
+    processingState_.globalBandpassEnabled = bandpassEnableCheck_->isChecked();
+    processingState_.bandpassLow = bandpassLowSpin_->value();
+    processingState_.bandpassHigh = bandpassHighSpin_->value();
+    refreshProcessingControls();
+    applyProcessingAndDisplay();
+}
+
+void MainWindow::applyProcessingAndDisplay() {
+    if (!hasCurrentFile_) {
+        return;
+    }
+    currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+    waveformWidget_->setSlice(currentFile_.waveform);
+    rebuildChannelControls();
+    applyBrowserStateToWaveform();
+}
+
+void MainWindow::setProcessingViewStateForBrowser(const ProcessingViewState& state) {
+    processingState_ = state;
+    refreshProcessingControls();
+    applyProcessingAndDisplay();
+}
+
+QString MainWindow::processingSummary() const {
+    return processingState_.summary();
 }
 
 QString MainWindow::browserStatusText() const {

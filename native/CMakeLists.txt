@@ -25,6 +25,8 @@ add_executable(bf_app
     src/controller/file_open_controller.h
     src/controller/file_session.cpp
     src/controller/file_session.h
+    src/controller/processing_view_state.cpp
+    src/controller/processing_view_state.h
     src/controller/request_generation.cpp
     src/controller/request_generation.h
     src/controller/waveform_view_state.cpp

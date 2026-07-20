@@ -1,6 +1,7 @@
 #pragma once
 
 #include "controller/file_open_controller.h"
+#include "controller/processing_view_state.h"
 #include "controller/waveform_view_state.h"
 #include "core/app_error.h"
 #include "core/version.h"
@@ -9,6 +10,7 @@
 
 #include <QAction>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDockWidget>
 #include <QDoubleSpinBox>
 #include <QLabel>
@@ -43,21 +45,28 @@ public:
     void setFirstVisibleChannelForBrowser(int channel);
     void setChannelVisibleForBrowser(int channel, bool visible);
     QString browserControlSummary() const;
+    QString processingSummary() const;
     void setOpenFileHandler(std::function<void(const QString&)> handler);
     void setWindowRequestHandler(std::function<void(const QString&, double, double)> handler);
     void setBrowserWindowSecondsForBrowser(double seconds);
     void openPathForBrowser(const QString& path);
+    void setProcessingViewStateForBrowser(const ProcessingViewState& state);
+    ProcessingViewState processingViewState() const { return processingState_; }
 
 private:
     void buildFileMenu();
     void buildLanguageMenu();
     void buildBrowserControls();
+    void buildProcessingControls();
     void chooseFile();
     void requestWindow(double t0);
     void setLoading(bool loading);
     void refreshBrowserControls();
+    void refreshProcessingControls();
     void applyBrowserStateToWaveform();
+    void applyProcessingAndDisplay();
     void rebuildChannelControls();
+    void onProcessingUiChanged();
     QString channelCheckSummary() const;
     QString visibleDisplayChannelSummary() const;
     int channelCount() const;
@@ -90,11 +99,26 @@ private:
     QWidget* channelListWidget_ = nullptr;
     QVBoxLayout* channelListLayout_ = nullptr;
     QVector<QCheckBox*> channelChecks_;
+
+    QLabel* referenceLabel_ = nullptr;
+    QComboBox* referenceCombo_ = nullptr;
+    QCheckBox* notchEnableCheck_ = nullptr;
+    QVector<QCheckBox*> notchBandChecks_;
+    QVector<QDoubleSpinBox*> notchBandSpins_;
+    QCheckBox* notchHarmonicsCheck_ = nullptr;
+    QSpinBox* notchHarmonicsSpin_ = nullptr;
+    QCheckBox* bandpassEnableCheck_ = nullptr;
+    QDoubleSpinBox* bandpassLowSpin_ = nullptr;
+    QDoubleSpinBox* bandpassHighSpin_ = nullptr;
+
     bool refreshingBrowserControls_ = false;
+    bool refreshingProcessingControls_ = false;
     std::function<void(const QString&)> openFileHandler_;
     std::function<void(const QString&, double, double)> windowRequestHandler_;
     WaveformViewState viewState_;
+    ProcessingViewState processingState_;
     FileOpenResult currentFile_;
+    WaveformSlice rawWaveform_;
     bool hasCurrentFile_ = false;
     QString statusKey_ = "app.status.ready";
     QJsonObject statusParams_;

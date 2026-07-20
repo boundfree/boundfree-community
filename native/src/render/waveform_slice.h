@@ -1,5 +1,6 @@
 #pragma once
 
+#include "controller/processing_view_state.h"
 #include "controller/waveform_view_state.h"
 #include "ipc/sidecar_client.h"
 
@@ -28,6 +29,7 @@ struct WaveformDisplayModel {
 };
 
 WaveformSlice waveformSliceFromSidecar(const SidecarOpenResult& session, const SidecarSliceResult& slice);
+WaveformSlice applyProcessingToSlice(const WaveformSlice& raw, const ProcessingViewState& processing);
 WaveformDisplayModel waveformDisplayModel(
     const WaveformSlice& slice,
     const WaveformViewState& state,

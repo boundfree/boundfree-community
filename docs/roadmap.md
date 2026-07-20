@@ -29,9 +29,8 @@ v1 stable 不承诺自研硬件采集闭环。自研 `ADS1299-4 + ESP32-C3`、BL
 ## 当前阶段
 
 M2 真实 GPU/显示门禁已关闭（`Passed`，2026-07-21，Windows 10 + RTX 4070 SUPER）。
-M2-5 已收口：CSV/HDF5/EDF/BDF/BrainVision/EEGLAB/FIF 生成夹具或样本证据为 `accepted`；Intan RHS 与 BBK/DAT/LSD 仍为 `not-implemented`。
-静态浏览侧已具备异步 open/slice、显示模型同窗口缓存与 GPU 门禁。
-下一阶段进入 M3 DSP（重参考/陷波/带通与黄金文件比对）。完整回放模式仍归 M5。
+M2-5 已收口。M3 DSP 算法层与静态浏览离线处理已落地：黄金文件比对通过，主窗口可切换参考/陷波/带通。
+产品版本保持 `0.1.0-dev`。下一阶段进入 M4 频谱分析；完整回放仍归 M5。
 
 ## 阶段路线
 

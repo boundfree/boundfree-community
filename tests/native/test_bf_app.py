@@ -453,3 +453,9 @@ def test_bf_app_smoke_waveform_benchmark_json_reports_gate_status():
     assert data["frames"] == 2
     assert data["fps"] > 0
     assert data["gate"] == "development-signal-only"
+
+
+def test_bf_app_smoke_processing_offline():
+    result = _run([str(APP), "--smoke-processing-offline"])
+    assert "smoke-processing-offline-ok" in result.stdout
+    assert "ref=car" in result.stdout

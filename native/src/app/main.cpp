@@ -1,6 +1,7 @@
 #include "controller/file_open_controller.h"
 #include "controller/file_session.h"
 #include "controller/request_generation.h"
+#include "controller/processing_view_state.h"
 #include "controller/waveform_view_state.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
@@ -25,6 +26,7 @@
 #include <QTimer>
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -394,6 +396,47 @@ int main(int argc, char** argv) {
                       << " samples=" << (model.data.empty() ? 0 : model.data.front().size())
                       << " window=" << model.t0 << "-" << model.t1
                       << " amplitude=" << model.amplitudeUv << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-processing-offline") {
+            QCoreApplication app(argc, argv);
+            bf::WaveformSlice raw;
+            raw.fs = 1000.0;
+            raw.t0 = 0.0;
+            raw.t1 = 0.256;
+            raw.channelNames = {"ch1", "ch2", "ch3", "ch4"};
+            raw.data.assign(4, std::vector<float>(256, 0.0f));
+            for (int ch = 0; ch < 4; ++ch) {
+                for (int i = 0; i < 256; ++i) {
+                    const double t = static_cast<double>(i) / raw.fs;
+                    raw.data[static_cast<std::size_t>(ch)][static_cast<std::size_t>(i)] = static_cast<float>(
+                        0.5 * std::sin(2.0 * 3.14159265358979323846 * 50.0 * t + 0.1 * ch)
+                        + 0.1 * ch);
+                }
+            }
+            bf::ProcessingViewState processing;
+            processing.referenceMode = bf::dsp::ReferenceMode::Car;
+            processing.notchEnabled = true;
+            processing.notchBands = {{true, 50.0}, {false, 100.0}, {false, 150.0}};
+            processing.globalBandpassEnabled = true;
+            processing.bandpassLow = 0.5;
+            processing.bandpassHigh = 40.0;
+            const bf::WaveformSlice filtered = bf::applyProcessingToSlice(raw, processing);
+            double mean = 0.0;
+            int count = 0;
+            for (const auto& row : filtered.data) {
+                for (float v : row) {
+                    mean += static_cast<double>(v);
+                    ++count;
+                }
+            }
+            if (count > 0) {
+                mean /= static_cast<double>(count);
+            }
+            std::cout << "smoke-processing-offline-ok channels=" << filtered.data.size()
+                      << " names=" << filtered.channelNames.join(",").toStdString()
+                      << " mean=" << mean
+                      << " summary=" << processing.summary().toStdString() << "\n";
             return 0;
         }
         if (arg == "--smoke-waveform-display-model-cache") {

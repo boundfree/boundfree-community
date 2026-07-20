@@ -25,6 +25,14 @@
     <message><source>app.status.file_failed</source><translation>Could not open file: {error}</translation></message>
     <message><source>app.status.file_opened</source><translation>{format} | {fs} Hz | {n_channels} channels</translation></message>
     <message><source>app.status.file_window</source><translation>{format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} visible channels</translation></message>
+    <message><source>app.processing.reference</source><translation>參考</translation></message>
+    <message><source>app.processing.ref.raw</source><translation>原始</translation></message>
+    <message><source>app.processing.ref.car</source><translation>CAR</translation></message>
+    <message><source>app.processing.ref.bipolar</source><translation>雙極</translation></message>
+    <message><source>app.processing.notch</source><translation>陷波</translation></message>
+    <message><source>app.processing.harmonics</source><translation>諧波</translation></message>
+    <message><source>app.processing.bandpass</source><translation>帶通</translation></message>
+    <message><source>app.processing.panel</source><translation>處理</translation></message>
     <message><source>app.language.zh_CN</source><translation>Simplified Chinese</translation></message>
     <message><source>app.language.zh_TW</source><translation>Traditional Chinese</translation></message>
     <message><source>app.language.en_US</source><translation>English</translation></message>

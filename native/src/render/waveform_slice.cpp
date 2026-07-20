@@ -1,5 +1,9 @@
 #include "render/waveform_slice.h"
 
+#include "controller/processing_view_state.h"
+#include "dsp/pipeline.h"
+#include "dsp/reference.h"
+
 #include <algorithm>
 
 namespace bf {
@@ -13,6 +17,28 @@ WaveformSlice waveformSliceFromSidecar(const SidecarOpenResult& session, const S
     result.channelNames = session.chNames;
     result.data = slice.data;
     return result;
+}
+
+WaveformSlice applyProcessingToSlice(const WaveformSlice& raw, const ProcessingViewState& processing) {
+    WaveformSlice out = raw;
+    if (raw.data.empty() || raw.fs <= 0.0) {
+        return out;
+    }
+
+    dsp::ProcessingPipeline pipeline;
+    const int nChannels = static_cast<int>(raw.data.size());
+    pipeline.rebuild(processing.toConfig(raw.fs, nChannels));
+    const dsp::Matrix filtered = pipeline.processOffline(matrixFromFloatChannels(raw.data));
+    out.data = floatChannelsFromMatrix(filtered);
+
+    std::vector<std::string> names;
+    names.reserve(static_cast<std::size_t>(raw.channelNames.size()));
+    for (const QString& name : raw.channelNames) {
+        names.push_back(name.toStdString());
+    }
+    out.channelNames = qStringListFromStd(
+        dsp::effectiveChannelNames(names, processing.referenceMode, static_cast<int>(out.data.size())));
+    return out;
 }
 
 WaveformDisplayModel waveformDisplayModel(
@@ -33,7 +59,7 @@ WaveformDisplayModel waveformDisplayModel(
         if (!state.isChannelVisible(channel)) {
             continue;
         }
-        model.data.push_back(slice.data[channel]);
+        model.data.push_back(slice.data[static_cast<std::size_t>(channel)]);
         if (channel < slice.channelNames.size()) {
             model.channelNames.push_back(slice.channelNames[channel]);
         } else {

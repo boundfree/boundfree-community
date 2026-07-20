@@ -25,6 +25,14 @@
     <message><source>app.status.file_failed</source><translation>[!! Coould noot oopen fiilee: {error} !!]</translation></message>
     <message><source>app.status.file_opened</source><translation>[!! {format} | {fs} Hz | {n_channels} chaanneels !!]</translation></message>
     <message><source>app.status.file_window</source><translation>[!! {format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} viisiiblee chaanneels !!]</translation></message>
+    <message><source>app.processing.reference</source><translation>[!! Reference !!]</translation></message>
+    <message><source>app.processing.ref.raw</source><translation>[!! Raw !!]</translation></message>
+    <message><source>app.processing.ref.car</source><translation>[!! CAR !!]</translation></message>
+    <message><source>app.processing.ref.bipolar</source><translation>[!! Bipolar !!]</translation></message>
+    <message><source>app.processing.notch</source><translation>[!! Notch !!]</translation></message>
+    <message><source>app.processing.harmonics</source><translation>[!! Harmonics !!]</translation></message>
+    <message><source>app.processing.bandpass</source><translation>[!! Bandpass !!]</translation></message>
+    <message><source>app.processing.panel</source><translation>[!! Processing !!]</translation></message>
     <message><source>app.language.zh_CN</source><translation>[!! Siimplified Chiinese !!]</translation></message>
     <message><source>app.language.zh_TW</source><translation>[!! Traaditiional Chiinese !!]</translation></message>
     <message><source>app.language.en_US</source><translation>[!! Eenglish !!]</translation></message>
