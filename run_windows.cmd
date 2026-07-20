@@ -2,7 +2,7 @@
 setlocal
 
 if not defined QT_ROOT set "QT_ROOT=E:\QT\6.8.2\msvc2022_64"
-if not defined BF_PYTHON_EXECUTABLE set "BF_PYTHON_EXECUTABLE=E:\venvs\boundfree-eeg-native\Scripts\python.exe"
+if not defined BF_PYTHON_EXECUTABLE set "BF_PYTHON_EXECUTABLE=%~dp0.venv\Scripts\python.exe"
 
 set "PATH=%QT_ROOT%\bin;%PATH%"
 set "APP=%~dp0native\build-windows\Release\bf_app.exe"
