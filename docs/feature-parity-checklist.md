@@ -39,17 +39,17 @@ v1.1/v2：
 
 ### v1 必达对齐格式
 
-- [ ] EDF / BDF 打开（元数据 fs/通道/时长一致）
-- [ ] BrainVision (.vhdr) 打开
-- [ ] EEGLAB (.set) 打开
-- [ ] FIF (.fif) 打开
+- [x] EDF / BDF 打开（元数据 fs/通道/时长一致）
+- [x] BrainVision (.vhdr) 打开
+- [x] EEGLAB (.set) 打开
+- [x] FIF (.fif) 打开
 - [ ] Intan RHS (.rhs) 打开 + 刺激/数字事件提取
 - [ ] BBK/DAT/LSD (.dat) 打开 + 量程换算
-- [ ] HDF5 (.h5/.hdf5) 打开（可配 dataset/通道轴）
+- [x] HDF5 (.h5/.hdf5) 打开（可配 dataset/通道轴）
 - [x] CSV 打开（可去时间列）
 - [x] 懒加载：open 只取元数据，get_slice 按需读
 - [x] 单位统一换算为 μV
-- [ ] 后台异步加载不阻塞 UI
+- [x] 后台异步加载不阻塞 UI
 
 ### v1 目标格式与样本门禁
 
@@ -66,8 +66,8 @@ v1.1/v2：
 - [x] 时间窗 1–120s（默认 10s）
 - [x] 幅值缩放（默认 ±200μV）
 - [x] 静态浏览和回放刷新（帧率达 M0 基线）
-- [ ] 回放/静态双模式
-- [ ] 时间轴/顶点缓冲复用（相同窗口不重建）
+- [ ] 回放/静态双模式（真播放/seek/倍速属 M5；M2 仅静态浏览）
+- [x] 时间轴/顶点缓冲复用（相同窗口不重建显示模型）
 - [x] 大窗口或高采样率数据使用 MinMax、LTTB 或等价抽稀策略
 - [x] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
 

@@ -16,7 +16,7 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 }
 ```
 
-当前阶段：M0 技术验证已完成，M1-A 基础契约与可启动骨架已具备可验证基础。
+当前阶段：M0 技术验证与 M2 真实 GPU 门禁已完成；M2-5 格式证据与静态浏览收口已完成。下一阶段为 M3 DSP。
 
 v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
