@@ -3,7 +3,7 @@ title: M2 真实 GPU 渲染门禁记录
 doc_type: report
 status: active
 owner: BoundFree
-last_updated: 2026-07-12
+last_updated: 2026-07-21
 ---
 
 # M2 真实 GPU 渲染门禁记录
@@ -59,9 +59,38 @@ Real GPU result rows must include:
 
 | Date | Environment | Channels | fs | Window | FPS | CPU | GPU | Interaction Notes | Gate |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-07-12 | Not yet run on real GPU/display | 256 | 1000 Hz | 4 s | not recorded | not recorded | not recorded | not recorded | Open |
+| 2026-07-21 | Windows 10 Pro 19045 desktop / NVIDIA GeForce RTX 4070 SUPER / driver 32.0.15.1062 / Qt 6.8.2 | 64 | 1000 Hz | 4 s | 112.99 | Task Manager while benchmark | Task Manager GPU 3D while benchmark | scroll/zoom/channel visibility: smooth | Passed |
+| 2026-07-21 | Windows 10 Pro 19045 desktop / NVIDIA GeForce RTX 4070 SUPER / driver 32.0.15.1062 / Qt 6.8.2 | 128 | 1000 Hz | 4 s | 110.50 | Task Manager while benchmark | Task Manager GPU 3D while benchmark | scroll/zoom/channel visibility: smooth | Passed |
+| 2026-07-21 | Windows 10 Pro 19045 desktop / NVIDIA GeForce RTX 4070 SUPER / driver 32.0.15.1062 / Qt 6.8.2 | 256 | 1000 Hz | 4 s | 111.32 | Task Manager while benchmark | Task Manager GPU 3D while benchmark | scroll/zoom/channel visibility: smooth | Passed |
 
-Offscreen benchmark smoke passed in development, but this does not close the real GPU/display gate.
+### 2026-07-21 real-windows-gpu
+
+- Gate: Passed
+- OS/display: Windows 10 Pro 19045 desktop
+- GPU: NVIDIA GeForce RTX 4070 SUPER, driver 32.0.15.1062
+- Qt: 6.8.2
+- CPU: Task Manager while benchmark
+- GPU usage: Task Manager GPU 3D while benchmark
+
+| Channels | fs | Window | Frames | FPS |
+| --- | --- | --- | --- | --- |
+| 64 | 1000 | 4 | 120 | 112.99 |
+| 128 | 1000 | 4 | 120 | 110.50 |
+| 256 | 1000 | 4 | 120 | 111.32 |
+
+Interaction notes:
+
+- Scroll: smooth
+- Zoom: smooth
+- Channel visibility: smooth
+
+Commands:
+
+- `native\build-windows\Release\bf_app.exe --smoke-waveform-benchmark --channels 64 --fs 1000 --seconds 4 --frames 120 --json`
+- `native\build-windows\Release\bf_app.exe --smoke-waveform-benchmark --channels 128 --fs 1000 --seconds 4 --frames 120 --json`
+- `native\build-windows\Release\bf_app.exe --smoke-waveform-benchmark --channels 256 --fs 1000 --seconds 4 --frames 120 --json`
+
+Acceptance run used `scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run` with `development_reasons: []` and `gate: Passed`.
 
 ## M2-3 Status
 
@@ -101,4 +130,4 @@ The script runs these required scenarios:
 
 Development/offscreen results must not be copied as acceptance evidence. If the run happens under WSL, Xvfb, Mesa software rendering, or `QT_QPA_PLATFORM=offscreen`, the gate remains `Open`.
 
-Current gate status: Open.
+Current gate status: Passed.

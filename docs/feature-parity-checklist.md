@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-07-12
+last_updated: 2026-07-21
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -65,11 +65,11 @@ v1.1/v2：
 - [x] 通道显隐
 - [x] 时间窗 1–120s（默认 10s）
 - [x] 幅值缩放（默认 ±200μV）
-- [ ] 静态浏览和回放刷新（帧率达 M0 基线）
+- [x] 静态浏览和回放刷新（帧率达 M0 基线）
 - [ ] 回放/静态双模式
 - [ ] 时间轴/顶点缓冲复用（相同窗口不重建）
 - [x] 大窗口或高采样率数据使用 MinMax、LTTB 或等价抽稀策略
-- [ ] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
+- [x] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
 
 ## 信号处理 — M3
 

@@ -3,7 +3,7 @@ title: 项目路线图
 doc_type: plan
 status: active
 owner: BoundFree
-last_updated: 2026-07-12
+last_updated: 2026-07-21
 ---
 
 # 项目路线图
@@ -15,7 +15,7 @@ last_updated: 2026-07-12
 当前版本为 `0.1.0-dev`。M0 技术验证已完成，结论为 conditional go：
 
 - IPC：可进入 M1，初版采用 stdio + JSON 控制消息 + 长度前缀二进制 payload。
-- 渲染：Xvfb/Mesa 软件 OpenGL 已验证代码路径，但真实 GPU 验收尚未完成。
+- 渲染：真实 Windows GPU/显示验收已通过（见 [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md)）。
 - 旧版性能画像：MNE 打开文件延迟和 Python DSP 热点已确认，后续必须异步打开文件并迁移 DSP。
 
 ## v1 产品边界
@@ -28,7 +28,7 @@ v1 stable 不承诺自研硬件采集闭环。自研 `ADS1299-4 + ESP32-C3`、BL
 
 ## 当前阶段
 
-当前阶段进入 M2-4：真实 GPU/显示门禁证据包、64/128/256 通道 benchmark 聚合、gate 分类和报告格式收口。M2-4 仍不代表完整 M2 验收；只有 `docs/reports/m2-rendering-gpu-gate.md` 记录真实 GPU/显示环境通过或带说明接受后，M2 波形浏览门禁才能关闭。
+M2 真实 GPU/显示门禁已关闭（`Passed`，2026-07-21，Windows 10 + RTX 4070 SUPER）。M2 仍未整体完成：格式样本验收、静态浏览剩余项与完整功能对齐仍在进行。后续优先收口格式证据与 M2 剩余浏览项，再进入 M3 DSP。
 
 ## 阶段路线
 
