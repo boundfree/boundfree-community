@@ -7,16 +7,56 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EDF_SAMPLE = ROOT.parent / "boundfree-eeg-upper-computer" / "samples" / "mark.edf"
+GENERATED = ROOT / "tests" / "fixtures" / "generated"
 
 
 def dependency_available(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
 
 
+def generated_exists(name: str) -> bool:
+    return (GENERATED / name).exists()
+
+
 def collect() -> dict[str, dict[str, object]]:
     h5py_available = dependency_available("h5py")
     mne_available = dependency_available("mne")
     edf_sample_available = EDF_SAMPLE.exists()
+    generated_edf = generated_exists("simple_eeg.edf")
+    generated_bdf = generated_exists("simple_eeg.bdf")
+    generated_vhdr = generated_exists("simple_eeg.vhdr")
+    generated_set = generated_exists("simple_eeg.set")
+    generated_fif = generated_exists("simple_eeg.fif")
+
+    edf_accepted = mne_available and (edf_sample_available or generated_edf)
+    edf_evidence = []
+    if edf_accepted:
+        if edf_sample_available:
+            edf_evidence.append("tests/sidecar/test_mne_reader.py")
+        if generated_edf:
+            edf_evidence.append("tests/sidecar/test_mne_generated_formats.py")
+
+    def mne_generated(status_name: str, filename: str) -> dict[str, object]:
+        if not mne_available:
+            return {
+                "status": "dependency-skipped",
+                "evidence": [],
+                "required_dependency": "mne==1.12.1",
+                "skip_is_acceptance_evidence": False,
+            }
+        if not generated_exists(filename):
+            return {
+                "status": "sample-skipped",
+                "evidence": [],
+                "sample": str(GENERATED / filename),
+                "skip_is_acceptance_evidence": False,
+            }
+        return {
+            "status": "accepted",
+            "evidence": ["tests/sidecar/test_mne_generated_formats.py"],
+            "sample": str(GENERATED / filename),
+            "skip_is_acceptance_evidence": False,
+        }
 
     return {
         "CSV": {
@@ -32,17 +72,17 @@ def collect() -> dict[str, dict[str, object]]:
         },
         "EDF": {
             "status": "accepted"
-            if (mne_available and edf_sample_available)
+            if edf_accepted
             else ("dependency-skipped" if not mne_available else "sample-skipped"),
-            "evidence": ["tests/sidecar/test_mne_reader.py"] if (mne_available and edf_sample_available) else [],
+            "evidence": edf_evidence,
             "required_dependency": "mne==1.12.1",
-            "sample": str(EDF_SAMPLE),
+            "sample": str(EDF_SAMPLE if edf_sample_available else GENERATED / "simple_eeg.edf"),
             "skip_is_acceptance_evidence": False,
         },
-        "BDF": {"status": "sample-skipped", "evidence": [], "skip_is_acceptance_evidence": False},
-        "BrainVision": {"status": "sample-skipped", "evidence": [], "skip_is_acceptance_evidence": False},
-        "EEGLAB": {"status": "sample-skipped", "evidence": [], "skip_is_acceptance_evidence": False},
-        "MNE FIF": {"status": "sample-skipped", "evidence": [], "skip_is_acceptance_evidence": False},
+        "BDF": mne_generated("BDF", "simple_eeg.bdf"),
+        "BrainVision": mne_generated("BrainVision", "simple_eeg.vhdr"),
+        "EEGLAB": mne_generated("EEGLAB", "simple_eeg.set"),
+        "MNE FIF": mne_generated("MNE FIF", "simple_eeg.fif"),
         "Intan RHS": {"status": "not-implemented", "evidence": [], "skip_is_acceptance_evidence": False},
         "BBK/DAT/LSD": {"status": "not-implemented", "evidence": [], "skip_is_acceptance_evidence": False},
     }
