@@ -39,6 +39,8 @@ def _run(args, env_overrides=None):
     env = os.environ.copy()
     env.setdefault("PYTHONPATH", str(ROOT / "sidecar"))
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUTF8", "1")
     if env_overrides:
         env.update(env_overrides)
     return subprocess.run(
@@ -46,6 +48,8 @@ def _run(args, env_overrides=None):
         cwd=ROOT,
         env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,
