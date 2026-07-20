@@ -396,6 +396,75 @@ int main(int argc, char** argv) {
                       << " amplitude=" << model.amplitudeUv << "\n";
             return 0;
         }
+        if (arg == "--smoke-waveform-display-model-cache") {
+            QApplication app(argc, argv);
+            bf::WaveformWidget widget;
+            bf::WaveformSlice slice;
+            slice.fs = 100.0;
+            slice.t0 = 0.0;
+            slice.t1 = 0.04;
+            slice.unit = "uV";
+            slice.channelNames = {"ch1", "ch2"};
+            slice.data = {{0.0f, 1.0f, 2.0f, 3.0f}, {10.0f, 11.0f, 12.0f, 13.0f}};
+            bf::WaveformViewState state;
+            state.setAmplitudeUv(200.0);
+            widget.setSlice(slice);
+            widget.setViewState(state);
+            const int before = widget.displayModelBuildCount();
+            const bf::WaveformDisplayModel first = widget.cachedDisplayModel(32);
+            const int afterFirst = widget.displayModelBuildCount();
+            const bf::WaveformDisplayModel second = widget.cachedDisplayModel(32);
+            const int afterSecond = widget.displayModelBuildCount();
+            QImage image(widget.size(), QImage::Format_ARGB32);
+            widget.render(&image);
+            widget.render(&image);
+            const int afterPaint = widget.displayModelBuildCount();
+            std::cout << "smoke-waveform-display-model-cache-ok"
+                      << " builds_before=" << before
+                      << " builds_after_first=" << afterFirst
+                      << " builds_after_second=" << afterSecond
+                      << " builds_after_paint=" << afterPaint
+                      << " channels=" << first.channelNames.join(",").toStdString()
+                      << " same_channels=" << (first.channelNames == second.channelNames ? "true" : "false")
+                      << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-async-open-nonblocking" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::FileOpenController controller(repoRoot, version);
+            int exitCode = 1;
+            int timerTicks = 0;
+            bool loadedSeen = false;
+            QTimer ticker;
+            ticker.setInterval(5);
+            QObject::connect(&ticker, &QTimer::timeout, &app, [&]() {
+                ++timerTicks;
+            });
+            QObject::connect(&controller, &bf::FileOpenController::loaded, &app, [&](const bf::FileOpenResult&) {
+                loadedSeen = true;
+                std::cout << "smoke-async-open-nonblocking-ok timer_ticks=" << timerTicks << "\n";
+                exitCode = (timerTicks > 0) ? 0 : 1;
+                if (timerTicks <= 0) {
+                    std::cerr << "smoke-async-open-nonblocking-failed code=no_event_loop_progress\n";
+                }
+                app.quit();
+            });
+            QObject::connect(&controller, &bf::FileOpenController::failed, &app, [&](const bf::AppError& error) {
+                std::cerr << "smoke-async-open-nonblocking-failed code=" << error.code.toStdString() << "\n";
+                exitCode = 1;
+                app.quit();
+            });
+            ticker.start();
+            controller.openInitialWindow(QString::fromLocal8Bit(argv[i + 1]), 0.05);
+            QTimer::singleShot(10000, &app, [&]() {
+                std::cerr << "smoke-async-open-nonblocking-failed code=timeout loaded="
+                          << (loadedSeen ? "true" : "false") << " ticks=" << timerTicks << "\n";
+                exitCode = 1;
+                app.quit();
+            });
+            app.exec();
+            return exitCode;
+        }
         if (arg == "--smoke-waveform-benchmark") {
             QApplication app(argc, argv);
             const int channels = valueAfter(i + 1, "--channels", "256").toInt();

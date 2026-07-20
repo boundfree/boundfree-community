@@ -13,12 +13,33 @@ WaveformWidget::WaveformWidget(QWidget* parent) : QWidget(parent) {
 
 void WaveformWidget::setSlice(const WaveformSlice& slice) {
     slice_ = slice;
+    invalidateDisplayModelCache();
     update();
 }
 
 void WaveformWidget::setViewState(const WaveformViewState& state) {
     viewState_ = state;
+    invalidateDisplayModelCache();
     update();
+}
+
+const WaveformDisplayModel& WaveformWidget::cachedDisplayModel(int maxVisibleChannels) const {
+    ensureDisplayModel(maxVisibleChannels);
+    return *cachedModel_;
+}
+
+void WaveformWidget::invalidateDisplayModelCache() {
+    cachedModel_.reset();
+    cachedMaxVisibleChannels_ = -1;
+}
+
+void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
+    if (cachedModel_.has_value() && cachedMaxVisibleChannels_ == maxVisibleChannels) {
+        return;
+    }
+    cachedModel_ = waveformDisplayModel(slice_, viewState_, maxVisibleChannels);
+    cachedMaxVisibleChannels_ = maxVisibleChannels;
+    ++displayModelBuildCount_;
 }
 
 void WaveformWidget::paintEvent(QPaintEvent*) {
@@ -26,7 +47,7 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
     painter.fillRect(rect(), QColor("#111827"));
     painter.setRenderHint(QPainter::Antialiasing, false);
 
-    const WaveformDisplayModel model = waveformDisplayModel(slice_, viewState_, 32);
+    const WaveformDisplayModel& model = cachedDisplayModel(32);
     const int nChannels = static_cast<int>(model.data.size());
     if (nChannels <= 0) {
         return;

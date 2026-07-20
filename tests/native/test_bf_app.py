@@ -298,6 +298,30 @@ def test_bf_app_smoke_waveform_display_model_filters_visible_channels():
         "window=0-0.04 amplitude=200"
     )
 
+def test_bf_app_smoke_waveform_display_model_cache_reuses_same_window():
+    result = _run(
+        [str(APP), "--smoke-waveform-display-model-cache"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert result.stdout.strip() == (
+        "smoke-waveform-display-model-cache-ok builds_before=0 builds_after_first=1 "
+        "builds_after_second=1 builds_after_paint=1 channels=ch1,ch2 same_channels=true"
+    )
+
+
+def test_bf_app_smoke_async_open_allows_event_loop_progress():
+    sample = ROOT / "tests" / "fixtures" / "generated" / "simple_eeg.csv"
+
+    result = _run(
+        [str(APP), "--smoke-async-open-nonblocking", str(sample)],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+
+    assert "smoke-async-open-nonblocking-ok timer_ticks=" in result.stdout
+    ticks = int(result.stdout.strip().split("timer_ticks=")[1])
+    assert ticks > 0
+
 
 def test_bf_app_smoke_ui_browser_controls_show_window_and_scale():
     result = _run(
