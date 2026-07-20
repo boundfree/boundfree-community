@@ -22,7 +22,9 @@ def main(argv: list[str] | None = None) -> int:
         if hasattr(sys.stdin, "reconfigure"):
             sys.stdin.reconfigure(encoding="utf-8")
         if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8")
+            sys.stdout.reconfigure(encoding="utf-8", line_buffering=True, write_through=True)
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
         return run_stdio(sys.stdin, sys.stdout)
 
     parser.print_help()

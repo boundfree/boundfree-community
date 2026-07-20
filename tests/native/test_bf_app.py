@@ -1,19 +1,44 @@
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BUILD_DIR = ROOT / "native" / "build"
-APP = BUILD_DIR / "bf_app"
+
+
+def _candidate_apps() -> list[Path]:
+    return [
+        ROOT / "native" / "build-windows" / "Release" / "bf_app.exe",
+        ROOT / "native" / "build-windows" / "Debug" / "bf_app.exe",
+        ROOT / "native" / "build" / "Release" / "bf_app.exe",
+        ROOT / "native" / "build" / "Debug" / "bf_app.exe",
+        ROOT / "native" / "build" / "bf_app.exe",
+        ROOT / "native" / "build" / "bf_app",
+    ]
+
+
+def _resolve_app() -> Path:
+    existing = [path for path in _candidate_apps() if path.exists()]
+    if not existing:
+        listed = "\n".join(f"- {path}" for path in _candidate_apps())
+        raise FileNotFoundError(
+            "bf_app executable was not found. Build the native app first.\n"
+            f"Checked:\n{listed}"
+        )
+    return existing[0]
+
+
+APP = _resolve_app()
 
 
 def _run(args, env_overrides=None):
     env = os.environ.copy()
     env.setdefault("PYTHONPATH", str(ROOT / "sidecar"))
+    env.setdefault("QT_QPA_PLATFORM", "offscreen")
     if env_overrides:
         env.update(env_overrides)
     return subprocess.run(

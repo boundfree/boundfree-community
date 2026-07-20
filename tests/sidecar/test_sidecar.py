@@ -73,45 +73,63 @@ def test_sidecar_missing_field_returns_error_envelope():
 
 
 def test_sidecar_stdio_process_handles_hello_and_unknown_method():
+    env = {
+        **SIDECAR_ENV,
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONUTF8": "1",
+    }
     process = subprocess.Popen(
-        [sys.executable, "-m", "boundfree_sidecar", "--stdio"],
+        [sys.executable, "-u", "-m", "boundfree_sidecar", "--stdio"],
         cwd=ROOT,
-        env=SIDECAR_ENV,
+        env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        bufsize=1,
     )
     assert process.stdin is not None
     assert process.stdout is not None
 
-    process.stdin.write(json.dumps({"id": "stdio-1", "method": "hello", "params": {}}) + "\n")
-    process.stdin.flush()
-    hello = json.loads(process.stdout.readline())
-    assert hello["id"] == "stdio-1"
-    assert hello["ok"] is True
-    assert hello["result"]["product_version"] == "0.1.0-dev"
-    assert hello["result"]["ipc_protocol_version"] == 1
+    try:
+        process.stdin.write(json.dumps({"id": "stdio-1", "method": "hello", "params": {}}) + "\n")
+        process.stdin.flush()
+        hello_line = process.stdout.readline()
+        assert hello_line, f"sidecar produced no stdout for hello; stderr={process.stderr.read() if process.stderr else ''}"
+        hello = json.loads(hello_line)
+        assert hello["id"] == "stdio-1"
+        assert hello["ok"] is True
+        assert hello["result"]["product_version"] == "0.1.0-dev"
+        assert hello["result"]["ipc_protocol_version"] == 1
 
-    process.stdin.write(json.dumps({"id": "stdio-2", "method": "bad_method", "params": {}}) + "\n")
-    process.stdin.flush()
-    bad_method = json.loads(process.stdout.readline())
-    assert bad_method["id"] == "stdio-2"
-    assert bad_method["ok"] is False
-    assert bad_method["error"]["code"] == "protocol.unknown_method"
+        process.stdin.write(json.dumps({"id": "stdio-2", "method": "bad_method", "params": {}}) + "\n")
+        process.stdin.flush()
+        bad_line = process.stdout.readline()
+        assert bad_line, f"sidecar produced no stdout for unknown method; stderr={process.stderr.read() if process.stderr else ''}"
+        bad_method = json.loads(bad_line)
+        assert bad_method["id"] == "stdio-2"
+        assert bad_method["ok"] is False
+        assert bad_method["error"]["code"] == "protocol.unknown_method"
 
-    process.stdin.write(json.dumps(
-        {"id": "stdio-3", "method": "未知方法", "params": {}},
-        ensure_ascii=False,
-    ) + "\n")
-    process.stdin.flush()
-    unicode_method = json.loads(process.stdout.readline())
+        process.stdin.write(json.dumps(
+            {"id": "stdio-3", "method": "未知方法", "params": {}},
+            ensure_ascii=False,
+        ) + "\n")
+        process.stdin.flush()
+        unicode_line = process.stdout.readline()
+        assert unicode_line, f"sidecar produced no stdout for unicode method; stderr={process.stderr.read() if process.stderr else ''}"
+        unicode_method = json.loads(unicode_line)
 
-    assert unicode_method["id"] == "stdio-3"
-    assert unicode_method["error"]["params"]["method"] == "未知方法"
-
-    process.stdin.close()
-    assert process.wait(timeout=3) == 0
+        assert unicode_method["id"] == "stdio-3"
+        assert unicode_method["error"]["params"]["method"] == "未知方法"
+    finally:
+        if process.stdin is not None and not process.stdin.closed:
+            process.stdin.close()
+        if process.poll() is None:
+            process.wait(timeout=3)
+        assert process.returncode == 0
 
 
 def test_sidecar_open_requires_path_param():
