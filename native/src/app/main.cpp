@@ -3,6 +3,7 @@
 #include "controller/request_generation.h"
 #include "controller/processing_view_state.h"
 #include "controller/waveform_view_state.h"
+#include "controller/analysis_service.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
@@ -10,6 +11,7 @@
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
+#include "ui/analysis_widgets.h"
 #include "ui/waveform_widget.h"
 
 #include <QApplication>
@@ -28,6 +30,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <QEventLoop>
 #include <vector>
 
 int main(int argc, char** argv) {
@@ -64,6 +67,138 @@ int main(int argc, char** argv) {
             QCoreApplication app(argc, argv);
             std::cout << version.displayString().toStdString() << "\n";
             return 0;
+        }
+        if (arg == "--smoke-m4-analysis") {
+            QCoreApplication app(argc, argv);
+            bf::dsp::Matrix data = bf::dsp::makeMatrix(2, 2048);
+            for (int sample = 0; sample < 2048; ++sample) {
+                const double t = static_cast<double>(sample) / 250.0;
+                data[0][static_cast<std::size_t>(sample)] = std::sin(2.0 * 3.14159265358979323846 * 10.0 * t);
+                data[1][static_cast<std::size_t>(sample)] = 0.8 * std::sin(2.0 * 3.14159265358979323846 * 10.0 * t + 0.2);
+            }
+            bf::AnalysisService service;
+            QEventLoop loop;
+            QTimer timeout;
+            timeout.setSingleShot(true);
+            bool completed = false;
+            QString failure;
+            QObject::connect(&service, &bf::AnalysisService::completed, &loop, [&](int, const bf::AnalysisResult& result) {
+                completed = result.kind == bf::AnalysisKind::Psd && !result.spectrum.values.empty();
+                loop.quit();
+            });
+            QObject::connect(&service, &bf::AnalysisService::failed, &loop, [&](int, const QString& code, const QString&) {
+                failure = code;
+                loop.quit();
+            });
+            QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+            bf::AnalysisRequest psd;
+            psd.kind = bf::AnalysisKind::Psd;
+            psd.data = data;
+            psd.fs = 250.0;
+            psd.channel = 0;
+            service.request(psd);
+            timeout.start(3000);
+            loop.exec();
+            if (!completed) {
+                std::cerr << "smoke-m4-analysis-failed code=" << failure.toStdString() << "\n";
+                return 1;
+            }
+            QEventLoop generationLoop;
+            QTimer generationTimeout;
+            generationTimeout.setSingleShot(true);
+            int completedGeneration = 0;
+            QObject::connect(&service, &bf::AnalysisService::completed, &generationLoop, [&](int generation, const bf::AnalysisResult&) {
+                completedGeneration = generation;
+                generationLoop.quit();
+            });
+            QObject::connect(&generationTimeout, &QTimer::timeout, &generationLoop, &QEventLoop::quit);
+            bf::AnalysisRequest first = psd;
+            first.kind = bf::AnalysisKind::BandTrend;
+            first.epochSamples = 2;
+            const int stale = service.request(first);
+            const int latest = service.request(psd);
+            generationTimeout.start(3000);
+            generationLoop.exec();
+            if (completedGeneration != latest || stale == latest) {
+                std::cerr << "smoke-m4-analysis-failed latest_generation=" << completedGeneration << "\n";
+                return 1;
+            }
+            bool cancelledCallback = false;
+            QEventLoop cancelLoop;
+            QTimer cancelTimeout;
+            cancelTimeout.setSingleShot(true);
+            QObject::connect(&service, &bf::AnalysisService::completed, &cancelLoop, [&](int, const bf::AnalysisResult&) { cancelledCallback = true; });
+            QObject::connect(&service, &bf::AnalysisService::failed, &cancelLoop, [&](int, const QString&, const QString&) { cancelledCallback = true; });
+            QObject::connect(&cancelTimeout, &QTimer::timeout, &cancelLoop, &QEventLoop::quit);
+            service.request(first);
+            service.cancel();
+            cancelTimeout.start(100);
+            cancelLoop.exec();
+            if (cancelledCallback) {
+                std::cerr << "smoke-m4-analysis-failed cancel_callback=true\n";
+                return 1;
+            }
+            QEventLoop errorLoop;
+            QTimer errorTimeout;
+            errorTimeout.setSingleShot(true);
+            QString errorCode;
+            QObject::connect(&service, &bf::AnalysisService::failed, &errorLoop, [&](int, const QString& code, const QString&) {
+                errorCode = code;
+                errorLoop.quit();
+            });
+            QObject::connect(&errorTimeout, &QTimer::timeout, &errorLoop, &QEventLoop::quit);
+            bf::AnalysisRequest invalid = psd;
+            invalid.kind = bf::AnalysisKind::Coherence;
+            invalid.channelB = 0;
+            service.request(invalid);
+            errorTimeout.start(3000);
+            errorLoop.exec();
+            if (errorCode != "analysis.same_channel") {
+                std::cerr << "smoke-m4-analysis-failed same_channel=" << errorCode.toStdString() << "\n";
+                return 1;
+            }
+            std::cout << "smoke-m4-analysis-ok psd=true latest_request=true cancel=true same_channel=" << errorCode.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-m4-render") {
+            QApplication app(argc, argv);
+            bf::dsp::Spectrum spectrum;
+            spectrum.frequencies = {0.0, 5.0, 10.0, 20.0, 40.0};
+            spectrum.values = {0.1, 0.5, 1.0, 0.4, 0.2};
+            bf::SpectrumWidget spectrumWidget;
+            spectrumWidget.resize(480, 260);
+            spectrumWidget.setSpectrum(spectrum, "PSD", "uV^2/Hz");
+            bf::dsp::Spectrogram spectrogram;
+            spectrogram.frequencies = {0.0, 10.0, 20.0};
+            spectrogram.times = {0.0, 1.0, 2.0};
+            spectrogram.values = {{-30.0, -20.0, -10.0}, {-20.0, -10.0, 0.0}, {-10.0, 0.0, 10.0}};
+            bf::SpectrogramWidget spectrogramWidget;
+            spectrogramWidget.resize(480, 260);
+            spectrogramWidget.setSpectrogram(spectrogram);
+            bf::BandTrendWidget trendWidget;
+            trendWidget.resize(480, 260);
+            trendWidget.setTrend({0.5, 1.5, 2.5}, {{1.0, 2.0, 3.0}, {2.0, 1.0, 2.0}, {1.0, 3.0, 1.0}, {0.5, 1.0, 1.5}, {0.2, 0.4, 0.6}});
+            const auto nonBackground = [](QWidget& widget) {
+                QImage image(widget.size(), QImage::Format_ARGB32);
+                image.fill(QColor("#111827"));
+                widget.render(&image);
+                int count = 0;
+                for (int y = 0; y < image.height(); ++y) {
+                    for (int x = 0; x < image.width(); ++x) {
+                        if (image.pixelColor(x, y) != QColor("#111827")) {
+                            ++count;
+                        }
+                    }
+                }
+                return count;
+            };
+            const int spectrumPixels = nonBackground(spectrumWidget);
+            const int spectrogramPixels = nonBackground(spectrogramWidget);
+            const int trendPixels = nonBackground(trendWidget);
+            std::cout << "smoke-m4-render-ok spectrum=" << spectrumPixels
+                      << " spectrogram=" << spectrogramPixels
+                      << " trend=" << trendPixels << "\n";
+            return (spectrumPixels > 0 && spectrogramPixels > 0 && trendPixels > 0) ? 0 : 1;
         }
         if (arg == "--smoke-sidecar") {
             QCoreApplication app(argc, argv);

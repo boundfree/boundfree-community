@@ -104,6 +104,30 @@
       "description": "Offline license is expired."
     },
     {
+      "code": "analysis.invalid_input",
+      "params": [],
+      "retryable": false,
+      "description": "Analysis input is invalid."
+    },
+    {
+      "code": "analysis.invalid_channel",
+      "params": [],
+      "retryable": false,
+      "description": "Analysis channel is invalid."
+    },
+    {
+      "code": "analysis.same_channel",
+      "params": [],
+      "retryable": false,
+      "description": "Coherence requires two different channels."
+    },
+    {
+      "code": "analysis.failed",
+      "params": [],
+      "retryable": false,
+      "description": "Analysis failed."
+    },
+    {
       "code": "internal.unexpected",
       "params": ["operation"],
       "retryable": false,

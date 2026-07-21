@@ -1,18 +1,18 @@
-// M4 频谱分析数值对齐测试。
+// M4 spectral-analysis numerical parity test.
 //
-// 调用 native/src/dsp/spectral.h 的公共 API,与 scripts/generate_m4_golden.py
-// 用 SciPy 生成的黄金 .npy 结果逐项比对,输出每个检查项的通过/失败与最大绝对误差。
+// Calls the native/src/dsp/spectral.h public API and compares it with
+// SciPy-generated golden .npy outputs, reporting pass/fail and max absolute error.
 //
-// 用法: m4_spectral_test [tests/golden/m4]
+// Usage: m4_spectral_test [tests/golden/m4]
 //
-// 对齐目标 (meta.json 记录完整参数):
-// - FFT 幅度:   np.hanning 对称窗, abs*2/window.sum(), 不去趋势。
-// - Welch PSD: scipy.signal.welch window='hann'(周期), detrend='constant', scaling='density',
+// Parity target (meta.json records all parameters):
+// - FFT amplitude: np.hanning symmetric window, abs*2/window.sum(), no detrending.
+// - Welch PSD: scipy.signal.welch window='hann' (periodic), detrend='constant', scaling='density',
 //              noverlap=nperseg//2, average='mean'。
-// - STFT:      scipy.signal.spectrogram window='hann', scaling='density', mode='psd',
-//              boundary=None, padded=False; 时间轴 times+t_start。
-// - MSC 相干:  scipy.signal.coherence, Cxy=|Pxy|^2/(Pxx*Pyy), 频率上限闭区间。
-// - 频段功率:   闭区间 [low,high] 频点求和 * df, 基于 Welch 线性 PSD。
+// - STFT: scipy.signal.spectrogram window='hann', scaling='density', mode='psd',
+//              boundary=None, padded=False; time axis is times+t_start.
+// - MSC coherence: scipy.signal.coherence, Cxy=|Pxy|^2/(Pxx*Pyy), inclusive frequency maximum.
+// - Band power: inclusive [low, high] bin sum * df from linear Welch PSD.
 
 #include "dsp/npy_io.h"
 #include "dsp/spectral.h"
@@ -25,7 +25,7 @@
 
 namespace {
 
-// 容差 (与 meta.json 一致)。
+// Tolerances, matching meta.json.
 struct Tolerances {
     double fftAmpAtol = 1e-9;
     double welchPsdAtol = 1e-10;
@@ -38,8 +38,8 @@ struct Tolerances {
     double freqAtol = 1e-12;
 };
 
-// 将 Matrix (rows x cols, C-order) 解释为一维向量或二维布局的辅助函数。
-// loadNpyFloat64 对 1D (n,) 返回 rows=n, cols=1 的矩阵。
+// Helpers interpreting Matrix (rows x cols, C-order) as one-dimensional or two-dimensional data.
+// loadNpyFloat64 returns 1D (n,) as rows=n, cols=1.
 
 std::vector<double> asVector(const bf::dsp::Matrix& m) {
     std::vector<double> out;
@@ -50,12 +50,12 @@ std::vector<double> asVector(const bf::dsp::Matrix& m) {
     return out;
 }
 
-// 读取形状为 (rows, cols) 的二维矩阵,按行优先展开。
+// Reads a (rows, cols) matrix in row-major layout.
 std::vector<std::vector<double>> asMatrix2d(const bf::dsp::Matrix& m) {
-    return m;  // Matrix 已是 rows x cols。
+    return m;  // Matrix is already rows x cols.
 }
 
-// 比较两个一维向量:长度、逐元素绝对误差,返回最大绝对误差。
+// Compares vector lengths and elementwise absolute error, returning the maximum.
 bool vectorsClose(
     const std::vector<double>& got,
     const std::vector<double>& expected,
@@ -86,7 +86,7 @@ bool vectorsClose(
     return true;
 }
 
-// 报告单个检查项,统一格式: PASS/FAIL <name> max_abs_err=... [shape]
+// Reports one check: PASS/FAIL <name> max_abs_err=... [shape]
 bool checkVector(
     const std::string& name,
     const std::vector<double>& got,
@@ -105,7 +105,7 @@ bool checkVector(
     return true;
 }
 
-// 比较二维矩阵 (行数、列数、逐元素)。
+// Compares two-dimensional matrices: rows, columns and values.
 bool matrices2dClose(
     const std::vector<std::vector<double>>& got,
     const std::vector<std::vector<double>>& expected,
@@ -165,10 +165,10 @@ bool checkMatrix2d(
     return true;
 }
 
-// STFT golden .npy 形状为 (n_freq, n_time) 行优先;C++ Spectrogram.values 是
-// frequency-major: values[frequency][time]。两者布局一致,直接比对。
-// 但 scipy spectrogram 返回 Sxx[freq][time],C++ values 也是 [freq][time] -> 一致。
-// 注意 npy_io 读 (rows,cols) -> Matrix[rows][cols],正好 freq-major。
+// STFT golden .npy shape is (n_freq, n_time) row-major; C++ Spectrogram.values is
+// frequency-major: values[frequency][time]. The layouts match directly.
+// SciPy returns Sxx[freq][time], matching C++ values[freq][time].
+// npy_io maps (rows,cols) to Matrix[rows][cols], therefore frequency-major.
 std::vector<std::vector<double>> loadMatrix2d(const std::string& path) {
     return asMatrix2d(bf::dsp::loadNpyFloat64(path));
 }
@@ -181,13 +181,13 @@ int main(int argc, char** argv) {
     Tolerances tol;
 
     try {
-        // 输入信号
+        // Input signals
         const bf::dsp::Matrix signalMat = bf::dsp::loadNpyFloat64(goldenDir + "/signal.npy");
         const std::vector<double> signal = asVector(signalMat);
         const bf::dsp::Matrix signalBMat = bf::dsp::loadNpyFloat64(goldenDir + "/signal_b.npy");
         const std::vector<double> signalB = asVector(signalBMat);
 
-        // 从 meta.json 读取的固定参数 (与生成器一致,这里硬编码以避免引入 JSON 依赖)。
+        // Fixed generator parameters from meta.json, hard-coded to avoid a JSON dependency.
         const double fs = 250.0;
         const int nperseg = 256;
         const int noverlapStft = 192;  // nperseg * 3 / 4
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
         const double stftFmax = 60.0;
         const double cohFmax = 80.0;
 
-        // ---- FFT 幅度 ----
+        // ---- FFT amplitude ----
         const bf::dsp::Spectrum fftResult = bf::dsp::computeFftAmplitude(signal, fs);
         const std::vector<double> fftFreqExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/fft_freq.npy"));
         const std::vector<double> fftAmpExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/fft_amp.npy"));
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
             ++failures;
         }
 
-        // ---- Welch PSD 线性 ----
+        // ---- Linear Welch PSD ----
         const bf::dsp::Spectrum welchResult = bf::dsp::computeWelchPsd(signal, fs, nperseg, /*asDb=*/false);
         const std::vector<double> welchFreqExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/welch_freq.npy"));
         const std::vector<double> welchPsdExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/welch_psd.npy"));
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
             ++failures;
         }
 
-        // ---- MSC 相干 ----
+        // ---- MSC coherence ----
         const bf::dsp::Spectrum cohResult =
             bf::dsp::computeCoherence(signal, signalB, fs, nperseg, cohFmax);
         const std::vector<double> cohFreqExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/coh_freq.npy"));
@@ -253,9 +253,9 @@ int main(int argc, char** argv) {
             ++failures;
         }
 
-        // ---- 五频段功率 (基于 Welch 线性 PSD) ----
+        // ---- Five-band power from linear Welch PSD ----
         const std::vector<double> bandPowerExp = asVector(bf::dsp::loadNpyFloat64(goldenDir + "/band_power.npy"));
-        // 与 eegBands() 顺序一致: delta/theta/alpha/beta/gamma。
+        // Matches eegBands() order: delta/theta/alpha/beta/gamma.
         const std::array<bf::dsp::Band, 5>& bands = bf::dsp::eegBands();
         std::vector<double> bandPowerGot;
         bandPowerGot.reserve(bands.size());
