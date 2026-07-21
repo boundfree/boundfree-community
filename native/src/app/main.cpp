@@ -4,6 +4,8 @@
 #include "controller/processing_view_state.h"
 #include "controller/waveform_view_state.h"
 #include "controller/analysis_service.h"
+#include "controller/marker_store.h"
+#include "controller/playback_state.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
@@ -66,6 +68,68 @@ int main(int argc, char** argv) {
         if (arg == "--version") {
             QCoreApplication app(argc, argv);
             std::cout << version.displayString().toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-m5-playback") {
+            QCoreApplication app(argc, argv);
+            bf::PlaybackState state;
+            state.setDuration(10.0);
+            state.seek(-1.0);
+            if (state.position() != 0.0 || state.isPlaying()) {
+                std::cerr << "smoke-m5-playback-failed initial_state\n";
+                return 1;
+            }
+            state.setSpeed(2.0);
+            state.play();
+            state.advance(1.5);
+            if (!state.isPlaying() || std::abs(state.position() - 3.0) > 1e-12) {
+                std::cerr << "smoke-m5-playback-failed speed\n";
+                return 1;
+            }
+            state.setSpeed(3.0);
+            state.advance(1.0);
+            if (std::abs(state.position() - 5.0) > 1e-12) {
+                std::cerr << "smoke-m5-playback-failed unsupported_speed\n";
+                return 1;
+            }
+            state.seek(9.5);
+            state.advance(1.0);
+            if (state.isPlaying() || state.position() != 0.0) {
+                std::cerr << "smoke-m5-playback-failed tail_reset\n";
+                return 1;
+            }
+            state.setDuration(0.0);
+            state.play();
+            std::cout << "smoke-m5-playback-ok speeds=5 tail_reset=true\n";
+            return state.isPlaying() ? 1 : 0;
+        }
+        if (arg == "--smoke-m5-markers" && i + 1 < argc) {
+            QCoreApplication app(argc, argv);
+            bf::MarkerStore store;
+            store.replaceFromEvents({{0.07, "late"}, {0.02, "early"}});
+            store.add(0.05, "middle");
+            if (store.markers().size() != 3 || store.markers()[0].label != "early" || store.markers()[1].label != "middle" || store.markers()[2].label != "late" || store.markers()[0].color == store.markers()[1].color) {
+                std::cerr << "smoke-m5-markers-failed ordering_or_colors\n";
+                return 1;
+            }
+            if (!store.updateLabel(1, "edited") || !store.remove(0) || store.remove(9) || store.markers().size() != 2 || store.markers()[0].label != "edited") {
+                std::cerr << "smoke-m5-markers-failed edit_or_remove\n";
+                return 1;
+            }
+            bf::SidecarClient sidecar(repoRoot);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            if (!hello.ok) {
+                std::cerr << "smoke-m5-markers-failed code=" << hello.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
+            if (!opened.ok) {
+                sidecar.stop();
+                std::cerr << "smoke-m5-markers-failed code=" << opened.error.code.toStdString() << "\n";
+                return 1;
+            }
+            sidecar.stop();
+            std::cout << "smoke-m5-markers-ok events=" << opened.events.size() << " markers=" << store.markers().size() << "\n";
             return 0;
         }
         if (arg == "--smoke-m4-analysis") {
@@ -889,6 +953,9 @@ int main(int argc, char** argv) {
     });
     window.setWindowRequestHandler([&](const QString& path, double t0, double windowSeconds) {
         fileController.openWindow(path, t0, windowSeconds);
+    });
+    window.setExportMarkersHandler([&](const QString& path, const QVector<bf::SidecarEvent>& events) {
+        return sidecar.exportMarkersCsv(path, events, 5000);
     });
     QObject::connect(&fileController, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
         window.showFileOpenResult(result);

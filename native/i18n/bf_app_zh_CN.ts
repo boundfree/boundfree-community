@@ -318,5 +318,19 @@
       <source>app.analysis.empty</source>
       <translation>暂无分析数据</translation>
     </message>
+    <message><source>app.playback.play</source><translation>播放</translation></message>
+    <message><source>app.playback.pause</source><translation>暂停</translation></message>
+    <message><source>app.playback.speed</source><translation>倍速</translation></message>
+    <message><source>app.marker.mode</source><translation>标注模式</translation></message>
+    <message><source>app.marker.mode_tooltip</source><translation>点击波形添加事件标注</translation></message>
+    <message><source>app.marker.panel</source><translation>事件标注</translation></message>
+    <message><source>app.marker.time</source><translation>时间 (s)</translation></message>
+    <message><source>app.marker.label</source><translation>标签</translation></message>
+    <message><source>app.marker.color</source><translation>颜色</translation></message>
+    <message><source>app.marker.delete</source><translation>删除选中</translation></message>
+    <message><source>app.marker.clear</source><translation>清空全部</translation></message>
+    <message><source>app.marker.export</source><translation>导出 CSV</translation></message>
+    <message><source>app.marker.add_title</source><translation>添加标注</translation></message>
+    <message><source>app.marker.add_prompt</source><translation>时间：{time} 秒；请输入标签（可留空）</translation></message>
   </context>
 </TS>

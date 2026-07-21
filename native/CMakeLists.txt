@@ -33,6 +33,10 @@ add_executable(bf_app
     src/controller/processing_view_state.h
     src/controller/request_generation.cpp
     src/controller/request_generation.h
+    src/controller/marker_store.cpp
+    src/controller/marker_store.h
+    src/controller/playback_state.cpp
+    src/controller/playback_state.h
     src/controller/waveform_view_state.cpp
     src/controller/waveform_view_state.h
     src/core/app_error.cpp

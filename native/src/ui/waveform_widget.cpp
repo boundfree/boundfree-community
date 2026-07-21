@@ -1,6 +1,7 @@
 #include "ui/waveform_widget.h"
 
 #include <QPainter>
+#include <QMouseEvent>
 
 #include <algorithm>
 #include <cmath>
@@ -21,6 +22,21 @@ void WaveformWidget::setViewState(const WaveformViewState& state) {
     viewState_ = state;
     invalidateDisplayModelCache();
     update();
+}
+
+void WaveformWidget::setMarkers(const QVector<Marker>& markers) {
+    markers_ = markers;
+    update();
+}
+
+void WaveformWidget::setCursorTime(double time) {
+    cursorTime_ = time;
+    update();
+}
+
+void WaveformWidget::setMarkerModeEnabled(bool enabled) {
+    markerModeEnabled_ = enabled;
+    setCursor(markerModeEnabled_ ? Qt::CrossCursor : Qt::ArrowCursor);
 }
 
 const WaveformDisplayModel& WaveformWidget::cachedDisplayModel(int maxVisibleChannels) const {
@@ -77,6 +93,31 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
             previous = current;
         }
     }
+    const double span = std::max(1e-12, model.t1 - model.t0);
+    for (const Marker& marker : markers_) {
+        if (marker.time < model.t0 || marker.time > model.t1) {
+            continue;
+        }
+        const int x = static_cast<int>(width() * (marker.time - model.t0) / span);
+        painter.setPen(QPen(marker.color, 1));
+        painter.drawLine(x, 0, x, height());
+        painter.drawText(x + 3, 15, marker.label);
+    }
+    if (cursorTime_ >= model.t0 && cursorTime_ <= model.t1) {
+        const int x = static_cast<int>(width() * (cursorTime_ - model.t0) / span);
+        painter.setPen(QPen(QColor("#F8FAFC"), 1));
+        painter.drawLine(x, 0, x, height());
+    }
+}
+
+void WaveformWidget::mousePressEvent(QMouseEvent* event) {
+    if (markerModeEnabled_ && event->button() == Qt::LeftButton && !slice_.data.empty() && slice_.t1 > slice_.t0) {
+        const double ratio = std::clamp(static_cast<double>(event->position().x()) / std::max(1, width()), 0.0, 1.0);
+        emit markerRequested(slice_.t0 + ratio * (slice_.t1 - slice_.t0));
+        event->accept();
+        return;
+    }
+    QWidget::mousePressEvent(event);
 }
 
 }  // namespace bf

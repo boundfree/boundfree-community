@@ -25,6 +25,11 @@ struct SidecarResponse {
     AppError error;
 };
 
+struct SidecarEvent {
+    double time = 0.0;
+    QString label;
+};
+
 struct SidecarOpenResult {
     bool ok = false;
     QString handle;
@@ -35,6 +40,7 @@ struct SidecarOpenResult {
     double duration = 0.0;
     QString format;
     QStringList chNames;
+    QVector<SidecarEvent> events;
     AppError error;
 };
 
@@ -61,6 +67,7 @@ public:
     SidecarHelloResult startAndHello(const VersionInfo& version, int timeoutMs = 3000);
     SidecarResponse request(const QString& method, const QJsonObject& params, int timeoutMs = 3000);
     SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000);
+    SidecarResponse exportMarkersCsv(const QString& path, const QVector<SidecarEvent>& events, int timeoutMs = 3000);
     SidecarSliceResult getSlice(const QString& handle, double t0, double t1, int timeoutMs = 3000);
     void stop();
 

@@ -17,7 +17,7 @@ last_updated: 2026-07-08
 | 文档 | 类型 | 用途 |
 | --- | --- | --- |
 | [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、当前阶段、M0-M8 路线和阶段门禁 |
-| M5 当前计划 | 尚未建立 | 开始实施前创建并评审 M5 回放与标注计划 |
+| M6 当前计划 | 尚未建立 | 开始实施前创建并评审 M6 视频同步计划 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
 | [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
@@ -32,6 +32,7 @@ last_updated: 2026-07-08
 | [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md) | 真实 GPU/显示门禁记录 |
 | [`reports/m3-dsp-acceptance.md`](reports/m3-dsp-acceptance.md) | M3 DSP 黄金比对与静态浏览接入记录 |
 | [`reports/m4-spectral-acceptance.md`](reports/m4-spectral-acceptance.md) | M4 频谱算法、后台调度、渲染和黄金比对记录 |
+| [`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md) | M5 回放状态、事件标注、CSV 往返和 UI 文件流记录 |
 
 ## 历史归档
 

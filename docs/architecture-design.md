@@ -106,6 +106,7 @@ v1 仍保留 `native/realtime/`、数据源抽象、Session 和录制写盘边�
 | `open` | `path` | `{fs, ch_names[], duration, n_channels, markers[]}` 或 `{error_code, params}` |
 | `get_slice` | `t0, t1` | 二进制数组 `[n_ch, n_samp] float32 μV` |
 | `close` | `handle` | `{ok}` |
+| `export_markers_csv` | `path, markers[]` | `{path, marker_count}` 或 `{error_code}` |
 | `record_open` | `fs, ch_names[], out_dir, meta, formats[]` | `{handle}` |
 | `record_write` | `handle, 二进制 chunk` | `{ok, backlog, dropped}` |
 | `record_event` | `handle, ts, label` | `{ok}` |

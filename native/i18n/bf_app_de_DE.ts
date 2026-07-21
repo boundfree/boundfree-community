@@ -318,5 +318,19 @@
       <source>app.analysis.empty</source>
       <translation>No analysis data</translation>
     </message>
+    <message><source>app.playback.play</source><translation>Play</translation></message>
+    <message><source>app.playback.pause</source><translation>Pause</translation></message>
+    <message><source>app.playback.speed</source><translation>Speed</translation></message>
+    <message><source>app.marker.mode</source><translation>Marker mode</translation></message>
+    <message><source>app.marker.mode_tooltip</source><translation>Click the waveform to add an event marker</translation></message>
+    <message><source>app.marker.panel</source><translation>Event markers</translation></message>
+    <message><source>app.marker.time</source><translation>Time (s)</translation></message>
+    <message><source>app.marker.label</source><translation>Label</translation></message>
+    <message><source>app.marker.color</source><translation>Color</translation></message>
+    <message><source>app.marker.delete</source><translation>Delete selected</translation></message>
+    <message><source>app.marker.clear</source><translation>Clear all</translation></message>
+    <message><source>app.marker.export</source><translation>Export CSV</translation></message>
+    <message><source>app.marker.add_title</source><translation>Add marker</translation></message>
+    <message><source>app.marker.add_prompt</source><translation>Time: {time} s; enter a label (optional)</translation></message>
   </context>
 </TS>

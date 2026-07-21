@@ -2,6 +2,8 @@
 
 #include "controller/file_open_controller.h"
 #include "controller/processing_view_state.h"
+#include "controller/marker_store.h"
+#include "controller/playback_state.h"
 #include "controller/analysis_service.h"
 #include "controller/waveform_view_state.h"
 #include "core/app_error.h"
@@ -20,6 +22,8 @@
 #include <QMenu>
 #include <QJsonObject>
 #include <QPushButton>
+#include <QSlider>
+#include <QElapsedTimer>
 #include <QScrollArea>
 #include <QStackedWidget>
 #include <QSpinBox>
@@ -27,6 +31,8 @@
 #include <QToolBar>
 #include <QVector>
 #include <QVBoxLayout>
+#include <QTableWidget>
+#include <QTimer>
 
 #include <functional>
 
@@ -52,6 +58,7 @@ public:
     void setOpenFileHandler(std::function<void(const QString&)> handler);
     void setWindowRequestHandler(std::function<void(const QString&, double, double)> handler);
     void setBrowserWindowSecondsForBrowser(double seconds);
+    void setExportMarkersHandler(std::function<SidecarResponse(const QString&, const QVector<SidecarEvent>&)> handler);
     void openPathForBrowser(const QString& path);
     void setProcessingViewStateForBrowser(const ProcessingViewState& state);
     ProcessingViewState processingViewState() const { return processingState_; }
@@ -74,6 +81,16 @@ private:
     void handleAnalysisCompleted(int generation, const AnalysisResult& result);
     void handleAnalysisFailed(int generation, const QString& code, const QString& detail);
     void rebuildChannelControls();
+    void buildPlaybackControls();
+    void buildMarkerDock();
+    void refreshPlaybackControls();
+    void refreshMarkerControls();
+    void togglePlayback();
+    void advancePlayback();
+    void addMarkerAt(double time);
+    void deleteSelectedMarker();
+    void clearMarkers();
+    void exportMarkers();
     void onProcessingUiChanged();
     QString channelCheckSummary() const;
     QString visibleDisplayChannelSummary() const;
@@ -103,10 +120,20 @@ private:
     QLabel* firstChannelLabel_ = nullptr;
     QSpinBox* firstChannelSpin_ = nullptr;
     QDockWidget* channelDock_ = nullptr;
+    QAction* playAction_ = nullptr;
+    QLabel* speedLabel_ = nullptr;
+    QComboBox* speedCombo_ = nullptr;
+    QSlider* playbackProgress_ = nullptr;
     QScrollArea* channelScroll_ = nullptr;
     QWidget* channelListWidget_ = nullptr;
     QVBoxLayout* channelListLayout_ = nullptr;
     QVector<QCheckBox*> channelChecks_;
+    QDockWidget* markerDock_ = nullptr;
+    QTableWidget* markerTable_ = nullptr;
+    QPushButton* deleteMarkerButton_ = nullptr;
+    QPushButton* clearMarkersButton_ = nullptr;
+    QPushButton* exportMarkersButton_ = nullptr;
+    QAction* markerModeAction_ = nullptr;
 
     QLabel* referenceLabel_ = nullptr;
     QComboBox* referenceCombo_ = nullptr;
@@ -150,11 +177,18 @@ private:
     WaveformViewState viewState_;
     ProcessingViewState processingState_;
     FileOpenResult currentFile_;
+    std::function<SidecarResponse(const QString&, const QVector<SidecarEvent>&)> exportMarkersHandler_;
     WaveformSlice rawWaveform_;
     bool hasCurrentFile_ = false;
     QString statusKey_ = "app.status.ready";
     QJsonObject statusParams_;
     QString emptyStateKey_ = "app.main.empty_state";
+    PlaybackState playback_;
+    MarkerStore markerStore_;
+    QTimer playbackTimer_;
+    QElapsedTimer playbackElapsed_;
+    bool refreshingMarkerControls_ = false;
+    bool playbackPrefetchPending_ = false;
     QJsonObject emptyStateParams_;
     AppError lastError_;
 };

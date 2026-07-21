@@ -42,7 +42,7 @@ M1-A 需要消费该文件：
 
 ## IPC Envelope
 
-控制消息使用 JSON。M1-A 先实现 `hello`，后续阶段扩展 `open/get_slice/close`。
+控制消息使用 JSON。已实现 `hello/open/get_slice/close/export_markers_csv`；录制与片段导出协议在后续阶段扩展。
 
 请求 envelope：
 
@@ -92,6 +92,13 @@ M1-A 需要消费该文件：
 - `ok=false` 时必须包含 `error.code`。
 - `trace_id` 用于日志和售后定位，UI 默认不把它当正文文案。
 - 后续二进制 payload 统一小端，EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
+
+M5 `export_markers_csv`：
+
+- 请求参数：`path` 为源 CSV 路径，`markers` 为 `{time, label}[]`。
+- 写入路径：源文件同目录的 `{stem}_markers.csv`，列为 `time_s,label`。
+- 成功响应：`path`、`marker_count`。
+- 参数错误返回 `protocol.invalid_params`；写入失败返回 `reader.open_failed`。
 
 ## Error Codes
 

@@ -1,3 +1,5 @@
+import csv
+import math
 from typing import Any
 from pathlib import Path
 
@@ -120,6 +122,36 @@ def _handle_close(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
     return success_response(request_id, {"closed": True})
 
 
+def _handle_export_markers_csv(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
+    raw_path = _required_string(params, "path")
+    if raw_path is None:
+        return error_response(request_id, "protocol.invalid_params", {"field": "path", "reason": "required string"})
+    raw_markers = params.get("markers")
+    if not isinstance(raw_markers, list):
+        return error_response(request_id, "protocol.invalid_params", {"field": "markers", "reason": "required array"})
+
+    markers: list[tuple[float, str]] = []
+    for index, marker in enumerate(raw_markers):
+        if not isinstance(marker, dict):
+            return error_response(request_id, "protocol.invalid_params", {"field": f"markers[{index}]", "reason": "required object"})
+        time = _required_number(marker, "time")
+        label = marker.get("label")
+        if time is None or not math.isfinite(time) or time < 0.0 or not isinstance(label, str):
+            return error_response(request_id, "protocol.invalid_params", {"field": f"markers[{index}]", "reason": "required non-negative time and label"})
+        markers.append((time, label))
+
+    path = Path(raw_path)
+    markers_path = path.with_name(path.stem + "_markers.csv")
+    try:
+        with markers_path.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.writer(output)
+            writer.writerow(["time_s", "label"])
+            writer.writerows(markers)
+    except OSError as exc:
+        return error_response(request_id, "reader.open_failed", {"path": str(markers_path), "reason": str(exc)})
+    return success_response(request_id, {"path": str(markers_path), "marker_count": len(markers)})
+
+
 def handle_request(request: Any) -> dict[str, Any]:
     if not isinstance(request, dict):
         return error_response(None, "protocol.invalid_json")
@@ -146,5 +178,7 @@ def handle_request(request: Any) -> dict[str, Any]:
         return _handle_get_slice(request_id, params)
     if method == "close":
         return _handle_close(request_id, params)
+    if method == "export_markers_csv":
+        return _handle_export_markers_csv(request_id, params)
 
     return error_response(request_id, "protocol.unknown_method", {"method": str(method)})

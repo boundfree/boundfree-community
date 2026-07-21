@@ -318,5 +318,19 @@
       <source>app.analysis.empty</source>
       <translation>[!! Noo anaalyysiis daataa !!]</translation>
     </message>
+    <message><source>app.playback.play</source><translation>[!! Plaay !!]</translation></message>
+    <message><source>app.playback.pause</source><translation>[!! Paauusee !!]</translation></message>
+    <message><source>app.playback.speed</source><translation>[!! Speeed !!]</translation></message>
+    <message><source>app.marker.mode</source><translation>[!! Maarkeer moodee !!]</translation></message>
+    <message><source>app.marker.mode_tooltip</source><translation>[!! Cliick the waaveefoorm too aadd aan eevent maarkeer !!]</translation></message>
+    <message><source>app.marker.panel</source><translation>[!! Eevent maarkeers !!]</translation></message>
+    <message><source>app.marker.time</source><translation>[!! Tiimee (s) !!]</translation></message>
+    <message><source>app.marker.label</source><translation>[!! Laabeel !!]</translation></message>
+    <message><source>app.marker.color</source><translation>[!! Cooloor !!]</translation></message>
+    <message><source>app.marker.delete</source><translation>[!! Deeleetee seileecteed !!]</translation></message>
+    <message><source>app.marker.clear</source><translation>[!! Cleear aall !!]</translation></message>
+    <message><source>app.marker.export</source><translation>[!! Expoort CSV !!]</translation></message>
+    <message><source>app.marker.add_title</source><translation>[!! Aadd maarkeer !!]</translation></message>
+    <message><source>app.marker.add_prompt</source><translation>[!! Tiimee: {time} s; eenteer aa laabeel (ooptiioonaal) !!]</translation></message>
   </context>
 </TS>

@@ -12,6 +12,10 @@
 #include <QKeySequence>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QHeaderView>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <QSpinBox>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -46,6 +50,11 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildBrowserControls();
     buildProcessingControls();
     buildAnalysisDock();
+    buildPlaybackControls();
+    buildMarkerDock();
+    playbackTimer_.setInterval(25);
+    connect(&playbackTimer_, &QTimer::timeout, this, &MainWindow::advancePlayback);
+    connect(waveformWidget_, &WaveformWidget::markerRequested, this, &MainWindow::addMarkerAt);
     connect(openButton_, &QPushButton::clicked, this, &MainWindow::chooseFile);
     resize(900, 560);
     retranslateUi();
@@ -99,15 +108,29 @@ void MainWindow::buildBrowserControls() {
     positionSpin_->setSingleStep(1.0);
     positionSpin_->setSuffix(" s");
     positionSpin_->setMinimumWidth(100);
+    playbackProgress_ = new QSlider(Qt::Horizontal, this);
+    playbackProgress_->setRange(0, 10000);
+    playbackProgress_->setMinimumWidth(160);
     browserToolbar_->addSeparator();
     browserToolbar_->addWidget(positionLabel_);
     browserToolbar_->addWidget(positionSpin_);
+    browserToolbar_->addWidget(playbackProgress_);
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
         if (!refreshingBrowserControls_) {
+            playback_.seek(positionSpin_->value());
             requestWindow(positionSpin_->value());
         }
     });
 
+    connect(playbackProgress_, &QSlider::sliderReleased, this, [this]() {
+        if (!hasCurrentFile_) {
+            return;
+        }
+        const double position = playback_.duration() * playbackProgress_->value() / 10000.0;
+        playback_.seek(position);
+        requestWindow(position);
+        refreshPlaybackControls();
+    });
     timeWindowLabel_ = new QLabel(this);
     timeWindowSpin_ = new QDoubleSpinBox(this);
     timeWindowSpin_->setRange(1.0, 120.0);
@@ -174,6 +197,57 @@ void MainWindow::buildBrowserControls() {
         }
         viewState_.setFirstVisibleChannel(value);
         applyBrowserStateToWaveform();
+    });
+}
+
+void MainWindow::buildPlaybackControls() {
+    playAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
+    connect(playAction_, &QAction::triggered, this, &MainWindow::togglePlayback);
+    speedLabel_ = new QLabel(this);
+    speedCombo_ = new QComboBox(this);
+    for (double speed : PlaybackState::kSpeeds) {
+        speedCombo_->addItem(QString::number(speed) + "x", speed);
+    }
+    speedCombo_->setCurrentIndex(2);
+    connect(speedCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+        playback_.setSpeed(speedCombo_->itemData(index).toDouble());
+    });
+    browserToolbar_->addWidget(speedLabel_);
+    browserToolbar_->addWidget(speedCombo_);
+    markerModeAction_ = browserToolbar_->addAction(QString());
+    markerModeAction_->setCheckable(true);
+    connect(markerModeAction_, &QAction::toggled, this, [this](bool enabled) { waveformWidget_->setMarkerModeEnabled(enabled); });
+}
+
+void MainWindow::buildMarkerDock() {
+    markerDock_ = new QDockWidget(this);
+    markerDock_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    auto* content = new QWidget(markerDock_);
+    auto* layout = new QVBoxLayout(content);
+    markerTable_ = new QTableWidget(content);
+    markerTable_->setColumnCount(3);
+    markerTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    markerTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    layout->addWidget(markerTable_);
+    auto* buttons = new QHBoxLayout();
+    deleteMarkerButton_ = new QPushButton(content);
+    clearMarkersButton_ = new QPushButton(content);
+    exportMarkersButton_ = new QPushButton(content);
+    buttons->addWidget(deleteMarkerButton_);
+    buttons->addWidget(clearMarkersButton_);
+    buttons->addWidget(exportMarkersButton_);
+    layout->addLayout(buttons);
+    markerDock_->setWidget(content);
+    addDockWidget(Qt::RightDockWidgetArea, markerDock_);
+    markerDock_->hide();
+    connect(deleteMarkerButton_, &QPushButton::clicked, this, &MainWindow::deleteSelectedMarker);
+    connect(clearMarkersButton_, &QPushButton::clicked, this, &MainWindow::clearMarkers);
+    connect(exportMarkersButton_, &QPushButton::clicked, this, &MainWindow::exportMarkers);
+    connect(markerTable_, &QTableWidget::itemChanged, this, [this](QTableWidgetItem* item) {
+        if (!refreshingMarkerControls_ && item->column() == 1) {
+            markerStore_.updateLabel(item->row(), item->text());
+            waveformWidget_->setMarkers(markerStore_.markers());
+        }
     });
 }
 
@@ -462,6 +536,7 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
     case AnalysisKind::BandTrend:
         trendWidget_->setTrend(result.trend.times, result.trend.powers);
         break;
+
     case AnalysisKind::Coherence: {
         coherenceWidget_->setSpectrum(result.spectrum, i18n_->text("app.analysis.coherence"), i18n_->text("app.analysis.coherence"), true);
         QStringList values;
@@ -480,6 +555,109 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
         break;
     }
     }
+}
+
+void MainWindow::togglePlayback() {
+    if (!hasCurrentFile_) return;
+    if (playback_.isPlaying()) {
+        playback_.pause();
+        playbackTimer_.stop();
+    } else {
+        if (playback_.position() < currentFile_.waveform.t0 || playback_.position() >= currentFile_.waveform.t1) {
+            requestWindow(playback_.position());
+        }
+        playback_.play();
+        playbackElapsed_.restart();
+        playbackTimer_.start();
+    }
+    refreshPlaybackControls();
+}
+
+void MainWindow::advancePlayback() {
+    const bool wasPlaying = playback_.isPlaying();
+    const double elapsedSeconds = playbackElapsed_.restart() / 1000.0;
+    playback_.advance(elapsedSeconds);
+    const double prefillAt = currentFile_.waveform.t1 - std::min(1.0, viewState_.windowSeconds * 0.25);
+    const bool hasNextWindow = currentFile_.waveform.t1 + 1e-9 < playback_.duration();
+    if (playback_.isPlaying() && hasNextWindow && !playbackPrefetchPending_ && playback_.position() >= prefillAt) {
+        playbackPrefetchPending_ = true;
+        requestWindow(playback_.position());
+    }
+    if (wasPlaying && !playback_.isPlaying() && playback_.position() == 0.0) {
+        playbackPrefetchPending_ = true;
+        requestWindow(0.0);
+    }
+    if (!playback_.isPlaying()) {
+        playbackTimer_.stop();
+    }
+    refreshPlaybackControls();
+}
+
+void MainWindow::refreshPlaybackControls() {
+    if (playAction_ == nullptr) {
+        return;
+    }
+    playAction_->setIcon(style()->standardIcon(playback_.isPlaying() ? QStyle::SP_MediaPause : QStyle::SP_MediaPlay));
+    playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
+    playAction_->setToolTip(playAction_->text());
+    waveformWidget_->setCursorTime(playback_.position());
+    if (positionSpin_ != nullptr) {
+        const QSignalBlocker blocker(positionSpin_);
+        positionSpin_->setValue(std::min(playback_.position(), positionSpin_->maximum()));
+    }
+    if (playbackProgress_ != nullptr && !playbackProgress_->isSliderDown()) {
+        const QSignalBlocker blocker(playbackProgress_);
+        const int value = playback_.duration() > 0.0
+            ? static_cast<int>(10000.0 * playback_.position() / playback_.duration())
+            : 0;
+        playbackProgress_->setValue(value);
+    }
+}
+
+void MainWindow::addMarkerAt(double time) {
+    if (!hasCurrentFile_) return;
+    bool accepted = false;
+    const QString label = QInputDialog::getText(this, i18n_->text("app.marker.add_title"), i18n_->text("app.marker.add_prompt", {{"time", QString::number(time, 'f', 3)}}), QLineEdit::Normal, {}, &accepted);
+    if (!accepted) return;
+    markerStore_.add(time, label);
+    refreshMarkerControls();
+}
+
+void MainWindow::refreshMarkerControls() {
+    if (markerTable_ == nullptr) return;
+    refreshingMarkerControls_ = true;
+    markerTable_->setRowCount(markerStore_.markers().size());
+    for (int row = 0; row < markerStore_.markers().size(); ++row) {
+        const Marker& marker = markerStore_.markers()[row];
+        auto* time = new QTableWidgetItem(QString::number(marker.time, 'f', 3));
+        time->setFlags(time->flags() & ~Qt::ItemIsEditable);
+        markerTable_->setItem(row, 0, time);
+        markerTable_->setItem(row, 1, new QTableWidgetItem(marker.label));
+        auto* color = new QTableWidgetItem();
+        color->setBackground(marker.color);
+        color->setFlags(color->flags() & ~Qt::ItemIsEditable);
+        markerTable_->setItem(row, 2, color);
+    }
+    refreshingMarkerControls_ = false;
+    waveformWidget_->setMarkers(markerStore_.markers());
+}
+
+void MainWindow::deleteSelectedMarker() {
+    if (markerTable_ != nullptr && markerStore_.remove(markerTable_->currentRow())) refreshMarkerControls();
+}
+
+void MainWindow::clearMarkers() {
+    markerStore_.clear();
+    refreshMarkerControls();
+}
+
+void MainWindow::exportMarkers() {
+    if (!hasCurrentFile_ || !exportMarkersHandler_) return;
+    QVector<SidecarEvent> events;
+    events.reserve(markerStore_.markers().size());
+    for (const Marker& marker : markerStore_.markers()) events.push_back({marker.time, marker.label});
+    const SidecarResponse response = exportMarkersHandler_(currentFile_.session.path, events);
+    if (!response.ok) statusBar()->showMessage(i18n_->text(QString("error.%1").arg(response.error.code), response.error.params));
 }
 
 void MainWindow::handleAnalysisFailed(int generation, const QString& code, const QString&) {
@@ -523,7 +701,6 @@ void MainWindow::requestWindow(double t0) {
     }
     statusKey_ = "app.status.file_opening";
     statusParams_ = {{"path", currentFile_.session.path}};
-    retranslateUi();
     windowRequestHandler_(currentFile_.session.path, requestedT0, viewState_.windowSeconds);
 }
 
@@ -554,8 +731,8 @@ void MainWindow::refreshBrowserControls() {
     }
     if (positionSpin_ != nullptr) {
         QSignalBlocker blocker(positionSpin_);
-        positionSpin_->setRange(0.0, std::max(0.0, currentFile_.session.duration - viewState_.windowSeconds));
-        positionSpin_->setValue(currentFile_.waveform.t0);
+        positionSpin_->setRange(0.0, std::max(0.0, currentFile_.session.duration));
+        positionSpin_->setValue(playback_.position());
     }
     refreshingBrowserControls_ = false;
     rebuildChannelControls();
@@ -657,6 +834,15 @@ void MainWindow::retranslateUi() {
     stftResolutionCombo_->setItemText(0, i18n_->text("app.analysis.high_time"));
     stftResolutionCombo_->setItemText(1, i18n_->text("app.analysis.balanced"));
     stftResolutionCombo_->setItemText(2, i18n_->text("app.analysis.high_frequency"));
+    markerModeAction_->setText(i18n_->text("app.marker.mode"));
+    markerModeAction_->setToolTip(i18n_->text("app.marker.mode_tooltip"));
+    playAction_->setToolTip(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
+    speedLabel_->setText(i18n_->text("app.playback.speed"));
+    markerDock_->setWindowTitle(i18n_->text("app.marker.panel"));
+    markerTable_->setHorizontalHeaderLabels({i18n_->text("app.marker.time"), i18n_->text("app.marker.label"), i18n_->text("app.marker.color")});
+    deleteMarkerButton_->setText(i18n_->text("app.marker.delete"));
+    clearMarkersButton_->setText(i18n_->text("app.marker.clear"));
+    exportMarkersButton_->setText(i18n_->text("app.marker.export"));
 
     if (statusKey_ == "app.status.sidecar_failed" || statusKey_ == "app.status.file_failed") {
         statusBar()->showMessage(i18n_->text(
@@ -695,22 +881,40 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     setLoading(false);
+    const bool sameSession = hasCurrentFile_ && currentFile_.session.path == result.session.path;
     currentFile_ = result;
     rawWaveform_ = result.waveform;
     hasCurrentFile_ = true;
+    playbackPrefetchPending_ = false;
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
+    if (!sameSession) {
+        playback_.pause();
+        playbackTimer_.stop();
+        playback_.setDuration(result.session.duration);
+        playback_.seek(result.waveform.t0);
+        QVector<QPair<double, QString>> events;
+        events.reserve(result.session.events.size());
+        for (const SidecarEvent& event : result.session.events) {
+            events.push_back({event.time, event.label});
+        }
+        markerStore_.replaceFromEvents(events);
+    }
     channelDock_->show();
     refreshBrowserControls();
     refreshProcessingControls();
     applyProcessingAndDisplay();
     refreshAnalysisControls();
     analysisDock_->show();
+    markerDock_->show();
+    refreshPlaybackControls();
+    refreshMarkerControls();
     requestCurrentAnalysis();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
     setLoading(false);
+    playbackPrefetchPending_ = false;
     statusKey_ = "app.status.file_failed";
     lastError_ = error;
     statusParams_ = {};
@@ -746,6 +950,10 @@ void MainWindow::setOpenFileHandler(std::function<void(const QString&)> handler)
 
 void MainWindow::setWindowRequestHandler(std::function<void(const QString&, double, double)> handler) {
     windowRequestHandler_ = std::move(handler);
+}
+
+void MainWindow::setExportMarkersHandler(std::function<SidecarResponse(const QString&, const QVector<SidecarEvent>&)> handler) {
+    exportMarkersHandler_ = std::move(handler);
 }
 
 void MainWindow::setBrowserWindowSecondsForBrowser(double seconds) {

@@ -93,20 +93,22 @@ v1.1/v2：
 
 ## 事件标注 — M5
 
-- [ ] 波形点击添加标注 + 输入框
-- [ ] 顶通道显标签、颜色轮换（只连一次 scene）
-- [ ] 标注列表增删
-- [ ] 导入：MNE annotations / Intan 事件 / CSV `_markers.csv` 侧车
-- [ ] 标注 CSV 导出与回读往返一致
+- [x] 波形点击添加标注 + 输入框
+- [x] 顶通道显标签、颜色轮换（单次 signal 连接）
+- [x] 标注列表编辑、删除与清空
+- [x] 导入：MNE annotations / CSV `_markers.csv` 侧车；Intan RHS 读取器仍未实现，事件导入随其格式实现验收
+- [x] 标注 CSV 导出与回读往返一致
 
 ## 回放控制 — M5
 
-- [ ] 播放 / 暂停 / 进度拖动 seek
-- [ ] 倍速 0.25/0.5/1/2/4×
-- [ ] prefill 平滑起播
-- [ ] seek 只保留最新窗口（过期切片不覆盖）
-- [ ] 播放到尾归零
-- [ ] 位置时钟同步
+- [x] 播放 / 暂停 / 进度拖动 seek
+- [x] 倍速 0.25/0.5/1/2/4×
+- [x] prefill 窗口预取
+- [x] seek 只保留最新窗口（复用 `FileOpenController` 请求代次）
+- [x] 播放到尾归零并请求起始窗口
+- [x] 位置时钟同步
+
+验收记录：[`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md)。
 
 ## 视频同步 — M6
 

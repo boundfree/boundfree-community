@@ -178,8 +178,26 @@ SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
     for (const QJsonValue& value : channels) {
         result.chNames.push_back(value.toString());
     }
+    const QJsonArray events = payload.value("events").toArray();
+    result.events.reserve(events.size());
+    for (const QJsonValue& value : events) {
+        const QJsonObject event = value.toObject();
+        const QJsonValue labelValue = event.value("label");
+        const double time = event.value("time").toDouble(std::numeric_limits<double>::quiet_NaN());
+        if (std::isfinite(time) && time >= 0.0 && labelValue.isString()) {
+            result.events.push_back({time, labelValue.toString()});
+        }
+    }
     result.ok = true;
     return result;
+}
+
+SidecarResponse SidecarClient::exportMarkersCsv(const QString& path, const QVector<SidecarEvent>& events, int timeoutMs) {
+    QJsonArray markers;
+    for (const SidecarEvent& event : events) {
+        markers.append(QJsonObject{{"time", event.time}, {"label", event.label}});
+    }
+    return request("export_markers_csv", {{"path", path}, {"markers", markers}}, timeoutMs);
 }
 
 SidecarSliceResult SidecarClient::getSlice(const QString& handle, double t0, double t1, int timeoutMs) {
