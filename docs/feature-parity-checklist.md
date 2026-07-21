@@ -83,13 +83,13 @@ v1.1/v2：
 
 ## 频谱分析 — M4
 
-- [ ] PSD（Welch + Hann + dB 切换 + 频段色块）
-- [ ] FFT 幅度谱模式
-- [ ] STFT 时频图（jet 内联色阶 + 双线性平滑 + colorbar + 频段文字注释）
-- [ ] 频段功率趋势（后台计算 + 色块图例 + 切文件中止旧计算）
-- [ ] 相干性（MSC + 通道 A/B + 频段着色 + 0.5 阈值 + 均值摘要 + 同通道提示）
-- [ ] 后台计算、只算当前 tab、latest-request-wins
-- [ ] 【黄金比对】四视图数值一致
+- [x] PSD（Welch + Hann + dB 切换 + 频段色块）
+- [x] FFT 幅度谱模式
+- [x] STFT 时频图（jet 内联色阶 + 双线性平滑 + colorbar + 频段文字注释）
+- [x] 频段功率趋势（后台计算 + 色块图例 + 旧请求结果抑制）
+- [x] 相干性（MSC + 通道 A/B + 频段着色 + 0.5 阈值 + 均值摘要 + 同通道提示）
+- [x] 后台计算、只算当前 tab、latest-request-wins
+- [x] 【黄金比对】四视图数值一致（见 `docs/reports/m4-spectral-acceptance.md`）
 
 ## 事件标注 — M5
 

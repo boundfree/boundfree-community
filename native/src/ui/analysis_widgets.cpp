@@ -168,6 +168,14 @@ void SpectrogramWidget::paintEvent(QPaintEvent*) {
         painter.setPen(jet(1.0 - static_cast<double>(y) / std::max(1, colorbar.height() - 1)));
         painter.drawLine(colorbar.left(), colorbar.top() + y, colorbar.right(), colorbar.top() + y);
     }
+    painter.setPen(QColor("#CBD5E1"));
+    const double fmax = std::max(1.0, spectrogram_.frequencies.back());
+    for (const dsp::Band& band : dsp::eegBands()) {
+        if (band.low <= fmax) {
+            const double x = plot.left() + plot.width() * std::min(band.low, fmax) / fmax;
+            painter.drawText(static_cast<int>(x) + 2, plot.top() + 14, QString::fromUtf8(band.key));
+        }
+    }
 }
 
 BandTrendWidget::BandTrendWidget(QWidget* parent) : QWidget(parent) {
@@ -211,6 +219,14 @@ void BandTrendWidget::paintEvent(QPaintEvent*) {
     maxValue = std::max(maxValue, 1e-12);
     const double minTime = times_.front();
     const double timeSpan = std::max(1e-12, times_.back() - minTime);
+    int legendX = plot.left();
+    for (std::size_t band = 0; band < powers_.size() && band < dsp::eegBands().size(); ++band) {
+        const dsp::Band& definition = dsp::eegBands()[band];
+        painter.fillRect(QRect(legendX, plot.top() + 6, 8, 8), QColor(definition.rgba[0], definition.rgba[1], definition.rgba[2]));
+        painter.setPen(QColor("#CBD5E1"));
+        painter.drawText(legendX + 11, plot.top() + 14, QString::fromUtf8(definition.key));
+        legendX += 58;
+    }
     for (std::size_t band = 0; band < powers_.size() && band < dsp::eegBands().size(); ++band) {
         const dsp::Band& definition = dsp::eegBands()[band];
         QPainterPath path;

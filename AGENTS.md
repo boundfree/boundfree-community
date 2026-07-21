@@ -19,8 +19,8 @@
 
 日常开发优先阅读以下当前有效文档：
 
-| 当前阶段实施 | `docs/plans/m4-spectral.md` |
-| 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md` |
+| 当前阶段实施 | M5 计划尚未建立；开始实施前必须先创建并评审当前计划 |
+| 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md`、`docs/reports/m4-spectral-acceptance.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
 | 分支、版本、文档、验证规范 | `docs/development-guide.md` |
 | 架构或模块边界 | `docs/architecture-design.md` |
@@ -34,8 +34,8 @@
 - 当前版本为 `0.1.0-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
-- 当前执行阶段为 M4：频谱分析（PSD/FFT、STFT、频段功率趋势、相干性）。M3 的重参考、陷波、带通及黄金比对已完成。
-- M4 不实现回放/标注（M5）、视频（M6）、导出录制（M7）与打包（M8）。
+- M4 频谱分析已完成并通过黄金比对、后台请求代次、离屏渲染和 i18n 验收（见 `docs/reports/m4-spectral-acceptance.md`）。下一阶段为 M5 回放与标注。
+- M5 不实现视频（M6）、导出录制（M7）与打包（M8）。
 - 产品版本保持 `0.1.0-dev`，普通功能提交不修改 version.json。
 
 ## Branch And Version Rules
@@ -62,8 +62,7 @@
 
 ## Implementation Rules
 
-- 当前阶段优先遵循 `docs/plans/m4-spectral.md`、`docs/contracts.md`、`docs/roadmap.md` 和 `docs/feature-parity-checklist.md`。
-- controller/service 不依赖 UI；UI 不承担文件解析、DSP 算法或 IPC 细节。
+- M5 开始实施前必须先创建当前阶段计划；其后优先遵循该计划、`docs/contracts.md`、`docs/roadmap.md` 和 `docs/feature-parity-checklist.md`。
 - 后端不得返回用户可见的本地化文案；统一返回 `code + params`。
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
 - 新增共享接口时，同步更新相关契约文档和测试计划。

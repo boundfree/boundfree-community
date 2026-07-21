@@ -132,6 +132,13 @@ M1-B 扩展：
 - 分析：`analysis.*`。
 - 录制和导出：`record.*`、`export.*`。
 
+M4 扩展：
+
+- `analysis.invalid_input`：分析数据、采样率或窗口参数无效。
+- `analysis.invalid_channel`：请求的分析通道不存在。
+- `analysis.same_channel`：MSC 相干性必须选择两个不同通道。
+- `analysis.failed`：未分类的 Native 分析失败。
+
 ## i18n Contract
 
 i18n 使用 Qt Linguist `.ts/.qm`。v1 stable 必达语言为：

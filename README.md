@@ -16,7 +16,7 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 }
 ```
 
-当前阶段：M0–M2 门禁与静态浏览已完成；M3 DSP 滤波与黄金比对已落地。下一阶段为 M4 频谱分析。产品版本 0.1.0-dev。
+当前阶段：M0–M2 门禁与静态浏览、M3 DSP 滤波与黄金比对、M4 频谱分析均已完成。下一阶段为 M5 回放与标注。产品版本 `0.1.0-dev`。
 
 v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -26,17 +26,18 @@ M0 结论：
 
 - IPC 已进入并支撑 M2 文件 `open/get_slice` 路径：stdio + JSON 控制消息 + 长度前缀二进制 payload。
 - 真实 Windows GPU/显示验收已通过；记录见 [`docs/reports/m2-rendering-gpu-gate.md`](docs/reports/m2-rendering-gpu-gate.md)。
-- 旧 Python 版继续作为参考实现、性能基线和 M3/M4 黄金文件来源。
+- 旧 Python 版继续作为参考实现、性能基线以及 M3/M4 黄金文件来源。
 
 ## Current Milestone
 
-当前实施计划为 [`docs/plans/m4-spectral.md`](docs/plans/m4-spectral.md)。M4 在 M3 处理后的数据上实现 PSD/FFT、STFT、频段功率趋势和相干性；M5 之前不实现播放与标注，M6–M8 也不在当前范围。
+M4 已完成，验收记录见 [`docs/reports/m4-spectral-acceptance.md`](docs/reports/m4-spectral-acceptance.md)。下一阶段 M5 实现回放控制和事件标注；M6–M8 仍不在当前范围。
 
 已完成阶段的可验证记录：
 
 - [`docs/reports/m2-format-acceptance.md`](docs/reports/m2-format-acceptance.md)：已验收格式与未实现格式。
 - [`docs/reports/m2-rendering-gpu-gate.md`](docs/reports/m2-rendering-gpu-gate.md)：真实 GPU/显示门禁。
 - [`docs/reports/m3-dsp-acceptance.md`](docs/reports/m3-dsp-acceptance.md)：DSP 黄金比对、离线处理接入和测试命令。
+- [`docs/reports/m4-spectral-acceptance.md`](docs/reports/m4-spectral-acceptance.md)：频谱算法、后台调度、渲染和黄金比对。
 
 ## Documentation
 

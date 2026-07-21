@@ -1,7 +1,7 @@
 ---
 title: M4 频谱分析实施计划
 doc_type: plan
-status: active
+status: completed
 owner: BoundFree
 last_updated: 2026-07-21
 milestone: M4
@@ -9,7 +9,7 @@ milestone: M4
 
 # M4 频谱分析实施计划
 
-M4 在 M3 处理后的脑电数据上实现频域与时频分析；不实现播放、标注、视频、录制、导出、授权或硬件采集。
+M4 已完成。本文保留 M4 在 M3 处理后的脑电数据上实现频域与时频分析的实施范围；验证结果见 [`../reports/m4-spectral-acceptance.md`](../reports/m4-spectral-acceptance.md)。不包含播放、标注、视频、录制、导出、授权或硬件采集。
 
 ## Goal
 
@@ -37,7 +37,7 @@ M3 处理后数据 → AnalysisService（后台、请求代次） → 当前激�
 ## Dependencies
 
 - M3 DSP 与静态浏览已完成。
-- M4 开始前必须将许可安全的 FFT 后端接入构建；当前构建尚未集成 `pocketfft`。不得引入 FFTW、KFR 或其他 GPL 风险依赖。
+- FFT 后端已接入构建：使用许可安全的 `pocketfft` BSD 单头文件；未引入 FFTW、KFR 或其他 GPL 风险依赖。
 - 黄金文件由 `../boundfree-eeg-upper-computer` 的 SciPy 参考实现生成。
 
 ## Acceptance Criteria
@@ -46,4 +46,4 @@ M3 处理后数据 → AnalysisService（后台、请求代次） → 当前激�
 - 后台计算不阻塞 UI；旧请求结果不可覆盖新请求。
 - 当前 tab 以外不触发分析计算。
 - `zh_CN`、`en_US`、`pseudo` 的新增 UI 文本通过 i18n 检查和 offscreen 冒烟。
-- 完成后更新 `feature-parity-checklist.md` 并写入 M4 验收报告。
+- 验收已完成：`feature-parity-checklist.md` 已更新，结果写入 `reports/m4-spectral-acceptance.md`。
