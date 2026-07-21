@@ -2,11 +2,13 @@
 
 #include "controller/file_open_controller.h"
 #include "controller/processing_view_state.h"
+#include "controller/analysis_service.h"
 #include "controller/waveform_view_state.h"
 #include "core/app_error.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ui/waveform_widget.h"
+#include "ui/analysis_widgets.h"
 
 #include <QAction>
 #include <QCheckBox>
@@ -21,6 +23,7 @@
 #include <QScrollArea>
 #include <QStackedWidget>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QToolBar>
 #include <QVector>
 #include <QVBoxLayout>
@@ -58,6 +61,7 @@ private:
     void buildLanguageMenu();
     void buildBrowserControls();
     void buildProcessingControls();
+    void buildAnalysisDock();
     void chooseFile();
     void requestWindow(double t0);
     void setLoading(bool loading);
@@ -65,6 +69,10 @@ private:
     void refreshProcessingControls();
     void applyBrowserStateToWaveform();
     void applyProcessingAndDisplay();
+    void refreshAnalysisControls();
+    void requestCurrentAnalysis();
+    void handleAnalysisCompleted(int generation, const AnalysisResult& result);
+    void handleAnalysisFailed(int generation, const QString& code, const QString& detail);
     void rebuildChannelControls();
     void onProcessingUiChanged();
     QString channelCheckSummary() const;
@@ -111,8 +119,32 @@ private:
     QDoubleSpinBox* bandpassLowSpin_ = nullptr;
     QDoubleSpinBox* bandpassHighSpin_ = nullptr;
 
+    QDockWidget* analysisDock_ = nullptr;
+    QTabWidget* analysisTabs_ = nullptr;
+    QComboBox* psdChannelCombo_ = nullptr;
+    QComboBox* psdModeCombo_ = nullptr;
+    QCheckBox* psdDbCheck_ = nullptr;
+    QSpinBox* psdFmaxSpin_ = nullptr;
+    SpectrumWidget* spectrumWidget_ = nullptr;
+    QLabel* psdBandSummaryLabel_ = nullptr;
+    QComboBox* stftChannelCombo_ = nullptr;
+    QComboBox* stftResolutionCombo_ = nullptr;
+    QSpinBox* stftFmaxSpin_ = nullptr;
+    SpectrogramWidget* spectrogramWidget_ = nullptr;
+    QComboBox* trendChannelCombo_ = nullptr;
+    QDoubleSpinBox* trendEpochSpin_ = nullptr;
+    BandTrendWidget* trendWidget_ = nullptr;
+    QComboBox* coherenceACombo_ = nullptr;
+    QComboBox* coherenceBCombo_ = nullptr;
+    QSpinBox* coherenceFmaxSpin_ = nullptr;
+    QLabel* coherenceSummaryLabel_ = nullptr;
+    SpectrumWidget* coherenceWidget_ = nullptr;
+    AnalysisService* analysisService_ = nullptr;
+    int analysisGeneration_ = 0;
+
     bool refreshingBrowserControls_ = false;
     bool refreshingProcessingControls_ = false;
+    bool refreshingAnalysisControls_ = false;
     std::function<void(const QString&)> openFileHandler_;
     std::function<void(const QString&, double, double)> windowRequestHandler_;
     WaveformViewState viewState_;

@@ -45,6 +45,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildLanguageMenu();
     buildBrowserControls();
     buildProcessingControls();
+    buildAnalysisDock();
     connect(openButton_, &QPushButton::clicked, this, &MainWindow::chooseFile);
     resize(900, 560);
     retranslateUi();
@@ -256,6 +257,242 @@ void MainWindow::buildProcessingControls() {
     refreshProcessingControls();
 }
 
+void MainWindow::buildAnalysisDock() {
+    analysisDock_ = new QDockWidget(this);
+    analysisDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    analysisTabs_ = new QTabWidget(analysisDock_);
+    analysisDock_->setWidget(analysisTabs_);
+    addDockWidget(Qt::RightDockWidgetArea, analysisDock_);
+    analysisDock_->hide();
+
+    auto* psdPage = new QWidget(analysisTabs_);
+    auto* psdLayout = new QVBoxLayout(psdPage);
+    auto* psdControls = new QHBoxLayout();
+    psdChannelCombo_ = new QComboBox(psdPage);
+    psdModeCombo_ = new QComboBox(psdPage);
+    psdDbCheck_ = new QCheckBox(psdPage);
+    psdFmaxSpin_ = new QSpinBox(psdPage);
+    psdFmaxSpin_->setRange(5, 500);
+    psdFmaxSpin_->setValue(100);
+    psdFmaxSpin_->setSuffix(" Hz");
+    psdControls->addWidget(psdChannelCombo_);
+    psdControls->addWidget(psdModeCombo_);
+    psdControls->addWidget(psdDbCheck_);
+    psdModeCombo_->addItem(QString());
+    psdModeCombo_->addItem(QString());
+    psdControls->addWidget(psdFmaxSpin_);
+    psdControls->addStretch();
+    spectrumWidget_ = new SpectrumWidget(psdPage);
+    psdLayout->addLayout(psdControls);
+    psdLayout->addWidget(spectrumWidget_);
+    psdBandSummaryLabel_ = new QLabel(psdPage);
+    psdBandSummaryLabel_->setWordWrap(true);
+    psdLayout->addWidget(psdBandSummaryLabel_);
+    analysisTabs_->addTab(psdPage, QString());
+
+    auto* stftPage = new QWidget(analysisTabs_);
+    auto* stftLayout = new QVBoxLayout(stftPage);
+    auto* stftControls = new QHBoxLayout();
+    stftChannelCombo_ = new QComboBox(stftPage);
+    stftResolutionCombo_ = new QComboBox(stftPage);
+    stftFmaxSpin_ = new QSpinBox(stftPage);
+    stftFmaxSpin_->setRange(5, 500);
+    stftFmaxSpin_->setValue(100);
+    stftFmaxSpin_->setSuffix(" Hz");
+    stftControls->addWidget(stftChannelCombo_);
+    stftControls->addWidget(stftResolutionCombo_);
+    stftControls->addWidget(stftFmaxSpin_);
+    stftControls->addStretch();
+    spectrogramWidget_ = new SpectrogramWidget(stftPage);
+    stftLayout->addLayout(stftControls);
+    stftLayout->addWidget(spectrogramWidget_);
+    analysisTabs_->addTab(stftPage, QString());
+
+    auto* trendPage = new QWidget(analysisTabs_);
+    stftResolutionCombo_->addItem(QString());
+    stftResolutionCombo_->addItem(QString());
+    stftResolutionCombo_->addItem(QString());
+    auto* trendLayout = new QVBoxLayout(trendPage);
+    auto* trendControls = new QHBoxLayout();
+    trendChannelCombo_ = new QComboBox(trendPage);
+    trendEpochSpin_ = new QDoubleSpinBox(trendPage);
+    trendEpochSpin_->setRange(0.5, 30.0);
+    trendEpochSpin_->setValue(1.0);
+    trendEpochSpin_->setSuffix(" s");
+    trendControls->addWidget(trendChannelCombo_);
+    trendControls->addWidget(trendEpochSpin_);
+    trendControls->addStretch();
+    trendWidget_ = new BandTrendWidget(trendPage);
+    trendLayout->addLayout(trendControls);
+    trendLayout->addWidget(trendWidget_);
+    analysisTabs_->addTab(trendPage, QString());
+
+    auto* coherencePage = new QWidget(analysisTabs_);
+    auto* coherenceLayout = new QVBoxLayout(coherencePage);
+    auto* coherenceControls = new QHBoxLayout();
+    coherenceACombo_ = new QComboBox(coherencePage);
+    coherenceBCombo_ = new QComboBox(coherencePage);
+    coherenceFmaxSpin_ = new QSpinBox(coherencePage);
+    coherenceFmaxSpin_->setRange(5, 500);
+    coherenceFmaxSpin_->setValue(100);
+    coherenceFmaxSpin_->setSuffix(" Hz");
+    coherenceControls->addWidget(coherenceACombo_);
+    coherenceControls->addWidget(coherenceBCombo_);
+    coherenceControls->addWidget(coherenceFmaxSpin_);
+    coherenceControls->addStretch();
+    coherenceWidget_ = new SpectrumWidget(coherencePage);
+    coherenceSummaryLabel_ = new QLabel(coherencePage);
+    coherenceSummaryLabel_->setWordWrap(true);
+    coherenceLayout->addLayout(coherenceControls);
+    coherenceLayout->addWidget(coherenceWidget_);
+    coherenceLayout->addWidget(coherenceSummaryLabel_);
+    analysisTabs_->addTab(coherencePage, QString());
+
+    analysisService_ = new AnalysisService(this);
+    connect(analysisService_, &AnalysisService::completed, this, &MainWindow::handleAnalysisCompleted);
+    connect(analysisService_, &AnalysisService::failed, this, &MainWindow::handleAnalysisFailed);
+    connect(analysisTabs_, &QTabWidget::currentChanged, this, [this](int) { requestCurrentAnalysis(); });
+    const auto reanalyze = [this]() { if (!refreshingAnalysisControls_) requestCurrentAnalysis(); };
+    for (QComboBox* combo : {psdChannelCombo_, psdModeCombo_, stftChannelCombo_, stftResolutionCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this, reanalyze);
+    }
+    for (QSpinBox* spin : {psdFmaxSpin_, stftFmaxSpin_, coherenceFmaxSpin_}) {
+        connect(spin, qOverload<int>(&QSpinBox::valueChanged), this, reanalyze);
+    }
+    connect(psdDbCheck_, &QCheckBox::toggled, this, reanalyze);
+    connect(trendEpochSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, reanalyze);
+}
+
+void MainWindow::refreshAnalysisControls() {
+    if (analysisTabs_ == nullptr) {
+        return;
+    }
+    refreshingAnalysisControls_ = true;
+    const QStringList names = hasCurrentFile_ ? currentFile_.waveform.channelNames : QStringList{};
+    for (QComboBox* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        const int selected = combo->currentIndex();
+        combo->clear();
+        combo->addItems(names);
+        combo->setCurrentIndex(std::clamp(selected, 0, std::max(0, combo->count() - 1)));
+    }
+    if (coherenceBCombo_->count() > 1 && coherenceBCombo_->currentIndex() == coherenceACombo_->currentIndex()) {
+        coherenceBCombo_->setCurrentIndex(1);
+    }
+    const int nyquist = hasCurrentFile_ ? std::max(5, static_cast<int>(currentFile_.waveform.fs / 2.0)) : 500;
+    for (QSpinBox* spin : {psdFmaxSpin_, stftFmaxSpin_, coherenceFmaxSpin_}) {
+        spin->setMaximum(nyquist);
+        spin->setValue(std::min(spin->value(), nyquist));
+    }
+    refreshingAnalysisControls_ = false;
+}
+
+void MainWindow::requestCurrentAnalysis() {
+    if (!hasCurrentFile_ || refreshingAnalysisControls_ || analysisService_ == nullptr) {
+        return;
+    }
+    AnalysisRequest request;
+    request.data = matrixFromFloatChannels(currentFile_.waveform.data);
+    request.fs = currentFile_.waveform.fs;
+    request.tStart = currentFile_.waveform.t0;
+    const int currentTab = analysisTabs_->currentIndex();
+    if (currentTab == 0) {
+        request.kind = psdModeCombo_->currentIndex() == 1 ? AnalysisKind::Fft : AnalysisKind::Psd;
+        request.channel = psdChannelCombo_->currentIndex();
+        request.fmax = psdFmaxSpin_->value();
+    } else if (currentTab == 1) {
+        request.kind = AnalysisKind::Stft;
+        request.channel = stftChannelCombo_->currentIndex();
+        request.fmax = stftFmaxSpin_->value();
+        const int base = std::max(16, static_cast<int>(request.fs / 2.0));
+        const int factors[] = {1, 2, 4};
+        request.nperseg = base * factors[std::clamp(stftResolutionCombo_->currentIndex(), 0, 2)];
+    } else if (currentTab == 2) {
+        request.kind = AnalysisKind::BandTrend;
+        request.channel = trendChannelCombo_->currentIndex();
+        request.epochSamples = std::max(2, static_cast<int>(trendEpochSpin_->value() * request.fs));
+    } else {
+        request.kind = AnalysisKind::Coherence;
+        request.channel = coherenceACombo_->currentIndex();
+        request.channelB = coherenceBCombo_->currentIndex();
+        request.fmax = coherenceFmaxSpin_->value();
+    }
+    if (request.channel < 0 || (request.kind == AnalysisKind::Coherence && request.channelB < 0)) {
+        return;
+    }
+    analysisGeneration_ = analysisService_->request(request);
+}
+
+void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& result) {
+    if (generation != analysisGeneration_) {
+        return;
+    }
+    switch (result.kind) {
+    case AnalysisKind::Psd:
+    case AnalysisKind::Fft: {
+        const bool fft = result.kind == AnalysisKind::Fft;
+        const bool asDb = !fft && psdDbCheck_->isChecked();
+        dsp::Spectrum spectrum = result.spectrum;
+        if (asDb) {
+            for (double& value : spectrum.values) {
+                value = 10.0 * std::log10(std::max(value, 1e-12));
+            }
+        }
+        const auto limit = std::upper_bound(spectrum.frequencies.begin(), spectrum.frequencies.end(), static_cast<double>(psdFmaxSpin_->value()));
+        const std::size_t keep = static_cast<std::size_t>(limit - spectrum.frequencies.begin());
+        spectrum.frequencies.resize(keep);
+        spectrum.values.resize(keep);
+        spectrumWidget_->setSpectrum(
+            spectrum,
+            fft ? i18n_->text("app.analysis.fft") : i18n_->text("app.analysis.psd"),
+            fft ? i18n_->text("app.analysis.amplitude") : (asDb ? i18n_->text("app.analysis.db") : i18n_->text("app.analysis.psd_unit")));
+        if (!fft && !asDb) {
+            QStringList powers;
+            for (const dsp::Band& band : dsp::eegBands()) {
+                powers.push_back(QString("%1=%2").arg(band.key).arg(dsp::bandPower(result.spectrum, band.low, band.high), 0, 'f', 2));
+            }
+            psdBandSummaryLabel_->setText(powers.join(" | "));
+        } else {
+            psdBandSummaryLabel_->clear();
+        }
+        break;
+    }
+    case AnalysisKind::Stft:
+        spectrogramWidget_->setSpectrogram(result.spectrogram);
+        break;
+    case AnalysisKind::BandTrend:
+        trendWidget_->setTrend(result.trend.times, result.trend.powers);
+        break;
+    case AnalysisKind::Coherence: {
+        coherenceWidget_->setSpectrum(result.spectrum, i18n_->text("app.analysis.coherence"), i18n_->text("app.analysis.coherence"), true);
+        QStringList values;
+        for (const dsp::Band& band : dsp::eegBands()) {
+            double sum = 0.0;
+            int count = 0;
+            for (std::size_t i = 0; i < result.spectrum.frequencies.size(); ++i) {
+                if (result.spectrum.frequencies[i] >= band.low && result.spectrum.frequencies[i] <= band.high) {
+                    sum += result.spectrum.values[i];
+                    ++count;
+                }
+            }
+            values.push_back(QString("%1=%2").arg(band.key).arg(count > 0 ? sum / count : 0.0, 0, 'f', 2));
+        }
+        coherenceSummaryLabel_->setText(values.join(" | "));
+        break;
+    }
+    }
+}
+
+void MainWindow::handleAnalysisFailed(int generation, const QString& code, const QString&) {
+    if (generation != analysisGeneration_) {
+        return;
+    }
+    if (code == "analysis.same_channel") {
+        coherenceSummaryLabel_->setText(i18n_->text("error.analysis.same_channel"));
+    } else {
+        statusBar()->showMessage(i18n_->text(QString("error.%1").arg(code)));
+    }
+}
+
 void MainWindow::chooseFile() {
     const QString path = QFileDialog::getOpenFileName(
         this,
@@ -398,6 +635,28 @@ void MainWindow::retranslateUi() {
         notchHarmonicsCheck_->setText(i18n_->text("app.processing.harmonics"));
         bandpassEnableCheck_->setText(i18n_->text("app.processing.bandpass"));
     }
+    analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
+    analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
+    analysisTabs_->setTabText(1, i18n_->text("app.analysis.stft"));
+    analysisTabs_->setTabText(2, i18n_->text("app.analysis.trend"));
+    spectrumWidget_->setLabels(i18n_->text("app.analysis.frequency"), i18n_->text("app.analysis.empty"));
+    spectrogramWidget_->setLabels(
+        i18n_->text("app.analysis.stft"),
+        i18n_->text("app.analysis.time"),
+        i18n_->text("app.analysis.frequency"),
+        i18n_->text("app.analysis.empty"));
+    trendWidget_->setLabels(
+        i18n_->text("app.analysis.trend"),
+        i18n_->text("app.analysis.time"),
+        i18n_->text("app.analysis.empty"));
+    coherenceWidget_->setLabels(i18n_->text("app.analysis.frequency"), i18n_->text("app.analysis.empty"));
+    analysisTabs_->setTabText(3, i18n_->text("app.analysis.coherence"));
+    psdModeCombo_->setItemText(0, i18n_->text("app.analysis.welch"));
+    psdModeCombo_->setItemText(1, i18n_->text("app.analysis.fft"));
+    psdDbCheck_->setText(i18n_->text("app.analysis.db_display"));
+    stftResolutionCombo_->setItemText(0, i18n_->text("app.analysis.high_time"));
+    stftResolutionCombo_->setItemText(1, i18n_->text("app.analysis.balanced"));
+    stftResolutionCombo_->setItemText(2, i18n_->text("app.analysis.high_frequency"));
 
     if (statusKey_ == "app.status.sidecar_failed" || statusKey_ == "app.status.file_failed") {
         statusBar()->showMessage(i18n_->text(
@@ -445,6 +704,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     refreshBrowserControls();
     refreshProcessingControls();
     applyProcessingAndDisplay();
+    refreshAnalysisControls();
+    analysisDock_->show();
+    requestCurrentAnalysis();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
@@ -566,6 +828,8 @@ void MainWindow::applyProcessingAndDisplay() {
     }
     currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
     waveformWidget_->setSlice(currentFile_.waveform);
+    refreshAnalysisControls();
+    requestCurrentAnalysis();
     rebuildChannelControls();
     applyBrowserStateToWaveform();
 }
