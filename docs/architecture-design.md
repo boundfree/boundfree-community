@@ -119,8 +119,7 @@ v1 仍保留 `native/realtime/`、数据源抽象、Session 和录制写盘边�
 
 ## 4. DSP 引擎
 
-- **库选型**：`Eigen`（线性代数/向量化）+ `pocketfft`（**BSD 许可**，FFT）。
-  - ⚠️ **明确避开 FFTW / KFR**：二者为 GPL，会污染闭源专有产品；pocketfft 为 BSD，商业安全。
+- **现状与后续选型**：M3 滤波器设计和 SOS 处理链以纯 C++ 实现，尚未依赖 Eigen 或 FFT 后端。M4 频谱分析计划接入 `pocketfft`（**BSD 许可**）；不得引入 FFTW / KFR 等 GPL 风险依赖。Eigen 仅在确有线性代数收益时引入。
 - **滤波**：SOS 双二阶级联（Direct Form II Transposed biquad）。
   - 实时路径：带状态 biquad（等价现有 `sosfilt` + zi 跨块），逐块推进不丢状态。
   - 离线路径：前向-后向零相位（等价 `sosfiltfilt`）。

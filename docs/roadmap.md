@@ -12,11 +12,11 @@ last_updated: 2026-07-21
 
 ## 当前状态
 
-当前版本为 `0.1.0-dev`。M0 技术验证已完成，结论为 conditional go：
+当前版本为 `0.1.0-dev`。M0 技术验证已完成：
 
-- IPC：可进入 M1，初版采用 stdio + JSON 控制消息 + 长度前缀二进制 payload。
+- IPC：stdio + JSON 控制消息 + 长度前缀二进制 payload 已用于 M2 的文件 `open/get_slice` 路径。
 - 渲染：真实 Windows GPU/显示验收已通过（见 [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md)）。
-- 旧版性能画像：MNE 打开文件延迟和 Python DSP 热点已确认，后续必须异步打开文件并迁移 DSP。
+- 旧版性能画像：MNE 打开文件延迟和 Python DSP 热点已确认；M2 异步打开和 M3 DSP 迁移已完成，M4 继续以旧版为频谱黄金来源。
 
 ## v1 产品边界
 
@@ -28,9 +28,9 @@ v1 stable 不承诺自研硬件采集闭环。自研 `ADS1299-4 + ESP32-C3`、BL
 
 ## 当前阶段
 
-M2 真实 GPU/显示门禁已关闭（`Passed`，2026-07-21，Windows 10 + RTX 4070 SUPER）。
-M2-5 已收口。M3 DSP 算法层与静态浏览离线处理已落地：黄金文件比对通过，主窗口可切换参考/陷波/带通。
-产品版本保持 `0.1.0-dev`。下一阶段进入 M4 频谱分析；完整回放仍归 M5。
+M2-5 已收口：CSV、HDF5、EDF/BDF、BrainVision、EEGLAB 与 FIF 已有验收证据；Intan RHS 与 BBK/DAT/LSD 仍未实现。
+M3 DSP 算法层与静态浏览离线处理已落地：重参考、陷波、带通和黄金文件比对通过。当前 UI 仅提供全局带通开关。
+当前阶段为 M4 频谱分析，实施入口为 [`plans/m4-spectral.md`](plans/m4-spectral.md)；完整回放仍归 M5。产品版本保持 `0.1.0-dev`。
 
 ## 阶段路线
 
@@ -68,6 +68,6 @@ M2-5 已收口。M3 DSP 算法层与静态浏览离线处理已落地：黄金�
 - 文件读写只经 Python 边车，主程序不直接解析科研文件格式。
 - 边车和后端只返回结构化错误，不返回本地化文案。
 - EEG 数据统一为 `[n_channels, n_samples]`，单位为 `uV`。
-- DSP 使用 Eigen 与 pocketfft，避免 GPL 风险依赖。
+- M3 滤波当前为纯 C++ 实现；M4 FFT 采用许可安全后端（计划为 `pocketfft`），避免 GPL 风险依赖。
 - 功能不变以 [`feature-parity-checklist.md`](feature-parity-checklist.md) 为验收依据。
 - 对外宣称支持的文件格式必须有真实样本和验收记录；没有事件样本时不得宣称事件支持完成。

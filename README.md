@@ -24,22 +24,19 @@ v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理
 
 M0 结论：
 
-- IPC 可进入 M1：初版采用 stdio + JSON 控制消息 + 长度前缀二进制 payload。
-- 渲染为 conditional go：Xvfb/Mesa 软件 OpenGL 已验证代码路径，但真实 GPU 验收仍是 M2 前硬门禁。
-- 旧 Python 版继续作为参考实现、性能基线和黄金文件来源。
+- IPC 已进入并支撑 M2 文件 `open/get_slice` 路径：stdio + JSON 控制消息 + 长度前缀二进制 payload。
+- 真实 Windows GPU/显示验收已通过；记录见 [`docs/reports/m2-rendering-gpu-gate.md`](docs/reports/m2-rendering-gpu-gate.md)。
+- 旧 Python 版继续作为参考实现、性能基线和 M3/M4 黄金文件来源。
 
-## First Phase
+## Current Milestone
 
-M1-A 只实现基础骨架，不进入业务功能：
+当前实施计划为 [`docs/plans/m4-spectral.md`](docs/plans/m4-spectral.md)。M4 在 M3 处理后的数据上实现 PSD/FFT、STFT、频段功率趋势和相干性；M5 之前不实现播放与标注，M6–M8 也不在当前范围。
 
-- `bf_app --version` 从 `version.json` 输出版本。
-- Qt6 空主窗口可启动，显示版本、状态栏和语言菜单。
-- i18n 框架落地，支持 `zh_CN`、`en_US`、`pseudo` 实际切换。
-- 错误码框架落地，后端统一返回 `code + params`，UI 负责本地化文案。
-- Python 边车正式包支持 `--version`、`--stdio`、`hello`。
-- C++ 主程序可启动边车、握手、超时处理，并在关闭时停止边车。
+已完成阶段的可验证记录：
 
-不在 M1-A 做真实文件打开、波形渲染、DSP、完整授权校验、录制和导出。
+- [`docs/reports/m2-format-acceptance.md`](docs/reports/m2-format-acceptance.md)：已验收格式与未实现格式。
+- [`docs/reports/m2-rendering-gpu-gate.md`](docs/reports/m2-rendering-gpu-gate.md)：真实 GPU/显示门禁。
+- [`docs/reports/m3-dsp-acceptance.md`](docs/reports/m3-dsp-acceptance.md)：DSP 黄金比对、离线处理接入和测试命令。
 
 ## Documentation
 
@@ -47,8 +44,8 @@ M1-A 只实现基础骨架，不进入业务功能：
 
 | 文档 | 用途 |
 | --- | --- |
-| [docs/roadmap.md](docs/roadmap.md) | v1 边界、M0 结论、M1-M8 路线和阶段门禁 |
-| [docs/phase-1-foundation.md](docs/phase-1-foundation.md) | M1-A 第一阶段执行计划 |
+| [docs/roadmap.md](docs/roadmap.md) | v1 边界、当前阶段、M0–M8 路线和门禁 |
+| [docs/plans/m4-spectral.md](docs/plans/m4-spectral.md) | 当前 M4 频谱分析实施范围与验收条件 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
 | [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |
@@ -72,7 +69,7 @@ boundfree-eeg-native/
 ## Branch And Version Model
 
 - 日常开发基于 `master`。
-- 当前第一阶段开发以 M1-A 骨架为基础继续演进；后续功能分支按 `feature/*`、`fix/*`、`docs/*` 拆分。
+- 当前开发以已完成的 M1–M3 能力为基础，按当前里程碑从 `master` 创建 `feature/*`、`fix/*` 或 `docs/*` 分支。
 - `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
 - 普通功能分支不修改 `version.json` 的产品版本号。
 - 产品版本和 `ipc_protocol_version` 分开维护。

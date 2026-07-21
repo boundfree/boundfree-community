@@ -1,15 +1,15 @@
 ---
 title: M1-A 基础契约与可启动骨架
 doc_type: plan
-status: active
+status: completed
 owner: BoundFree
-last_updated: 2026-07-06
+last_updated: 2026-07-21
 milestone: M1-A
 ---
 
 # M1-A 基础契约与可启动骨架
 
-本文是当前阶段唯一执行计划。M1-A 只建立基础契约和可启动骨架，为后续文件打开、波形浏览、DSP、授权、录制和打包提供稳定边界。
+本文记录已完成的 M1-A 基础骨架实施计划，保留用于追溯；当前阶段实施入口见 [`plans/m4-spectral.md`](plans/m4-spectral.md)。M1-A 只建立基础契约和可启动骨架，为后续文件打开、波形浏览、DSP、授权、录制和打包提供稳定边界。
 
 ## Goal
 

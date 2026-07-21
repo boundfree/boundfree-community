@@ -23,11 +23,11 @@ last_updated: 2026-07-06
   - `docs/*`：文档调整。
 - 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
 
-当前第一阶段使用：
+当前阶段从 `master` 创建短分支：
 
 ```bash
 git switch master
-git switch -c feature/m1-foundation
+git switch -c feature/m4-spectral
 ```
 
 ## Version Rules

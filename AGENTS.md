@@ -19,9 +19,8 @@
 
 日常开发优先阅读以下当前有效文档：
 
-| 任务类型 | 必读文档 |
-| --- | --- |
-| 当前阶段实施 | `docs/phase-1-foundation.md` |
+| 当前阶段实施 | `docs/plans/m4-spectral.md` |
+| 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
 | 分支、版本、文档、验证规范 | `docs/development-guide.md` |
 | 架构或模块边界 | `docs/architecture-design.md` |
@@ -35,16 +34,15 @@
 - 当前版本为 `0.1.0-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
-- 当前执行阶段为 M3 收口后进入 M4：DSP 重参考/陷波/带通与黄金比对已落地。
-- M3 不实现完整频谱四视图（M4）、回放/标注（M5）、视频（M6）、导出录制（M7）与打包（M8）。
+- 当前执行阶段为 M4：频谱分析（PSD/FFT、STFT、频段功率趋势、相干性）。M3 的重参考、陷波、带通及黄金比对已完成。
+- M4 不实现回放/标注（M5）、视频（M6）、导出录制（M7）与打包（M8）。
 - 产品版本保持 `0.1.0-dev`，普通功能提交不修改 version.json。
 
 ## Branch And Version Rules
 
 - 日常开发基于 `master`。
-- 当前第一阶段分支使用 `feature/m1-foundation`。
+- 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`；当前阶段不绑定历史 `feature/m1-foundation` 分支。
 - `release` 是稳定发布分支；当前可作为占位分支，但首个 `rc` 或 `stable` 版本前不得打正式 tag。
-- 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`。
 - 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
 - `version.json` 是产品版本和 IPC 协议版本的单一人工维护来源。
 - 不要在普通 feature 分支上修改产品版本号。
@@ -58,13 +56,13 @@
 - IPC 初版使用 JSON 控制消息和长度前缀二进制 EEG payload。
 - 正式 IPC payload 字节序使用小端。
 - EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
-- DSP 使用 Eigen 与 pocketfft。禁止引入 FFTW 或 KFR 等 GPL 风险依赖。
+- M3 当前滤波实现不依赖第三方 DSP 库；M4 接入 FFT 前必须引入许可安全的后端（计划使用 `pocketfft`）。禁止引入 FFTW、KFR 等 GPL 风险依赖。
 - 授权校验保留在 C++ 原生侧，并兼容旧版密钥语义。
 - i18n 使用 Qt Linguist `.ts/.qm`，边车和后端只返回错误码与结构化参数。
 
 ## Implementation Rules
 
-- 优先遵循 `docs/phase-1-foundation.md` 和 `docs/contracts.md`。
+- 当前阶段优先遵循 `docs/plans/m4-spectral.md`、`docs/contracts.md`、`docs/roadmap.md` 和 `docs/feature-parity-checklist.md`。
 - controller/service 不依赖 UI；UI 不承担文件解析、DSP 算法或 IPC 细节。
 - 后端不得返回用户可见的本地化文案；统一返回 `code + params`。
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
