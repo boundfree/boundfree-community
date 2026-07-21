@@ -112,12 +112,14 @@ v1.1/v2：
 
 ## 视频同步 — M6
 
-- [ ] 视频加载（mp4/avi/mov/mkv/wmv/m4v）
-- [ ] 逐帧渲染节流 ~20fps
-- [ ] 视频从属 EEG 时钟 syncTo（漂移>400ms 校正）
-- [ ] 偏移对齐（「应用」按钮显式触发）
-- [ ] 空白段黑屏（不显封面）
-- [ ] 倍速跟随
+- [x] 视频加载（mp4/avi/mov/mkv/wmv/m4v）
+- [x] 逐帧渲染节流 ~20fps
+- [x] 视频从属 EEG 时钟 syncTo（漂移>400ms 校正）
+- [x] 偏移对齐（「应用」按钮显式触发）
+- [x] 空白段黑屏（不显封面）
+- [x] 倍速跟随
+
+验收记录：[`reports/m6-video-sync-acceptance.md`](reports/m6-video-sync-acceptance.md)。
 
 ## 录制 — M7
 

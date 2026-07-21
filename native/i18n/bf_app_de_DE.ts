@@ -332,5 +332,16 @@
     <message><source>app.marker.export</source><translation>Export CSV</translation></message>
     <message><source>app.marker.add_title</source><translation>Add marker</translation></message>
     <message><source>app.marker.add_prompt</source><translation>Time: {time} s; enter a label (optional)</translation></message>
+    <message><source>app.video.panel</source><translation>Video sync</translation></message>
+    <message><source>app.video.open</source><translation>Open video</translation></message>
+    <message><source>app.video.offset</source><translation>Offset</translation></message>
+    <message><source>app.video.offset_tooltip</source><translation>EEG time corresponding to the first video frame</translation></message>
+    <message><source>app.video.apply</source><translation>Apply</translation></message>
+    <message><source>app.video.apply_tooltip</source><translation>Apply the offset and synchronize to the current EEG time</translation></message>
+    <message><source>app.video.not_loaded</source><translation>No video loaded</translation></message>
+    <message><source>app.video.filter</source><translation>Video files (*.mp4 *.avi *.mov *.mkv *.wmv *.m4v);;All files (*)</translation></message>
+    <message><source>app.video.loaded</source><translation>Video loaded: {name}</translation></message>
+    <message><source>app.video.offset_applied</source><translation>Video offset applied: {offset} s</translation></message>
+    <message><source>app.video.load_failed</source><translation>Could not load video: {detail}</translation></message>
   </context>
 </TS>

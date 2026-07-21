@@ -19,8 +19,8 @@
 
 日常开发优先阅读以下当前有效文档：
 
-| 当前阶段实施 | M6 计划尚未建立；开始实施前必须先创建并评审当前计划 |
-| 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md`、`docs/reports/m4-spectral-acceptance.md`、`docs/reports/m5-playback-annotations-acceptance.md` |
+| 当前阶段实施 | M7 计划尚未建立；开始实施前必须先创建并评审当前计划 |
+| 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md`、`docs/reports/m4-spectral-acceptance.md`、`docs/reports/m5-playback-annotations-acceptance.md`、`docs/reports/m6-video-sync-acceptance.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
 | 分支、版本、文档、验证规范 | `docs/development-guide.md` |
 | 架构或模块边界 | `docs/architecture-design.md` |
@@ -34,8 +34,8 @@
 - 当前版本为 `0.1.0-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
-- M5 回放与标注已完成并通过状态机、窗口预取、CSV 标注往返、UI 文件流和 i18n 验收（见 `docs/reports/m5-playback-annotations-acceptance.md`）。下一阶段为 M6 视频同步。
-- M6 不实现导出录制（M7）与打包发布（M8）。
+- M6 视频同步已完成并通过六类视频容器、从属 EEG 时钟、偏移、前后黑屏、倍速、帧节流和主窗口文件流验收（见 `docs/reports/m6-video-sync-acceptance.md`）。下一阶段为 M7 录制与导出。
+- M7 不实现打包发布（M8）与真实硬件采集（v1.1/v2）。
 - 产品版本保持 `0.1.0-dev`，普通功能提交不修改 version.json。
 
 ## Branch And Version Rules

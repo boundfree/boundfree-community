@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QJsonObject>
 #include <QKeySequence>
@@ -52,6 +53,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildAnalysisDock();
     buildPlaybackControls();
     buildMarkerDock();
+    buildVideoDock();
     playbackTimer_.setInterval(25);
     connect(&playbackTimer_, &QTimer::timeout, this, &MainWindow::advancePlayback);
     connect(waveformWidget_, &WaveformWidget::markerRequested, this, &MainWindow::addMarkerAt);
@@ -65,6 +67,8 @@ void MainWindow::buildFileMenu() {
     openAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), QString());
     openAction_->setShortcut(QKeySequence::Open);
     connect(openAction_, &QAction::triggered, this, &MainWindow::chooseFile);
+    openVideoAction_ = fileMenu_->addAction(QString());
+    connect(openVideoAction_, &QAction::triggered, this, &MainWindow::chooseVideo);
     fileMenu_->addSeparator();
     quitAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogCloseButton), QString());
     quitAction_->setShortcut(QKeySequence::Quit);
@@ -118,7 +122,11 @@ void MainWindow::buildBrowserControls() {
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
         if (!refreshingBrowserControls_) {
             playback_.seek(positionSpin_->value());
-            requestWindow(positionSpin_->value());
+            if (playback_.position() < signalDurationSeconds_) {
+                requestWindow(playback_.position());
+            }
+            syncVideoToPlayback();
+            refreshPlaybackControls();
         }
     });
 
@@ -128,7 +136,10 @@ void MainWindow::buildBrowserControls() {
         }
         const double position = playback_.duration() * playbackProgress_->value() / 10000.0;
         playback_.seek(position);
-        requestWindow(position);
+        if (position < signalDurationSeconds_) {
+            requestWindow(position);
+        }
+        syncVideoToPlayback();
         refreshPlaybackControls();
     });
     timeWindowLabel_ = new QLabel(this);
@@ -211,6 +222,10 @@ void MainWindow::buildPlaybackControls() {
     speedCombo_->setCurrentIndex(2);
     connect(speedCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         playback_.setSpeed(speedCombo_->itemData(index).toDouble());
+        if (videoPanel_ != nullptr) {
+            videoPanel_->setRate(playback_.speed());
+            syncVideoToPlayback();
+        }
     });
     browserToolbar_->addWidget(speedLabel_);
     browserToolbar_->addWidget(speedCombo_);
@@ -248,6 +263,30 @@ void MainWindow::buildMarkerDock() {
             markerStore_.updateLabel(item->row(), item->text());
             waveformWidget_->setMarkers(markerStore_.markers());
         }
+    });
+}
+
+void MainWindow::buildVideoDock() {
+    videoDock_ = new QDockWidget(this);
+    videoDock_->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::RightDockWidgetArea);
+    videoPanel_ = new VideoPanel(i18n_, videoDock_);
+    videoDock_->setWidget(videoPanel_);
+    addDockWidget(Qt::BottomDockWidgetArea, videoDock_);
+    videoDock_->hide();
+    connect(videoPanel_, &VideoPanel::offsetApplyRequested, this, [this]() {
+        videoPanel_->applyOffset(playback_.position(), playback_.isPlaying());
+        updatePlaybackDuration();
+        statusBar()->showMessage(i18n_->text(
+            "app.video.offset_applied",
+            {{"offset", QString::number(videoPanel_->offsetSeconds(), 'f', 3)}}),
+            3000);
+    });
+    connect(videoPanel_, &VideoPanel::durationKnown, this, [this](double) {
+        updatePlaybackDuration();
+        syncVideoToPlayback();
+    });
+    connect(videoPanel_, &VideoPanel::loadFailed, this, [this](const QString& detail) {
+        statusBar()->showMessage(i18n_->text("app.video.load_failed", {{"detail", detail}}), 5000);
     });
 }
 
@@ -570,6 +609,7 @@ void MainWindow::togglePlayback() {
         playbackElapsed_.restart();
         playbackTimer_.start();
     }
+    syncVideoToPlayback();
     refreshPlaybackControls();
 }
 
@@ -578,7 +618,7 @@ void MainWindow::advancePlayback() {
     const double elapsedSeconds = playbackElapsed_.restart() / 1000.0;
     playback_.advance(elapsedSeconds);
     const double prefillAt = currentFile_.waveform.t1 - std::min(1.0, viewState_.windowSeconds * 0.25);
-    const bool hasNextWindow = currentFile_.waveform.t1 + 1e-9 < playback_.duration();
+    const bool hasNextWindow = currentFile_.waveform.t1 + 1e-9 < signalDurationSeconds_;
     if (playback_.isPlaying() && hasNextWindow && !playbackPrefetchPending_ && playback_.position() >= prefillAt) {
         playbackPrefetchPending_ = true;
         requestWindow(playback_.position());
@@ -590,6 +630,7 @@ void MainWindow::advancePlayback() {
     if (!playback_.isPlaying()) {
         playbackTimer_.stop();
     }
+    syncVideoToPlayback();
     refreshPlaybackControls();
 }
 
@@ -612,6 +653,21 @@ void MainWindow::refreshPlaybackControls() {
             : 0;
         playbackProgress_->setValue(value);
     }
+}
+
+void MainWindow::syncVideoToPlayback() {
+    if (videoPanel_ != nullptr && videoPanel_->isLoaded()) {
+        videoPanel_->syncTo(playback_.position(), playback_.isPlaying());
+    }
+}
+
+void MainWindow::updatePlaybackDuration() {
+    const double videoEnd = videoPanel_ != nullptr && videoPanel_->videoDurationSeconds() > 0.0
+        ? videoPanel_->offsetSeconds() + videoPanel_->videoDurationSeconds()
+        : 0.0;
+    playback_.setDuration(std::max(signalDurationSeconds_, videoEnd));
+    refreshBrowserControls();
+    refreshPlaybackControls();
 }
 
 void MainWindow::addMarkerAt(double time) {
@@ -682,6 +738,32 @@ void MainWindow::chooseFile() {
     }
 }
 
+void MainWindow::chooseVideo() {
+    const QString path = QFileDialog::getOpenFileName(
+        this,
+        i18n_->text("app.video.open"),
+        QString(),
+        i18n_->text("app.video.filter"));
+    if (!path.isEmpty()) {
+        loadVideoForBrowser(path);
+    }
+}
+
+bool MainWindow::loadVideoForBrowser(const QString& path) {
+    if (videoPanel_ == nullptr || !videoPanel_->load(path)) {
+        return false;
+    }
+    videoPanel_->setRate(playback_.speed());
+    syncVideoToPlayback();
+    videoDock_->show();
+    statusBar()->showMessage(i18n_->text("app.video.loaded", {{"name", QFileInfo(path).fileName()}}), 3000);
+    return true;
+}
+
+QString MainWindow::videoStatusSummary() const {
+    return videoPanel_ != nullptr ? videoPanel_->statusSummary() : QString("unavailable");
+}
+
 void MainWindow::openPathForBrowser(const QString& path) {
     if (path.isEmpty() || !openFileHandler_) {
         return;
@@ -731,7 +813,7 @@ void MainWindow::refreshBrowserControls() {
     }
     if (positionSpin_ != nullptr) {
         QSignalBlocker blocker(positionSpin_);
-        positionSpin_->setRange(0.0, std::max(0.0, currentFile_.session.duration));
+        positionSpin_->setRange(0.0, playback_.duration());
         positionSpin_->setValue(playback_.position());
     }
     refreshingBrowserControls_ = false;
@@ -787,6 +869,7 @@ void MainWindow::retranslateUi() {
     centralLabel_->setText(i18n_->text(emptyStateKey_, emptyStateParams_));
     fileMenu_->setTitle(i18n_->text("app.menu.file"));
     openAction_->setText(i18n_->text("app.action.open"));
+    openVideoAction_->setText(i18n_->text("app.video.open"));
     openButton_->setText(i18n_->text("app.action.open"));
     quitAction_->setText(i18n_->text("app.action.quit"));
     languageMenu_->setTitle(i18n_->text("app.menu.language"));
@@ -843,6 +926,8 @@ void MainWindow::retranslateUi() {
     deleteMarkerButton_->setText(i18n_->text("app.marker.delete"));
     clearMarkersButton_->setText(i18n_->text("app.marker.clear"));
     exportMarkersButton_->setText(i18n_->text("app.marker.export"));
+    videoDock_->setWindowTitle(i18n_->text("app.video.panel"));
+    videoPanel_->retranslateUi();
 
     if (statusKey_ == "app.status.sidecar_failed" || statusKey_ == "app.status.file_failed") {
         statusBar()->showMessage(i18n_->text(
@@ -891,7 +976,8 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     if (!sameSession) {
         playback_.pause();
         playbackTimer_.stop();
-        playback_.setDuration(result.session.duration);
+        signalDurationSeconds_ = result.session.duration;
+        updatePlaybackDuration();
         playback_.seek(result.waveform.t0);
         QVector<QPair<double, QString>> events;
         events.reserve(result.session.events.size());
@@ -909,6 +995,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     markerDock_->show();
     refreshPlaybackControls();
     refreshMarkerControls();
+    syncVideoToPlayback();
     requestCurrentAnalysis();
 }
 

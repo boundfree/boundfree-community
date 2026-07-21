@@ -11,6 +11,7 @@
 #include "i18n/i18n_service.h"
 #include "ui/waveform_widget.h"
 #include "ui/analysis_widgets.h"
+#include "ui/video_panel.h"
 
 #include <QAction>
 #include <QCheckBox>
@@ -62,6 +63,8 @@ public:
     void openPathForBrowser(const QString& path);
     void setProcessingViewStateForBrowser(const ProcessingViewState& state);
     ProcessingViewState processingViewState() const { return processingState_; }
+    bool loadVideoForBrowser(const QString& path);
+    QString videoStatusSummary() const;
 
 private:
     void buildFileMenu();
@@ -70,6 +73,10 @@ private:
     void buildProcessingControls();
     void buildAnalysisDock();
     void chooseFile();
+    void chooseVideo();
+    void buildVideoDock();
+    void syncVideoToPlayback();
+    void updatePlaybackDuration();
     void requestWindow(double t0);
     void setLoading(bool loading);
     void refreshBrowserControls();
@@ -105,6 +112,7 @@ private:
     WaveformWidget* waveformWidget_ = nullptr;
     QMenu* fileMenu_ = nullptr;
     QAction* openAction_ = nullptr;
+    QAction* openVideoAction_ = nullptr;
     QAction* quitAction_ = nullptr;
     QMenu* languageMenu_ = nullptr;
     QVector<QAction*> languageActions_;
@@ -134,6 +142,8 @@ private:
     QPushButton* clearMarkersButton_ = nullptr;
     QPushButton* exportMarkersButton_ = nullptr;
     QAction* markerModeAction_ = nullptr;
+    QDockWidget* videoDock_ = nullptr;
+    VideoPanel* videoPanel_ = nullptr;
 
     QLabel* referenceLabel_ = nullptr;
     QComboBox* referenceCombo_ = nullptr;
@@ -184,6 +194,7 @@ private:
     QJsonObject statusParams_;
     QString emptyStateKey_ = "app.main.empty_state";
     PlaybackState playback_;
+    double signalDurationSeconds_ = 0.0;
     MarkerStore markerStore_;
     QTimer playbackTimer_;
     QElapsedTimer playbackElapsed_;

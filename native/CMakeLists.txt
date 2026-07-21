@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia)
 find_package(Threads REQUIRED)
 
 set(BF_DSP_SOURCES
@@ -37,6 +37,8 @@ add_executable(bf_app
     src/controller/marker_store.h
     src/controller/playback_state.cpp
     src/controller/playback_state.h
+    src/controller/video_sync_state.cpp
+    src/controller/video_sync_state.h
     src/controller/waveform_view_state.cpp
     src/controller/waveform_view_state.h
     src/core/app_error.cpp
@@ -59,11 +61,13 @@ add_executable(bf_app
     src/ui/waveform_widget.h
     src/ui/analysis_widgets.cpp
     src/ui/analysis_widgets.h
+    src/ui/video_panel.cpp
+    src/ui/video_panel.h
 )
 
 target_include_directories(bf_app PRIVATE src)
 target_compile_definitions(bf_app PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets bf_dsp)
+target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets Qt6::Multimedia bf_dsp)
 
 add_executable(m3_dsp_test src/dsp/m3_dsp_test.cpp)
 target_include_directories(m3_dsp_test PRIVATE src)

@@ -332,5 +332,16 @@
     <message><source>app.marker.export</source><translation>[!! Expoort CSV !!]</translation></message>
     <message><source>app.marker.add_title</source><translation>[!! Aadd maarkeer !!]</translation></message>
     <message><source>app.marker.add_prompt</source><translation>[!! Tiimee: {time} s; eenteer aa laabeel (ooptiioonaal) !!]</translation></message>
+    <message><source>app.video.panel</source><translation>[!! Viideeo syync paaneel !!]</translation></message>
+    <message><source>app.video.open</source><translation>[!! Oopeen viideeo !!]</translation></message>
+    <message><source>app.video.offset</source><translation>[!! Ooffset !!]</translation></message>
+    <message><source>app.video.offset_tooltip</source><translation>[!! EEG tiimee coorre espoondiing too the fiirst viideeo fraamee !!]</translation></message>
+    <message><source>app.video.apply</source><translation>[!! Aapplyy !!]</translation></message>
+    <message><source>app.video.apply_tooltip</source><translation>[!! Aapplyy the ooffset aand syynchroonizee too the cuurreent EEG tiimee !!]</translation></message>
+    <message><source>app.video.not_loaded</source><translation>[!! Noo viideeo looadeed !!]</translation></message>
+    <message><source>app.video.filter</source><translation>[!! Viideeo fiilees (*.mp4 *.avi *.mov *.mkv *.wmv *.m4v);;Aall fiilees (*) !!]</translation></message>
+    <message><source>app.video.loaded</source><translation>[!! Viideeo looadeed: {name} !!]</translation></message>
+    <message><source>app.video.offset_applied</source><translation>[!! Viideeo ooffset aappliieed: {offset} s !!]</translation></message>
+    <message><source>app.video.load_failed</source><translation>[!! Coould noot looaad viideeo: {detail} !!]</translation></message>
   </context>
 </TS>

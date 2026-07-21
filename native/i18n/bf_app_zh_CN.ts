@@ -332,5 +332,16 @@
     <message><source>app.marker.export</source><translation>导出 CSV</translation></message>
     <message><source>app.marker.add_title</source><translation>添加标注</translation></message>
     <message><source>app.marker.add_prompt</source><translation>时间：{time} 秒；请输入标签（可留空）</translation></message>
+    <message><source>app.video.panel</source><translation>视频同步</translation></message>
+    <message><source>app.video.open</source><translation>打开视频</translation></message>
+    <message><source>app.video.offset</source><translation>偏移</translation></message>
+    <message><source>app.video.offset_tooltip</source><translation>视频第一帧对应的 EEG 时间</translation></message>
+    <message><source>app.video.apply</source><translation>应用</translation></message>
+    <message><source>app.video.apply_tooltip</source><translation>应用偏移并同步到当前 EEG 时间</translation></message>
+    <message><source>app.video.not_loaded</source><translation>未加载视频</translation></message>
+    <message><source>app.video.filter</source><translation>视频文件 (*.mp4 *.avi *.mov *.mkv *.wmv *.m4v);;所有文件 (*)</translation></message>
+    <message><source>app.video.loaded</source><translation>已加载视频：{name}</translation></message>
+    <message><source>app.video.offset_applied</source><translation>已应用视频偏移：{offset} 秒</translation></message>
+    <message><source>app.video.load_failed</source><translation>无法加载视频：{detail}</translation></message>
   </context>
 </TS>

@@ -6,6 +6,7 @@
 #include "controller/analysis_service.h"
 #include "controller/marker_store.h"
 #include "controller/playback_state.h"
+#include "controller/video_sync_state.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
@@ -15,6 +16,7 @@
 #include "ui/main_window.h"
 #include "ui/analysis_widgets.h"
 #include "ui/waveform_widget.h"
+#include "ui/video_panel.h"
 
 #include <QApplication>
 #include <QCommandLineOption>
@@ -33,6 +35,7 @@
 #include <cmath>
 #include <iostream>
 #include <QEventLoop>
+#include <limits>
 #include <vector>
 
 int main(int argc, char** argv) {
@@ -130,6 +133,110 @@ int main(int argc, char** argv) {
             }
             sidecar.stop();
             std::cout << "smoke-m5-markers-ok events=" << opened.events.size() << " markers=" << store.markers().size() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-m6-sync") {
+            QCoreApplication app(argc, argv);
+            bf::VideoSyncState sync;
+            sync.setOffsetSeconds(2.0);
+            if (sync.videoPositionMs(3.0) != 1000) {
+                std::cerr << "smoke-m6-sync-failed offset_mapping\n";
+                return 1;
+            }
+            const bf::VideoSyncCommand unknownDuration = sync.sync(100.0, false, 0, false);
+            if (unknownDuration.blank || !unknownDuration.seek || unknownDuration.seekPositionMs != 98000) {
+                std::cerr << "smoke-m6-sync-failed unknown_duration\n";
+                return 1;
+            }
+            sync.setDurationMs(10000);
+            const bf::VideoSyncCommand beforeStart = sync.sync(1.0, false, 0, true);
+            const bf::VideoSyncCommand repeatedBlank = sync.sync(1.0, false, 0, false);
+            if (!beforeStart.blank || !beforeStart.pause || !beforeStart.seek || beforeStart.seekPositionMs != 0 || repeatedBlank.seek) {
+                std::cerr << "smoke-m6-sync-failed blank_entry\n";
+                return 1;
+            }
+            const bf::VideoSyncCommand playingResync = sync.sync(3.0, true, 1500, false);
+            const bf::VideoSyncCommand playingWithinThreshold = sync.sync(3.0, true, 1400, true);
+            if (playingResync.blank || !playingResync.play || !playingResync.seek || playingResync.seekPositionMs != 1000 || playingWithinThreshold.seek) {
+                std::cerr << "smoke-m6-sync-failed playing_threshold\n";
+                return 1;
+            }
+            const bf::VideoSyncCommand pausedResync = sync.sync(3.0, false, 1051, true);
+            const bf::VideoSyncCommand pausedWithinThreshold = sync.sync(3.0, false, 1050, false);
+            if (!pausedResync.pause || !pausedResync.seek || pausedResync.seekPositionMs != 1000 || pausedWithinThreshold.seek) {
+                std::cerr << "smoke-m6-sync-failed paused_threshold\n";
+                return 1;
+            }
+            const bf::VideoSyncCommand afterEnd = sync.sync(12.0, true, 9000, true);
+            sync.setOffsetSeconds(std::numeric_limits<double>::quiet_NaN());
+            if (!afterEnd.blank || !afterEnd.pause || !afterEnd.seek || sync.offsetSeconds() != 0.0) {
+                std::cerr << "smoke-m6-sync-failed end_or_nonfinite\n";
+                return 1;
+            }
+            bf::PlaybackState playback;
+            playback.setSpeed(4.0);
+            playback.setSpeed(3.0);
+            if (playback.speed() != 4.0) {
+                std::cerr << "smoke-m6-sync-failed playback_speed\n";
+                return 1;
+            }
+            std::cout << "smoke-m6-sync-ok playing_threshold_ms=400 paused_threshold_ms=50 blank_idempotent=true speeds=5\n";
+            return 0;
+        }
+        if (arg == "--smoke-m6-video" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            if (!i18n.loadLocale("en_US", &i18nError)) {
+                std::cerr << "smoke-m6-video-failed i18n=" << i18nError.toStdString() << "\n";
+                return 1;
+            }
+            bf::VideoPanel panel(&i18n);
+            panel.resize(480, 280);
+            panel.show();
+            QString mediaError;
+            QObject::connect(&panel, &bf::VideoPanel::loadFailed, &app, [&](const QString& detail) {
+                mediaError = detail;
+            });
+            if (!panel.load(QString::fromLocal8Bit(argv[i + 1]))) {
+                std::cerr << "smoke-m6-video-failed load\n";
+                return 1;
+            }
+            panel.setRate(2.0);
+            panel.syncTo(0.2, true);
+            QEventLoop mediaLoop;
+            QTimer mediaTimeout;
+            QTimer mediaProbe;
+            mediaTimeout.setSingleShot(true);
+            mediaProbe.setInterval(25);
+            QObject::connect(&mediaTimeout, &QTimer::timeout, &mediaLoop, &QEventLoop::quit);
+            QObject::connect(&mediaProbe, &QTimer::timeout, &mediaLoop, [&]() {
+                panel.syncTo(0.2, true);
+                if (panel.videoDurationSeconds() > 0.0
+                    && panel.renderedFrameCount() >= 2
+                    && panel.droppedFrameCount() > 0) {
+                    mediaLoop.quit();
+                }
+            });
+            mediaTimeout.start(8000);
+            mediaProbe.start();
+            mediaLoop.exec();
+            mediaProbe.stop();
+            panel.syncTo(0.2, false);
+            const bool pausedFrameReady = panel.videoDurationSeconds() > 0.0
+                && panel.renderedFrameCount() >= 2
+                && panel.droppedFrameCount() > 0;
+            panel.syncTo(-1.0, false);
+            const bool beforeBlank = panel.isBlank();
+            panel.syncTo(panel.videoDurationSeconds() + 1.0, false);
+            const bool afterBlank = panel.isBlank();
+            if (!mediaError.isEmpty() || !pausedFrameReady || !beforeBlank || !afterBlank || std::abs(panel.playbackRate() - 2.0) > 1e-12) {
+                std::cerr << "smoke-m6-video-failed error=" << mediaError.toStdString()
+                          << " summary=" << panel.statusSummary().toStdString() << "\n";
+                return 1;
+            }
+            std::cout << "smoke-m6-video-ok " << panel.statusSummary().toStdString()
+                      << " before_blank=true after_blank=true\n";
             return 0;
         }
         if (arg == "--smoke-m4-analysis") {
@@ -935,7 +1042,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption smokeOpt("smoke-ui", "Start UI and exit automatically.");
     const QCommandLineOption languageOpt("language", "Set startup locale.", "locale", "zh_CN");
     const QCommandLineOption openFileOpt("open-file", "Open an EEG file after startup.", "path");
-    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt, openFileOpt});
+    const QCommandLineOption openVideoOpt("open-video", "Open a synchronized video after startup.", "path");
+    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt, openFileOpt, openVideoOpt});
     parser.process(app);
 
     bf::I18nService i18n(repoRoot);
@@ -959,12 +1067,21 @@ int main(int argc, char** argv) {
     });
     QObject::connect(&fileController, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
         window.showFileOpenResult(result);
+        if (parser.isSet(openVideoOpt) && !window.loadVideoForBrowser(parser.value(openVideoOpt))) {
+            std::cerr << "smoke-ui-file-flow-failed code=video_load_failed\n";
+            QTimer::singleShot(0, &app, [&]() { app.exit(1); });
+            return;
+        }
         if (parser.isSet(smokeOpt) && parser.isSet(openFileOpt)) {
             std::cout << "smoke-ui-file-flow-ok format=" << result.session.format.toStdString()
                       << " n_channels=" << result.session.nChannels
                       << " t0=" << result.waveform.t0
-                      << " t1=" << result.waveform.t1 << "\n";
-            QTimer::singleShot(0, &app, &QCoreApplication::quit);
+                      << " t1=" << result.waveform.t1;
+            if (parser.isSet(openVideoOpt)) {
+                std::cout << " video=" << window.videoStatusSummary().toStdString();
+            }
+            std::cout << "\n";
+            QTimer::singleShot(parser.isSet(openVideoOpt) ? 500 : 0, &app, &QCoreApplication::quit);
         }
     });
     QObject::connect(&fileController, &bf::FileOpenController::failed, &window, [&](const bf::AppError& error) {

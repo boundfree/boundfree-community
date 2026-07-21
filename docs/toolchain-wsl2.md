@@ -21,8 +21,10 @@ BoundFree EEG Native 当前在 WSL2 中使用 Qt6/conda 工具链构建。仓库
 当前指向：
 
 ```bash
-/home/vsonic12138/miniconda3/envs/bf-qt6-spike
+/home/vsonic12138/miniconda3/envs/bf-qt6-multimedia
 ```
+
+该环境提供 Qt 6.9.2 Core/Widgets/Multimedia 与 FFmpeg 媒体后端，用于 M6 本地构建和自动化验证。它不是 M8 发布环境；Windows 安装包必须另行核对 Qt/FFmpeg 许可证和部署依赖。
 
 如需迁移 Qt 环境，更新 symlink 即可：
 
