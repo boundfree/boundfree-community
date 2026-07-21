@@ -1,0 +1,137 @@
+{
+  "fs": 250.0,
+  "n_samples": 2048,
+  "seed": 20260721,
+  "nperseg": 256,
+  "noverlap_stft": 192,
+  "t_start": 12.5,
+  "stft_fmax": 60.0,
+  "coh_fmax": 80.0,
+  "bands": [
+    {
+      "key": "delta",
+      "low": 0.5,
+      "high": 4.0
+    },
+    {
+      "key": "theta",
+      "low": 4.0,
+      "high": 8.0
+    },
+    {
+      "key": "alpha",
+      "low": 8.0,
+      "high": 13.0
+    },
+    {
+      "key": "beta",
+      "low": 13.0,
+      "high": 30.0
+    },
+    {
+      "key": "gamma",
+      "low": 30.0,
+      "high": 100.0
+    }
+  ],
+  "scipy_params": {
+    "welch": {
+      "window": "hann",
+      "nperseg": 256,
+      "noverlap_default": 128,
+      "detrend": "constant",
+      "scaling": "density",
+      "return_onesided": true,
+      "average": "mean"
+    },
+    "spectrogram": {
+      "window": "hann",
+      "nperseg": 256,
+      "noverlap": 192,
+      "detrend": "constant",
+      "scaling": "density",
+      "mode": "psd",
+      "boundary": null,
+      "padded": false
+    },
+    "coherence": {
+      "window": "hann",
+      "nperseg": 256,
+      "noverlap_default": 128,
+      "detrend": "constant"
+    },
+    "fft_amplitude": {
+      "window": "np.hanning (symmetric Hann)",
+      "normalization": "abs*2/window.sum()",
+      "detrend": "none"
+    },
+    "db_floor": 1e-12,
+    "db_formula": "10*log10(max(value, 1e-12))"
+  },
+  "tolerances": {
+    "fft_amp_atol": 1e-09,
+    "welch_psd_atol": 1e-10,
+    "welch_psd_db_atol": 1e-09,
+    "stft_sxx_db_atol": 1e-09,
+    "stft_freq_atol": 1e-12,
+    "stft_time_atol": 1e-12,
+    "coherence_atol": 1e-09,
+    "band_power_atol": 1e-10,
+    "freq_atol": 1e-12
+  },
+  "shapes": {
+    "signal": [
+      2048
+    ],
+    "signal_b": [
+      2048
+    ],
+    "fft_freq": [
+      1025
+    ],
+    "fft_amp": [
+      1025
+    ],
+    "welch_freq": [
+      129
+    ],
+    "welch_psd": [
+      129
+    ],
+    "welch_psd_db": [
+      129
+    ],
+    "stft_freq": [
+      62
+    ],
+    "stft_time": [
+      29
+    ],
+    "stft_sxx_db": [
+      62,
+      29
+    ],
+    "coh_freq": [
+      82
+    ],
+    "coh": [
+      82
+    ],
+    "band_power": [
+      5
+    ]
+  },
+  "alignment_notes": [
+    "C++ symmetricHann = np.hanning = 0.5-0.5*cos(2\u03c0 i/(n-1)); \u7528\u4e8e FFT \u5e45\u5ea6\u3002",
+    "C++ periodicHann = scipy 'hann' window (DFT-even); \u7528\u4e8e Welch/STFT/Coherence\u3002",
+    "Welch \u6bb5\u91cd\u53e0: C++ step=max(1,n//2) \u7b49\u4ef7 scipy noverlap=nperseg//2 \u9ed8\u8ba4\u503c\u3002",
+    "STFT \u6bb5\u91cd\u53e0: \u65e7\u4ed3\u5e93 noverlap=nperseg*3//4, C++ step=n-noverlap \u4e00\u81f4\u3002",
+    "\u5355\u8fb9 PSD \u52a0\u500d: \u5076\u6570 n \u6700\u540e Nyquist bin \u4e0d\u52a0\u500d; \u5947\u6570 n \u5168\u90e8\u52a0\u500d\u3002",
+    "\u76f8\u5e72 Cxy=|Pxy|^2/(Pxx*Pyy), \u9891\u7387\u4e0a\u9650 mask freqs<=fmax (\u95ed\u533a\u95f4)\u3002",
+    "\u9891\u6bb5\u529f\u7387: \u95ed\u533a\u95f4 [low,high] \u9891\u70b9\u6c42\u548c * df, \u57fa\u4e8e Welch \u7ebf\u6027 PSD\u3002",
+    "\u65f6\u95f4\u8f74: scipy time=(nperseg/2 + k*step)/fs + t_start; C++ tStart+(start+n/2)/fs \u4e00\u81f4\u3002"
+  ],
+  "generator": "scripts/generate_m4_golden.py",
+  "scipy_version": "1.15.3",
+  "numpy_version": "2.2.6"
+}

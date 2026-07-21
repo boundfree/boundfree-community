@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Threads REQUIRED)
 
 set(BF_DSP_SOURCES
     src/dsp/biquad.cpp
@@ -14,12 +15,15 @@ set(BF_DSP_SOURCES
     src/dsp/npy_io.cpp
     src/dsp/pipeline.cpp
     src/dsp/reference.cpp
+    src/dsp/spectral.cpp
 )
 
 add_library(bf_dsp STATIC ${BF_DSP_SOURCES})
-target_include_directories(bf_dsp PUBLIC src)
+target_include_directories(bf_dsp PUBLIC src third_party)
 
 add_executable(bf_app
+    src/controller/analysis_service.cpp
+    src/controller/analysis_service.h
     src/app/main.cpp
     src/controller/file_open_controller.cpp
     src/controller/file_open_controller.h
@@ -49,6 +53,8 @@ add_executable(bf_app
     src/ui/main_window.h
     src/ui/waveform_widget.cpp
     src/ui/waveform_widget.h
+    src/ui/analysis_widgets.cpp
+    src/ui/analysis_widgets.h
 )
 
 target_include_directories(bf_app PRIVATE src)
@@ -58,3 +64,7 @@ target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets bf_dsp)
 add_executable(m3_dsp_test src/dsp/m3_dsp_test.cpp)
 target_include_directories(m3_dsp_test PRIVATE src)
 target_link_libraries(m3_dsp_test PRIVATE bf_dsp)
+
+add_executable(m4_spectral_test src/dsp/m4_spectral_test.cpp)
+target_include_directories(m4_spectral_test PRIVATE src)
+target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
