@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-07-08
+last_updated: 2026-07-22
 ---
 
 # 文档索引
@@ -17,7 +17,7 @@ last_updated: 2026-07-08
 | 文档 | 类型 | 用途 |
 | --- | --- | --- |
 | [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、当前阶段、M0-M8 路线和阶段门禁 |
-| [`plans/m6-video-sync.md`](plans/m6-video-sync.md) | 已完成计划 | M6 视频从属时钟、偏移、黑屏、倍速和帧节流 |
+| [`plans/m7-record-export.md`](plans/m7-record-export.md) | 当前计划 | M7 二进制 IPC、双格式录制、背压与三格式片段导出 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
 | [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |

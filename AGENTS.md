@@ -19,7 +19,7 @@
 
 日常开发优先阅读以下当前有效文档：
 
-| 当前阶段实施 | M7 计划尚未建立；开始实施前必须先创建并评审当前计划 |
+| 当前阶段实施 | `docs/plans/m7-record-export.md`；实施前必须先评审该计划 |
 | 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md`、`docs/reports/m4-spectral-acceptance.md`、`docs/reports/m5-playback-annotations-acceptance.md`、`docs/reports/m6-video-sync-acceptance.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
 | 分支、版本、文档、验证规范 | `docs/development-guide.md` |

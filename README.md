@@ -31,6 +31,7 @@ M0 结论：
 ## Current Milestone
 
 M6 已完成，验收记录见 [`docs/reports/m6-video-sync-acceptance.md`](docs/reports/m6-video-sync-acceptance.md)。下一阶段 M7 实现双格式录制骨架、背压、片段导出和标注写入；M8 仍不在当前范围。
+当前实施依据：[`docs/plans/m7-record-export.md`](docs/plans/m7-record-export.md)。
 
 已完成阶段的可验证记录：
 
@@ -48,7 +49,7 @@ M6 已完成，验收记录见 [`docs/reports/m6-video-sync-acceptance.md`](docs
 | 文档 | 用途 |
 | --- | --- |
 | [docs/roadmap.md](docs/roadmap.md) | v1 边界、当前阶段、M0–M8 路线和门禁 |
-| [docs/plans/m4-spectral.md](docs/plans/m4-spectral.md) | 当前 M4 频谱分析实施范围与验收条件 |
+| [docs/plans/m7-record-export.md](docs/plans/m7-record-export.md) | 当前 M7 录制与片段导出实施范围、协议边界与验收条件 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
 | [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |
