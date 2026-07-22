@@ -14,4 +14,5 @@ def test_sidecar_declares_format_optional_dependencies():
     assert data["project"]["optional-dependencies"]["formats"] == [
         "h5py==3.16.0",
         "mne==1.12.1",
+        "pyedflib==0.1.42",
     ]

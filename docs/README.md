@@ -17,7 +17,7 @@ last_updated: 2026-07-22
 | 文档 | 类型 | 用途 |
 | --- | --- | --- |
 | [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、当前阶段、M0-M8 路线和阶段门禁 |
-| [`plans/m7-record-export.md`](plans/m7-record-export.md) | 当前计划 | M7 二进制 IPC、双格式录制、背压与三格式片段导出 |
+| [`plans/m7-record-export.md`](plans/m7-record-export.md) | 已完成计划 | M7 二进制 IPC、双格式录制、背压与三格式片段导出 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
 | [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
@@ -34,6 +34,7 @@ last_updated: 2026-07-22
 | [`reports/m4-spectral-acceptance.md`](reports/m4-spectral-acceptance.md) | M4 频谱算法、后台调度、渲染和黄金比对记录 |
 | [`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md) | M5 回放状态、事件标注、CSV 往返和 UI 文件流记录 |
 | [`reports/m6-video-sync-acceptance.md`](reports/m6-video-sync-acceptance.md) | M6 视频格式、同步状态、帧节流与主窗口文件流记录 |
+| [`reports/m7-record-export-acceptance.md`](reports/m7-record-export-acceptance.md) | M7 录制、背压、三格式导出与回读验收记录 |
 
 ## 历史归档
 

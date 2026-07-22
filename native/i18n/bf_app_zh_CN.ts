@@ -343,5 +343,36 @@
     <message><source>app.video.loaded</source><translation>已加载视频：{name}</translation></message>
     <message><source>app.video.offset_applied</source><translation>已应用视频偏移：{offset} 秒</translation></message>
     <message><source>app.video.load_failed</source><translation>无法加载视频：{detail}</translation></message>
+    <message><source>app.record.start</source><translation>开始录制</translation></message>
+    <message><source>app.record.stop</source><translation>停止录制</translation></message>
+    <message><source>app.record.started</source><translation>录制已开始</translation></message>
+    <message><source>app.record.completed</source><translation>录制完成：{samples} 个样本</translation></message>
+    <message><source>app.record.no_file</source><translation>请先打开 EEG 文件</translation></message>
+    <message><source>app.record.metadata</source><translation>录制元数据</translation></message>
+    <message><source>app.record.animal_id</source><translation>动物编号</translation></message>
+    <message><source>app.record.exp_type</source><translation>实验类型</translation></message>
+    <message><source>app.record.notes</source><translation>备注</translation></message>
+    <message><source>app.record.output_dir</source><translation>选择录制目录</translation></message>
+    <message><source>app.record.status</source><translation>REC {elapsed}；样本 {samples}；丢弃 {dropped}</translation></message>
+    <message><source>app.record.low_disk</source><translation>磁盘空间低于 500 MiB；REC {elapsed}；样本 {samples}；丢弃 {dropped}</translation></message>
+    <message><source>app.export.action</source><translation>导出片段</translation></message>
+    <message><source>app.export.title</source><translation>导出 EEG 片段</translation></message>
+    <message><source>app.export.start</source><translation>开始时间（秒）</translation></message>
+    <message><source>app.export.end</source><translation>结束时间（秒）</translation></message>
+    <message><source>app.export.filter</source><translation>EDF (*.edf);;HDF5 (*.h5 *.hdf5);;CSV (*.csv)</translation></message>
+    <message><source>app.export.running</source><translation>正在导出片段</translation></message>
+    <message><source>app.export.completed</source><translation>导出完成：{path}</translation></message>
+    <message><source>error.ipc.invalid_frame</source><translation>边车数据帧无效：{reason}</translation></message>
+    <message><source>error.record.invalid_state</source><translation>当前状态不能录制：{state}</translation></message>
+    <message><source>error.record.session_not_found</source><translation>录制会话不存在：{handle}</translation></message>
+    <message><source>error.record.open_failed</source><translation>无法在 {path} 创建录制文件：{reason}</translation></message>
+    <message><source>error.record.invalid_chunk</source><translation>录制数据块无效：{reason}</translation></message>
+    <message><source>error.record.writer_failed</source><translation>录制会话 {handle} 写入失败：{reason}</translation></message>
+    <message><source>error.record.close_timeout</source><translation>录制会话 {handle} 未能在 {timeout_ms} 毫秒内关闭</translation></message>
+    <message><source>error.export.invalid_range</source><translation>导出范围 {t0}–{t1} 秒超出时长 {duration} 秒</translation></message>
+    <message><source>error.export.unsupported_format</source><translation>导出路径 {path} 的格式 {suffix} 不受支持</translation></message>
+    <message><source>error.export.busy</source><translation>已有导出任务正在运行</translation></message>
+    <message><source>error.export.failed</source><translation>片段导出到 {path} 失败：{reason}</translation></message>
+
   </context>
 </TS>

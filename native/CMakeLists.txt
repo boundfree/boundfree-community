@@ -25,6 +25,8 @@ add_executable(bf_app
     src/controller/analysis_service.cpp
     src/controller/analysis_service.h
     src/app/main.cpp
+    src/controller/export_controller.cpp
+    src/controller/export_controller.h
     src/controller/file_open_controller.cpp
     src/controller/file_open_controller.h
     src/controller/file_session.cpp
@@ -37,6 +39,8 @@ add_executable(bf_app
     src/controller/marker_store.h
     src/controller/playback_state.cpp
     src/controller/playback_state.h
+    src/controller/record_controller.cpp
+    src/controller/record_controller.h
     src/controller/video_sync_state.cpp
     src/controller/video_sync_state.h
     src/controller/waveform_view_state.cpp

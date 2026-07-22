@@ -8,6 +8,7 @@
 #include <QString>
 #include <QStringList>
 
+#include <QByteArray>
 #include <vector>
 
 namespace bf {
@@ -58,6 +59,34 @@ struct SidecarSliceResult {
 };
 
 SidecarSliceResult parseSlicePayload(const QJsonObject& payload);
+SidecarSliceResult parseSliceBinaryPayload(const QJsonObject& payload, const QByteArray& bytes);
+
+struct SidecarRecordOpenResult {
+    bool ok = false;
+    QString handle;
+    QJsonObject paths;
+    AppError error;
+};
+
+struct SidecarRecordResult {
+    bool ok = false;
+    bool accepted = false;
+    int backlogChunks = 0;
+    int samplesWritten = 0;
+    int droppedChunks = 0;
+    int droppedEvents = 0;
+    QJsonObject paths;
+    AppError error;
+};
+
+struct SidecarExportResult {
+    bool ok = false;
+    QString path;
+    int nChannels = 0;
+    int nSamples = 0;
+    int markerCount = 0;
+    AppError error;
+};
 
 class SidecarClient {
 public:
@@ -69,11 +98,38 @@ public:
     SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000);
     SidecarResponse exportMarkersCsv(const QString& path, const QVector<SidecarEvent>& events, int timeoutMs = 3000);
     SidecarSliceResult getSlice(const QString& handle, double t0, double t1, int timeoutMs = 3000);
+    SidecarRecordOpenResult recordOpen(
+        double fs,
+        const QStringList& chNames,
+        const QString& outputDir,
+        const QJsonObject& metadata,
+        int maxQueueChunks = 256,
+        int timeoutMs = 10000);
+    SidecarRecordResult recordWrite(
+        const QString& handle,
+        const std::vector<std::vector<float>>& data,
+        int timeoutMs = 3000);
+    SidecarRecordResult recordEvent(const QString& handle, double time, const QString& label, int timeoutMs = 3000);
+    SidecarRecordResult recordClose(const QString& handle, int timeoutMs = 15000);
+    SidecarExportResult exportSegment(
+        const QString& sourcePath,
+        double t0,
+        double t1,
+        const QString& outputPath,
+        const QVector<SidecarEvent>& events,
+        int timeoutMs = 30000);
     void stop();
 
 private:
-    bool writeJsonLine(const QJsonObject& object, int timeoutMs);
-    QByteArray readJsonLine(int timeoutMs);
+    bool writeFrame(quint8 frameType, const QByteArray& payload, int timeoutMs);
+    bool readFrame(quint8* frameType, QByteArray* payload, int timeoutMs);
+    SidecarResponse exchange(
+        const QString& method,
+        const QJsonObject& params,
+        const QByteArray& outgoingPayload,
+        bool expectBinaryPayload,
+        QByteArray* incomingPayload,
+        int timeoutMs);
 
     QString repoRoot_;
     QProcess process_;

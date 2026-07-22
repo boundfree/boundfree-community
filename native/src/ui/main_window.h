@@ -6,6 +6,8 @@
 #include "controller/playback_state.h"
 #include "controller/analysis_service.h"
 #include "controller/waveform_view_state.h"
+#include "controller/export_controller.h"
+#include "controller/record_controller.h"
 #include "core/app_error.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
@@ -65,6 +67,8 @@ public:
     ProcessingViewState processingViewState() const { return processingState_; }
     bool loadVideoForBrowser(const QString& path);
     QString videoStatusSummary() const;
+    QString recordStatusSummary() const;
+    QString exportStatusSummary() const;
 
 private:
     void buildFileMenu();
@@ -75,6 +79,9 @@ private:
     void chooseFile();
     void chooseVideo();
     void buildVideoDock();
+    void buildRecordControls();
+    void toggleRecording();
+    void exportSegment();
     void syncVideoToPlayback();
     void updatePlaybackDuration();
     void requestWindow(double t0);
@@ -143,6 +150,18 @@ private:
     QPushButton* exportMarkersButton_ = nullptr;
     QAction* markerModeAction_ = nullptr;
     QDockWidget* videoDock_ = nullptr;
+    QAction* recordAction_ = nullptr;
+    QAction* exportSegmentAction_ = nullptr;
+    RecordController* recordController_ = nullptr;
+    ExportController* exportController_ = nullptr;
+    RecordSummary lastRecordSummary_;
+    SidecarExportResult lastExportResult_;
+    bool exportRunning_ = false;
+    double recordSourceStart_ = 0.0;
+    QElapsedTimer recordElapsed_;
+    QTimer recordUiTimer_;
+    QString recordOutputDir_;
+    bool recordBlinkVisible_ = false;
     VideoPanel* videoPanel_ = nullptr;
 
     QLabel* referenceLabel_ = nullptr;

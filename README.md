@@ -16,7 +16,7 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 }
 ```
 
-当前阶段：M0–M2 门禁与静态浏览、M3 DSP、M4 频谱分析、M5 回放与标注、M6 视频同步均已完成。下一阶段为 M7 录制与导出。产品版本 `0.1.0-dev`。
+当前阶段：M0–M2 门禁与静态浏览、M3 DSP、M4 频谱分析、M5 回放与标注、M6 视频同步、M7 录制与导出均已完成。下一阶段为 M8 打包与发布验收。产品版本 `0.1.0-dev`。
 
 v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -30,8 +30,7 @@ M0 结论：
 
 ## Current Milestone
 
-M6 已完成，验收记录见 [`docs/reports/m6-video-sync-acceptance.md`](docs/reports/m6-video-sync-acceptance.md)。下一阶段 M7 实现双格式录制骨架、背压、片段导出和标注写入；M8 仍不在当前范围。
-当前实施依据：[`docs/plans/m7-record-export.md`](docs/plans/m7-record-export.md)。
+M7 已完成，验收记录见 [`docs/reports/m7-record-export-acceptance.md`](docs/reports/m7-record-export-acceptance.md)。下一阶段 M8 实现边车打包、Windows 安装包、代码签名和全量发布验收。
 
 已完成阶段的可验证记录：
 
@@ -41,6 +40,7 @@ M6 已完成，验收记录见 [`docs/reports/m6-video-sync-acceptance.md`](docs
 - [`docs/reports/m4-spectral-acceptance.md`](docs/reports/m4-spectral-acceptance.md)：频谱算法、后台调度、渲染和黄金比对。
 - [`docs/reports/m5-playback-annotations-acceptance.md`](docs/reports/m5-playback-annotations-acceptance.md)：回放状态、窗口预取、事件标注和 CSV 往返。
 - [`docs/reports/m6-video-sync-acceptance.md`](docs/reports/m6-video-sync-acceptance.md)：视频容器、从属时钟、偏移、黑屏、倍速和帧节流。
+- [`docs/reports/m7-record-export-acceptance.md`](docs/reports/m7-record-export-acceptance.md)：二进制 IPC、双格式录制、背压、三格式导出和回读。
 
 ## Documentation
 
@@ -49,7 +49,7 @@ M6 已完成，验收记录见 [`docs/reports/m6-video-sync-acceptance.md`](docs
 | 文档 | 用途 |
 | --- | --- |
 | [docs/roadmap.md](docs/roadmap.md) | v1 边界、当前阶段、M0–M8 路线和门禁 |
-| [docs/plans/m7-record-export.md](docs/plans/m7-record-export.md) | 当前 M7 录制与片段导出实施范围、协议边界与验收条件 |
+| [docs/plans/m7-record-export.md](docs/plans/m7-record-export.md) | 已完成 M7 录制与片段导出实施范围、协议边界与验收条件 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
 | [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |

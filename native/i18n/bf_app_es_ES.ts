@@ -343,5 +343,36 @@
     <message><source>app.video.loaded</source><translation>Video loaded: {name}</translation></message>
     <message><source>app.video.offset_applied</source><translation>Video offset applied: {offset} s</translation></message>
     <message><source>app.video.load_failed</source><translation>Could not load video: {detail}</translation></message>
+    <message><source>app.record.start</source><translation>Start recording</translation></message>
+    <message><source>app.record.stop</source><translation>Stop recording</translation></message>
+    <message><source>app.record.started</source><translation>Recording started</translation></message>
+    <message><source>app.record.completed</source><translation>Recording completed: {samples} samples</translation></message>
+    <message><source>app.record.no_file</source><translation>Open an EEG file first</translation></message>
+    <message><source>app.record.metadata</source><translation>Recording metadata</translation></message>
+    <message><source>app.record.animal_id</source><translation>Animal ID</translation></message>
+    <message><source>app.record.exp_type</source><translation>Experiment type</translation></message>
+    <message><source>app.record.notes</source><translation>Notes</translation></message>
+    <message><source>app.record.output_dir</source><translation>Select recording directory</translation></message>
+    <message><source>app.record.status</source><translation>REC {elapsed}; samples {samples}; dropped {dropped}</translation></message>
+    <message><source>app.record.low_disk</source><translation>Disk space below 500 MiB; REC {elapsed}; samples {samples}; dropped {dropped}</translation></message>
+    <message><source>app.export.action</source><translation>Export segment</translation></message>
+    <message><source>app.export.title</source><translation>Export EEG segment</translation></message>
+    <message><source>app.export.start</source><translation>Start time (s)</translation></message>
+    <message><source>app.export.end</source><translation>End time (s)</translation></message>
+    <message><source>app.export.filter</source><translation>EDF (*.edf);;HDF5 (*.h5 *.hdf5);;CSV (*.csv)</translation></message>
+    <message><source>app.export.running</source><translation>Exporting segment</translation></message>
+    <message><source>app.export.completed</source><translation>Export completed: {path}</translation></message>
+    <message><source>error.ipc.invalid_frame</source><translation>Invalid sidecar frame: {reason}</translation></message>
+    <message><source>error.record.invalid_state</source><translation>Recording is unavailable in state {state}</translation></message>
+    <message><source>error.record.session_not_found</source><translation>Recording session not found: {handle}</translation></message>
+    <message><source>error.record.open_failed</source><translation>Could not create recording files in {path}: {reason}</translation></message>
+    <message><source>error.record.invalid_chunk</source><translation>Invalid recording chunk: {reason}</translation></message>
+    <message><source>error.record.writer_failed</source><translation>Recording session {handle} failed: {reason}</translation></message>
+    <message><source>error.record.close_timeout</source><translation>Recording session {handle} did not close within {timeout_ms} ms</translation></message>
+    <message><source>error.export.invalid_range</source><translation>Export range {t0}-{t1} s exceeds duration {duration} s</translation></message>
+    <message><source>error.export.unsupported_format</source><translation>Export path {path} has unsupported format {suffix}</translation></message>
+    <message><source>error.export.busy</source><translation>Another export is already running</translation></message>
+    <message><source>error.export.failed</source><translation>Segment export to {path} failed: {reason}</translation></message>
+
   </context>
 </TS>

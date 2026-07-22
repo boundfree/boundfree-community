@@ -128,6 +128,73 @@
       "description": "Analysis failed."
     },
     {
+      "code": "ipc.invalid_frame",
+      "params": ["reason"],
+      "retryable": false,
+      "description": "IPC frame type, length, or payload is invalid."
+    },
+    {
+      "code": "record.invalid_state",
+      "params": ["state"],
+      "retryable": false,
+      "description": "Recording operation is not valid in the current state."
+    },
+    {
+      "code": "record.session_not_found",
+      "params": ["handle"],
+      "retryable": false,
+      "description": "Recording session handle does not exist."
+    },
+    {
+      "code": "record.open_failed",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Recording output writers could not be opened."
+    },
+    {
+      "code": "record.invalid_chunk",
+      "params": ["reason"],
+      "retryable": false,
+      "description": "Recording chunk shape or payload is invalid."
+    },
+    {
+      "code": "record.writer_failed",
+      "params": ["handle", "reason"],
+      "retryable": false,
+      "description": "Recording writer failed."
+    },
+    {
+      "code": "record.close_timeout",
+      "params": ["handle", "timeout_ms"],
+      "retryable": true,
+      "description": "Recording queue did not drain before close timeout."
+    },
+    {
+      "code": "export.invalid_range",
+      "params": ["t0", "t1", "duration"],
+      "retryable": false,
+      "description": "Export range is invalid."
+    },
+    {
+      "code": "export.unsupported_format",
+      "params": ["path", "suffix"],
+      "retryable": false,
+      "description": "Export destination format is unsupported."
+    },
+    {
+      "code": "export.busy",
+      "params": [],
+      "retryable": true,
+      "description": "Another export task is already running."
+    },
+    {
+      "code": "export.failed",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Segment export failed."
+    },
+
+    {
       "code": "internal.unexpected",
       "params": ["operation"],
       "retryable": false,

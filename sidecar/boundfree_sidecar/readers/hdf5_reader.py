@@ -1,4 +1,5 @@
 from pathlib import Path
+import math
 
 from .base import FileMetadata, Reader, SliceData
 
@@ -41,6 +42,18 @@ class Hdf5Reader(Reader):
             ch_names = _normalize_channel_names(raw_names, n_channels)
             unit = str(ds.attrs.get("unit", f.attrs.get("unit", "uV")))
 
+            events: list[dict[str, object]] = []
+            if "events/time" in f and "events/label" in f:
+                raw_times = f["events/time"][:]
+                raw_labels = f["events/label"][:]
+                if len(raw_times) != len(raw_labels):
+                    raise ValueError("events/time and events/label lengths differ")
+                for raw_time, raw_label in zip(raw_times, raw_labels, strict=False):
+                    time = float(raw_time)
+                    if not math.isfinite(time) or time < 0.0:
+                        raise ValueError("event time must be finite and non-negative")
+                    label = raw_label.decode() if isinstance(raw_label, bytes) else str(raw_label)
+                    events.append({"time": time, "label": label})
         return FileMetadata(
             fs=fs,
             n_channels=n_channels,
@@ -49,7 +62,7 @@ class Hdf5Reader(Reader):
             ch_names=ch_names,
             unit=unit,
             format_name=self.format_name,
-            events=[],
+            events=events,
         )
 
     def get_slice(self, t0: float, t1: float) -> SliceData:

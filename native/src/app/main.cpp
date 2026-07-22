@@ -1,4 +1,5 @@
 #include "controller/file_open_controller.h"
+#include "controller/export_controller.h"
 #include "controller/file_session.h"
 #include "controller/request_generation.h"
 #include "controller/processing_view_state.h"
@@ -6,6 +7,7 @@
 #include "controller/analysis_service.h"
 #include "controller/marker_store.h"
 #include "controller/playback_state.h"
+#include "controller/record_controller.h"
 #include "controller/video_sync_state.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
@@ -19,6 +21,7 @@
 #include "ui/video_panel.h"
 
 #include <QApplication>
+#include <QDir>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QCoreApplication>
@@ -1028,6 +1031,127 @@ int main(int argc, char** argv) {
 
             std::cout << "smoke-waveform-render-ok image=640x320 non_background_pixels=" << nonBackground << "\n";
             return nonBackground > 0 ? 0 : 1;
+        }
+        if (arg == "--smoke-m7-record" && i + 2 < argc) {
+            QCoreApplication app(argc, argv);
+            const QString sourcePath = QString::fromLocal8Bit(argv[i + 1]);
+            const QString outputDir = QString::fromLocal8Bit(argv[i + 2]);
+            bf::SidecarClient metadataClient(repoRoot);
+            const bf::SidecarHelloResult hello = metadataClient.startAndHello(version, 5000);
+            if (!hello.ok) {
+                std::cerr << "smoke-m7-record-failed code=" << hello.error.code.toStdString() << "\n";
+                return 1;
+            }
+            const bf::SidecarOpenResult source = metadataClient.openFile(sourcePath, 30000);
+            metadataClient.stop();
+            if (!source.ok) {
+                std::cerr << "smoke-m7-record-failed code=" << source.error.code.toStdString() << "\n";
+                return 1;
+            }
+            bf::RecordController controller(repoRoot, version);
+            int exitCode = 1;
+            QObject::connect(&controller, &bf::RecordController::started, &app, [&](const bf::RecordSummary&) {
+                controller.appendEvent(0.02, "m7-smoke");
+            });
+            QObject::connect(&controller, &bf::RecordController::stopped, &app, [&](const bf::RecordSummary& summary) {
+                const QString edfPath = summary.paths.value("edf").toString();
+                const QString h5Path = summary.paths.value("hdf5").toString();
+                bf::SidecarClient verify(repoRoot);
+                const bf::SidecarHelloResult verifyHello = verify.startAndHello(version, 5000);
+                const bf::SidecarOpenResult edf = verifyHello.ok ? verify.openFile(edfPath, 30000) : bf::SidecarOpenResult{};
+                const bf::SidecarOpenResult h5 = verifyHello.ok ? verify.openFile(h5Path, 30000) : bf::SidecarOpenResult{};
+                verify.stop();
+                if (verifyHello.ok && edf.ok && h5.ok && h5.events.size() == 1 && summary.samplesWritten > 0) {
+                    std::cout << "smoke-m7-record-ok samples=" << summary.samplesWritten
+                              << " source_dropped=" << summary.sourceDroppedChunks
+                              << " writer_dropped=" << summary.droppedChunks
+                              << " events=" << h5.events.size() << "\n";
+                    exitCode = 0;
+                } else {
+                    std::cerr << "smoke-m7-record-failed code=roundtrip_failed\n";
+                }
+                app.quit();
+            });
+            QObject::connect(&controller, &bf::RecordController::failed, &app, [&](const bf::AppError& error) {
+                std::cerr << "smoke-m7-record-failed code=" << error.code.toStdString() << "\n";
+                app.quit();
+            });
+            if (!controller.startFromFile(sourcePath, source.fs, source.chNames, source.duration, 0.0, outputDir, {{"animal_id", "smoke"}, {"exp_type", "file_replay"}, {"notes", "M7 smoke"}}, std::max(1, source.nSamples / 2), 2)) {
+                std::cerr << "smoke-m7-record-failed code=start_rejected\n";
+                return 1;
+            }
+            QTimer::singleShot(60000, &app, [&]() {
+                std::cerr << "smoke-m7-record-failed code=timeout\n";
+                controller.stop();
+                app.exit(1);
+            });
+            app.exec();
+            return exitCode;
+        }
+        if (arg == "--smoke-m7-export" && i + 2 < argc) {
+            QCoreApplication app(argc, argv);
+            const QString sourcePath = QString::fromLocal8Bit(argv[i + 1]);
+            const QDir outputDir(QString::fromLocal8Bit(argv[i + 2]));
+            bf::SidecarClient metadataClient(repoRoot);
+            const bf::SidecarHelloResult hello = metadataClient.startAndHello(version, 5000);
+            const bf::SidecarOpenResult source = hello.ok ? metadataClient.openFile(sourcePath, 30000) : bf::SidecarOpenResult{};
+            metadataClient.stop();
+            if (!hello.ok || !source.ok) {
+                std::cerr << "smoke-m7-export-failed code=source_open_failed\n";
+                return 1;
+            }
+            bf::ExportController controller(repoRoot, version);
+            const QStringList outputs{
+                outputDir.filePath("m7_export.csv"),
+                outputDir.filePath("m7_export.h5"),
+                outputDir.filePath("m7_export.edf"),
+            };
+            QVector<bf::SidecarEvent> events{{std::min(0.02, source.duration), "m7-smoke"}};
+            int outputIndex = 0;
+            int timerTicks = 0;
+            int exitCode = 1;
+            QTimer activityTimer;
+            activityTimer.setInterval(1);
+            QObject::connect(&activityTimer, &QTimer::timeout, [&]() { ++timerTicks; });
+            std::function<void()> startNext;
+            startNext = [&]() {
+                if (outputIndex >= outputs.size()) {
+                    std::cout << "smoke-m7-export-ok formats=3 timer_ticks=" << timerTicks << "\n";
+                    exitCode = timerTicks > 0 ? 0 : 1;
+                    app.quit();
+                    return;
+                }
+                const double t1 = source.duration;
+                if (!controller.exportAsync(sourcePath, 0.0, t1, source.duration, outputs[outputIndex], events)) {
+                    std::cerr << "smoke-m7-export-failed code=start_rejected\n";
+                    app.quit();
+                }
+            };
+            QObject::connect(&controller, &bf::ExportController::completed, &app, [&](const bf::SidecarExportResult& result) {
+                bf::SidecarClient verify(repoRoot);
+                const bf::SidecarHelloResult verifyHello = verify.startAndHello(version, 5000);
+                const bf::SidecarOpenResult reopened = verifyHello.ok ? verify.openFile(result.path, 30000) : bf::SidecarOpenResult{};
+                verify.stop();
+                if (!verifyHello.ok || !reopened.ok || result.nSamples <= 0 || result.markerCount != 1) {
+                    std::cerr << "smoke-m7-export-failed code=roundtrip_failed\n";
+                    app.quit();
+                    return;
+                }
+                ++outputIndex;
+                QTimer::singleShot(0, &app, startNext);
+            });
+            QObject::connect(&controller, &bf::ExportController::failed, &app, [&](const bf::AppError& error) {
+                std::cerr << "smoke-m7-export-failed code=" << error.code.toStdString() << "\n";
+                app.quit();
+            });
+            activityTimer.start();
+            QTimer::singleShot(0, &app, startNext);
+            QTimer::singleShot(60000, &app, [&]() {
+                std::cerr << "smoke-m7-export-failed code=timeout\n";
+                app.exit(1);
+            });
+            app.exec();
+            return exitCode;
         }
     }
 

@@ -123,21 +123,21 @@ v1.1/v2：
 
 ## 录制 — M7
 
-- [ ] 录制与 Session 骨架可通过文件回放源或模拟源验证
-- [ ] 双格式同时录制（EDF + HDF5）
-- [ ] 后台写 + 有界队列背压 + 丢弃计数
-- [ ] 录制元数据对话框（animal_id/exp_type/notes/dir）
-- [ ] REC 闪烁 / 耗时计时 / 磁盘监控（<500MB 警告）
-- [ ] 录制中事件追加 HDF5 events（单一写句柄）
-- [ ] HDF5 maxshape 可扩展 / float32 / 按秒 chunk
-- [ ] 不把 BLE 真实设备采集录制作为 v1 验收项
+- [x] 录制与 Session 骨架可通过文件回放源验证
+- [x] 双格式同时录制（EDF + HDF5）
+- [x] 后台写 + Native/边车有界队列背压 + 独立丢弃计数
+- [x] 录制元数据输入（animal_id/exp_type/notes/dir）
+- [x] REC 状态 / 耗时计时 / 磁盘监控（<500 MiB 警告）
+- [x] 录制中事件追加 HDF5 events（单一写线程与写句柄）
+- [x] HDF5 maxshape 可扩展 / float32 / 按约一秒 chunk
+- [x] 不把 BLE 真实设备采集录制作为 v1 验收项
 
 ## 片段导出 — M7
 
-- [ ] 异步导出 EDF / HDF5 / CSV
-- [ ] 导出带标注（EDF Annotations / HDF5 events / CSV 侧车）
-- [ ] 忙碌 / 完成 / 失败反馈
-- [ ] 【黄金比对】导出往返一致
+- [x] 异步导出 EDF / HDF5 / CSV
+- [x] 导出带标注（EDF Annotations / HDF5 events / CSV 侧车）
+- [x] 忙碌 / 完成 / 失败反馈
+- [x] 【往返比对】三格式元数据、数据和标注语义一致
 
 ## 系统级 — M1/M2/M8
 

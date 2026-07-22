@@ -19,13 +19,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.stdio:
-        if hasattr(sys.stdin, "reconfigure"):
-            sys.stdin.reconfigure(encoding="utf-8")
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", line_buffering=True, write_through=True)
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8")
-        return run_stdio(sys.stdin, sys.stdout)
+        return run_stdio(sys.stdin.buffer, sys.stdout.buffer)
 
     parser.print_help()
     return 0

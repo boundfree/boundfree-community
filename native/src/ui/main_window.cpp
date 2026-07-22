@@ -20,6 +20,8 @@
 #include <QSpinBox>
 #include <QMenuBar>
 #include <QStatusBar>
+#include <QStorageInfo>
+#include <QTime>
 #include <QStyle>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -54,6 +56,18 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildPlaybackControls();
     buildMarkerDock();
     buildVideoDock();
+    buildRecordControls();
+    recordUiTimer_.setInterval(500);
+    connect(&recordUiTimer_, &QTimer::timeout, this, [this]() {
+        if (recordController_ == nullptr || !recordController_->isActive()) return;
+        recordBlinkVisible_ = !recordBlinkVisible_;
+        recordAction_->setText((recordBlinkVisible_ ? QStringLiteral("● ") : QString()) + i18n_->text("app.record.stop"));
+        const qint64 freeBytes = QStorageInfo(recordOutputDir_).bytesAvailable();
+        const QString elapsed = QTime::fromMSecsSinceStartOfDay(static_cast<int>(recordElapsed_.elapsed() % 86400000)).toString("HH:mm:ss");
+        statusBar()->showMessage(i18n_->text(
+            freeBytes >= 0 && freeBytes < 500LL * 1024LL * 1024LL ? "app.record.low_disk" : "app.record.status",
+            {{"elapsed", elapsed}, {"samples", lastRecordSummary_.samplesWritten}, {"dropped", lastRecordSummary_.sourceDroppedChunks + lastRecordSummary_.droppedChunks}}));
+    });
     playbackTimer_.setInterval(25);
     connect(&playbackTimer_, &QTimer::timeout, this, &MainWindow::advancePlayback);
     connect(waveformWidget_, &WaveformWidget::markerRequested, this, &MainWindow::addMarkerAt);
@@ -232,6 +246,118 @@ void MainWindow::buildPlaybackControls() {
     markerModeAction_ = browserToolbar_->addAction(QString());
     markerModeAction_->setCheckable(true);
     connect(markerModeAction_, &QAction::toggled, this, [this](bool enabled) { waveformWidget_->setMarkerModeEnabled(enabled); });
+}
+
+void MainWindow::buildRecordControls() {
+    recordController_ = new RecordController(QStringLiteral(BF_REPO_ROOT), version_, this);
+    exportController_ = new ExportController(QStringLiteral(BF_REPO_ROOT), version_, this);
+    recordAction_ = browserToolbar_->addAction(QString());
+    exportSegmentAction_ = browserToolbar_->addAction(QString());
+    connect(recordAction_, &QAction::triggered, this, &MainWindow::toggleRecording);
+    connect(exportSegmentAction_, &QAction::triggered, this, &MainWindow::exportSegment);
+    connect(recordController_, &RecordController::started, this, [this](const RecordSummary& summary) {
+        lastRecordSummary_ = summary;
+        recordElapsed_.restart();
+        recordBlinkVisible_ = true;
+        recordUiTimer_.start();
+        recordAction_->setText(i18n_->text("app.record.stop"));
+        statusBar()->showMessage(i18n_->text("app.record.started"));
+    });
+    connect(recordController_, &RecordController::progress, this, [this](const RecordSummary& summary) {
+        lastRecordSummary_ = summary;
+    });
+    connect(recordController_, &RecordController::stopped, this, [this](const RecordSummary& summary) {
+        lastRecordSummary_ = summary;
+        recordAction_->setText(i18n_->text("app.record.start"));
+        statusBar()->showMessage(i18n_->text("app.record.completed", {{"samples", summary.samplesWritten}}), 5000);
+        recordUiTimer_.stop();
+        recordBlinkVisible_ = false;
+    });
+    connect(recordController_, &RecordController::failed, this, [this](const AppError& error) {
+        recordAction_->setText(i18n_->text("app.record.start"));
+        recordUiTimer_.stop();
+        recordBlinkVisible_ = false;
+        statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code), error.params), 5000);
+    });
+    connect(exportController_, &ExportController::completed, this, [this](const SidecarExportResult& result) {
+        exportRunning_ = false;
+        lastExportResult_ = result;
+        exportSegmentAction_->setEnabled(true);
+        statusBar()->showMessage(i18n_->text("app.export.completed", {{"path", result.path}}), 5000);
+    });
+    connect(exportController_, &ExportController::failed, this, [this](const AppError& error) {
+        exportRunning_ = false;
+        exportSegmentAction_->setEnabled(true);
+        statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code), error.params), 5000);
+    });
+}
+
+void MainWindow::toggleRecording() {
+    if (recordController_->isActive()) {
+        recordController_->stop();
+        recordAction_->setEnabled(false);
+        QTimer::singleShot(250, this, [this]() { recordAction_->setEnabled(true); });
+        return;
+    }
+    if (!hasCurrentFile_) {
+        statusBar()->showMessage(i18n_->text("app.record.no_file"), 3000);
+        return;
+    }
+    bool accepted = false;
+    const QString animalId = QInputDialog::getText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.animal_id"), QLineEdit::Normal, {}, &accepted);
+    if (!accepted) return;
+    const QString expType = QInputDialog::getText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.exp_type"), QLineEdit::Normal, {}, &accepted);
+    if (!accepted) return;
+    const QString notes = QInputDialog::getMultiLineText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.notes"), {}, &accepted);
+    if (!accepted) return;
+    const QString outputDir = QFileDialog::getExistingDirectory(this, i18n_->text("app.record.output_dir"));
+    if (outputDir.isEmpty()) return;
+    const QJsonObject metadata{{"animal_id", animalId}, {"exp_type", expType}, {"notes", notes}};
+    recordOutputDir_ = outputDir;
+    recordSourceStart_ = std::min(playback_.position(), std::max(0.0, currentFile_.session.duration - 1.0 / currentFile_.session.fs));
+    if (!recordController_->startFromFile(currentFile_.session.path, currentFile_.session.fs, currentFile_.session.chNames, currentFile_.session.duration, recordSourceStart_, outputDir, metadata)) {
+        statusBar()->showMessage(i18n_->text("error.record.invalid_state", {{"state", "busy"}}), 3000);
+    }
+}
+
+void MainWindow::exportSegment() {
+    if (!hasCurrentFile_ || exportController_->isBusy()) {
+        statusBar()->showMessage(i18n_->text(exportController_->isBusy() ? "error.export.busy" : "app.record.no_file"), 3000);
+        return;
+    }
+    bool accepted = false;
+    const double t0 = QInputDialog::getDouble(this, i18n_->text("app.export.title"), i18n_->text("app.export.start"), playback_.position(), 0.0, signalDurationSeconds_, 3, &accepted);
+    if (!accepted) return;
+    const double t1 = QInputDialog::getDouble(this, i18n_->text("app.export.title"), i18n_->text("app.export.end"), std::min(signalDurationSeconds_, t0 + viewState_.windowSeconds), 0.0, signalDurationSeconds_, 3, &accepted);
+    if (!accepted) return;
+    const QString outputPath = QFileDialog::getSaveFileName(this, i18n_->text("app.export.title"), {}, i18n_->text("app.export.filter"));
+    if (outputPath.isEmpty()) return;
+    QVector<SidecarEvent> events;
+    for (const Marker& marker : markerStore_.markers()) events.push_back({marker.time, marker.label});
+    if (!exportController_->exportAsync(currentFile_.session.path, t0, t1, signalDurationSeconds_, outputPath, events)) {
+        statusBar()->showMessage(i18n_->text("error.export.invalid_range", {{"t0", t0}, {"t1", t1}, {"duration", signalDurationSeconds_}}), 3000);
+        return;
+    }
+    exportRunning_ = true;
+    exportSegmentAction_->setEnabled(false);
+    statusBar()->showMessage(i18n_->text("app.export.running"));
+}
+
+QString MainWindow::recordStatusSummary() const {
+    return QString("active=%1 samples=%2 source_dropped=%3 writer_dropped=%4 events_dropped=%5")
+        .arg(recordController_ != nullptr && recordController_->isActive())
+        .arg(lastRecordSummary_.samplesWritten)
+        .arg(lastRecordSummary_.sourceDroppedChunks)
+        .arg(lastRecordSummary_.droppedChunks)
+        .arg(lastRecordSummary_.droppedEvents);
+}
+
+QString MainWindow::exportStatusSummary() const {
+    return QString("running=%1 path=%2 samples=%3 markers=%4")
+        .arg(exportRunning_)
+        .arg(lastExportResult_.path)
+        .arg(lastExportResult_.nSamples)
+        .arg(lastExportResult_.markerCount);
 }
 
 void MainWindow::buildMarkerDock() {
@@ -676,6 +802,9 @@ void MainWindow::addMarkerAt(double time) {
     const QString label = QInputDialog::getText(this, i18n_->text("app.marker.add_title"), i18n_->text("app.marker.add_prompt", {{"time", QString::number(time, 'f', 3)}}), QLineEdit::Normal, {}, &accepted);
     if (!accepted) return;
     markerStore_.add(time, label);
+    if (recordController_ != nullptr && recordController_->isActive()) {
+        recordController_->appendEvent(std::max(0.0, time - recordSourceStart_), label);
+    }
     refreshMarkerControls();
 }
 
@@ -926,6 +1055,8 @@ void MainWindow::retranslateUi() {
     deleteMarkerButton_->setText(i18n_->text("app.marker.delete"));
     clearMarkersButton_->setText(i18n_->text("app.marker.clear"));
     exportMarkersButton_->setText(i18n_->text("app.marker.export"));
+    recordAction_->setText(i18n_->text(recordController_ != nullptr && recordController_->isActive() ? "app.record.stop" : "app.record.start"));
+    exportSegmentAction_->setText(i18n_->text("app.export.action"));
     videoDock_->setWindowTitle(i18n_->text("app.video.panel"));
     videoPanel_->retranslateUi();
 
@@ -970,6 +1101,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     currentFile_ = result;
     rawWaveform_ = result.waveform;
     hasCurrentFile_ = true;
+    if (!sameSession && recordController_ != nullptr && recordController_->isActive()) {
+        recordController_->stop();
+    }
     playbackPrefetchPending_ = false;
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();

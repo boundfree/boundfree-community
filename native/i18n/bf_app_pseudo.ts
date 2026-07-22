@@ -343,5 +343,35 @@
     <message><source>app.video.loaded</source><translation>[!! Viideeo looadeed: {name} !!]</translation></message>
     <message><source>app.video.offset_applied</source><translation>[!! Viideeo ooffset aappliieed: {offset} s !!]</translation></message>
     <message><source>app.video.load_failed</source><translation>[!! Coould noot looaad viideeo: {detail} !!]</translation></message>
+    <message><source>app.record.start</source><translation>[!! Staart reecoordiing !!]</translation></message>
+    <message><source>app.record.stop</source><translation>[!! Stoopp reecoordiing !!]</translation></message>
+    <message><source>app.record.started</source><translation>[!! Reecoordiing staarted !!]</translation></message>
+    <message><source>app.record.completed</source><translation>[!! Reecoordiing coompleeted: {samples} saamplees !!]</translation></message>
+    <message><source>app.record.no_file</source><translation>[!! Oopeen aan EEG fiilee fiirst !!]</translation></message>
+    <message><source>app.record.metadata</source><translation>[!! Reecoordiing meetadaata !!]</translation></message>
+    <message><source>app.record.animal_id</source><translation>[!! Aaniimaal ID !!]</translation></message>
+    <message><source>app.record.exp_type</source><translation>[!! Eexpeeriimeent tyypee !!]</translation></message>
+    <message><source>app.record.notes</source><translation>[!! Nootees !!]</translation></message>
+    <message><source>app.record.output_dir</source><translation>[!! Seeleect reecoordiing diireectoory !!]</translation></message>
+    <message><source>app.record.status</source><translation>[!! REC {elapsed}; saamplees {samples}; drooppeed {dropped} !!]</translation></message>
+    <message><source>app.record.low_disk</source><translation>[!! Diisk spaacee beloow 500 MiB; REC {elapsed}; saamplees {samples}; drooppeed {dropped} !!]</translation></message>
+    <message><source>app.export.action</source><translation>[!! Eexpoort seegmeent !!]</translation></message>
+    <message><source>app.export.title</source><translation>[!! Eexpoort EEG seegmeent !!]</translation></message>
+    <message><source>app.export.start</source><translation>[!! Staart tiimee (s) !!]</translation></message>
+    <message><source>app.export.end</source><translation>[!! Eend tiimee (s) !!]</translation></message>
+    <message><source>app.export.filter</source><translation>[!! EDF (*.edf);;HDF5 (*.h5 *.hdf5);;CSV (*.csv) !!]</translation></message>
+    <message><source>app.export.running</source><translation>[!! Eexpoortiing seegmeent !!]</translation></message>
+    <message><source>app.export.completed</source><translation>[!! Eexpoort coompleeted: {path} !!]</translation></message>
+    <message><source>error.ipc.invalid_frame</source><translation>[!! Iinvaaliid siideecaar fraamee: {reason} !!]</translation></message>
+    <message><source>error.record.invalid_state</source><translation>[!! Reecoordiing uunaavaailaablee iin staatee {state} !!]</translation></message>
+    <message><source>error.record.session_not_found</source><translation>[!! Reecoordiing seessiioon noot foound: {handle} !!]</translation></message>
+    <message><source>error.record.open_failed</source><translation>[!! Coould noot creeaatee reecoordiing fiilees iin {path}: {reason} !!]</translation></message>
+    <message><source>error.record.invalid_chunk</source><translation>[!! Iinvaaliid reecoordiing chuunk: {reason} !!]</translation></message>
+    <message><source>error.record.writer_failed</source><translation>[!! Reecoordiing seessiioon {handle} faaiileed: {reason} !!]</translation></message>
+    <message><source>error.record.close_timeout</source><translation>[!! Reecoordiing seessiioon {handle} diid noot cloosee wiithiin {timeout_ms} ms !!]</translation></message>
+    <message><source>error.export.invalid_range</source><translation>[!! Eexpoort raangee {t0}-{t1} s eexceeeeds duuraatiioon {duration} s !!]</translation></message>
+    <message><source>error.export.unsupported_format</source><translation>[!! Eexpoort paath {path} haas uunsuuppoorteed foormaat {suffix} !!]</translation></message>
+    <message><source>error.export.busy</source><translation>[!! Aanootheer eexpoort iis aalreeaady ruunniing !!]</translation></message>
+    <message><source>error.export.failed</source><translation>[!! Seegmeent eexpoort too {path} faaiileed: {reason} !!]</translation></message>
   </context>
 </TS>

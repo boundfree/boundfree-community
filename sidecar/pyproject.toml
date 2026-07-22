@@ -12,6 +12,7 @@ requires-python = ">=3.10"
 formats = [
     "h5py==3.16.0",
     "mne==1.12.1",
+    "pyedflib==0.1.42",
 ]
 
 [tool.setuptools.packages.find]

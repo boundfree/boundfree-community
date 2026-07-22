@@ -1,7 +1,7 @@
 ---
 title: M7 录制与片段导出实施计划
 doc_type: plan
-status: active
+status: completed
 owner: BoundFree
 last_updated: 2026-07-22
 milestone: M7

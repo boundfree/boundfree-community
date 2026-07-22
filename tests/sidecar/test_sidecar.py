@@ -72,7 +72,7 @@ def test_sidecar_missing_field_returns_error_envelope():
     assert response["error"]["retryable"] is False
 
 
-def test_sidecar_stdio_process_handles_hello_and_unknown_method():
+def _stdio_process():
     env = {
         **SIDECAR_ENV,
         "PYTHONIOENCODING": "utf-8",
@@ -82,46 +82,51 @@ def test_sidecar_stdio_process_handles_hello_and_unknown_method():
         [sys.executable, "-u", "-m", "boundfree_sidecar", "--stdio"],
         cwd=ROOT,
         env=env,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        bufsize=1,
+        bufsize=0,
     )
     assert process.stdin is not None
     assert process.stdout is not None
+    return process
 
+
+def test_sidecar_stdio_process_handles_hello_and_unknown_method():
+    """M7 二进制帧协议: hello 与未知方法经 stdio 往返。
+
+    stdio 已从逐行 JSON clean cutover 到 ``u8 type + u32le length + payload``
+    帧循环; 请求/响应均以 JSON 帧交换。本测试覆盖 hello 成功、未知方法错误
+    与非 ASCII 方法名往返。
+    """
+    from boundfree_sidecar.framing import read_json_frame, write_json_frame
+
+    process = _stdio_process()
     try:
-        process.stdin.write(json.dumps({"id": "stdio-1", "method": "hello", "params": {}}) + "\n")
-        process.stdin.flush()
-        hello_line = process.stdout.readline()
-        assert hello_line, f"sidecar produced no stdout for hello; stderr={process.stderr.read() if process.stderr else ''}"
-        hello = json.loads(hello_line)
+        stdin = process.stdin
+        stdout = process.stdout
+
+        def _round_trip(request: dict) -> dict:
+            write_json_frame(stdin, request)
+            response = read_json_frame(stdout)
+            assert response is not None, (
+                f"sidecar produced no frame; stderr="
+                f"{process.stderr.read() if process.stderr else ''}"
+            )
+            return response
+
+        hello = _round_trip({"id": "stdio-1", "method": "hello", "params": {}})
         assert hello["id"] == "stdio-1"
         assert hello["ok"] is True
         assert hello["result"]["product_version"] == "0.1.0-dev"
         assert hello["result"]["ipc_protocol_version"] == 1
 
-        process.stdin.write(json.dumps({"id": "stdio-2", "method": "bad_method", "params": {}}) + "\n")
-        process.stdin.flush()
-        bad_line = process.stdout.readline()
-        assert bad_line, f"sidecar produced no stdout for unknown method; stderr={process.stderr.read() if process.stderr else ''}"
-        bad_method = json.loads(bad_line)
-        assert bad_method["id"] == "stdio-2"
-        assert bad_method["ok"] is False
-        assert bad_method["error"]["code"] == "protocol.unknown_method"
+        bad = _round_trip({"id": "stdio-2", "method": "bad_method", "params": {}})
+        assert bad["id"] == "stdio-2"
+        assert bad["ok"] is False
+        assert bad["error"]["code"] == "protocol.unknown_method"
 
-        process.stdin.write(json.dumps(
-            {"id": "stdio-3", "method": "未知方法", "params": {}},
-            ensure_ascii=False,
-        ) + "\n")
-        process.stdin.flush()
-        unicode_line = process.stdout.readline()
-        assert unicode_line, f"sidecar produced no stdout for unicode method; stderr={process.stderr.read() if process.stderr else ''}"
-        unicode_method = json.loads(unicode_line)
-
+        unicode_method = _round_trip({"id": "stdio-3", "method": "未知方法", "params": {}})
         assert unicode_method["id"] == "stdio-3"
         assert unicode_method["error"]["params"]["method"] == "未知方法"
     finally:

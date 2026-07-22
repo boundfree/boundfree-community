@@ -42,7 +42,7 @@ M1-A 需要消费该文件：
 
 ## IPC Envelope
 
-控制消息使用 JSON。已实现 `hello/open/get_slice/close/export_markers_csv`；录制与片段导出协议在后续阶段扩展。
+控制消息使用 JSON envelope，传输统一使用长度前缀二进制帧。已实现 `hello/open/get_slice/close/export_markers_csv/record_open/record_write/record_event/record_close/export_segment`。
 
 请求 envelope：
 
@@ -84,21 +84,30 @@ M1-A 需要消费该文件：
 }
 ```
 
-规则：
+帧格式：`u8 frame_type + u32le payload_length + payload`。
 
+- `frame_type=1`：UTF-8 JSON。
+- `frame_type=2`：原始二进制 payload。
+- 单 payload 最大 `256 MiB`；未知类型、短帧、超限和元数据不匹配返回 `ipc.invalid_frame`。
 - `id` 由主程序生成，响应必须原样返回。
 - `method` 是稳定协议名，不参与本地化。
 - `params` 只放结构化数据，不放用户可见完整句子。
 - `ok=false` 时必须包含 `error.code`。
 - `trace_id` 用于日志和售后定位，UI 默认不把它当正文文案。
-- 后续二进制 payload 统一小端，EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
+- EEG payload 使用小端连续 C-order `float32`，形状为 `[n_channels, n_samples]`，单位为 `uV`。
+- `get_slice` 成功时先返回 JSON 元数据帧，再返回一个二进制数据帧。
+- `record_write` 先发送 JSON 参数帧，再发送一个二进制数据帧。
 
-M5 `export_markers_csv`：
+M5 `export_markers_csv`：请求包含 `path` 和 `{time,label}[]`；写入 `{stem}_markers.csv`，列为 `time_s,label`。
 
-- 请求参数：`path` 为源 CSV 路径，`markers` 为 `{time, label}[]`。
-- 写入路径：源文件同目录的 `{stem}_markers.csv`，列为 `time_s,label`。
-- 成功响应：`path`、`marker_count`。
-- 参数错误返回 `protocol.invalid_params`；写入失败返回 `reader.open_failed`。
+M7 录制：
+
+- `record_open`：`fs/ch_names/out_dir/meta/formats/max_queue_chunks`，返回 `handle/paths`。
+- `record_write`：`handle/shape` 加二进制 chunk，返回 `accepted/backlog_chunks/samples_written/dropped_chunks/dropped_events`。
+- `record_event`：事件时间是相对录制起点的非负秒值，事件与 EEG 数据进入同一边车写队列。
+- `record_close`：停止接收并排空已接受数据，返回路径和最终统计。
+
+M7 `export_segment`：请求包含 `src/t0/t1/path/markers`；标注筛选源区间 `[t0,t1]` 并减去 `t0`。成功返回路径、通道数、样本数和标注数。
 
 ## Error Codes
 
@@ -145,6 +154,8 @@ M4 扩展：
 - `analysis.invalid_channel`：请求的分析通道不存在。
 - `analysis.same_channel`：MSC 相干性必须选择两个不同通道。
 - `analysis.failed`：未分类的 Native 分析失败。
+
+M7 扩展：`ipc.invalid_frame`、`record.invalid_state`、`record.session_not_found`、`record.open_failed`、`record.invalid_chunk`、`record.writer_failed`、`record.close_timeout`、`export.invalid_range`、`export.unsupported_format`、`export.busy`、`export.failed`。
 
 ## i18n Contract
 
