@@ -11,7 +11,7 @@
 
 namespace bf {
 
-// Spike 分析请求。signal 为单通道放电迹，fs 由调用方传入（禁止硬编码）。
+// Spike analysis request. 'signal' is the single-channel discharge trace, 'fs' is passed by the caller (no hardcoding).
 struct SpikeAnalysisRequest {
     std::vector<double> signal;
     double fs = 0.0;
@@ -21,8 +21,8 @@ struct SpikeAnalysisRequest {
     int channel = 0;
 };
 
-// Spike 分析服务：编排 detectSpikes → sortSpikes → 组装 bf::dsp::SpikeAnalysis。
-// 后台线程计算，latest-request-wins（过期 generation 的结果被丢弃）。
+// Spike analysis service: orchestrates detectSpikes -> sortSpikes -> assemble bf::dsp::SpikeAnalysis.
+// Background thread computation, latest-request-wins (results from expired generation are discarded).
 class SpikeAnalysisService final : public QObject {
     Q_OBJECT
 
@@ -30,7 +30,7 @@ public:
     explicit SpikeAnalysisService(QObject* parent = nullptr);
     ~SpikeAnalysisService() override;
 
-    // 返回本次请求的 generation；后续 isCurrent(generation) 判定是否仍最新。
+    // Returns the generation of this request; subsequent isCurrent(generation) determines if it is still the latest.
     int request(const SpikeAnalysisRequest& req);
     void cancel();
     bool isCurrent(int generation) const;

@@ -8,7 +8,7 @@
 namespace bf::dsp {
 namespace {
 
-// 中位数（修改输入顺序以避免拷贝；对副本操作）
+// Median (modifies input order to avoid copying; operates on a copy)
 double median(std::vector<double> v) {
     if (v.empty()) {
         return 0.0;
@@ -44,7 +44,7 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
         return result;
     }
 
-    // 波形快照长度（样本数）
+    // Waveform snippet length (number of samples)
     const std::size_t preSamples = static_cast<std::size_t>(
         std::round(cfg.preMs / 1000.0 * cfg.fs));
     const std::size_t postSamples = static_cast<std::size_t>(
@@ -55,11 +55,11 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
         return result;
     }
 
-    // 不应期（样本数）
+    // Refractory period (number of samples)
     const std::size_t refractorySamples = static_cast<std::size_t>(
         std::round(cfg.refractoryMs / 1000.0 * cfg.fs));
 
-    // 阈值
+    // Threshold
     double threshold = 0.0;
     if (cfg.useAbsoluteUv) {
         threshold = cfg.absoluteThresholdUv;
@@ -67,7 +67,7 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
         std::vector<double> copy = signal;
         const double med = median(copy);
         const double m = mad(signal, med);
-        // 0.6745 为标准正态分布分位数，MAD/0.6745 近似标准差
+        // 0.6745 is the quantile of the standard normal distribution, MAD / 0.6745 approximates standard deviation
         const double sigma = m / 0.6745;
         threshold = cfg.thresholdMad * sigma;
     }
@@ -76,19 +76,19 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
         return result;
     }
 
-    // 对负峰：考虑 -x 过阈（阈值方向反转）；对正峰：直接过阈
-    // 用 detectNegative=true 时，只接受 x <= -threshold 的过阈区间；
-    // 反之接受 x >= threshold 的过阈区间。
+    // For negative peaks: consider -x crossing the threshold (threshold direction is inverted); for positive peaks: cross the threshold directly.
+    // When detectNegative=true, only accept the threshold-crossing interval of x <= -threshold;
+    // otherwise, accept the threshold-crossing interval of x >= threshold.
     const bool neg = cfg.detectNegative;
 
-    // 有效检测方向上的"越过阈值"比较
-    // 对负峰：原始信号 x，过阈指 x < -threshold
-    // 对正峰：x > threshold
+    // Comparison of "crossing the threshold" in the effective detection direction.
+    // For negative peaks: original signal x, crossing threshold means x <= -threshold.
+    // For positive peaks: x >= threshold.
     auto over = [&](double x) {
         return neg ? (x <= -threshold) : (x >= threshold);
     };
 
-    // 在 [start, end) 范围内寻找极值索引（负峰找 min，正峰找 max）
+    // Find peak index in [start, end) (min for negative peak, max for positive peak)
     auto findPeak = [&](std::size_t start, std::size_t end) -> std::size_t {
         std::size_t pk = start;
         double v = signal[start];
@@ -112,22 +112,22 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
     std::size_t lastAcceptedIdx = 0;
     bool haveLast = false;
 
-    // 扫描连续过阈段
+    // Scan continuous threshold-crossing intervals
     std::size_t i = 0;
     while (i < n) {
         if (!over(signal[i])) {
             ++i;
             continue;
         }
-        // 进入过阈段 [i, j)
+        // Enter threshold-crossing interval [i, j)
         std::size_t j = i;
         while (j < n && over(signal[j])) {
             ++j;
         }
-        // 在 [i, j) 内找对齐峰
+        // Find aligned peak within [i, j)
         std::size_t peak = findPeak(i, j);
 
-        // 应用不应期
+        // Apply refractory period
         bool accept = true;
         if (haveLast) {
             if (peak < lastAcceptedIdx ||
@@ -137,7 +137,7 @@ DetectedSpikes detectSpikes(const std::vector<double>& signal,
         }
 
         if (accept) {
-            // 边界检查
+            // Boundary check
             if (peak >= preSamples && peak + postSamples <= n) {
                 std::size_t start = peak - preSamples;
                 std::vector<double> wf(snippetLen);

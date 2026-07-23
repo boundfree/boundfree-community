@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // 解析标志位参数。
+    // Parse command line arguments.
     for (int i = 1; i < argc; ++i) {
         const QString arg = QString::fromLocal8Bit(argv[i]);
 
@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
             return 0;
         }
 
-        // 端到端冒烟：offscreen 下构造 SpikeWindow、打开文件、等待分析完成。
-        // 证明 open→slice→detect→sort→视图 管线连通。
+        // End-to-end smoke test: construct SpikeWindow offscreen, open file, and wait for analysis completion.
+        // Verifies that the open -> slice -> detect -> sort -> view pipeline is connected.
         if (arg == "--smoke-spike-open" && i + 1 < argc) {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            // 等待分析完成信号，最多若干秒。
+            // Wait for the analysis completion signal, up to a few seconds.
             QEventLoop loop;
             QObject::connect(&window, &bf::SpikeWindow::analysisSettled,
                              &loop, &QEventLoop::quit);
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // 默认：正常启动 GUI。
+    // Default: start GUI normally.
     QApplication app(argc, argv);
     bf::I18nService i18n(repoRoot);
     QString i18nError;

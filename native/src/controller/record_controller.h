@@ -33,9 +33,9 @@ public:
     ~RecordController() override;
 
     /**
-     * @brief 开始从文件录制。
-     * @param chunkSamples 每次处理的样本数。如果 <= 0，则内部自动根据采样率推导：
-     *                     std::max(1.0, std::round(fs * kDefaultChunkSeconds))。
+     * @brief Start recording from a file.
+     * @param chunkSamples Number of samples processed each time. If <= 0, it is automatically derived from the sampling rate:
+     *                     std::max(1.0, std::round(fs * kDefaultChunkSeconds)).
      */
     bool startFromFile(
         const QString& sourcePath,

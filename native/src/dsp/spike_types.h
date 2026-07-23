@@ -4,28 +4,28 @@
 
 namespace bf::dsp {
 
-// 共享 Spike 数据模型。EEG 线用 [n_channels, n_samples] + Spectrum/Spectrogram；
-// Spike 线用「按簇组织的放电序列 + 波形快照」作为分析层与渲染层之间的统一载体。
-// 所有与采样率相关的量（snippetLen、时间戳）均由检测阶段按 fs 推导，禁止硬编码。
+// Shared Spike data model. EEG uses [n_channels, n_samples] + Spectrum/Spectrogram;
+// Spike uses "discharge sequence organized by cluster + waveform snippet" as a unified vehicle between analysis layer and rendering layer.
+// All values related to sampling rate (snippetLen, timestamps) are derived from fs during the detection phase, no hardcoding.
 
-// 单个簇（putative single unit）的放电序列与波形。
+// Single cluster (putative single unit) discharge sequence and waveforms.
 struct SpikeCluster {
-    int id = 0;                                  // 簇号 [0, nClusters)
-    std::vector<double> timestamps;              // 该簇所有放电时刻，单位秒，升序
-    std::vector<std::vector<double>> waveforms;  // [n_spikes][snippetLen] 对齐波形快照
-    std::vector<double> meanWaveform;            // [snippetLen] 平均波形（模板）
+    int id = 0;                                  // Cluster ID [0, nClusters)
+    std::vector<double> timestamps;              // All discharge times of this cluster, in seconds, ascending
+    std::vector<std::vector<double>> waveforms;  // [n_spikes][snippetLen] aligned waveform snippets
+    std::vector<double> meanWaveform;            // [snippetLen] mean waveform (template)
 };
 
-// 一个通道（或一次检测+排序）的完整 Spike 分析结果。
-// 这是 spike_analysis_service 产出、所有 Spike 视图消费的统一模型。
+// Complete Spike analysis result of a single channel (or a single detection+sorting run).
+// This is the unified model produced by spike_analysis_service and consumed by all Spike views.
 struct SpikeAnalysis {
-    double fs = 0.0;               // 采样率 Hz
-    double duration = 0.0;         // 记录时长秒（用于 raster/PSTH 时间轴）
-    int snippetLen = 0;            // 波形快照长度（样本）
-    double preMs = 0.5;            // 快照对齐前窗（用于波形视图时间轴）
-    double postMs = 1.0;           // 快照对齐后窗
-    int channel = 0;               // 源通道
-    int totalSpikes = 0;           // 所有簇放电总数
+    double fs = 0.0;               // Sampling rate Hz
+    double duration = 0.0;         // Recording duration in seconds (used for raster/PSTH timeline)
+    int snippetLen = 0;            // Waveform snippet length (samples)
+    double preMs = 0.5;            // Snippet alignment pre-window (used for waveform view timeline)
+    double postMs = 1.0;           // Snippet alignment post-window
+    int channel = 0;               // Source channel
+    int totalSpikes = 0;           // Total number of discharges across all clusters
     std::vector<SpikeCluster> clusters;
 };
 

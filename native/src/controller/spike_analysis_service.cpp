@@ -13,8 +13,8 @@
 namespace bf {
 namespace {
 
-// 后台计算：detectSpikes → sortSpikes → 分桶 → 均值 → 组装 SpikeAnalysis。
-// 抛 std::exception 表示失败（code 由 what() 前缀判定）。
+// Background calculation: detectSpikes -> sortSpikes -> bucket -> mean -> assemble SpikeAnalysis.
+// Throws std::exception to report failure (code determined by what() prefix).
 dsp::SpikeAnalysis calculate(const SpikeAnalysisRequest& req,
                              const std::shared_ptr<std::atomic<int>>& current,
                              int generation) {
@@ -24,7 +24,7 @@ dsp::SpikeAnalysis calculate(const SpikeAnalysisRequest& req,
 
     const auto cancelled = [&]() { return current->load() != generation; };
 
-    // 1) 阈值检测 + 波形提取
+    // 1) Threshold detection + waveform extraction
     dsp::DetectedSpikes detected = dsp::detectSpikes(req.signal, req.detect);
     if (cancelled()) {
         return {};
@@ -40,22 +40,22 @@ dsp::SpikeAnalysis calculate(const SpikeAnalysisRequest& req,
     result.channel = req.channel;
     result.totalSpikes = static_cast<int>(detected.timestamps.size());
 
-    // 无 spike：返回空 clusters 的 SpikeAnalysis（不算错误）。
+    // No spike: return SpikeAnalysis with empty clusters (not treated as an error).
     if (detected.timestamps.empty()) {
         return result;
     }
 
-    // 2) 排序（PCA + K-Means）
+    // 2) Sorting (PCA + K-Means)
     const dsp::SpikeSortResult sorted = dsp::sortSpikes(detected.waveforms, req.sort);
     if (cancelled()) {
         return {};
     }
 
-    // 3) 按 labels 分桶为 clusters
+    // 3) Bucket into clusters by labels
     const int nSpikes = static_cast<int>(detected.timestamps.size());
     const std::vector<int>& labels = sorted.labels;
 
-    // 簇号 → 在 result.clusters 中的下标；保持簇号紧凑且升序。
+    // Cluster ID -> index in result.clusters; keep cluster IDs compact and ascending.
     std::unordered_map<int, int> clusterIndex;
     clusterIndex.reserve(static_cast<std::size_t>(req.sort.nClusters));
     for (int i = 0; i < nSpikes; ++i) {
@@ -68,7 +68,7 @@ dsp::SpikeAnalysis calculate(const SpikeAnalysisRequest& req,
         }
     }
 
-    // 收集 timestamps + waveforms
+    // Collect timestamps + waveforms
     for (int i = 0; i < nSpikes; ++i) {
         const int label = (i < static_cast<int>(labels.size())) ? labels[static_cast<std::size_t>(i)] : 0;
         const int idx = clusterIndex.at(label);
@@ -77,7 +77,7 @@ dsp::SpikeAnalysis calculate(const SpikeAnalysisRequest& req,
         c.waveforms.push_back(detected.waveforms[static_cast<std::size_t>(i)]);
     }
 
-    // 4) 每簇计算 meanWaveform（逐样本平均）
+    // 4) Calculate meanWaveform for each cluster (sample-wise average)
     const int snippetLen = detected.snippetLen;
     for (dsp::SpikeCluster& c : result.clusters) {
         if (snippetLen <= 0 || c.waveforms.empty()) {

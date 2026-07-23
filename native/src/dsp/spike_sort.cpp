@@ -11,7 +11,7 @@
 namespace bf::dsp {
 namespace {
 
-// 确定性 PRNG（线性同余），便于跨平台复现
+// Deterministic PRNG (linear congruential), for easy cross-platform reproducibility
 struct Rng {
     uint64_t state;
     explicit Rng(uint64_t s) : state(s == 0 ? 0x9E3779B97F4A7C15ULL : s) {}
@@ -23,7 +23,7 @@ struct Rng {
         return state * 0x2545F4914F6CDD1DULL;
     }
     double unit() {
-        // [0, 1) 双精度
+        // [0, 1) double precision
         return static_cast<double>(next() >> 11) / static_cast<double>(1ULL << 53);
     }
     int range(int n) {
@@ -34,9 +34,9 @@ struct Rng {
     }
 };
 
-// 对称矩阵 Jacobi 特征值分解。A: n×n 对称矩阵（按行存）。
-// 输出 eigenvalues（升序排序）与 eigenvectors（列向量为特征向量，对应升序排列）。
-// maxSweeps 控制最大扫描轮数；converged 返回是否收敛。
+// Jacobi eigenvalue decomposition for symmetric matrices. A: n*n symmetric matrix (row-major).
+// Outputs eigenvalues (sorted in descending order) and eigenvectors (column vectors, corresponding to eigenvalues).
+// maxSweeps controls the maximum number of sweeps.
 void jacobiEigen(std::vector<double>& A, int n,
                  std::vector<double>& eval,
                  std::vector<double>& evec,
@@ -51,7 +51,7 @@ void jacobiEigen(std::vector<double>& A, int n,
         return;
     }
     for (int sweep = 0; sweep < maxSweeps; ++sweep) {
-        // 计算非对角范数
+        // Calculate off-diagonal norm
         double off = 0.0;
         for (int p = 0; p < n; ++p) {
             for (int q = p + 1; q < n; ++q) {
@@ -72,7 +72,7 @@ void jacobiEigen(std::vector<double>& A, int n,
                 double phi = 0.5 * std::atan2(2.0 * apq, aqq - app);
                 double c = std::cos(phi);
                 double s = std::sin(phi);
-                // 旋转 A
+                // Rotate A
                 for (int k = 0; k < n; ++k) {
                     double akp = A[k * n + p];
                     double akq = A[k * n + q];
@@ -85,7 +85,7 @@ void jacobiEigen(std::vector<double>& A, int n,
                     A[p * n + k] = c * apk + s * aqk;
                     A[q * n + k] = -s * apk + c * aqk;
                 }
-                // 旋转 eigenvectors
+                // Rotate eigenvectors
                 for (int k = 0; k < n; ++k) {
                     double vkp = evec[k * n + p];
                     double vkq = evec[k * n + q];
@@ -98,7 +98,7 @@ void jacobiEigen(std::vector<double>& A, int n,
     for (int i = 0; i < n; ++i) {
         eval[i] = A[i * n + i];
     }
-    // 按特征值降序排列（取前若干主成分）
+    // Sort by eigenvalues in descending order (select top principal components)
     std::vector<int> idx(n);
     for (int i = 0; i < n; ++i) {
         idx[i] = i;
@@ -117,7 +117,7 @@ void jacobiEigen(std::vector<double>& A, int n,
     evec = evecSorted;
 }
 
-// 简单 K-Means，初始中心用固定 seed 随机选取现有点
+// Simple K-Means, initial centers are randomly selected from existing points using a fixed seed
 struct KMeansResult {
     std::vector<int> labels;
     std::vector<std::vector<double>> centers;
@@ -137,7 +137,7 @@ KMeansResult kMeans(const std::vector<std::vector<double>>& data,
     }
     r.centers.assign(k, std::vector<double>(dim, 0.0));
     Rng rng(seed);
-    // k-means++ 初始化（确定性）
+    // k-means++ initialization (deterministic)
     int first = rng.range(n);
     for (int d = 0; d < dim; ++d) {
         r.centers[0][d] = data[first][d];
@@ -180,7 +180,7 @@ KMeansResult kMeans(const std::vector<std::vector<double>>& data,
 
     std::vector<int> prevLabels(n, -1);
     for (int iter = 0; iter < maxIters; ++iter) {
-        // 分配
+        // Assign
         bool changed = false;
         for (int i = 0; i < n; ++i) {
             int best = 0;
@@ -204,7 +204,7 @@ KMeansResult kMeans(const std::vector<std::vector<double>>& data,
         if (!changed && iter > 0) {
             break;
         }
-        // 更新中心
+        // Update centers
         std::vector<std::vector<double>> newCenters(
             k, std::vector<double>(dim, 0.0));
         std::vector<int> counts(k, 0);
@@ -222,7 +222,7 @@ KMeansResult kMeans(const std::vector<std::vector<double>>& data,
                 }
                 r.centers[c] = newCenters[c];
             } else {
-                // 空簇：保留原中心
+                // Empty cluster: keep original center
             }
         }
         prevLabels = r.labels;
@@ -244,7 +244,7 @@ SpikeSortResult sortSpikes(const std::vector<std::vector<double>>& waveforms,
         return r;
     }
 
-    // n < nClusters：每个 spike 单独成簇
+    // n < nClusters: each spike forms its own cluster
     if (n < cfg.nClusters) {
         r.labels.resize(n);
         for (int i = 0; i < n; ++i) {
@@ -255,7 +255,7 @@ SpikeSortResult sortSpikes(const std::vector<std::vector<double>>& waveforms,
         return r;
     }
 
-    // 1) 中心化：每列（样本点位置）减去该列均值
+    // 1) Mean centering: subtract the mean of each column (sample point position) from that column
     std::vector<double> colMean(snippetLen, 0.0);
     for (const auto& wf : waveforms) {
         for (int j = 0; j < snippetLen; ++j) {
@@ -275,7 +275,7 @@ SpikeSortResult sortSpikes(const std::vector<std::vector<double>>& waveforms,
         }
     }
 
-    // 2) 协方差矩阵（snippetLen × snippetLen，对称），1/(n-1) 归一
+    // 2) Covariance matrix (snippetLen * snippetLen, symmetric), 1/(n-1) normalized
     const int dim = snippetLen;
     std::vector<double> cov(static_cast<std::size_t>(dim * dim), 0.0);
     for (int i = 0; i < dim; ++i) {
@@ -291,14 +291,14 @@ SpikeSortResult sortSpikes(const std::vector<std::vector<double>>& waveforms,
         }
     }
 
-    // 3) Jacobi 特征分解
+    // 3) Jacobi eigenvalue decomposition
     std::vector<double> eval;
     std::vector<double> evec;
     jacobiEigen(cov, dim, eval, evec);
 
-    // 取前 nComponents（特征值已降序）
+    // Take the first nComponents (eigenvalues are already sorted in descending order)
     int nComp = std::min(cfg.nComponents, dim);
-    // 4) 投影得到 pcaCoords
+    // 4) Project to get pcaCoords
     r.pcaCoords.assign(n, std::vector<double>(nComp, 0.0));
     for (int i = 0; i < n; ++i) {
         for (int c = 0; c < nComp; ++c) {
@@ -311,7 +311,7 @@ SpikeSortResult sortSpikes(const std::vector<std::vector<double>>& waveforms,
         }
     }
 
-    // 5) K-Means 聚类
+    // 5) K-Means clustering
     KMeansResult km = kMeans(r.pcaCoords, cfg.nClusters, cfg.maxIters, cfg.seed);
     r.labels = std::move(km.labels);
 
