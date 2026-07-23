@@ -18,19 +18,34 @@ last_updated: 2026-07-21
 - 渲染：真实 Windows GPU/显示验收已通过（见 [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md)）。
 - 旧版性能画像：MNE 打开文件延迟和 Python DSP 热点已确认；M2 异步打开和 M3 DSP 迁移已完成，M4 继续以旧版为频谱黄金来源。
 
+## 产品分线与阶段策略
+
+BoundFree EEG 按信号范式分为两条产品线，共享同一套底座，不拆分为两个独立仓库：
+
+- **公共底座（core）**：文件打开与懒加载、IPC 与 Python 边车、波形浏览与渲染、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权、i18n、打包与发布。EEG 与 Spike 两线共用，占整体代码约九成。
+- **EEG 分析线（低频 EEG/LFP/电生理）**：重参考、工频与谐波陷波、带通、PSD、STFT、频段功率趋势、相干性等频谱范式。
+- **Spike 分析线（高频神经元放电）**：高采样率数据源与存储、阈值检测、spike sorting、波形簇叠加、raster/PSTH、ISI/自相关等事件范式。
+
+阶段策略：**第一版本（v1）只交付「公共底座 + EEG 分析线」**，作为可发布的通用 EEG/LFP 文件分析软件。Spike 分析线作为**下一阶段的独立产品面孔**（可为独立 SKU / 可执行程序），复用同一底座，通过可插拔的数据源、分析层与渲染层接入，不重做一套软件。
+
 ## v1 产品边界
 
-v1 stable 定位为面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。正式实现是本仓库的 C++/Qt6 Native 版本；旧 Python/PySide6 版只作为参考实现、功能基线、Python 边车迁移来源和黄金文件生成器。
+v1 stable 定位为面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件，即上文「公共底座 + EEG 分析线」。正式实现是本仓库的 C++/Qt6 Native 版本；旧 Python/PySide6 版只作为参考实现、功能基线、Python 边车迁移来源和黄金文件生成器。
 
 v1 stable 必须完整对齐旧版通用文件分析体验：文件打开与懒加载、多通道波形浏览、Raw/CAR/Bipolar 重参考、工频与谐波陷波、单通道带通、PSD、STFT、频段功率趋势、相干性、事件标注、视频文件同步、EDF/HDF5/CSV 片段导出、录制与 Session 骨架、离线机器授权、Windows 10/11 安装包、简体中文和英文界面。
 
-v1 stable 不承诺自研硬件采集闭环。自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时以上采集长稳测试进入 v1.1/v2。v1 仍保留数据源、Session、录制和实时管线扩展边界。
+v1 stable 不承诺 Spike sorting 分析线，也不承诺自研硬件采集闭环：
+
+- **Spike 分析线**（高采样率 spike sorting、raster/PSTH 等）进入下一阶段独立产品线。
+- **自研硬件采集闭环**（`ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控、12 小时以上采集长稳测试）进入 v1.1/v2。
+
+v1 在架构上必须保持底座的可扩展边界——数据源抽象、Session、录制与实时管线、分析层与渲染层接口，使后续 Spike 分析线与硬件采集接入时复用 v1 已建立的浏览、分析、标注、视频同步和导出流程，避免推倒重来。为此，v1 底座中与采样率相关的量（窗口点数、抽稀桶大小、切片粒度、payload 缓冲）不得按 EEG 的 1 kHz 量级写死，须按「窗口秒数 × 采样率」或「每像素目标点数」推导，天然兼容高采样率 Spike 数据。
 
 ## 当前阶段
 
 M2-5 已收口：CSV、HDF5、EDF/BDF、BrainVision、EEGLAB 与 FIF 已有验收证据；Intan RHS 与 BBK/DAT/LSD 仍未实现。
 M3 DSP 算法层与静态浏览离线处理已落地：重参考、陷波、带通和黄金文件比对通过。当前 UI 仅提供全局带通开关。
-M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完成。M7 已通过正式二进制 IPC、文件回放源、双格式录制、双层背压统计、事件追加、三格式异步导出和回读验收（见 [`reports/m7-record-export-acceptance.md`](reports/m7-record-export-acceptance.md)）。下一阶段为 M8 打包与发布验收；产品版本保持 `0.1.0-dev`。
+M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完成。M8 打包实现和 WSL2 Linux 可验证部分已完成（见 [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md)）；Windows x64 构建、Inno Setup 安装包、组织证书签名与干净 Windows 10/11 全流程仍是发布硬门禁。产品版本保持 `0.1.0-dev`，不得标为 `rc` 或 `stable`。
 
 ## 阶段路线
 
@@ -46,6 +61,7 @@ M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完�
 | M6 | 视频同步 | M5 完成 | 视频从属 EEG 时钟、偏移、黑屏和倍速跟随对齐旧版 |
 | M7 | 录制与导出 | M3 和 M5 完成 | 双格式录制、背压、片段导出和标注写入对齐旧版 |
 | M8 | 打包与发布验收 | M1-M7 完成 | Windows 10/11 安装包、边车打包、代码签名、全量功能清单勾验 |
+| Spike 分析线（下一阶段独立产品） | 高采样率数据源与存储、spike sorting、波形簇/raster/PSTH | v1 stable 完成，底座扩展点稳定 | 高频文件打开与浏览、检测/sorting/发放率分析、复用底座标注与导出 |
 | v1.1/v2 | 自研硬件采集闭环 | v1 stable 完成，设备协议和样机样本就绪 | BLE 真实设备采集、设备状态、真实采集录制和 12 小时以上长稳测试 |
 
 ## M2 前硬门禁

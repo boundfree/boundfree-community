@@ -16,11 +16,11 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 }
 ```
 
-当前阶段：M0–M2 门禁与静态浏览、M3 DSP、M4 频谱分析、M5 回放与标注、M6 视频同步、M7 录制与导出均已完成。下一阶段为 M8 打包与发布验收。产品版本 `0.1.0-dev`。
+当前阶段：M0–M7 均已完成；M8 打包实现和 WSL2 Linux 可验证部分已完成，Windows 安装、签名与干净机发布门禁待执行。产品版本 `0.1.0-dev`。
 
-v1 stable 产品边界：BoundFree EEG Native v1 stable 是面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件。v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
+产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
-自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时采集长稳测试不作为 v1 stable 门槛，进入 v1.1/v2。v1 仅保留数据源、Session、录制和实时管线的扩展边界。
+高频 **Spike 分析线**（spike sorting、raster/PSTH 等）作为下一阶段的独立产品面孔，复用同一底座接入，不重做一套软件。自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时采集长稳测试不作为 v1 stable 门槛，进入 v1.1/v2。v1 仅保留数据源、Session、录制、实时管线、分析层与渲染层的扩展边界。
 
 M0 结论：
 
@@ -30,7 +30,7 @@ M0 结论：
 
 ## Current Milestone
 
-M7 已完成，验收记录见 [`docs/reports/m7-record-export-acceptance.md`](docs/reports/m7-record-export-acceptance.md)。下一阶段 M8 实现边车打包、Windows 安装包、代码签名和全量发布验收。
+M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packaging-release-acceptance.md`](docs/reports/m8-packaging-release-acceptance.md)。Windows x64 安装包生成、组织证书签名和干净 Windows 10/11 全流程仍未验收，当前产物不得标为 `rc` 或 `stable`。
 
 已完成阶段的可验证记录：
 
@@ -41,6 +41,7 @@ M7 已完成，验收记录见 [`docs/reports/m7-record-export-acceptance.md`](d
 - [`docs/reports/m5-playback-annotations-acceptance.md`](docs/reports/m5-playback-annotations-acceptance.md)：回放状态、窗口预取、事件标注和 CSV 往返。
 - [`docs/reports/m6-video-sync-acceptance.md`](docs/reports/m6-video-sync-acceptance.md)：视频容器、从属时钟、偏移、黑屏、倍速和帧节流。
 - [`docs/reports/m7-record-export-acceptance.md`](docs/reports/m7-record-export-acceptance.md)：二进制 IPC、双格式录制、背压、三格式导出和回读。
+- [`docs/reports/m8-packaging-release-acceptance.md`](docs/reports/m8-packaging-release-acceptance.md)：打包实现、Linux 可验证证据与未完成 Windows 发布门禁。
 
 ## Documentation
 
@@ -49,7 +50,7 @@ M7 已完成，验收记录见 [`docs/reports/m7-record-export-acceptance.md`](d
 | 文档 | 用途 |
 | --- | --- |
 | [docs/roadmap.md](docs/roadmap.md) | v1 边界、当前阶段、M0–M8 路线和门禁 |
-| [docs/plans/m7-record-export.md](docs/plans/m7-record-export.md) | 已完成 M7 录制与片段导出实施范围、协议边界与验收条件 |
+| [docs/plans/m8-packaging-release.md](docs/plans/m8-packaging-release.md) | 当前 M8 打包实现、Windows 发布门禁与验收条件 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
 | [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |
