@@ -239,6 +239,10 @@
       <translation>读取器失败：{reason}</translation>
     </message>
     <message>
+      <source>error.reader.optional_dependency_missing</source>
+      <translation>读取器缺少可选依赖 {dependency}：{path}（{reason}）</translation>
+    </message>
+    <message>
       <source>error.reader.session_not_found</source>
       <translation>文件会话不存在：{handle}</translation>
     </message>

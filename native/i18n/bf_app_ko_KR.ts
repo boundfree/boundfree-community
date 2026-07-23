@@ -239,6 +239,10 @@
       <translation>Reader failed: {reason}</translation>
     </message>
     <message>
+      <source>error.reader.optional_dependency_missing</source>
+      <translation>리더에 선택적 종속성 {dependency}이(가) 없습니다: {path} ({reason})</translation>
+    </message>
+    <message>
       <source>error.reader.session_not_found</source>
       <translation>File session does not exist: {handle}</translation>
     </message>

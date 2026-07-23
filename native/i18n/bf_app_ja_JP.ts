@@ -239,6 +239,10 @@
       <translation>Reader failed: {reason}</translation>
     </message>
     <message>
+      <source>error.reader.optional_dependency_missing</source>
+      <translation>リーダーに必要な任意依存関係 {dependency} がありません：{path}（{reason}）</translation>
+    </message>
+    <message>
       <source>error.reader.session_not_found</source>
       <translation>File session does not exist: {handle}</translation>
     </message>

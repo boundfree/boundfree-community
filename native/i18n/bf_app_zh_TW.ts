@@ -239,6 +239,10 @@
       <translation>Reader failed: {reason}</translation>
     </message>
     <message>
+      <source>error.reader.optional_dependency_missing</source>
+      <translation>讀取器缺少可選相依套件 {dependency}：{path}（{reason}）</translation>
+    </message>
+    <message>
       <source>error.reader.session_not_found</source>
       <translation>File session does not exist: {handle}</translation>
     </message>
