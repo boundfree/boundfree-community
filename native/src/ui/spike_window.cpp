@@ -30,12 +30,12 @@
 namespace bf {
 
 namespace {
-// 取前若干秒的切片（高采样率下避免一次性拉全段）。
-// 若总时长不足，则取整段。
+// Take a slice of the first few seconds (avoids pulling the whole record at high sampling rates).
+// If total duration is shorter, take the whole record.
 constexpr double kSliceSeconds = 2.0;
 
-// 从 SidecarSliceResult 的指定通道组装单通道 double 信号。
-// data 为 [nChannels][nSamples] 的 float。
+// Assemble a single-channel double signal from the given channel of SidecarSliceResult.
+// data is float [nChannels][nSamples].
 std::vector<double> extractChannel(const SidecarSliceResult& slice, int channel) {
     std::vector<double> signal;
     if (slice.data.empty()) {
@@ -118,8 +118,8 @@ bool SpikeWindow::openPath(const QString& path) {
     const QFileInfo info(path);
     setStatusText(QStringLiteral("Opening %1...").arg(info.fileName()));
 
-    // 边车：startAndHello → openFile → getSlice。
-    // fs 严格来自 metadata，禁止硬编码。
+    // Sidecar: startAndHello -> openFile -> getSlice.
+    // fs comes strictly from metadata, never hardcoded.
     SidecarClient sidecar(repoRoot_);
     const SidecarHelloResult hello = sidecar.startAndHello(version_);
     if (!hello.ok) {
@@ -147,7 +147,7 @@ bool SpikeWindow::openPath(const QString& path) {
         return false;
     }
 
-    // fs 从 metadata 流入：优先 open 的 fs，退化用 slice 的 fs（两者一致）。
+    // fs flows in from metadata: prefer open's fs, fall back to slice's fs (they agree).
     const double fs = opened.fs > 0.0 ? opened.fs : slice.fs;
     if (fs <= 0.0) {
         setStatusText(QStringLiteral("invalid fs from metadata"));
@@ -161,9 +161,9 @@ bool SpikeWindow::openPath(const QString& path) {
         return false;
     }
 
-    // 检测配置：fs 必须来自 metadata。
+    // Detection config: fs must come from metadata.
     dsp::SpikeDetectConfig detect;
-    detect.fs = fs;  // ← metadata 流入，未硬编码
+    detect.fs = fs;  // <- flows from metadata, not hardcoded
     detect.thresholdMad = 4.0;
     detect.detectNegative = true;
     detect.refractoryMs = 1.0;
@@ -178,7 +178,7 @@ bool SpikeWindow::openPath(const QString& path) {
 
     SpikeAnalysisRequest req;
     req.signal = signal;
-    req.fs = fs;  // ← metadata 流入
+    req.fs = fs;  // <- flows from metadata
     req.duration = std::min(duration, static_cast<double>(signal.size()) / fs);
     req.detect = detect;
     req.sort = sort;

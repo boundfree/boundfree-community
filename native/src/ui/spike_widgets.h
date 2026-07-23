@@ -6,11 +6,11 @@
 
 namespace bf {
 
-// 4 个纯 QPainter 自绘的 Spike 可视化控件，消费 bf::dsp::SpikeAnalysis。
-// 设计与 ui/analysis_widgets.{h,cpp} 保持一致：final QWidget 子类、无 Q_OBJECT、
-// setDarkTheme + paintEvent、emptyLabel 空状态、kLeft/kTop/... 边距与 plotRect 映射。
-// 所有时间/幅值映射均从 SpikeAnalysis::fs/duration/snippetLen/preMs/postMs 推导，
-// 禁止硬编码采样率或时长。
+// Four self-drawn (QPainter) Spike views consuming bf::dsp::SpikeAnalysis.
+// Consistent with ui/analysis_widgets.{h,cpp}: final QWidget subclasses, no Q_OBJECT,
+// setDarkTheme + paintEvent, emptyLabel empty state, kLeft/kTop/... margins and plotRect mapping.
+// All time/amplitude mapping is derived from SpikeAnalysis::fs/duration/snippetLen/preMs/postMs;
+// sampling rate and duration are never hardcoded.
 
 class SpikeClusterWidget final : public QWidget {
 public:

@@ -11,17 +11,17 @@
 namespace bf {
 namespace {
 
-// 与 analysis_widgets.cpp 保持一致的边距/主题配色。
+// Margins/theme colors consistent with analysis_widgets.cpp.
 constexpr int kLeft = 54;
 constexpr int kRight = 16;
 constexpr int kTop = 28;
 constexpr int kBottom = 36;
 
-// PSTH / ISI 默认 bin（可调，内部常量；bin 数由 duration / 范围推导，禁止硬编码时长）。
+// Default PSTH / ISI bins (tunable internal constants; bin count derived from duration/range, duration never hardcoded).
 constexpr double kPsthBinMs = 50.0;
 constexpr double kIsiBinMs = 1.0;
 constexpr double kIsiRangeMs = 50.0;
-constexpr double kRefractoryMs = 1.0;  // 不应期违例高亮上限
+constexpr double kRefractoryMs = 1.0;  // Refractory-violation highlight upper bound
 
 struct ThemePalette {
     QColor background;
@@ -51,7 +51,7 @@ QRect plotRect(const QWidget& widget) {
     return widget.rect().adjusted(kLeft, kTop, -kRight, -kBottom);
 }
 
-// 稳定的簇颜色轮换：按 cluster.id 取色，确保跨重绘/重排颜色一致。
+// Stable cluster color rotation: color by cluster.id so it stays consistent across redraws/reordering.
 QColor clusterColor(int id) {
     static const QColor palette[] = {
         QColor("#60A5FA"),  // blue
@@ -112,18 +112,18 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
         return;
     }
 
-    // 波形快照时间轴：preMs .. preMs + postMs，由 snippetLen 样本 / fs 映射。
-    // 禁止硬编码采样率：从 analysis_.fs 推导 ms/样本。
+    // Waveform snippet time axis: preMs .. preMs + postMs, mapped from snippetLen samples / fs.
+    // Never hardcode sampling rate: derive ms/sample from analysis_.fs.
     const double fs = analysis_.fs > 0 ? analysis_.fs : 1.0;
     const double preMs = analysis_.preMs;
     const double postMs = analysis_.postMs;
     const int snippetLen = analysis_.snippetLen;
     const double totalMs = (snippetLen > 0) ? (snippetLen / fs * 1000.0) : (preMs + postMs);
-    // 以 preMs..preMs+postMs 为轴，若 snippet 与窗不一致则按 snippet 实际长度。
-    const double tStartMs = (snippetLen > 0) ? 0.0 : preMs;  // 快照索引 0 对齐到 0，更直观
+    // Use preMs..preMs+postMs as the axis; if snippet differs from the window, use the snippet's actual length.
+    const double tStartMs = (snippetLen > 0) ? 0.0 : preMs;  // snippet index 0 aligns to 0 (clearer)
     const double tSpanMs = std::max(1e-9, totalMs);
 
-    // Y 自适应：扫描所有簇所有样本。
+    // Y auto-scale: scan all samples of all clusters.
     double yMin = std::numeric_limits<double>::infinity();
     double yMax = -std::numeric_limits<double>::infinity();
     for (const auto& c : analysis_.clusters) {
@@ -142,7 +142,7 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
         drawEmpty(painter, t, plot, title, emptyLabel_);
         return;
     }
-    // 对称留白。
+    // Symmetric padding.
     if (yMin > 0) yMin = 0.0;
     if (yMax < 0) yMax = 0.0;
     double pad = (yMax - yMin) * 0.1;
@@ -150,7 +150,7 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
     yMin -= pad;
     yMax += pad;
 
-    // 轴。
+    // Axes.
     painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
     painter.setPen(t.label);
@@ -163,7 +163,7 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
     painter.drawText(QRect(plot.left(), height() - 28, plot.width(), 20), Qt::AlignCenter, xLabel);
 
     const auto xMs = [&](int i) -> double {
-        // 样本 i -> ms，索引 0 对齐 tStartMs。
+        // sample i -> ms, index 0 aligned to tStartMs.
         return tStartMs + (snippetLen > 0 ? (i / fs * 1000.0) : (i * (tSpanMs / std::max(1, snippetLen))));
     };
     const auto mapX = [&](int i) -> double {
@@ -173,14 +173,14 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
         return plot.bottom() - plot.height() * (v - yMin) / (yMax - yMin);
     };
 
-    // 0 基线。
+    // Zero baseline.
     painter.setPen(QPen(t.grid, 1, Qt::DashLine));
     const double y0 = mapY(0.0);
     painter.drawLine(QPointF(plot.left(), y0), QPointF(plot.right(), y0));
 
     for (const auto& cluster : analysis_.clusters) {
         const QColor color = clusterColor(cluster.id);
-        // 半透明细线：每条 waveform。
+        // Semi-transparent thin line: one per waveform.
         QColor faint = color; faint.setAlpha(90);
         painter.setPen(QPen(faint, 1.0));
         for (const auto& w : cluster.waveforms) {
@@ -193,7 +193,7 @@ void SpikeClusterWidget::paintEvent(QPaintEvent*) {
             }
             painter.drawPath(path);
         }
-        // meanWaveform：粗线。
+        // meanWaveform: thick line.
         painter.setPen(QPen(color, 2.0));
         QPainterPath meanPath;
         for (int i = 0; i < static_cast<int>(cluster.meanWaveform.size()) && i < snippetLen; ++i) {
@@ -240,7 +240,7 @@ void SpikeRasterWidget::paintEvent(QPaintEvent*) {
         return;
     }
     const double duration = analysis_.duration > 0 ? analysis_.duration : 1.0;
-    // 没有真实 duration 时从 timestamps 末尾兜底（不硬编码时长）。
+    // Fall back to the last timestamp when no real duration is available (duration not hardcoded).
     double tmax = duration;
     for (const auto& c : analysis_.clusters) {
         if (!c.timestamps.empty()) tmax = std::max(tmax, c.timestamps.back());
@@ -268,17 +268,17 @@ void SpikeRasterWidget::paintEvent(QPaintEvent*) {
     for (int ci = 0; ci < nClusters; ++ci) {
         const auto& cluster = analysis_.clusters[ci];
         const QColor color = clusterColor(cluster.id);
-        // 行中线。
+        // Row center line.
         const double rowMid = plot.top() + rowH * (ci + 0.5);
         const double tickHalf = std::min(rowH * 0.4, 8.0);
 
-        // 行分隔（除最后一行）。
+        // Row separators (except the last row).
         if (ci > 0) {
             painter.setPen(QPen(t.grid, 1, Qt::DotLine));
             painter.drawLine(QPointF(plot.left(), plot.top() + rowH * ci), QPointF(plot.right(), plot.top() + rowH * ci));
         }
 
-        // 簇 id 标签（左侧 plot 外）。
+        // Cluster id label (left, outside the plot).
         painter.setPen(t.label);
         painter.drawText(QRect(0, static_cast<int>(plot.top() + rowH * ci), kLeft - 4, static_cast<int>(rowH)),
                          Qt::AlignRight | Qt::AlignVCenter, QString::number(cluster.id));
@@ -291,7 +291,7 @@ void SpikeRasterWidget::paintEvent(QPaintEvent*) {
         }
     }
 
-    // X 轴刻度。
+    // X-axis ticks.
     painter.setPen(t.label);
     painter.setPen(QPen(t.grid, 1));
     for (int i = 0; i <= 5; ++i) {
@@ -342,12 +342,12 @@ void SpikePsthWidget::paintEvent(QPaintEvent*) {
     }
     tmax = std::max(tmax, 1e-9);
 
-    // bin 数由 duration / tmax 与 kPsthBinMs 推导（不硬编码 bin 数）。
+    // Bin count derived from duration / tmax and kPsthBinMs (bin count not hardcoded).
     const double binSec = kPsthBinMs / 1000.0;
     const int nBins = std::max(1, static_cast<int>(std::ceil(tmax / binSec)));
     const double effSpan = nBins * binSec;
 
-    // 每簇 per-bin 计数 + 总发放率（Hz = count / binSec）。
+    // Per-cluster per-bin counts + firing rate (Hz = count / binSec).
     std::vector<std::vector<int>> counts(analysis_.clusters.size(), std::vector<int>(nBins, 0));
     double maxRate = 0.0;
     for (std::size_t ci = 0; ci < analysis_.clusters.size(); ++ci) {
@@ -384,12 +384,12 @@ void SpikePsthWidget::paintEvent(QPaintEvent*) {
             const double rate = counts[ci][b] / binSec;
             const double h = plot.height() * (rate / maxRate);
             const double x = plot.left() + b * barW;
-            // 多簇叠加：每簇画一次（半透明），可叠加观察。
+            // Multi-cluster overlay: draw each cluster once (semi-transparent) for comparison.
             painter.drawRect(QRectF(x, plot.bottom() - h, std::max(1.0, barW - 0.5), h));
         }
     }
 
-    // X 轴刻度。
+    // X-axis ticks.
     painter.setPen(QPen(t.grid, 1));
     painter.setBrush(Qt::NoBrush);
     for (int i = 0; i <= 5; ++i) {
@@ -436,14 +436,14 @@ void SpikeIsiWidget::paintEvent(QPaintEvent*) {
         return;
     }
 
-    // bin 数由 kIsiRangeMs / kIsiBinMs 推导。
+    // Bin count derived from kIsiRangeMs / kIsiBinMs.
     const int nBins = std::max(1, static_cast<int>(std::ceil(kIsiRangeMs / kIsiBinMs)));
     std::vector<std::vector<int>> counts(analysis_.clusters.size(), std::vector<int>(nBins, 0));
     int maxCount = 0;
     for (std::size_t ci = 0; ci < analysis_.clusters.size(); ++ci) {
         const auto& ts = analysis_.clusters[ci].timestamps;
         for (std::size_t i = 1; i < ts.size(); ++i) {
-            // timestamps 单位秒 -> ISI ms。
+            // timestamps in seconds -> ISI in ms.
             double isiMs = (ts[i] - ts[i - 1]) * 1000.0;
             if (isiMs < 0) isiMs = 0;
             int b = static_cast<int>(isiMs / kIsiBinMs);
@@ -468,9 +468,9 @@ void SpikeIsiWidget::paintEvent(QPaintEvent*) {
 
     const double barW = plot.width() / static_cast<double>(nBins);
 
-    // 不应期违例区高亮 (< kRefractoryMs)。
+    // Highlight the refractory-violation region (< kRefractoryMs).
     const int refractoryBins = std::max(1, static_cast<int>(std::ceil(kRefractoryMs / kIsiBinMs)));
-    painter.setBrush(QColor(248, 113, 113, 40));  // 浅红
+    painter.setBrush(QColor(248, 113, 113, 40));  // light red
     painter.setPen(Qt::NoPen);
     painter.drawRect(QRectF(plot.left(), plot.top(), barW * refractoryBins, plot.height()));
 
@@ -486,7 +486,7 @@ void SpikeIsiWidget::paintEvent(QPaintEvent*) {
         }
     }
 
-    // X 轴刻度。
+    // X-axis ticks.
     painter.setPen(QPen(t.grid, 1));
     painter.setBrush(Qt::NoBrush);
     for (int i = 0; i <= 5; ++i) {
