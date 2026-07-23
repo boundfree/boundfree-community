@@ -47,6 +47,8 @@ M2-5 已收口：CSV、HDF5、EDF/BDF、BrainVision、EEGLAB 与 FIF 已有验�
 M3 DSP 算法层与静态浏览离线处理已落地：重参考、陷波、带通和黄金文件比对通过。当前 UI 仅提供全局带通开关。
 M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完成。M8 打包实现和 WSL2 Linux 可验证部分已完成（见 [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md)）；Windows x64 构建、Inno Setup 安装包、组织证书签名与干净 Windows 10/11 全流程仍是发布硬门禁。产品版本保持 `0.1.0-dev`，不得标为 `rc` 或 `stable`。
 
+Spike 分析线已完成**底座打通的原型**（非发布件）：`bf_core` 共享静态库已从单体拆出，`bf_spike` 独立可执行入口、Spike 分析服务层（检测→sorting→组装 `SpikeAnalysis` 后台线程）、4 个纯 QPainter 视图（簇波形/raster/PSTH/ISI）与共享数据模型 `dsp/spike_types.h` 均已落地并可编译运行；Spike 检测（MAD 阈值+不应期）与 sorting（PCA+K-Means）DSP 引擎带单测（purity=1）。端到端冒烟以 30 kHz 合成信号验证 `fs` 全程来自文件 metadata、未硬编码。**仍缺**：真实 Intan 样本回归（当前仅合成信号）、Spike 视图的 GPU/大道数性能门禁、sorting 数值黄金基线、与底座标注/导出的整合。详见 [`reports/spike-foundation-acceptance.md`](reports/spike-foundation-acceptance.md)。
+
 ## 阶段路线
 
 | 阶段 | 目标 | 进入条件 | 完成标准 |
@@ -61,7 +63,7 @@ M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完�
 | M6 | 视频同步 | M5 完成 | 视频从属 EEG 时钟、偏移、黑屏和倍速跟随对齐旧版 |
 | M7 | 录制与导出 | M3 和 M5 完成 | 双格式录制、背压、片段导出和标注写入对齐旧版 |
 | M8 | 打包与发布验收 | M1-M7 完成 | Windows 10/11 安装包、边车打包、代码签名、全量功能清单勾验 |
-| Spike 分析线（下一阶段独立产品） | 高采样率数据源与存储、spike sorting、波形簇/raster/PSTH | v1 stable 完成，底座扩展点稳定 | 高频文件打开与浏览、检测/sorting/发放率分析、复用底座标注与导出 |
+| Spike 分析线（下一阶段独立产品）*[底座原型已落地]* | 高采样率数据源与存储、spike sorting、波形簇/raster/PSTH | v1 stable 完成，底座扩展点稳定 | 高频文件打开与浏览、检测/sorting/发放率分析、复用底座标注与导出 |
 | v1.1/v2 | 自研硬件采集闭环 | v1 stable 完成，设备协议和样机样本就绪 | BLE 真实设备采集、设备状态、真实采集录制和 12 小时以上长稳测试 |
 
 ## M2 前硬门禁

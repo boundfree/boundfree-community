@@ -20,7 +20,7 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
-高频 **Spike 分析线**（spike sorting、raster/PSTH 等）作为下一阶段的独立产品面孔，复用同一底座接入，不重做一套软件。自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时采集长稳测试不作为 v1 stable 门槛，进入 v1.1/v2。v1 仅保留数据源、Session、录制、实时管线、分析层与渲染层的扩展边界。
+高频 **Spike 分析线**（spike sorting、raster/PSTH 等）作为下一阶段的独立产品面孔，复用同一底座接入，不重做一套软件。自研 `ADS1299-4 + ESP32-C3`、BLE 实时采集、真实设备录制、设备状态监控和 12 小时采集长稳测试不作为 v1 stable 门槛，进入 v1.1/v2。v1 仅保留数据源、Session、录制、实时管线、分析层与渲染层的扩展边界。当前 Spike 线已完成**底座打通原型**（`bf_core` 共享库、`bf_spike` 可执行、检测/sorting DSP、分析服务与 4 个可视化视图），仅以 30 kHz 合成信号验证 `fs` 全程来自 metadata；真实 Intan 样本回归、sorting 黄金基线与视图性能门禁尚未建立，详见 [`docs/reports/spike-foundation-acceptance.md`](docs/reports/spike-foundation-acceptance.md)。
 
 M0 结论：
 
@@ -42,6 +42,7 @@ M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packagi
 - [`docs/reports/m6-video-sync-acceptance.md`](docs/reports/m6-video-sync-acceptance.md)：视频容器、从属时钟、偏移、黑屏、倍速和帧节流。
 - [`docs/reports/m7-record-export-acceptance.md`](docs/reports/m7-record-export-acceptance.md)：二进制 IPC、双格式录制、背压、三格式导出和回读。
 - [`docs/reports/m8-packaging-release-acceptance.md`](docs/reports/m8-packaging-release-acceptance.md)：打包实现、Linux 可验证证据与未完成 Windows 发布门禁。
+- [`docs/reports/spike-foundation-acceptance.md`](docs/reports/spike-foundation-acceptance.md)：Spike 分析线底座原型、复用性核验与未完成门禁。
 
 ## Documentation
 
