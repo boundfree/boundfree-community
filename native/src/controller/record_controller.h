@@ -27,9 +27,16 @@ class RecordController final : public QObject {
     Q_OBJECT
 
 public:
+    static constexpr double kDefaultChunkSeconds = 1.0;
+
     RecordController(QString repoRoot, VersionInfo version, QObject* parent = nullptr);
     ~RecordController() override;
 
+    /**
+     * @brief 开始从文件录制。
+     * @param chunkSamples 每次处理的样本数。如果 <= 0，则内部自动根据采样率推导：
+     *                     std::max(1.0, std::round(fs * kDefaultChunkSeconds))。
+     */
     bool startFromFile(
         const QString& sourcePath,
         double fs,

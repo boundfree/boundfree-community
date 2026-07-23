@@ -50,6 +50,9 @@ bool RecordController::startFromFile(
     const QJsonObject& metadata,
     int chunkSamples,
     int maxSourceQueueChunks) {
+    if (chunkSamples <= 0 && fs > 0.0) {
+        chunkSamples = static_cast<int>(std::max(1.0, std::round(fs * kDefaultChunkSeconds)));
+    }
     if (state_->active.exchange(true) || sourcePath.isEmpty() || fs <= 0.0 || channelNames.isEmpty() ||
         duration <= 0.0 || sourceStart < 0.0 || sourceStart >= duration || outputDir.isEmpty() ||
         chunkSamples <= 0 || maxSourceQueueChunks <= 0) {
