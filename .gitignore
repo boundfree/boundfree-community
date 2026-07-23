@@ -1,7 +1,21 @@
+# Build outputs (native)
 native/build/
-native/build-windows/
-native/spike/build-windows/
+native/build-*/
+native/spike/build/
+native/spike/build-*/
+native/**/*_autogen/
+
+# Release and packaging artifacts (never commit built binaries or frozen sidecar)
+release/
+dist/
+installer/Output/
+*.exe
+*.msi
+
+# Sample data
 local-samples/public/data/
+
+# Python
 *.egg-info/
 __pycache__/
 .pytest_cache/
