@@ -19,6 +19,50 @@
       <translation>[!! Laanguaage !!]</translation>
     </message>
     <message>
+      <source>app.menu.view</source>
+      <translation>[!! Viiew !!]</translation>
+    </message>
+    <message>
+      <source>app.menu.theme</source>
+      <translation>[!! Theemee !!]</translation>
+    </message>
+    <message>
+      <source>app.theme.light</source>
+      <translation>[!! Liight !!]</translation>
+    </message>
+    <message>
+      <source>app.theme.dark</source>
+      <translation>[!! Daark !!]</translation>
+    </message>
+    <message>
+      <source>app.view.channels</source>
+      <translation>[!! Chaanneels paaneel !!]</translation>
+    </message>
+    <message>
+      <source>app.view.markers</source>
+      <translation>[!! Maarkeers paaneel !!]</translation>
+    </message>
+    <message>
+      <source>app.view.analysis</source>
+      <translation>[!! Anaalyysiis paaneel !!]</translation>
+    </message>
+    <message>
+      <source>app.view.video</source>
+      <translation>[!! Viideeo paaneel !!]</translation>
+    </message>
+    <message>
+      <source>app.status.mode.idle</source>
+      <translation>[!! Iidlee !!]</translation>
+    </message>
+    <message>
+      <source>app.status.mode.playback</source>
+      <translation>[!! Plaaybaack !!]</translation>
+    </message>
+    <message>
+      <source>app.status.mode.recording</source>
+      <translation>[!! Reecoordiing !!]</translation>
+    </message>
+    <message>
       <source>app.action.open</source>
       <translation>[!! Oopeen Fiilee !!]</translation>
     </message>
@@ -373,5 +417,9 @@
     <message><source>error.export.unsupported_format</source><translation>[!! Eexpoort paath {path} haas uunsuuppoorteed foormaat {suffix} !!]</translation></message>
     <message><source>error.export.busy</source><translation>[!! Aanootheer eexpoort iis aalreeaady ruunniing !!]</translation></message>
     <message><source>error.export.failed</source><translation>[!! Seegmeent eexpoort too {path} faaiileed: {reason} !!]</translation></message>
+    <message><source>app.license.title</source><translation>[!! BoouundFreee EEG Ooffliinee Liiceensee !!]</translation></message>
+    <message><source>app.license.prompt</source><translation>[!! Maachiinee ID: {machine_id}&#10;&#10;Cuurreent staatuus: {error}&#10;&#10;Eenteer the ooffliinee liiceensee keey: !!]</translation></message>
+    <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
+    <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
   </context>
 </TS>

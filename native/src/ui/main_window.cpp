@@ -3,6 +3,8 @@
 #include "controller/processing_view_state.h"
 #include "render/waveform_slice.h"
 
+#include <QActionGroup>
+#include <QPalette>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -31,8 +33,8 @@
 
 namespace bf {
 
-MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* parent)
-    : QMainWindow(parent), version_(version), i18n_(i18n) {
+MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QString& repoRoot, QWidget* parent)
+    : QMainWindow(parent), version_(version), repoRoot_(repoRoot), i18n_(i18n) {
     centralStack_ = new QStackedWidget(this);
     emptyPage_ = new QWidget(centralStack_);
     auto* emptyLayout = new QVBoxLayout(emptyPage_);
@@ -50,6 +52,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     setCentralWidget(centralStack_);
     buildFileMenu();
     buildLanguageMenu();
+
     buildBrowserControls();
     buildProcessingControls();
     buildAnalysisDock();
@@ -57,6 +60,8 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     buildMarkerDock();
     buildVideoDock();
     buildRecordControls();
+    buildViewMenu();
+    buildThemeMenu();
     recordUiTimer_.setInterval(500);
     connect(&recordUiTimer_, &QTimer::timeout, this, [this]() {
         if (recordController_ == nullptr || !recordController_->isActive()) return;
@@ -72,6 +77,12 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* p
     connect(&playbackTimer_, &QTimer::timeout, this, &MainWindow::advancePlayback);
     connect(waveformWidget_, &WaveformWidget::markerRequested, this, &MainWindow::addMarkerAt);
     connect(openButton_, &QPushButton::clicked, this, &MainWindow::chooseFile);
+    statusFileLabel_ = new QLabel(this);
+    statusModeLabel_ = new QLabel(this);
+    statusFileLabel_->setMinimumWidth(40);
+    statusModeLabel_->setMinimumWidth(40);
+    statusBar()->addPermanentWidget(statusModeLabel_);
+    statusBar()->addPermanentWidget(statusFileLabel_);
     resize(900, 560);
     retranslateUi();
 }
@@ -82,6 +93,7 @@ void MainWindow::buildFileMenu() {
     openAction_->setShortcut(QKeySequence::Open);
     connect(openAction_, &QAction::triggered, this, &MainWindow::chooseFile);
     openVideoAction_ = fileMenu_->addAction(QString());
+    openVideoAction_->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     connect(openVideoAction_, &QAction::triggered, this, &MainWindow::chooseVideo);
     fileMenu_->addSeparator();
     quitAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogCloseButton), QString());
@@ -104,6 +116,104 @@ void MainWindow::buildLanguageMenu() {
         });
         languageActions_.append(action);
     }
+}
+
+void MainWindow::buildViewMenu() {
+    viewMenu_ = menuBar()->addMenu(QString());
+    toggleChannelsAction_ = viewMenu_->addAction(QString());
+    toggleMarkersAction_ = viewMenu_->addAction(QString());
+    toggleAnalysisAction_ = viewMenu_->addAction(QString());
+    toggleVideoAction_ = viewMenu_->addAction(QString());
+    auto wireToggle = [this](QAction* action, QDockWidget* dock) {
+        action->setCheckable(true);
+        action->setChecked(dock->isVisible());
+        action->setEnabled(true);
+        connect(action, &QAction::triggered, dock, &QDockWidget::setVisible);
+        connect(dock, &QDockWidget::visibilityChanged, action, &QAction::setChecked);
+    };
+    wireToggle(toggleChannelsAction_, channelDock_);
+    wireToggle(toggleMarkersAction_, markerDock_);
+    wireToggle(toggleAnalysisAction_, analysisDock_);
+    wireToggle(toggleVideoAction_, videoDock_);
+}
+
+void MainWindow::buildThemeMenu() {
+    themeMenu_ = menuBar()->addMenu(QString());
+    themeGroup_ = new QActionGroup(this);
+    themeGroup_->setExclusive(true);
+    lightThemeAction_ = themeMenu_->addAction(QString());
+    lightThemeAction_->setCheckable(true);
+    darkThemeAction_ = themeMenu_->addAction(QString());
+    darkThemeAction_->setCheckable(true);
+    themeGroup_->addAction(lightThemeAction_);
+    themeGroup_->addAction(darkThemeAction_);
+    darkThemeAction_->setChecked(true);
+    connect(lightThemeAction_, &QAction::triggered, this, [this]() { applyTheme(false); });
+    connect(darkThemeAction_, &QAction::triggered, this, [this]() { applyTheme(true); });
+    applyTheme(darkTheme_);
+}
+
+void MainWindow::applyTheme(bool dark) {
+    darkTheme_ = dark;
+    // Tsinghua purple accent (#660874) used across both themes.
+    const QColor accent("#660874");
+    QPalette palette;
+    if (dark) {
+        palette.setColor(QPalette::Window, QColor("#111827"));
+        palette.setColor(QPalette::Base, QColor("#0B1220"));
+        palette.setColor(QPalette::AlternateBase, QColor("#1B2433"));
+        palette.setColor(QPalette::WindowText, QColor("#E2E8F0"));
+        palette.setColor(QPalette::Text, QColor("#E2E8F0"));
+        palette.setColor(QPalette::Button, QColor("#1F2937"));
+        palette.setColor(QPalette::ButtonText, QColor("#E2E8F0"));
+        palette.setColor(QPalette::Highlight, accent);
+        palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#1F2937"));
+        palette.setColor(QPalette::ToolTipText, QColor("#E2E8F0"));
+    } else {
+        palette.setColor(QPalette::Window, QColor("#FFFFFF"));
+        palette.setColor(QPalette::Base, QColor("#F8FAFC"));
+        palette.setColor(QPalette::AlternateBase, QColor("#EEF2F7"));
+        palette.setColor(QPalette::WindowText, QColor("#0F172A"));
+        palette.setColor(QPalette::Text, QColor("#0F172A"));
+        palette.setColor(QPalette::Button, QColor("#E5E7EB"));
+        palette.setColor(QPalette::ButtonText, QColor("#0F172A"));
+        palette.setColor(QPalette::Highlight, accent);
+        palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#E5E7EB"));
+        palette.setColor(QPalette::ToolTipText, QColor("#0F172A"));
+    }
+    setPalette(palette);
+    for (QWidget* child : findChildren<QWidget*>()) {
+        child->setPalette(palette);
+    }
+    if (waveformWidget_ != nullptr) {
+        waveformWidget_->setPalette(palette);
+        waveformWidget_->setDarkTheme(darkTheme_);
+    }
+    if (spectrumWidget_ != nullptr) spectrumWidget_->setDarkTheme(darkTheme_);
+    if (spectrogramWidget_ != nullptr) spectrogramWidget_->setDarkTheme(darkTheme_);
+    if (trendWidget_ != nullptr) trendWidget_->setDarkTheme(darkTheme_);
+    if (coherenceWidget_ != nullptr) coherenceWidget_->setDarkTheme(darkTheme_);
+    update();
+}
+
+void MainWindow::refreshPersistentStatus() {
+    if (statusFileLabel_ == nullptr || statusModeLabel_ == nullptr) {
+        return;
+    }
+    statusFileLabel_->setText(hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() : QString());
+    statusModeLabel_->setText(i18n_->text(currentModeKey()));
+}
+
+QString MainWindow::currentModeKey() const {
+    if (recordController_ != nullptr && recordController_->isActive()) {
+        return QStringLiteral("app.status.mode.recording");
+    }
+    if (playback_.isPlaying()) {
+        return QStringLiteral("app.status.mode.playback");
+    }
+    return QStringLiteral("app.status.mode.idle");
 }
 
 void MainWindow::buildBrowserControls() {
@@ -249,8 +359,9 @@ void MainWindow::buildPlaybackControls() {
 }
 
 void MainWindow::buildRecordControls() {
-    recordController_ = new RecordController(QStringLiteral(BF_REPO_ROOT), version_, this);
-    exportController_ = new ExportController(QStringLiteral(BF_REPO_ROOT), version_, this);
+    const QString root = repoRoot_.isEmpty() ? QStringLiteral(BF_REPO_ROOT) : repoRoot_;
+    recordController_ = new RecordController(root, version_, this);
+    exportController_ = new ExportController(root, version_, this);
     recordAction_ = browserToolbar_->addAction(QString());
     exportSegmentAction_ = browserToolbar_->addAction(QString());
     connect(recordAction_, &QAction::triggered, this, &MainWindow::toggleRecording);
@@ -262,6 +373,7 @@ void MainWindow::buildRecordControls() {
         recordUiTimer_.start();
         recordAction_->setText(i18n_->text("app.record.stop"));
         statusBar()->showMessage(i18n_->text("app.record.started"));
+        refreshPersistentStatus();
     });
     connect(recordController_, &RecordController::progress, this, [this](const RecordSummary& summary) {
         lastRecordSummary_ = summary;
@@ -272,11 +384,13 @@ void MainWindow::buildRecordControls() {
         statusBar()->showMessage(i18n_->text("app.record.completed", {{"samples", summary.samplesWritten}}), 5000);
         recordUiTimer_.stop();
         recordBlinkVisible_ = false;
+        refreshPersistentStatus();
     });
     connect(recordController_, &RecordController::failed, this, [this](const AppError& error) {
         recordAction_->setText(i18n_->text("app.record.start"));
         recordUiTimer_.stop();
         recordBlinkVisible_ = false;
+        refreshPersistentStatus();
         statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code), error.params), 5000);
     });
     connect(exportController_, &ExportController::completed, this, [this](const SidecarExportResult& result) {
@@ -737,6 +851,7 @@ void MainWindow::togglePlayback() {
     }
     syncVideoToPlayback();
     refreshPlaybackControls();
+    refreshPersistentStatus();
 }
 
 void MainWindow::advancePlayback() {
@@ -758,6 +873,7 @@ void MainWindow::advancePlayback() {
     }
     syncVideoToPlayback();
     refreshPlaybackControls();
+    refreshPersistentStatus();
 }
 
 void MainWindow::refreshPlaybackControls() {
@@ -1002,6 +1118,14 @@ void MainWindow::retranslateUi() {
     openButton_->setText(i18n_->text("app.action.open"));
     quitAction_->setText(i18n_->text("app.action.quit"));
     languageMenu_->setTitle(i18n_->text("app.menu.language"));
+    viewMenu_->setTitle(i18n_->text("app.menu.view"));
+    toggleChannelsAction_->setText(i18n_->text("app.view.channels"));
+    toggleMarkersAction_->setText(i18n_->text("app.view.markers"));
+    toggleAnalysisAction_->setText(i18n_->text("app.view.analysis"));
+    toggleVideoAction_->setText(i18n_->text("app.view.video"));
+    themeMenu_->setTitle(i18n_->text("app.menu.theme"));
+    lightThemeAction_->setText(i18n_->text("app.theme.light"));
+    darkThemeAction_->setText(i18n_->text("app.theme.dark"));
     for (QAction* action : languageActions_) {
         const QString locale = action->data().toString();
         action->setText(i18n_->text(QString("app.language.%1").arg(locale)));
@@ -1064,9 +1188,11 @@ void MainWindow::retranslateUi() {
         statusBar()->showMessage(i18n_->text(
             statusKey_,
             {{"error", i18n_->text(QString("error.%1").arg(lastError_.code), lastError_.params)}}));
+        refreshPersistentStatus();
         return;
     }
     statusBar()->showMessage(i18n_->text(statusKey_, statusParams_));
+    refreshPersistentStatus();
 }
 
 void MainWindow::setSidecarConnecting() {
@@ -1126,6 +1252,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     applyProcessingAndDisplay();
     refreshAnalysisControls();
     analysisDock_->show();
+    refreshPersistentStatus();
     markerDock_->show();
     refreshPlaybackControls();
     refreshMarkerControls();

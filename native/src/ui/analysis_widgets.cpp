@@ -31,6 +31,36 @@ QRect plotRect(const QWidget& widget) {
     return widget.rect().adjusted(kLeft, kTop, -kRight, -kBottom);
 }
 
+struct ThemePalette {
+    QColor background;
+    QColor grid;
+    QColor label;
+    QColor empty;
+    QColor coherenceLine;
+    QColor spectrumLine;
+};
+
+ThemePalette themePalette(bool dark) {
+    if (dark) {
+        return {
+            QColor("#111827"),
+            QColor("#64748B"),
+            QColor("#CBD5E1"),
+            QColor("#94A3B8"),
+            QColor("#FBBF24"),
+            QColor("#60A5FA"),
+        };
+    }
+    return {
+        QColor("#FFFFFF"),
+        QColor("#94A3B8"),
+        QColor("#0F172A"),
+        QColor("#64748B"),
+        QColor("#D97706"),
+        QColor("#2563EB"),
+    };
+}
+
 }  // namespace
 
 SpectrumWidget::SpectrumWidget(QWidget* parent) : QWidget(parent) {
@@ -56,14 +86,20 @@ void SpectrumWidget::setBandsVisible(bool visible) {
     update();
 }
 
+void SpectrumWidget::setDarkTheme(bool dark) {
+    darkTheme_ = dark;
+    update();
+}
+
 void SpectrumWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor("#111827"));
+    const ThemePalette t = themePalette(darkTheme_);
+    painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const QRect plot = plotRect(*this);
-    painter.setPen(QPen(QColor("#64748B"), 1));
+    painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
-    painter.setPen(QColor("#CBD5E1"));
+    painter.setPen(t.label);
     painter.drawText(8, 18, title_);
     painter.save();
     painter.translate(14, height() / 2);
@@ -72,7 +108,7 @@ void SpectrumWidget::paintEvent(QPaintEvent*) {
     painter.restore();
     painter.drawText(QRect(plot.left(), height() - 28, plot.width(), 20), Qt::AlignCenter, xLabel_);
     if (spectrum_.frequencies.empty() || spectrum_.values.empty()) {
-        painter.setPen(QColor("#94A3B8"));
+        painter.setPen(t.empty);
         painter.drawText(plot, Qt::AlignCenter, emptyLabel_);
         return;
     }
@@ -88,7 +124,7 @@ void SpectrumWidget::paintEvent(QPaintEvent*) {
     const double yMin = coherence_ ? 0.0 : *minmax.first;
     const double yMax = coherence_ ? 1.0 : std::max(*minmax.second, yMin + 1e-12);
     if (coherence_) {
-        painter.setPen(QPen(QColor("#FBBF24"), 1, Qt::DashLine));
+        painter.setPen(QPen(t.coherenceLine, 1, Qt::DashLine));
         const double y = plot.bottom() - 0.5 * plot.height();
         painter.drawLine(plot.left(), static_cast<int>(y), plot.right(), static_cast<int>(y));
     }
@@ -103,8 +139,7 @@ void SpectrumWidget::paintEvent(QPaintEvent*) {
             path.lineTo(x, y);
         }
     }
-    painter.setPen(QPen(QColor("#60A5FA"), 1.5));
-    painter.drawPath(path);
+    painter.setPen(QPen(t.spectrumLine, 1.5));
 }
 
 SpectrogramWidget::SpectrogramWidget(QWidget* parent) : QWidget(parent) {
@@ -124,13 +159,19 @@ void SpectrogramWidget::setLabels(const QString& title, const QString& xLabel, c
     update();
 }
 
+void SpectrogramWidget::setDarkTheme(bool dark) {
+    darkTheme_ = dark;
+    update();
+}
+
 void SpectrogramWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor("#111827"));
+    const ThemePalette t = themePalette(darkTheme_);
+    painter.fillRect(rect(), t.background);
     const QRect plot = plotRect(*this);
-    painter.setPen(QPen(QColor("#64748B"), 1));
+    painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
-    painter.setPen(QColor("#CBD5E1"));
+    painter.setPen(t.label);
     painter.drawText(8, 18, title_);
     painter.drawText(QRect(plot.left(), height() - 28, plot.width(), 20), Qt::AlignCenter, xLabel_);
     painter.save();
@@ -139,7 +180,7 @@ void SpectrogramWidget::paintEvent(QPaintEvent*) {
     painter.drawText(QRect(-height() / 2, 0, height(), 18), Qt::AlignCenter, yLabel_);
     painter.restore();
     if (spectrogram_.values.empty() || spectrogram_.times.empty()) {
-        painter.setPen(QColor("#94A3B8"));
+        painter.setPen(t.empty);
         painter.drawText(plot, Qt::AlignCenter, emptyLabel_);
         return;
     }
@@ -168,7 +209,7 @@ void SpectrogramWidget::paintEvent(QPaintEvent*) {
         painter.setPen(jet(1.0 - static_cast<double>(y) / std::max(1, colorbar.height() - 1)));
         painter.drawLine(colorbar.left(), colorbar.top() + y, colorbar.right(), colorbar.top() + y);
     }
-    painter.setPen(QColor("#CBD5E1"));
+    painter.setPen(t.label);
     const double fmax = std::max(1.0, spectrogram_.frequencies.back());
     for (const dsp::Band& band : dsp::eegBands()) {
         if (band.low <= fmax) {
@@ -195,18 +236,24 @@ void BandTrendWidget::setLabels(const QString& title, const QString& xLabel, con
     update();
 }
 
+void BandTrendWidget::setDarkTheme(bool dark) {
+    darkTheme_ = dark;
+    update();
+}
+
 void BandTrendWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor("#111827"));
+    const ThemePalette t = themePalette(darkTheme_);
+    painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const QRect plot = plotRect(*this);
-    painter.setPen(QPen(QColor("#64748B"), 1));
+    painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
-    painter.setPen(QColor("#CBD5E1"));
+    painter.setPen(t.label);
     painter.drawText(8, 18, title_);
     painter.drawText(QRect(plot.left(), height() - 28, plot.width(), 20), Qt::AlignCenter, xLabel_);
     if (times_.empty() || powers_.empty()) {
-        painter.setPen(QColor("#94A3B8"));
+        painter.setPen(t.empty);
         painter.drawText(plot, Qt::AlignCenter, emptyLabel_);
         return;
     }
@@ -223,7 +270,7 @@ void BandTrendWidget::paintEvent(QPaintEvent*) {
     for (std::size_t band = 0; band < powers_.size() && band < dsp::eegBands().size(); ++band) {
         const dsp::Band& definition = dsp::eegBands()[band];
         painter.fillRect(QRect(legendX, plot.top() + 6, 8, 8), QColor(definition.rgba[0], definition.rgba[1], definition.rgba[2]));
-        painter.setPen(QColor("#CBD5E1"));
+        painter.setPen(t.label);
         painter.drawText(legendX + 11, plot.top() + 14, QString::fromUtf8(definition.key));
         legendX += 58;
     }

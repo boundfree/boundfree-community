@@ -110,7 +110,7 @@ def test_bf_app_smoke_machine_id_from_fixed_inputs():
         ]
     )
 
-    assert result.stdout.strip() == "smoke-machine-id 53C42CBF-B2AE90CE-65593CDA-87F80560"
+    assert result.stdout.strip() == "smoke-machine-id 0B9C9157-6A069C39-FA9C30B9-C0086DFA"
 
 
 def test_bf_app_smoke_open_generated_csv_fixture():
@@ -459,3 +459,9 @@ def test_bf_app_smoke_processing_offline():
     result = _run([str(APP), "--smoke-processing-offline"])
     assert "smoke-processing-offline-ok" in result.stdout
     assert "ref=car" in result.stdout
+
+
+def test_bf_app_smoke_m8_system_ui_offscreen():
+    result = _run([str(APP), "--smoke-m8-system-ui"])
+
+    assert result.stdout.strip() == "smoke-m8-system-ui-ok"

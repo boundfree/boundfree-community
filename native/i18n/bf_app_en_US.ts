@@ -19,6 +19,50 @@
       <translation>Language</translation>
     </message>
     <message>
+      <source>app.menu.view</source>
+      <translation>View</translation>
+    </message>
+    <message>
+      <source>app.menu.theme</source>
+      <translation>Theme</translation>
+    </message>
+    <message>
+      <source>app.theme.light</source>
+      <translation>Light</translation>
+    </message>
+    <message>
+      <source>app.theme.dark</source>
+      <translation>Dark</translation>
+    </message>
+    <message>
+      <source>app.view.channels</source>
+      <translation>Channels panel</translation>
+    </message>
+    <message>
+      <source>app.view.markers</source>
+      <translation>Markers panel</translation>
+    </message>
+    <message>
+      <source>app.view.analysis</source>
+      <translation>Analysis panel</translation>
+    </message>
+    <message>
+      <source>app.view.video</source>
+      <translation>Video panel</translation>
+    </message>
+    <message>
+      <source>app.status.mode.idle</source>
+      <translation>Idle</translation>
+    </message>
+    <message>
+      <source>app.status.mode.playback</source>
+      <translation>Playback</translation>
+    </message>
+    <message>
+      <source>app.status.mode.recording</source>
+      <translation>Recording</translation>
+    </message>
+    <message>
       <source>app.action.open</source>
       <translation>Open File</translation>
     </message>
@@ -373,5 +417,9 @@
     <message><source>error.export.unsupported_format</source><translation>Export path {path} has unsupported format {suffix}</translation></message>
     <message><source>error.export.busy</source><translation>Another export is already running</translation></message>
     <message><source>error.export.failed</source><translation>Segment export to {path} failed: {reason}</translation></message>
+    <message><source>app.license.title</source><translation>BoundFree EEG Offline License</translation></message>
+    <message><source>app.license.prompt</source><translation>Machine ID: {machine_id}&#10;&#10;Current status: {error}&#10;&#10;Enter the offline license key:</translation></message>
+    <message><source>app.license.save_failed</source><translation>The license is valid, but the license file could not be saved.</translation></message>
+    <message><source>app.license.activated</source><translation>The offline license is activated.</translation></message>
   </context>
 </TS>

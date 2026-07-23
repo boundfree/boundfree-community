@@ -15,7 +15,7 @@
 #include "ui/analysis_widgets.h"
 #include "ui/video_panel.h"
 
-#include <QAction>
+#include <QActionGroup>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
@@ -43,7 +43,7 @@ namespace bf {
 
 class MainWindow : public QMainWindow {
 public:
-    MainWindow(const VersionInfo& version, I18nService* i18n, QWidget* parent = nullptr);
+    MainWindow(const VersionInfo& version, I18nService* i18n, const QString& repoRoot = {}, QWidget* parent = nullptr);
 
     void retranslateUi();
     void setSidecarConnecting();
@@ -71,6 +71,11 @@ public:
     QString exportStatusSummary() const;
 
 private:
+    void buildViewMenu();
+    void buildThemeMenu();
+    void applyTheme(bool dark);
+    void refreshPersistentStatus();
+    QString currentModeKey() const;
     void buildFileMenu();
     void buildLanguageMenu();
     void buildBrowserControls();
@@ -111,6 +116,7 @@ private:
     int channelCount() const;
 
     VersionInfo version_;
+    QString repoRoot_;
     I18nService* i18n_ = nullptr;
     QStackedWidget* centralStack_ = nullptr;
     QWidget* emptyPage_ = nullptr;
@@ -122,6 +128,18 @@ private:
     QAction* openVideoAction_ = nullptr;
     QAction* quitAction_ = nullptr;
     QMenu* languageMenu_ = nullptr;
+    QMenu* viewMenu_ = nullptr;
+    QMenu* themeMenu_ = nullptr;
+    QActionGroup* themeGroup_ = nullptr;
+    QAction* lightThemeAction_ = nullptr;
+    QAction* darkThemeAction_ = nullptr;
+    QAction* toggleChannelsAction_ = nullptr;
+    QAction* toggleMarkersAction_ = nullptr;
+    QAction* toggleAnalysisAction_ = nullptr;
+    QAction* toggleVideoAction_ = nullptr;
+    QLabel* statusFileLabel_ = nullptr;
+    QLabel* statusModeLabel_ = nullptr;
+    bool darkTheme_ = true;
     QVector<QAction*> languageActions_;
     QToolBar* browserToolbar_ = nullptr;
     QAction* previousWindowAction_ = nullptr;

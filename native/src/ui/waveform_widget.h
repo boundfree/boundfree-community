@@ -19,6 +19,7 @@ public:
     void setMarkers(const QVector<Marker>& markers);
     void setCursorTime(double time);
     void setMarkerModeEnabled(bool enabled);
+    void setDarkTheme(bool dark);
     const WaveformDisplayModel& cachedDisplayModel(int maxVisibleChannels = 32) const;
     int displayModelBuildCount() const { return displayModelBuildCount_; }
 
@@ -40,6 +41,7 @@ private:
     double cursorTime_ = 0.0;
     mutable int cachedMaxVisibleChannels_ = -1;
     bool markerModeEnabled_ = false;
+    bool darkTheme_ = true;
     mutable int displayModelBuildCount_ = 0;
 };
 

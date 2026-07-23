@@ -19,6 +19,50 @@
       <translation>语言</translation>
     </message>
     <message>
+      <source>app.menu.view</source>
+      <translation>视图</translation>
+    </message>
+    <message>
+      <source>app.menu.theme</source>
+      <translation>主题</translation>
+    </message>
+    <message>
+      <source>app.theme.light</source>
+      <translation>亮色</translation>
+    </message>
+    <message>
+      <source>app.theme.dark</source>
+      <translation>暗色</translation>
+    </message>
+    <message>
+      <source>app.view.channels</source>
+      <translation>通道面板</translation>
+    </message>
+    <message>
+      <source>app.view.markers</source>
+      <translation>标注面板</translation>
+    </message>
+    <message>
+      <source>app.view.analysis</source>
+      <translation>分析面板</translation>
+    </message>
+    <message>
+      <source>app.view.video</source>
+      <translation>视频面板</translation>
+    </message>
+    <message>
+      <source>app.status.mode.idle</source>
+      <translation>空闲</translation>
+    </message>
+    <message>
+      <source>app.status.mode.playback</source>
+      <translation>回放</translation>
+    </message>
+    <message>
+      <source>app.status.mode.recording</source>
+      <translation>录制</translation>
+    </message>
+    <message>
       <source>app.action.open</source>
       <translation>打开文件</translation>
     </message>
@@ -373,6 +417,10 @@
     <message><source>error.export.unsupported_format</source><translation>导出路径 {path} 的格式 {suffix} 不受支持</translation></message>
     <message><source>error.export.busy</source><translation>已有导出任务正在运行</translation></message>
     <message><source>error.export.failed</source><translation>片段导出到 {path} 失败：{reason}</translation></message>
+    <message><source>app.license.title</source><translation>BoundFree EEG 离线授权</translation></message>
+    <message><source>app.license.prompt</source><translation>机器码：{machine_id}&#10;&#10;当前状态：{error}&#10;&#10;请输入离线许可证：</translation></message>
+    <message><source>app.license.save_failed</source><translation>许可证有效，但无法保存授权文件。</translation></message>
+    <message><source>app.license.activated</source><translation>离线授权已激活。</translation></message>
 
   </context>
 </TS>

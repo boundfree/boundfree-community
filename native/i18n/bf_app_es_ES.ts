@@ -19,6 +19,50 @@
       <translation>Language</translation>
     </message>
     <message>
+      <source>app.menu.view</source>
+      <translation>app.menu.view</translation>
+    </message>
+    <message>
+      <source>app.menu.theme</source>
+      <translation>app.menu.theme</translation>
+    </message>
+    <message>
+      <source>app.theme.light</source>
+      <translation>app.theme.light</translation>
+    </message>
+    <message>
+      <source>app.theme.dark</source>
+      <translation>app.theme.dark</translation>
+    </message>
+    <message>
+      <source>app.view.channels</source>
+      <translation>app.view.channels</translation>
+    </message>
+    <message>
+      <source>app.view.markers</source>
+      <translation>app.view.markers</translation>
+    </message>
+    <message>
+      <source>app.view.analysis</source>
+      <translation>app.view.analysis</translation>
+    </message>
+    <message>
+      <source>app.view.video</source>
+      <translation>app.view.video</translation>
+    </message>
+    <message>
+      <source>app.status.mode.idle</source>
+      <translation>app.status.mode.idle</translation>
+    </message>
+    <message>
+      <source>app.status.mode.playback</source>
+      <translation>app.status.mode.playback</translation>
+    </message>
+    <message>
+      <source>app.status.mode.recording</source>
+      <translation>app.status.mode.recording</translation>
+    </message>
+    <message>
       <source>app.action.open</source>
       <translation>Open File</translation>
     </message>
@@ -373,6 +417,10 @@
     <message><source>error.export.unsupported_format</source><translation>Export path {path} has unsupported format {suffix}</translation></message>
     <message><source>error.export.busy</source><translation>Another export is already running</translation></message>
     <message><source>error.export.failed</source><translation>Segment export to {path} failed: {reason}</translation></message>
+    <message><source>app.license.title</source><translation>app.license.title</translation></message>
+    <message><source>app.license.prompt</source><translation>app.license.prompt {machine_id} {error}</translation></message>
+    <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
+    <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
 
   </context>
 </TS>

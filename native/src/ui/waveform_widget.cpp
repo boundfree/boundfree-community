@@ -38,6 +38,10 @@ void WaveformWidget::setMarkerModeEnabled(bool enabled) {
     markerModeEnabled_ = enabled;
     setCursor(markerModeEnabled_ ? Qt::CrossCursor : Qt::ArrowCursor);
 }
+void WaveformWidget::setDarkTheme(bool dark) {
+    darkTheme_ = dark;
+    update();
+}
 
 const WaveformDisplayModel& WaveformWidget::cachedDisplayModel(int maxVisibleChannels) const {
     ensureDisplayModel(maxVisibleChannels);
@@ -60,7 +64,11 @@ void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
 
 void WaveformWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor("#111827"));
+    const QColor bg = darkTheme_ ? QColor("#111827") : QColor("#FFFFFF");
+    const QColor labelColor = darkTheme_ ? QColor("#CBD5E1") : QColor("#0F172A");
+    const QColor waveColor = darkTheme_ ? QColor("#6EE7B7") : QColor("#059669");
+    const QColor cursorColor = darkTheme_ ? QColor("#F8FAFC") : QColor("#0F172A");
+    painter.fillRect(rect(), bg);
     painter.setRenderHint(QPainter::Antialiasing, false);
 
     const WaveformDisplayModel& model = cachedDisplayModel(32);
@@ -76,12 +84,12 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
             continue;
         }
 
-        painter.setPen(QPen(QColor("#CBD5E1"), 1));
+        painter.setPen(QPen(labelColor, 1));
         if (ch < model.channelNames.size()) {
             painter.drawText(8, static_cast<int>(rowHeight * ch + 16), model.channelNames[ch]);
         }
 
-        painter.setPen(QPen(QColor("#6EE7B7"), 1));
+        painter.setPen(QPen(waveColor, 1));
         const double amplitude = std::max(1.0, model.amplitudeUv);
         const double centerY = rowHeight * (ch + 0.5);
         QPointF previous(0.0, centerY - samples[0] / amplitude * rowHeight * 0.45);
@@ -105,7 +113,7 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
     }
     if (cursorTime_ >= model.t0 && cursorTime_ <= model.t1) {
         const int x = static_cast<int>(width() * (cursorTime_ - model.t0) / span);
-        painter.setPen(QPen(QColor("#F8FAFC"), 1));
+        painter.setPen(QPen(cursorColor, 1));
         painter.drawLine(x, 0, x, height());
     }
 }
