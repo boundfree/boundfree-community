@@ -66,6 +66,8 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 
 已经公开发布的 tag 不复用、不覆盖。需要修复时发布更高 patch 版本。
 
+M8 起构建和签名使用根目录 `build_release.ps1`。`rc/stable` 必须签署并验证 `bf_app.exe`、冻结边车和最终安装包；`-SkipSigning` 只允许 `dev/alpha/beta`。Windows x64 构建、Inno Setup 安装、干净 Windows 10/11 全流程、正式授权公钥兼容和 `signtool verify /pa` 未通过前，不得进入 `rc` 或 `stable`。
+
 ## Documentation Rules
 
 当前有效文档集中在 `docs/` 根目录。`docs/archive/` 仅用于历史追溯。

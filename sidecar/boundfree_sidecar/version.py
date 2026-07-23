@@ -1,5 +1,7 @@
 import json
 from dataclasses import dataclass
+import os
+import sys
 from pathlib import Path
 
 
@@ -13,8 +15,20 @@ class VersionInfo:
 
 
 def repo_root() -> Path:
+    configured = os.environ.get("BF_RESOURCE_ROOT")
+    if configured:
+        return Path(configured)
+    if getattr(sys, "frozen", False):
+        candidates = [
+            Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent)),
+            Path(sys.executable).resolve().parent.parent,
+            Path(sys.executable).resolve().parent,
+        ]
+        for candidate in candidates:
+            if (candidate / "version.json").exists():
+                return candidate
+        return candidates[0]
     return Path(__file__).resolve().parents[2]
-
 
 def load_version(path: Path | None = None) -> VersionInfo:
     version_path = path or repo_root() / "version.json"

@@ -21,7 +21,7 @@ public:
     const QString& repoRoot() const;
     bool load(VersionInfo* out, QString* errorMessage = nullptr) const;
 
-    static QString detectRepoRoot();
+    static QString detectRepoRoot(const QString& executablePath = {});
 
 private:
     QString repoRoot_;

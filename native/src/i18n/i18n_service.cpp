@@ -15,7 +15,11 @@ QStringList I18nService::supportedLocales() const {
 
 bool I18nService::loadLocale(const QString& locale, QString* errorMessage) {
     const QString normalized = supportedLocales().contains(locale) ? locale : QStringLiteral("zh_CN");
-    QFile file(QDir(repoRoot_).filePath(QString("native/i18n/bf_app_%1.ts").arg(normalized)));
+    QString filePath = QDir(repoRoot_).filePath(QString("native/i18n/bf_app_%1.ts").arg(normalized));
+    if (!QFile::exists(filePath)) {
+        filePath = QDir(repoRoot_).filePath(QString("i18n/bf_app_%1.ts").arg(normalized));
+    }
+    QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         if (errorMessage != nullptr) {
             *errorMessage = file.errorString();

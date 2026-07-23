@@ -13,6 +13,7 @@
 #include "i18n/i18n_service.h"
 #include "ipc/sidecar_client.h"
 #include "license/machine_id.h"
+#include "license/license_manager.h"
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
@@ -21,16 +22,23 @@
 #include "ui/video_panel.h"
 
 #include <QApplication>
+#include <QAction>
 #include <QDir>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
+#include <QDockWidget>
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QImage>
+#include <QKeySequence>
+#include <QInputDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QPainter>
+#include <QMessageBox>
+#include <QPalette>
 #include <QStatusBar>
 #include <QTimer>
 
@@ -41,8 +49,54 @@
 #include <limits>
 #include <vector>
 
+#ifdef BF_REQUIRE_LICENSE
+namespace {
+
+bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
+    bf::LicenseManager manager(version.version, repoRoot);
+    bf::LicenseResult result = manager.checkSavedLicense();
+    if (result.ok()) {
+        return true;
+    }
+
+    while (true) {
+        const QString errorText = i18n.text(QString("error.%1").arg(result.error.code), result.error.params);
+        bool accepted = false;
+        if (smokeGate) {
+            QTimer::singleShot(0, []() {
+                if (QWidget* modal = QApplication::activeModalWidget()) {
+                    modal->close();
+                }
+            });
+        }
+        const QString key = QInputDialog::getMultiLineText(
+            nullptr,
+            i18n.text("app.license.title"),
+            i18n.text("app.license.prompt", {{"machine_id", bf::currentMachineId()}, {"error", errorText}}),
+            QString(),
+            &accepted);
+        if (!accepted) {
+            return false;
+        }
+
+        result = manager.verifyKey(key);
+        if (!result.ok()) {
+            continue;
+        }
+        if (!manager.saveLicense(key)) {
+            QMessageBox::warning(nullptr, i18n.text("app.license.title"), i18n.text("app.license.save_failed"));
+            continue;
+        }
+        QMessageBox::information(nullptr, i18n.text("app.license.title"), i18n.text("app.license.activated"));
+        return true;
+    }
+}
+
+}  // namespace
+#endif
+
 int main(int argc, char** argv) {
-    const QString repoRoot = bf::VersionService::detectRepoRoot();
+    const QString repoRoot = bf::VersionService::detectRepoRoot(QString::fromLocal8Bit(argv[0]));
     bf::VersionService versionService(repoRoot);
     bf::VersionInfo version;
     QString versionError;
@@ -74,6 +128,59 @@ int main(int argc, char** argv) {
         if (arg == "--version") {
             QCoreApplication app(argc, argv);
             std::cout << version.displayString().toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-m8-system-ui") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) {
+                std::cerr << "smoke-m8-system-ui-failed i18n\n";
+                return 1;
+            }
+            bf::MainWindow window(version, &i18n, repoRoot);
+            window.show();
+            app.processEvents();
+
+            QAction* light = nullptr;
+            QAction* dark = nullptr;
+            QAction* channels = nullptr;
+            bool hasOpen = false;
+            bool hasVideo = false;
+            bool hasQuit = false;
+            for (QAction* action : window.findChildren<QAction*>()) {
+                if (action->text() == i18n.text("app.theme.light")) light = action;
+                if (action->text() == i18n.text("app.theme.dark")) dark = action;
+                if (action->text() == i18n.text("app.view.channels")) channels = action;
+                hasOpen = hasOpen || action->shortcut() == QKeySequence::Open;
+                hasVideo = hasVideo || action->shortcut() == QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O);
+                hasQuit = hasQuit || action->shortcut() == QKeySequence::Quit;
+            }
+            if (light == nullptr || dark == nullptr || channels == nullptr || !hasOpen || !hasVideo || !hasQuit) {
+                std::cerr << "smoke-m8-system-ui-failed actions\n";
+                return 1;
+            }
+
+            light->trigger();
+            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#FFFFFF");
+            dark->trigger();
+            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#111827")
+                && window.palette().color(QPalette::Highlight) == QColor("#660874");
+            const bool beforeToggle = channels->isChecked();
+            channels->trigger();
+            app.processEvents();
+            const bool dockToggled = channels->isChecked() != beforeToggle;
+
+            bool hasIdleStatus = false;
+            const QList<QLabel*> statusLabels = window.statusBar()->findChildren<QLabel*>(QString(), Qt::FindDirectChildrenOnly);
+            for (QLabel* label : statusLabels) {
+                hasIdleStatus = hasIdleStatus || label->text() == i18n.text("app.status.mode.idle");
+            }
+            if (!lightApplied || !darkApplied || !dockToggled || statusLabels.size() < 2 || !hasIdleStatus) {
+                std::cerr << "smoke-m8-system-ui-failed behavior\n";
+                return 1;
+            }
+            std::cout << "smoke-m8-system-ui-ok\n";
             return 0;
         }
         if (arg == "--smoke-m5-playback") {
@@ -483,7 +590,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             bf::FileOpenController controller(repoRoot, version);
             int exitCode = 1;
 
@@ -529,7 +636,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             window.showFileOpenLoading("demo.csv");
             const QString loadingEn = window.statusBar()->currentMessage();
             if (!i18n.loadLocale("pseudo", &i18nError)) {
@@ -573,7 +680,7 @@ int main(int argc, char** argv) {
                 std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
                 return 1;
             }
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             bf::FileOpenResult result;
             result.session.ok = true;
             result.session.format = "CSV";
@@ -597,7 +704,7 @@ int main(int argc, char** argv) {
                 std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
                 return 1;
             }
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             bf::FileOpenController controller(repoRoot, version);
             int exitCode = 1;
             QObject::connect(&controller, &bf::FileOpenController::loaded, &window, [&](const bf::FileOpenResult& result) {
@@ -887,7 +994,7 @@ int main(int argc, char** argv) {
                 std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
                 return 1;
             }
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             bf::FileOpenResult result;
             result.session.ok = true;
             result.session.format = "CSV";
@@ -921,7 +1028,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
             const QString path = QString::fromLocal8Bit(argv[i + 1]);
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             QString requestedPath;
             double requestedT0 = -1.0;
             double requestedWindow = -1.0;
@@ -958,7 +1065,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
             const QString path = QString::fromLocal8Bit(argv[i + 1]);
-            bf::MainWindow window(version, &i18n);
+            bf::MainWindow window(version, &i18n, repoRoot);
             bf::FileOpenController controller(repoRoot, version);
             int exitCode = 1;
             window.setWindowRequestHandler([&](const QString& activePath, double t0, double windowSeconds) {
@@ -1164,10 +1271,11 @@ int main(int argc, char** argv) {
     const QCommandLineOption smokeSidecarOpt("smoke-sidecar", "Start sidecar, run hello, and exit.");
     const QCommandLineOption smokeSidecarOpenOpt("smoke-sidecar-open", "Start sidecar, open a file, and exit.", "path");
     const QCommandLineOption smokeOpt("smoke-ui", "Start UI and exit automatically.");
+    const QCommandLineOption smokeLicenseGateOpt("smoke-license-gate", "Open the release license gate and cancel automatically.");
     const QCommandLineOption languageOpt("language", "Set startup locale.", "locale", "zh_CN");
     const QCommandLineOption openFileOpt("open-file", "Open an EEG file after startup.", "path");
     const QCommandLineOption openVideoOpt("open-video", "Open a synchronized video after startup.", "path");
-    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, languageOpt, openFileOpt, openVideoOpt});
+    parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, smokeLicenseGateOpt, languageOpt, openFileOpt, openVideoOpt});
     parser.process(app);
 
     bf::I18nService i18n(repoRoot);
@@ -1176,8 +1284,16 @@ int main(int argc, char** argv) {
         std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
         return 1;
     }
+#ifdef BF_REQUIRE_LICENSE
+    if (!ensureOfflineLicense(version, repoRoot, i18n, parser.isSet(smokeLicenseGateOpt))) {
+        if (parser.isSet(smokeLicenseGateOpt)) {
+            std::cout << "smoke-license-gate-ok\n";
+        }
+        return 0;
+    }
+#endif
 
-    bf::MainWindow window(version, &i18n);
+    bf::MainWindow window(version, &i18n, repoRoot);
     bf::SidecarClient sidecar(repoRoot);
     bf::FileOpenController fileController(repoRoot, version);
     window.setOpenFileHandler([&](const QString& path) {

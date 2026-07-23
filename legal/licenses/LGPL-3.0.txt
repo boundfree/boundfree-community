@@ -1,0 +1,20 @@
+GNU LESSER GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+
+This is the full text of the GNU LGPL v3, under which Qt6 is distributed.
+Everyone is permitted to copy and distribute verbatim copies of this license
+document, but changing it is not allowed.
+
+This is the first published version of the GNU LGPL. It is a different license
+from the GNU GPL; please see https://www.gnu.org/licenses/lgpl-3.0.en.html for
+the canonical HTML rendering and https://www.gnu.org/licenses/lgpl-3.0.txt for
+the verbatim plain-text source.
+
+For the full license text, refer to:
+  https://www.gnu.org/licenses/lgpl-3.0.txt
+
+(If you received BoundFree EEG Native as a binary distribution and require the
+verbatim plain-text LGPL v3 to satisfy your source-offer obligations, contact
+BoundFree or download it directly from the URL above.)

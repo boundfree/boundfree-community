@@ -1,6 +1,7 @@
 #include "ipc/sidecar_client.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -32,17 +33,6 @@ AppError invalidPayload(const QString& field, const QString& reason) {
     return makeError("protocol.invalid_params", {{"field", field}, {"reason", reason}});
 }
 
-QString sidecarPythonProgram() {
-    const QString configured = qEnvironmentVariable("BF_PYTHON_EXECUTABLE");
-    if (!configured.isEmpty()) {
-        return configured;
-    }
-#ifdef Q_OS_WIN
-    return "python";
-#else
-    return "python3";
-#endif
-}
 
 bool jsonValueToNonNegativeInt(const QJsonValue& value, int* out) {
     if (!value.isDouble()) {
@@ -188,14 +178,37 @@ SidecarResponse SidecarClient::exchange(
 
 SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int timeoutMs) {
     SidecarHelloResult result;
-    process_.setProgram(sidecarPythonProgram());
-    process_.setArguments({"-m", "boundfree_sidecar", "--stdio"});
+    const QString configuredExecutable = qEnvironmentVariable("BF_SIDECAR_EXECUTABLE");
+#ifdef Q_OS_WIN
+    const QString bundledName = QStringLiteral("boundfree_sidecar.exe");
+#else
+    const QString bundledName = QStringLiteral("boundfree_sidecar");
+#endif
+    const QString bundledExecutable = QDir(repoRoot_).filePath(QString("sidecar/%1").arg(bundledName));
+    const QString candidateExecutable = configuredExecutable.isEmpty() ? bundledExecutable : configuredExecutable;
+    const QFileInfo candidateInfo(candidateExecutable);
+    const bool useBundled = candidateInfo.isFile() && candidateInfo.isExecutable();
+    if (useBundled) {
+        process_.setProgram(candidateExecutable);
+        process_.setArguments({"--stdio"});
+    } else {
+        const QString configuredPython = qEnvironmentVariable("BF_PYTHON_EXECUTABLE");
+#ifdef Q_OS_WIN
+        process_.setProgram(configuredPython.isEmpty() ? QStringLiteral("python") : configuredPython);
+#else
+        process_.setProgram(configuredPython.isEmpty() ? QStringLiteral("python3") : configuredPython);
+#endif
+        process_.setArguments({"-m", "boundfree_sidecar", "--stdio"});
+    }
     process_.setWorkingDirectory(repoRoot_);
     process_.setProcessChannelMode(QProcess::SeparateChannels);
     QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
     const QString sidecarPath = QDir(repoRoot_).filePath("sidecar");
     const QString existingPythonPath = environment.value("PYTHONPATH");
-    environment.insert("PYTHONPATH", existingPythonPath.isEmpty() ? sidecarPath : sidecarPath + QDir::listSeparator() + existingPythonPath);
+    if (!useBundled) {
+        environment.insert("PYTHONPATH", existingPythonPath.isEmpty() ? sidecarPath : sidecarPath + QDir::listSeparator() + existingPythonPath);
+    }
+    environment.insert("BF_RESOURCE_ROOT", repoRoot_);
     environment.insert("PYTHONIOENCODING", "utf-8");
     environment.insert("PYTHONUTF8", "1");
     process_.setProcessEnvironment(environment);

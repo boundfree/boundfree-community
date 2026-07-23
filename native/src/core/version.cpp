@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -52,10 +53,20 @@ bool VersionService::load(VersionInfo* out, QString* errorMessage) const {
     return !out->productName.isEmpty() && !out->version.isEmpty() && out->ipcProtocolVersion > 0;
 }
 
-QString VersionService::detectRepoRoot() {
-    const QString compiledRoot = QStringLiteral(BF_REPO_ROOT);
-    if (QFile::exists(QDir(compiledRoot).filePath("version.json"))) {
-        return QDir(compiledRoot).absolutePath();
+QString VersionService::detectRepoRoot(const QString& executablePath) {
+    const QString configuredRoot = qEnvironmentVariable("BF_RESOURCE_ROOT");
+    if (!configuredRoot.isEmpty() && QFile::exists(QDir(configuredRoot).filePath("version.json"))) {
+        return QDir(configuredRoot).absolutePath();
+    }
+
+    if (!executablePath.isEmpty()) {
+        QDir appDir(QFileInfo(executablePath).absoluteDir());
+        if (QFile::exists(appDir.filePath("version.json"))) {
+            return appDir.absolutePath();
+        }
+        if (appDir.cdUp() && QFile::exists(appDir.filePath("version.json"))) {
+            return appDir.absolutePath();
+        }
     }
 
     const QString currentRoot = QDir::currentPath();
@@ -63,9 +74,9 @@ QString VersionService::detectRepoRoot() {
         return QDir(currentRoot).absolutePath();
     }
 
-    QDir appDir(QCoreApplication::applicationDirPath());
-    if (appDir.cd("../..") && QFile::exists(appDir.filePath("version.json"))) {
-        return appDir.absolutePath();
+    const QString compiledRoot = QStringLiteral(BF_REPO_ROOT);
+    if (QFile::exists(QDir(compiledRoot).filePath("version.json"))) {
+        return QDir(compiledRoot).absolutePath();
     }
 
     return QDir(compiledRoot).absolutePath();

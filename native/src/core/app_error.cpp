@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
+#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -16,12 +17,24 @@ int nextTraceId() {
 }
 
 QJsonArray loadErrorCodes() {
-    QFile file(QDir(QStringLiteral(BF_REPO_ROOT)).filePath("contracts/error_codes.json"));
-    if (!file.open(QIODevice::ReadOnly)) {
-        return {};
+    QStringList candidates;
+    const QString configuredRoot = qEnvironmentVariable("BF_RESOURCE_ROOT");
+    if (!configuredRoot.isEmpty()) {
+        candidates.push_back(QDir(configuredRoot).filePath("contracts/error_codes.json"));
     }
-    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    return doc.object().value("error_codes").toArray();
+    candidates.push_back(QDir(QCoreApplication::applicationDirPath()).filePath("contracts/error_codes.json"));
+    candidates.push_back(QDir(QStringLiteral(BF_REPO_ROOT)).filePath("contracts/error_codes.json"));
+    for (const QString& path : candidates) {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            continue;
+        }
+        const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+        if (doc.isObject()) {
+            return doc.object().value("error_codes").toArray();
+        }
+    }
+    return {};
 }
 
 }  // namespace

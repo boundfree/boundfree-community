@@ -4,14 +4,13 @@ from datetime import datetime
 from itertools import count
 from pathlib import Path
 from typing import Any
+from .version import repo_root
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
 
 
 def load_error_retryability() -> dict[str, bool]:
-    registry_path = _repo_root() / "contracts" / "error_codes.json"
+    registry_path = repo_root() / "contracts" / "error_codes.json"
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     return {
         str(entry["code"]): bool(entry["retryable"])
