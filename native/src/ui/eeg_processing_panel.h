@@ -1,0 +1,61 @@
+#pragma once
+
+#include "controller/processing_view_state.h"
+#include "i18n/i18n_service.h"
+
+#include <QCheckBox>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
+#include <QLabel>
+#include <QToolBar>
+#include <QWidget>
+
+namespace bf {
+
+// EegProcessingPanel owns the reference / notch / bandpass filter controls that
+// live on the browser toolbar. It is an internal UI-assembly unit extracted from
+// MainWindow; MainWindow holds a pointer and forwards state to/from it. The
+// panel does not own any DSP state itself -- it only mirrors ProcessingViewState
+// into the widgets and reports user edits via changed().
+class EegProcessingPanel : public QWidget {
+    Q_OBJECT
+public:
+    explicit EegProcessingPanel(QWidget* parent = nullptr);
+
+    // Append the reference / notch / bandpass controls to the host toolbar,
+    // creating the per-notch-band check/spin pairs from the initial state. The
+    // band widget count is fixed at construction (matching the original behavior
+    // where buildProcessingControls created them once from the default state).
+    void buildInto(QToolBar* toolbar, const ProcessingViewState& state);
+
+    // Push state into the widgets (blocks emission of changed() while refreshing).
+    void refreshFromState(const ProcessingViewState& state);
+
+    // Read the current widget values back into state.
+    void writeToState(ProcessingViewState& state) const;
+
+    // Retranslate the panel labels/combo items.
+    void retranslateUi(I18nService* i18n);
+
+signals:
+    // Emitted whenever the user edits any control (not during refresh).
+    void changed();
+
+private:
+    void connectChanged();
+
+    QLabel* referenceLabel_ = nullptr;
+    QComboBox* referenceCombo_ = nullptr;
+    QCheckBox* notchEnableCheck_ = nullptr;
+    QVector<QCheckBox*> notchBandChecks_;
+    QVector<QDoubleSpinBox*> notchBandSpins_;
+    QCheckBox* notchHarmonicsCheck_ = nullptr;
+    QSpinBox* notchHarmonicsSpin_ = nullptr;
+    QCheckBox* bandpassEnableCheck_ = nullptr;
+    QDoubleSpinBox* bandpassLowSpin_ = nullptr;
+    QDoubleSpinBox* bandpassHighSpin_ = nullptr;
+    bool refreshing_ = false;
+};
+
+}  // namespace bf

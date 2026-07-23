@@ -11,6 +11,7 @@
 #include "core/app_error.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
+#include "ui/eeg_processing_panel.h"
 #include "ui/waveform_widget.h"
 #include "ui/analysis_widgets.h"
 #include "ui/video_panel.h"
@@ -182,16 +183,7 @@ private:
     bool recordBlinkVisible_ = false;
     VideoPanel* videoPanel_ = nullptr;
 
-    QLabel* referenceLabel_ = nullptr;
-    QComboBox* referenceCombo_ = nullptr;
-    QCheckBox* notchEnableCheck_ = nullptr;
-    QVector<QCheckBox*> notchBandChecks_;
-    QVector<QDoubleSpinBox*> notchBandSpins_;
-    QCheckBox* notchHarmonicsCheck_ = nullptr;
-    QSpinBox* notchHarmonicsSpin_ = nullptr;
-    QCheckBox* bandpassEnableCheck_ = nullptr;
-    QDoubleSpinBox* bandpassLowSpin_ = nullptr;
-    QDoubleSpinBox* bandpassHighSpin_ = nullptr;
+    EegProcessingPanel* processingPanel_ = nullptr;
 
     QDockWidget* analysisDock_ = nullptr;
     QTabWidget* analysisTabs_ = nullptr;
@@ -217,7 +209,6 @@ private:
     int analysisGeneration_ = 0;
 
     bool refreshingBrowserControls_ = false;
-    bool refreshingProcessingControls_ = false;
     bool refreshingAnalysisControls_ = false;
     std::function<void(const QString&)> openFileHandler_;
     std::function<void(const QString&, double, double)> windowRequestHandler_;
