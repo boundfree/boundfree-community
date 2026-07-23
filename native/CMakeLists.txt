@@ -186,3 +186,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../legal/
         PATTERN "*.md"
         PATTERN "licenses/*"
 )
+
+add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
+target_include_directories(spike_dsp_test PRIVATE src third_party)
