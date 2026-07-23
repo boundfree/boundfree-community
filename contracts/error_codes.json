@@ -50,6 +50,12 @@
       "description": "Sidecar reader failed while opening or reading the requested file."
     },
     {
+      "code": "reader.optional_dependency_missing",
+      "params": ["path", "dependency", "reason"],
+      "retryable": false,
+      "description": "Sidecar reader requires an optional dependency that is not installed."
+    },
+    {
       "code": "reader.session_not_found",
       "params": ["handle"],
       "retryable": false,

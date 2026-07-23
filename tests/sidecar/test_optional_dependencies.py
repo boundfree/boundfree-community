@@ -15,4 +15,5 @@ def test_sidecar_declares_format_optional_dependencies():
         "h5py==3.16.0",
         "mne==1.12.1",
         "pyedflib==0.1.42",
+        "neo==0.14.5",
     ]
