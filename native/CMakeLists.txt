@@ -194,6 +194,9 @@ target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
 add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
 target_include_directories(spike_dsp_test PRIVATE src third_party)
 
+add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
+target_include_directories(spike_golden_test PRIVATE src third_party)
+
 # ---------------------------------------------------------------------------
 # Install rules: stage bf_app + source-tree assets into a release tree.
 # Assets are referenced relative to the install source dir (no hardcoded
