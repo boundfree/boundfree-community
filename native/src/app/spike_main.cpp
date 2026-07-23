@@ -7,6 +7,9 @@
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QEventLoop>
+#include <QFile>
+#include <QString>
+#include <QTextStream>
 #include <QTimer>
 
 #include <iostream>
@@ -65,6 +68,65 @@ int main(int argc, char** argv) {
 
             std::cout << "smoke-spike-open-ok spikes=" << window.lastTotalSpikes()
                       << " clusters=" << window.lastClusterCount() << "\n";
+            return 0;
+        }
+
+        // End-to-end smoke test: open file -> analyze -> exportSpikeResult -> assert CSV.
+        if (arg == "--smoke-spike-export" && i + 2 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString i18nError;
+            i18n.loadLocale(QStringLiteral("en_US"), &i18nError);
+
+            bf::SpikeWindow window(version, &i18n, repoRoot);
+            const QString inPath = QString::fromLocal8Bit(argv[i + 1]);
+            const QString outPath = QString::fromLocal8Bit(argv[i + 2]);
+
+            if (!window.openPath(inPath)) {
+                std::cout << "smoke-spike-export-failed openPath returned false\n";
+                return 1;
+            }
+
+            QEventLoop loop;
+            QObject::connect(&window, &bf::SpikeWindow::analysisSettled,
+                             &loop, &QEventLoop::quit);
+            QTimer::singleShot(30000, &loop, [&]() { loop.quit(); });
+            loop.exec();
+
+            if (!window.analysisSucceeded()) {
+                std::cout << "smoke-spike-export-failed analysis did not succeed\n";
+                return 1;
+            }
+
+            if (!window.exportSpikeResult(outPath)) {
+                std::cout << "smoke-spike-export-failed exportSpikeResult returned false\n";
+                return 1;
+            }
+
+            // Count data rows in the output CSV (skip header).
+            QFile f(outPath);
+            int rows = 0;
+            if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QTextStream ts(&f);
+                bool first = true;
+                while (!ts.atEnd()) {
+                    const QString line = ts.readLine();
+                    if (first) {
+                        first = false;
+                        continue;
+                    }
+                    if (!line.trimmed().isEmpty()) {
+                        ++rows;
+                    }
+                }
+            }
+
+            if (rows <= 0) {
+                std::cout << "smoke-spike-export-failed rows=" << rows << "\n";
+                return 1;
+            }
+
+            std::cout << "smoke-spike-export-ok rows=" << rows << "\n";
             return 0;
         }
     }

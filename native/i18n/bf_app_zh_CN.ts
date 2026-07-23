@@ -426,5 +426,9 @@
     <message><source>app.license.save_failed</source><translation>许可证有效，但无法保存授权文件。</translation></message>
     <message><source>app.license.activated</source><translation>离线授权已激活。</translation></message>
 
+    <message><source>app.spike.export.action</source><translation>导出 Spike 结果</translation></message>
+    <message><source>app.spike.export.no_result</source><translation>无可导出的 Spike 结果</translation></message>
+    <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
+    <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
   </context>
 </TS>

@@ -425,5 +425,9 @@
     <message><source>app.license.prompt</source><translation>[!! Maachiinee ID: {machine_id}&#10;&#10;Cuurreent staatuus: {error}&#10;&#10;Eenteer the ooffliinee liiceensee keey: !!]</translation></message>
     <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
     <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
+    <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
+    <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
+    <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>
+    <message><source>app.spike.export.failed</source><translation>[!! Spiikee eexpoort faileed: {reason} !!]</translation></message>
   </context>
 </TS>

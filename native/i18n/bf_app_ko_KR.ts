@@ -426,5 +426,9 @@
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
 
+    <message><source>app.spike.export.action</source><translation>Spike 결과 내보내기...</translation></message>
+    <message><source>app.spike.export.no_result</source><translation>내보낼 Spike 결과가 없습니다</translation></message>
+    <message><source>app.spike.export.completed</source><translation>{rows}개의 Spike 이벤트를 {path}로 내보냈습니다</translation></message>
+    <message><source>app.spike.export.failed</source><translation>Spike 내보내기 실패: {reason}</translation></message>
   </context>
 </TS>

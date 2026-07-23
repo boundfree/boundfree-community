@@ -425,5 +425,9 @@
     <message><source>app.license.prompt</source><translation>Machine ID: {machine_id}&#10;&#10;Current status: {error}&#10;&#10;Enter the offline license key:</translation></message>
     <message><source>app.license.save_failed</source><translation>The license is valid, but the license file could not be saved.</translation></message>
     <message><source>app.license.activated</source><translation>The offline license is activated.</translation></message>
+    <message><source>app.spike.export.action</source><translation>Export Spike Results...</translation></message>
+    <message><source>app.spike.export.no_result</source><translation>No spike result to export</translation></message>
+    <message><source>app.spike.export.completed</source><translation>Exported {rows} spike events to {path}</translation></message>
+    <message><source>app.spike.export.failed</source><translation>Spike export failed: {reason}</translation></message>
   </context>
 </TS>

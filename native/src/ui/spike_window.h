@@ -44,6 +44,12 @@ public:
     int lastTotalSpikes() const { return lastTotalSpikes_; }
     int lastClusterCount() const { return lastClusterCount_; }
 
+    // Export the most recent SpikeAnalysis result to an events CSV at outputPath.
+    // Each row is one spike: cluster_id,time_s (ascending by time). Reuses the
+    // marker CSV semantics (time_s,label). Returns false when there is no result
+    // or the file could not be written; sets a status label via i18n in either case.
+    // No sidecar round-trip: the events already live in memory.
+    bool exportSpikeResult(const QString& outputPath);
 signals:
     // Smoke: emitted after analysis settles (success or failure) so the event loop can exit.
     void analysisSettled(bool ok);
@@ -76,6 +82,7 @@ private:
     bool analysisSucceeded_ = false;
     int lastTotalSpikes_ = 0;
     int lastClusterCount_ = 0;
+    dsp::SpikeAnalysis lastResult_;  // cached for exportSpikeResult
 };
 
 }  // namespace bf

@@ -11,6 +11,7 @@
 #include "ui/spike_widgets.h"
 
 #include <QAction>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QKeySequence>
@@ -19,6 +20,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QTabWidget>
+#include <QTextStream>
 #include <QTimer>
 
 #include <QEventLoop>
@@ -92,6 +94,19 @@ void SpikeWindow::buildMenu() {
     openAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_O));
     connect(openAction, &QAction::triggered, this, &SpikeWindow::onOpenFile);
     fileMenu->addAction(openAction);
+
+    QAction* exportAction = new QAction(i18n_->text(QStringLiteral("app.spike.export.action")), this);
+    connect(exportAction, &QAction::triggered, this, [this]() {
+        const QString path = QFileDialog::getSaveFileName(
+            this, i18n_->text(QStringLiteral("app.spike.export.action")),
+            QStringLiteral("spike_events.csv"),
+            QStringLiteral("CSV (*.csv);;All files (*)"));
+        if (path.isEmpty()) {
+            return;
+        }
+        exportSpikeResult(path);
+    });
+    fileMenu->addAction(exportAction);
     fileMenu->addSeparator();
     QAction* quitAction = new QAction(QStringLiteral("&Quit"), this);
     quitAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
@@ -205,7 +220,7 @@ void SpikeWindow::onAnalysisCompleted(int generation, const dsp::SpikeAnalysis& 
     analysisSucceeded_ = true;
     lastTotalSpikes_ = result.totalSpikes;
     lastClusterCount_ = static_cast<int>(result.clusters.size());
-
+    lastResult_ = result;  // cache for exportSpikeResult
     clusterWidget_->setAnalysis(result);
     rasterWidget_->setAnalysis(result);
     psthWidget_->setAnalysis(result);
@@ -229,4 +244,46 @@ void SpikeWindow::onAnalysisFailed(int generation, const QString& code, const QS
     emit analysisSettled(false);
 }
 
+bool SpikeWindow::exportSpikeResult(const QString& outputPath) {
+    // No analysis result yet: report via i18n and bail.
+    if (!analysisSucceeded_ || lastResult_.clusters.empty()) {
+        setStatusText(i18n_->text(QStringLiteral("app.spike.export.no_result")));
+        return false;
+    }
+
+    // Collect (cluster_id, time_s) pairs across all clusters, then sort by time
+    // ascending so the events CSV is ordered like the marker CSV sidecar.
+    struct SpikeEvent {
+        int clusterId;
+        double time;
+    };
+    std::vector<SpikeEvent> events;
+    for (const auto& cluster : lastResult_.clusters) {
+        for (double t : cluster.timestamps) {
+            events.push_back({cluster.id, t});
+        }
+    }
+    std::sort(events.begin(), events.end(),
+              [](const SpikeEvent& a, const SpikeEvent& b) { return a.time < b.time; });
+
+    QFile file(outputPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        const QString reason = file.errorString();
+        setStatusText(i18n_->text(QStringLiteral("app.spike.export.failed"),
+                                  {{"reason", reason}}));
+        return false;
+    }
+    QTextStream out(&file);
+    out << "cluster_id,time_s\n";
+    for (const auto& ev : events) {
+        out << ev.clusterId << ',' << ev.time << '\n';
+    }
+    out.flush();
+    file.close();
+
+    setStatusText(i18n_->text(QStringLiteral("app.spike.export.completed"),
+                              {{"rows", static_cast<int>(events.size())},
+                               {"path", outputPath}}));
+    return true;
+}
 }  // namespace bf

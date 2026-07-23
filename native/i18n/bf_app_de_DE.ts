@@ -426,5 +426,9 @@
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
 
+    <message><source>app.spike.export.action</source><translation>Spike-Ergebnisse exportieren...</translation></message>
+    <message><source>app.spike.export.no_result</source><translation>Kein Spike-Ergebnis zum Exportieren</translation></message>
+    <message><source>app.spike.export.completed</source><translation>{rows} Spike-Ereignisse nach {path} exportiert</translation></message>
+    <message><source>app.spike.export.failed</source><translation>Spike-Export fehlgeschlagen: {reason}</translation></message>
   </context>
 </TS>
