@@ -19,7 +19,7 @@
 
 日常开发优先阅读以下当前有效文档：
 
-| 当前阶段实施 | M8 计划尚未建立；开始实施前必须先创建并评审当前计划 |
+| 当前阶段实施 | `docs/plans/m8-packaging-release.md`；实现与当前环境证据见 `docs/reports/m8-packaging-release-acceptance.md` |
 | 已完成阶段证据 | `docs/reports/m2-format-acceptance.md`、`docs/reports/m2-rendering-gpu-gate.md`、`docs/reports/m3-dsp-acceptance.md`、`docs/reports/m4-spectral-acceptance.md`、`docs/reports/m5-playback-annotations-acceptance.md`、`docs/reports/m6-video-sync-acceptance.md`、`docs/reports/m7-record-export-acceptance.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
 | 分支、版本、文档、验证规范 | `docs/development-guide.md` |
@@ -34,8 +34,8 @@
 - 当前版本为 `0.1.0-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
-- M7 录制与片段导出已完成并通过文件回放源、双格式写入、背压、事件追加和三格式导出回读验收（见 `docs/reports/m7-record-export-acceptance.md`）。下一阶段为 M8 打包与发布验收。
-- M7 不包含真实硬件采集；该能力仍属于 v1.1/v2。
+- M8 打包实现与 WSL2 Linux 可验证部分已完成；Windows x64 安装包、组织证书签名及干净 Windows 10/11 发布门禁尚未执行（见 `docs/reports/m8-packaging-release-acceptance.md`）。
+- 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
 - 产品版本保持 `0.1.0-dev`，普通功能提交不修改 version.json。
 
 ## Branch And Version Rules
@@ -62,12 +62,12 @@
 
 ## Implementation Rules
 
-- M6 开始实施前必须先创建当前阶段计划；其后优先遵循该计划、`docs/contracts.md`、`docs/roadmap.md` 和 `docs/feature-parity-checklist.md`。
+- 当前实施优先遵循 `docs/plans/m8-packaging-release.md`、`docs/contracts.md`、`docs/roadmap.md` 和 `docs/feature-parity-checklist.md`。
 - 后端不得返回用户可见的本地化文案；统一返回 `code + params`。
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
 - 新增共享接口时，同步更新相关契约文档和测试计划。
 - 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/development-guide.md`。
-- 代码和文档应保持小步提交，提交信息使用明确前缀，例如 `feat:`、`fix:`、`docs:`、`spike:`、`chore:`。
+- 代码和文档应保持小步提交。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
 
 ## Verification
 

@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-07-06
+last_updated: 2026-07-23
 ---
 
 # 开发规范
@@ -100,15 +100,60 @@ last_updated: 2026-07-06
 
 ## Commit Rules
 
-提交应小步、可审查。推荐前缀：
+提交应小步、可审查。**统一使用中文 Conventional Commits 格式**，subject 使用中文。
+
+### 格式
+
+```text
+<type>: <中文摘要>
+
+[可选正文]
+
+[可选页脚]
+```
+
+规则：
+
+- subject 使用中文，说明做了什么；不以句号结尾。
+- subject 尽量控制在一行内；需要细节时写 body。
+- body 可选；用中文说明动机、影响范围或为何不做某事。多段用空行分隔。
+- 一次提交只做一类事；不要把无关改动混在同一提交。
+- 不写无信息量的 subject，例如 `更新`、`修复 bug`、`wip`、`update`。
+- type 保持英文小写；subject 与 body 使用中文。
+
+### 允许的 type
+
+| type | 用途 |
+| --- | --- |
+| `feat` | 用户可见功能或能力 |
+| `fix` | 缺陷修复 |
+| `docs` | 仅文档 |
+| `test` | 仅测试或测试夹具 |
+| `chore` | 构建、忽略规则、版本周期、工具链等杂项 |
+| `spike` | 技术验证与其记录 |
+| `refactor` | 不改变对外行为的重构 |
+| `perf` | 性能改进 |
+
+需要时可用可选 scope：`feat(ipc): ...`、`fix(license): ...`。
+
+### 示例
 
 ```text
 feat: 增加边车握手协议
+
 fix: 修复授权版本判断
+
 docs: 收口 M1-A 文档
+
 spike: 记录真实 GPU 复测结果
+
 chore: 开启 0.2.0 开发周期
+
+test: 增加 M2 格式夹具与验收证据
 ```
+
+
+### 禁止提交的内容
 
 不要提交构建产物、安装包、私钥、授权 keygen 私有材料或临时环境目录。
 
