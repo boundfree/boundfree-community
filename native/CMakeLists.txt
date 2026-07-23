@@ -28,15 +28,22 @@ set(BF_DSP_SOURCES
     src/dsp/pipeline.cpp
     src/dsp/reference.cpp
     src/dsp/spectral.cpp
+    src/dsp/spike_detect.cpp
+    src/dsp/spike_sort.cpp
 )
 
 add_library(bf_dsp STATIC ${BF_DSP_SOURCES})
 target_include_directories(bf_dsp PUBLIC src third_party)
 
-add_executable(bf_app
-    src/controller/analysis_service.cpp
-    src/controller/analysis_service.h
-    src/app/main.cpp
+# ---------------------------------------------------------------------------
+# bf_core: shared base (controller/ipc/license/render/i18n/core + shared UI
+# widgets) reused by both the EEG executable (bf_app) and the Spike executable
+# (bf_spike). EEG-specific sources (main window, spectral analysis widgets,
+# analysis_service) stay in bf_app; Spike-specific sources live in bf_spike.
+# This keeps the working EEG product unchanged while enabling a second product
+# line to reuse the same base without a rewrite.
+# ---------------------------------------------------------------------------
+set(BF_CORE_SOURCES
     src/controller/export_controller.cpp
     src/controller/export_controller.h
     src/controller/file_open_controller.cpp
@@ -77,22 +84,55 @@ add_executable(bf_app
     src/render/minmax_decimator.h
     src/render/waveform_slice.cpp
     src/render/waveform_slice.h
-    src/ui/main_window.cpp
-    src/ui/main_window.h
     src/ui/waveform_widget.cpp
     src/ui/waveform_widget.h
-    src/ui/analysis_widgets.cpp
-    src/ui/analysis_widgets.h
     src/ui/video_panel.cpp
     src/ui/video_panel.h
 )
 
-target_include_directories(bf_app PRIVATE src)
-target_compile_definitions(bf_app PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_app PRIVATE Qt6::Core Qt6::Widgets Qt6::Multimedia bf_dsp)
-
+add_library(bf_core STATIC ${BF_CORE_SOURCES})
+target_include_directories(bf_core PUBLIC src)
+target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia bf_dsp)
 if(WIN32)
-    target_link_libraries(bf_app PRIVATE bcrypt iphlpapi)
+    target_link_libraries(bf_core PUBLIC bcrypt iphlpapi)
+endif()
+
+# ---------------------------------------------------------------------------
+# bf_app: EEG analysis executable (v1 product). EEG-specific sources only;
+# everything shared comes from bf_core. Name and behavior are unchanged so the
+# existing test suite and M8 packaging pipeline keep working.
+# ---------------------------------------------------------------------------
+add_executable(bf_app
+    src/app/main.cpp
+    src/controller/analysis_service.cpp
+    src/controller/analysis_service.h
+    src/ui/main_window.cpp
+    src/ui/main_window.h
+    src/ui/analysis_widgets.cpp
+    src/ui/analysis_widgets.h
+)
+target_include_directories(bf_app PRIVATE src)
+target_link_libraries(bf_app PRIVATE bf_core)
+
+# ---------------------------------------------------------------------------
+# bf_spike: Spike analysis executable (next-generation product line). Reuses
+# bf_core for base UI/IPC/license/i18n/render and bf_dsp for spike detection
+# and sorting. Spike-specific window, widgets and analysis service live here.
+# ---------------------------------------------------------------------------
+set(BF_SPIKE_SOURCES
+    src/app/spike_main.cpp
+    src/controller/spike_analysis_service.cpp
+    src/controller/spike_analysis_service.h
+    src/ui/spike_widgets.cpp
+    src/ui/spike_widgets.h
+    src/ui/spike_window.cpp
+    src/ui/spike_window.h
+)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/app/spike_main.cpp")
+    add_executable(bf_spike ${BF_SPIKE_SOURCES})
+    target_include_directories(bf_spike PRIVATE src)
+    target_link_libraries(bf_spike PRIVATE bf_core)
 endif()
 
 add_executable(bf_license_smoke
@@ -151,6 +191,9 @@ add_executable(m4_spectral_test src/dsp/m4_spectral_test.cpp)
 target_include_directories(m4_spectral_test PRIVATE src)
 target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
 
+add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
+target_include_directories(spike_dsp_test PRIVATE src third_party)
+
 # ---------------------------------------------------------------------------
 # Install rules: stage bf_app + source-tree assets into a release tree.
 # Assets are referenced relative to the install source dir (no hardcoded
@@ -186,6 +229,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../legal/
         PATTERN "*.md"
         PATTERN "licenses/*"
 )
-
-add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
-target_include_directories(spike_dsp_test PRIVATE src third_party)
