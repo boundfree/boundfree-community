@@ -141,20 +141,20 @@ v1.1/v2：
 
 ## 系统级 — M1/M2/M8
 
-- [ ] 亮/暗双主题（清华紫），切换同步所有图元配色
+- [x] 亮/暗双主题（清华紫），切换同步所有图元配色
 - [ ] 可折叠面板（通道/滤波/标注）
-- [ ] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
+- [x] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
 - [ ] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）
-- [ ] i18n：zh_CN/en_US 运行时切换
-- [ ] i18n：pseudo 用于布局与缺 key 检查
-- [ ] i18n：其他 locale 文件保持 key 完整性，不作为 v1 stable 验收项
+- [x] i18n：zh_CN/en_US 运行时切换
+- [x] i18n：pseudo 用于布局与缺 key 检查
+- [x] i18n：其他 locale 文件保持 key 完整性，不作为 v1 stable 验收项
 - [ ] i18n：数字/日期/单位区域格式化覆盖 v1 必达语言
-- [ ] i18n：边车 error_code → UI 本地化
-- [ ] i18n：缺 key CI 拦截 + 伪本地化
-- [ ] 离线授权：机器码 SHA256(MachineGuid+MAC) 一致
-- [ ] 离线授权：RSA-2048 PSS 校验与旧版判定一致、密钥格式兼容
-- [ ] 数据源抽象、Session 和实时管线扩展边界保留
-- [ ] PyInstaller 边车 + Inno Setup 安装包（DisableDirPage=no、法务文件）
+- [x] i18n：边车 error_code → UI 本地化
+- [x] i18n：缺 key CI 拦截 + 伪本地化
+- [x] 离线授权：机器码 SHA256(MachineGuid) 一致（MAC 不参与，与旧版 get_machine_id 对齐）
+- [ ] 离线授权：RSA-2048 PSS 校验与旧版判定一致、密钥格式兼容（实现与固定向量已通过；待正式公钥和旧版真实 key 验收）
+- [x] 数据源抽象、Session 和实时管线扩展边界保留
+- [ ] PyInstaller 边车 + Inno Setup 安装包（冻结边车和配置已验证；待 Windows 实际生成、安装、覆盖安装与卸载）
 - [ ] Windows 代码签名
 
 ## v1.1/v2 硬件采集 — 后续路线
