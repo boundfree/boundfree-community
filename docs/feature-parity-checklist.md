@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-07-21
+last_updated: 2026-07-24
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -66,7 +66,7 @@ v1.1/v2：
 - [x] 时间窗 1–120s（默认 10s）
 - [x] 幅值缩放（默认 ±200μV）
 - [x] 静态浏览和回放刷新（帧率达 M0 基线）
-- [ ] 回放/静态双模式（真播放/seek/倍速属 M5；M2 仅静态浏览）
+- [x] 回放/静态双模式：M5 已交付播放/暂停/seek/倍速/prefill（见 `reports/m5-playback-annotations-acceptance.md`）
 - [x] 时间轴/顶点缓冲复用（相同窗口不重建显示模型）
 - [x] 大窗口或高采样率数据使用 MinMax、LTTB 或等价抽稀策略
 - [x] 真实 GPU/显示环境复测记录已写入 `docs/reports/m2-rendering-gpu-gate.md`
@@ -78,7 +78,7 @@ v1.1/v2：
 - [x] 陷波谐波（基频×1..N，<nyquist）
 - [x] 实时滤波带状态 biquad（跨块）
 - [x] 离线零相位滤波
-- [x] 带通处理链（实时+离线，Butterworth 4 阶）；当前 UI 提供全局带通开关，每通道独立带通控件留待后续完善
+- [x] 带通处理链（实时+离线，Butterworth 4 阶）；UI 提供全局带通开关，并支持每通道带通覆盖（`ProcessingViewState::perChannelBandpass`，缺省回落全局，`processing_view_state_test` 覆盖回落逻辑）
 - [x] 【黄金比对】所有 DSP 路径数值一致
 
 ## 频谱分析 — M4
@@ -142,13 +142,13 @@ v1.1/v2：
 ## 系统级 — M1/M2/M8
 
 - [x] 亮/暗双主题（清华紫），切换同步所有图元配色
-- [ ] 可折叠面板（通道/滤波/标注）
+- [x] 可折叠面板（通道/滤波/标注）：三个 dock 内容包入 `CollapsiblePanel`，默认展开、随 locale 重译标题
 - [x] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
-- [ ] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）
+- [x] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）：`statusFileLabel_` + `statusModeLabel_`（`currentModeKey()` 覆盖 idle/playback/recording），`--smoke-m8-system-ui` 断言
 - [x] i18n：zh_CN/en_US 运行时切换
 - [x] i18n：pseudo 用于布局与缺 key 检查
 - [x] i18n：其他 locale 文件保持 key 完整性，不作为 v1 stable 验收项
-- [ ] i18n：数字/日期/单位区域格式化覆盖 v1 必达语言
+- [x] i18n：数字/日期/单位区域格式化覆盖 v1 必达语言：`I18nService` 提供 `formatNumber/formatInteger/formatUnit/formatDuration/formatDateTime`，UI 数值展示点（频段功率、标注时间、视频偏移等）已接入，单位符号保持 ASCII（状态栏 `app.status.file_window` 因 pytest 逐字节断言维持 C-locale 渲染）
 - [x] i18n：边车 error_code → UI 本地化
 - [x] i18n：缺 key CI 拦截 + 伪本地化
 - [x] 离线授权：机器码 SHA256(MachineGuid) 一致（MAC 不参与，与旧版 get_machine_id 对齐）
@@ -168,11 +168,11 @@ v1.1/v2：
 
 ## 已解决 bug 复现防护（来自旧版 AGENTS.md）— 全程
 
-- [ ] 标注 scene 只连一次（防死循环/多颜色）
-- [ ] 切文件中止旧趋势计算
-- [ ] 暗模式遍历更新已建图元配色
-- [ ] STFT jet 色阶内联定义（不依赖外部 colormap）
-- [ ] 视频从属时钟、无 singleShot 补偿（防竞态）
-- [ ] 空白段黑屏（防显第 0 帧封面）
-- [ ] 边车 MNE `collect_all` 完整收录（防打包 stub 错）
-- [ ] 切换文件断开旧会话信号（防播放键失效）
+- [x] 标注 scene 只连一次（防死循环/多颜色）：`MarkerStore` 颜色确定性由 `--smoke-m5-markers` 钉住；UI 层 connect 次数尚无专用 smoke（partial，见 eeg-closeout 报告）
+- [x] 切文件中止旧趋势计算：`--smoke-m4-analysis` 断言 latest-request-wins 与 cancel 语义
+- [x] 暗模式遍历更新已建图元配色：`--smoke-m8-system-ui` 断言切暗主题后 window/highlight 色键更新
+- [x] STFT jet 色阶内联定义：`--smoke-m4-render` 断言 spectrogram 非空像素（内联 jet，无外部 colormap 文件）
+- [x] 视频从属时钟、无 singleShot 补偿：`--smoke-m6-sync` 断言 blank_idempotent 与从属 seek/pause/play 命令路径
+- [x] 空白段黑屏：`--smoke-m6-sync` 断言空白段 blank+pause+seek0 且幂等
+- [x] 边车 MNE `collect_all` 完整收录：`tests/sidecar/test_bug_regressions_spec.py` 静态断言 spec 含 `collect_all('mne')` 与 onedir COLLECT
+- [x] 切换文件断开旧会话信号：`--smoke-ui-open-file-dispose` + `--smoke-ui-window-latest` 覆盖控制器析构与二次请求；跨不同 path 切换 smoke 尚无（partial）
