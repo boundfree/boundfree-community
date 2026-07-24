@@ -148,7 +148,8 @@ void MainWindow::buildThemeMenu() {
     darkThemeAction_->setCheckable(true);
     themeGroup_->addAction(lightThemeAction_);
     themeGroup_->addAction(darkThemeAction_);
-    darkThemeAction_->setChecked(true);
+    // Default to light lavender + white for readable contrast.
+    lightThemeAction_->setChecked(true);
     connect(lightThemeAction_, &QAction::triggered, this, [this]() { applyTheme(false); });
     connect(darkThemeAction_, &QAction::triggered, this, [this]() { applyTheme(true); });
     applyTheme(darkTheme_);
@@ -156,38 +157,117 @@ void MainWindow::buildThemeMenu() {
 
 void MainWindow::applyTheme(bool dark) {
     darkTheme_ = dark;
-    // Tsinghua purple accent (#660874) used across both themes.
-    const QColor accent("#660874");
+    // Brand accent: soft Tsinghua lavender. Light theme prioritizes readable
+    // black text on white / pale-lavender surfaces.
     QPalette palette;
     if (dark) {
-        palette.setColor(QPalette::Window, QColor("#111827"));
-        palette.setColor(QPalette::Base, QColor("#0B1220"));
-        palette.setColor(QPalette::AlternateBase, QColor("#1B2433"));
-        palette.setColor(QPalette::WindowText, QColor("#E2E8F0"));
-        palette.setColor(QPalette::Text, QColor("#E2E8F0"));
-        palette.setColor(QPalette::Button, QColor("#1F2937"));
-        palette.setColor(QPalette::ButtonText, QColor("#E2E8F0"));
-        palette.setColor(QPalette::Highlight, accent);
+        const QColor accentDark("#A78BFA");
+        palette.setColor(QPalette::Window, QColor("#1E1B2E"));
+        palette.setColor(QPalette::Base, QColor("#151221"));
+        palette.setColor(QPalette::AlternateBase, QColor("#2A2540"));
+        palette.setColor(QPalette::WindowText, QColor("#F5F3FF"));
+        palette.setColor(QPalette::Text, QColor("#F5F3FF"));
+        palette.setColor(QPalette::Button, QColor("#2A2540"));
+        palette.setColor(QPalette::ButtonText, QColor("#F5F3FF"));
+        palette.setColor(QPalette::BrightText, QColor("#FFFFFF"));
+        palette.setColor(QPalette::PlaceholderText, QColor("#C4B5FD"));
+        palette.setColor(QPalette::Highlight, accentDark);
         palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::ToolTipBase, QColor("#1F2937"));
-        palette.setColor(QPalette::ToolTipText, QColor("#E2E8F0"));
+        palette.setColor(QPalette::Link, QColor("#C4B5FD"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#2A2540"));
+        palette.setColor(QPalette::ToolTipText, QColor("#F5F3FF"));
+        palette.setColor(QPalette::Light, QColor("#3B3358"));
+        palette.setColor(QPalette::Mid, QColor("#2A2540"));
+        palette.setColor(QPalette::Dark, QColor("#151221"));
+        palette.setColor(QPalette::Shadow, QColor("#0B0A12"));
     } else {
-        palette.setColor(QPalette::Window, QColor("#FFFFFF"));
-        palette.setColor(QPalette::Base, QColor("#F8FAFC"));
-        palette.setColor(QPalette::AlternateBase, QColor("#EEF2F7"));
-        palette.setColor(QPalette::WindowText, QColor("#0F172A"));
-        palette.setColor(QPalette::Text, QColor("#0F172A"));
-        palette.setColor(QPalette::Button, QColor("#E5E7EB"));
-        palette.setColor(QPalette::ButtonText, QColor("#0F172A"));
-        palette.setColor(QPalette::Highlight, accent);
+        // Light lavender + white: high contrast for menu/button/status text.
+        const QColor accentLight("#7C3AED");
+        palette.setColor(QPalette::Window, QColor("#F7F3FF"));
+        palette.setColor(QPalette::Base, QColor("#FFFFFF"));
+        palette.setColor(QPalette::AlternateBase, QColor("#EFE7FF"));
+        palette.setColor(QPalette::WindowText, QColor("#1F1235"));
+        palette.setColor(QPalette::Text, QColor("#1F1235"));
+        palette.setColor(QPalette::Button, QColor("#FFFFFF"));
+        palette.setColor(QPalette::ButtonText, QColor("#1F1235"));
+        palette.setColor(QPalette::BrightText, QColor("#FFFFFF"));
+        palette.setColor(QPalette::PlaceholderText, QColor("#6B5B95"));
+        palette.setColor(QPalette::Highlight, accentLight);
         palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::ToolTipBase, QColor("#E5E7EB"));
-        palette.setColor(QPalette::ToolTipText, QColor("#0F172A"));
+        palette.setColor(QPalette::Link, QColor("#6D28D9"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#FFFFFF"));
+        palette.setColor(QPalette::ToolTipText, QColor("#1F1235"));
+        palette.setColor(QPalette::Light, QColor("#FFFFFF"));
+        palette.setColor(QPalette::Mid, QColor("#E9DFFF"));
+        palette.setColor(QPalette::Dark, QColor("#C4B5FD"));
+        palette.setColor(QPalette::Shadow, QColor("#A78BFA"));
     }
+    // Disabled roles still need readable contrast.
+    const QColor disabledText = dark ? QColor("#9CA3AF") : QColor("#8B7EAE");
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
+    palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
+
+    setPalette(palette);
+    for (QWidget* child : findChildren<QWidget*>()) {
+        child->setPalette(palette);
+        // Force palette inheritance; some native controls ignore parent palette.
+        child->setAutoFillBackground(true);
+    }
+    // Windows native menu bar often ignores QPalette; style sheet keeps labels readable.
+    if (!dark) {
+        setStyleSheet(
+            "QMainWindow { background: #F7F3FF; color: #1F1235; }"
+            "QMenuBar { background: #FFFFFF; color: #1F1235; border-bottom: 1px solid #E9DFFF; }"
+            "QMenuBar::item { background: transparent; color: #1F1235; padding: 4px 10px; }"
+            "QMenuBar::item:selected { background: #EFE7FF; color: #1F1235; }"
+            "QMenu { background: #FFFFFF; color: #1F1235; border: 1px solid #E9DFFF; }"
+            "QMenu::item:selected { background: #EFE7FF; color: #1F1235; }"
+            "QToolBar { background: #FFFFFF; color: #1F1235; border-bottom: 1px solid #E9DFFF; spacing: 6px; }"
+            "QStatusBar { background: #FFFFFF; color: #1F1235; border-top: 1px solid #E9DFFF; }"
+            "QPushButton { background: #FFFFFF; color: #1F1235; border: 1px solid #C4B5FD; border-radius: 4px; padding: 4px 12px; }"
+            "QPushButton:hover { background: #EFE7FF; }"
+            "QPushButton:pressed { background: #E9DFFF; }"
+            "QToolButton { color: #1F1235; }"
+            "QLabel { color: #1F1235; }"
+            "QDockWidget { color: #1F1235; titlebar-close-icon: none; }"
+            "QDockWidget::title { background: #EFE7FF; color: #1F1235; padding: 4px; }"
+            "QTabBar::tab { background: #FFFFFF; color: #1F1235; border: 1px solid #E9DFFF; padding: 4px 10px; }"
+            "QTabBar::tab:selected { background: #EFE7FF; color: #1F1235; }"
+            "QHeaderView::section { background: #EFE7FF; color: #1F1235; border: 1px solid #E9DFFF; }"
+            "QTableWidget { background: #FFFFFF; color: #1F1235; gridline-color: #E9DFFF; }"
+            "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { background: #FFFFFF; color: #1F1235; border: 1px solid #C4B5FD; selection-background-color: #7C3AED; selection-color: #FFFFFF; }"
+        );
+    } else {
+        setStyleSheet(
+            "QMainWindow { background: #1E1B2E; color: #F5F3FF; }"
+            "QMenuBar { background: #151221; color: #F5F3FF; border-bottom: 1px solid #2A2540; }"
+            "QMenuBar::item { background: transparent; color: #F5F3FF; padding: 4px 10px; }"
+            "QMenuBar::item:selected { background: #2A2540; color: #FFFFFF; }"
+            "QMenu { background: #151221; color: #F5F3FF; border: 1px solid #2A2540; }"
+            "QMenu::item:selected { background: #2A2540; color: #FFFFFF; }"
+            "QToolBar { background: #151221; color: #F5F3FF; border-bottom: 1px solid #2A2540; }"
+            "QStatusBar { background: #151221; color: #F5F3FF; border-top: 1px solid #2A2540; }"
+            "QPushButton { background: #2A2540; color: #F5F3FF; border: 1px solid #3B3358; border-radius: 4px; padding: 4px 12px; }"
+            "QPushButton:hover { background: #3B3358; }"
+            "QToolButton { color: #F5F3FF; }"
+            "QLabel { color: #F5F3FF; }"
+            "QDockWidget { color: #F5F3FF; }"
+            "QDockWidget::title { background: #2A2540; color: #F5F3FF; padding: 4px; }"
+            "QTabBar::tab { background: #151221; color: #F5F3FF; border: 1px solid #2A2540; padding: 4px 10px; }"
+            "QTabBar::tab:selected { background: #2A2540; color: #FFFFFF; }"
+            "QHeaderView::section { background: #2A2540; color: #F5F3FF; border: 1px solid #3B3358; }"
+            "QTableWidget { background: #151221; color: #F5F3FF; gridline-color: #2A2540; }"
+            "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { background: #151221; color: #F5F3FF; border: 1px solid #3B3358; selection-background-color: #A78BFA; selection-color: #FFFFFF; }"
+        );
+    }
+    // Stylesheets can rematerialize some palette roles on Fusion/Windows; re-apply
+    // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
         child->setPalette(palette);
     }
+
     if (waveformWidget_ != nullptr) {
         waveformWidget_->setPalette(palette);
         waveformWidget_->setDarkTheme(darkTheme_);

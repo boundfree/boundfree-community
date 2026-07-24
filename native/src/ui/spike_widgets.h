@@ -24,7 +24,7 @@ protected:
 private:
     dsp::SpikeAnalysis analysis_;
     QString emptyLabel_ = "No spike data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 class SpikeRasterWidget final : public QWidget {
@@ -39,7 +39,7 @@ protected:
 private:
     dsp::SpikeAnalysis analysis_;
     QString emptyLabel_ = "No spike data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 class SpikePsthWidget final : public QWidget {
@@ -54,7 +54,7 @@ protected:
 private:
     dsp::SpikeAnalysis analysis_;
     QString emptyLabel_ = "No spike data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 class SpikeIsiWidget final : public QWidget {
@@ -69,7 +69,7 @@ protected:
 private:
     dsp::SpikeAnalysis analysis_;
     QString emptyLabel_ = "No spike data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 }  // namespace bf

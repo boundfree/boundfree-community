@@ -41,7 +41,7 @@ private:
     double cursorTime_ = 0.0;
     mutable int cachedMaxVisibleChannels_ = -1;
     bool markerModeEnabled_ = false;
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
     mutable int displayModelBuildCount_ = 0;
 };
 

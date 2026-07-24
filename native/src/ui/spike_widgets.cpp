@@ -33,17 +33,17 @@ struct ThemePalette {
 ThemePalette themePalette(bool dark) {
     if (dark) {
         return {
-            QColor("#111827"),
-            QColor("#64748B"),
-            QColor("#CBD5E1"),
-            QColor("#94A3B8"),
+            QColor("#1E1B2E"),
+            QColor("#6B7280"),
+            QColor("#F5F3FF"),
+            QColor("#C4B5FD"),
         };
     }
     return {
         QColor("#FFFFFF"),
-        QColor("#94A3B8"),
-        QColor("#0F172A"),
-        QColor("#64748B"),
+        QColor("#C4B5FD"),
+        QColor("#1F1235"),
+        QColor("#6B5B95"),
     };
 }
 

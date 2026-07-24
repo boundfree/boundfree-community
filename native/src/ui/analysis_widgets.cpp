@@ -43,21 +43,21 @@ struct ThemePalette {
 ThemePalette themePalette(bool dark) {
     if (dark) {
         return {
-            QColor("#111827"),
-            QColor("#64748B"),
-            QColor("#CBD5E1"),
-            QColor("#94A3B8"),
+            QColor("#1E1B2E"),
+            QColor("#6B7280"),
+            QColor("#F5F3FF"),
+            QColor("#C4B5FD"),
             QColor("#FBBF24"),
-            QColor("#60A5FA"),
+            QColor("#A78BFA"),
         };
     }
     return {
         QColor("#FFFFFF"),
-        QColor("#94A3B8"),
-        QColor("#0F172A"),
-        QColor("#64748B"),
-        QColor("#D97706"),
-        QColor("#2563EB"),
+        QColor("#C4B5FD"),
+        QColor("#1F1235"),
+        QColor("#6B5B95"),
+        QColor("#7C3AED"),
+        QColor("#6D28D9"),
     };
 }
 

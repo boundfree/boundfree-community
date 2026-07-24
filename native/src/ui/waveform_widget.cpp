@@ -64,10 +64,10 @@ void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
 
 void WaveformWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const QColor bg = darkTheme_ ? QColor("#111827") : QColor("#FFFFFF");
-    const QColor labelColor = darkTheme_ ? QColor("#CBD5E1") : QColor("#0F172A");
-    const QColor waveColor = darkTheme_ ? QColor("#6EE7B7") : QColor("#059669");
-    const QColor cursorColor = darkTheme_ ? QColor("#F8FAFC") : QColor("#0F172A");
+    const QColor bg = darkTheme_ ? QColor("#1E1B2E") : QColor("#FFFFFF");
+    const QColor labelColor = darkTheme_ ? QColor("#E9D5FF") : QColor("#1F1235");
+    const QColor waveColor = darkTheme_ ? QColor("#C4B5FD") : QColor("#7C3AED");
+    const QColor cursorColor = darkTheme_ ? QColor("#F5F3FF") : QColor("#1F1235");
     painter.fillRect(rect(), bg);
     painter.setRenderHint(QPainter::Antialiasing, false);
 

@@ -25,7 +25,7 @@ private:
     QString emptyLabel_ = "No analysis data";
     bool coherence_ = false;
     bool showBands_ = true;
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 class SpectrogramWidget final : public QWidget {
@@ -44,7 +44,7 @@ private:
     QString xLabel_ = "Time (s)";
     QString yLabel_ = "Frequency (Hz)";
     QString emptyLabel_ = "No analysis data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 class BandTrendWidget final : public QWidget {
@@ -63,7 +63,7 @@ private:
     QString title_ = "Band power trend";
     QString xLabel_ = "Time (s)";
     QString emptyLabel_ = "No analysis data";
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
 };
 
 }  // namespace bf

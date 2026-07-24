@@ -24,7 +24,7 @@ Bug coverage map (item number = checklist entry):
 
 3. Dark-mode traversal re-themes already-built graphics: ``--smoke-m8-system-ui``
    triggers light then dark and asserts the dark palette colours
-   (``#111827`` window + ``#660874`` highlight) were applied. Pinning the
+   (``#1E1B2E`` window + ``#A78BFA`` highlight) were applied. Pinning the
    success marker proves the palette traversal path ran.
 
 4. STFT jet colormap is inline (no external colormap file dependency):
@@ -204,7 +204,7 @@ def test_bug3_dark_mode_palette_applied_after_toggle():
     items, leaving already-built graphics on the light palette. The fix:
     ``MainWindow`` re-applies the palette so existing widgets pick up the new
     colours. ``--smoke-m8-system-ui`` triggers light then dark and internally
-    asserts ``darkApplied`` (window == ``#111827`` && highlight == ``#660874``).
+    asserts ``darkApplied`` (window == ``#1E1B2E`` && highlight == ``#A78BFA``).
 
     Pinning the success marker proves the palette-traversal path executed.
     """

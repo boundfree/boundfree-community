@@ -22,6 +22,7 @@
 #include "ui/video_panel.h"
 
 #include <QApplication>
+#include <QStyleFactory>
 #include <QAction>
 #include <QDir>
 #include <QCommandLineOption>
@@ -161,11 +162,15 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
+            // Default is light lavender; re-apply light then dark to verify both.
             light->trigger();
-            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#FFFFFF");
+            app.processEvents();
+            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#F7F3FF")
+                && window.palette().color(QPalette::WindowText) == QColor("#1F1235");
             dark->trigger();
-            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#111827")
-                && window.palette().color(QPalette::Highlight) == QColor("#660874");
+            app.processEvents();
+            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#1E1B2E")
+                && window.palette().color(QPalette::Highlight) == QColor("#A78BFA");
             const bool beforeToggle = channels->isChecked();
             channels->trigger();
             app.processEvents();
@@ -461,12 +466,12 @@ int main(int argc, char** argv) {
             trendWidget.setTrend({0.5, 1.5, 2.5}, {{1.0, 2.0, 3.0}, {2.0, 1.0, 2.0}, {1.0, 3.0, 1.0}, {0.5, 1.0, 1.5}, {0.2, 0.4, 0.6}});
             const auto nonBackground = [](QWidget& widget) {
                 QImage image(widget.size(), QImage::Format_ARGB32);
-                image.fill(QColor("#111827"));
+                image.fill(QColor("#00FF00"));
                 widget.render(&image);
                 int count = 0;
                 for (int y = 0; y < image.height(); ++y) {
                     for (int x = 0; x < image.width(); ++x) {
-                        if (image.pixelColor(x, y) != QColor("#111827")) {
+                        if (image.pixelColor(x, y) != QColor("#00FF00")) {
                             ++count;
                         }
                     }
@@ -961,7 +966,7 @@ int main(int argc, char** argv) {
             QElapsedTimer timer;
             timer.start();
             for (int frame = 0; frame < frames; ++frame) {
-                image.fill(QColor("#111827"));
+                image.fill(QColor("#00FF00"));
                 widget.render(&image);
             }
             const double elapsedSeconds = std::max(0.001, timer.elapsed() / 1000.0);
@@ -1123,11 +1128,11 @@ int main(int argc, char** argv) {
             widget.setSlice(slice);
 
             QImage image(widget.size(), QImage::Format_ARGB32);
-            image.fill(QColor("#111827"));
+            image.fill(QColor("#00FF00"));
             widget.render(&image);
 
             int nonBackground = 0;
-            const QRgb background = QColor("#111827").rgba();
+            const QRgb background = QColor("#00FF00").rgba();
             for (int y = 0; y < image.height(); ++y) {
                 for (int x = 0; x < image.width(); ++x) {
                     if (image.pixel(x, y) != background) {
@@ -1263,6 +1268,10 @@ int main(int argc, char** argv) {
     }
 
     QApplication app(argc, argv);
+    // Fusion makes menu/button colors honor QPalette + stylesheets on Windows.
+    if (QStyleFactory::keys().contains(QStringLiteral("Fusion"))) {
+        app.setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+    }
 
     QCommandLineParser parser;
     parser.setApplicationDescription("BoundFree EEG Native");

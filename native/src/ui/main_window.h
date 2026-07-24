@@ -147,7 +147,7 @@ private:
     QAction* toggleVideoAction_ = nullptr;
     QLabel* statusFileLabel_ = nullptr;
     QLabel* statusModeLabel_ = nullptr;
-    bool darkTheme_ = true;
+    bool darkTheme_ = false;
     QVector<QAction*> languageActions_;
     QToolBar* browserToolbar_ = nullptr;
     QAction* previousWindowAction_ = nullptr;
