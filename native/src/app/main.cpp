@@ -22,6 +22,7 @@
 #include "ui/video_panel.h"
 
 #include <QApplication>
+#include <QMenuBar>
 #include <QStyleFactory>
 #include <QAction>
 #include <QDir>
@@ -157,8 +158,26 @@ int main(int argc, char** argv) {
                 hasVideo = hasVideo || action->shortcut() == QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O);
                 hasQuit = hasQuit || action->shortcut() == QKeySequence::Quit;
             }
-            if (light == nullptr || dark == nullptr || channels == nullptr || !hasOpen || !hasVideo || !hasQuit) {
-                std::cerr << "smoke-m8-system-ui-failed actions\n";
+            // All four top-level menus must be present with non-empty titles.
+            bool hasFileMenu = false;
+            bool hasLanguageMenu = false;
+            bool hasViewMenu = false;
+            bool hasThemeMenu = false;
+            for (QAction* menuAction : window.menuBar()->actions()) {
+                const QString title = menuAction->text();
+                hasFileMenu = hasFileMenu || title == i18n.text("app.menu.file");
+                hasLanguageMenu = hasLanguageMenu || title == i18n.text("app.menu.language");
+                hasViewMenu = hasViewMenu || title == i18n.text("app.menu.view");
+                hasThemeMenu = hasThemeMenu || title == i18n.text("app.menu.theme");
+            }
+            if (light == nullptr || dark == nullptr || channels == nullptr || !hasOpen || !hasVideo || !hasQuit
+                || !hasFileMenu || !hasLanguageMenu || !hasViewMenu || !hasThemeMenu) {
+                std::cerr << "smoke-m8-system-ui-failed actions"
+                          << " file=" << hasFileMenu
+                          << " language=" << hasLanguageMenu
+                          << " view=" << hasViewMenu
+                          << " theme=" << hasThemeMenu
+                          << "\n";
                 return 1;
             }
 

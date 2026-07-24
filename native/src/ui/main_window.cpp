@@ -86,6 +86,9 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     statusBar()->addPermanentWidget(statusFileLabel_);
     resize(900, 560);
     retranslateUi();
+    // Apply theme only after menu titles/actions are translated, otherwise the
+    // first QMenuBar items can stay blank under stylesheet on Windows.
+    applyTheme(darkTheme_);
 }
 
 void MainWindow::buildFileMenu() {
@@ -152,7 +155,7 @@ void MainWindow::buildThemeMenu() {
     lightThemeAction_->setChecked(true);
     connect(lightThemeAction_, &QAction::triggered, this, [this]() { applyTheme(false); });
     connect(darkThemeAction_, &QAction::triggered, this, [this]() { applyTheme(true); });
-    applyTheme(darkTheme_);
+    // Do not applyTheme here: menu titles are still empty until retranslateUi().
 }
 
 void MainWindow::applyTheme(bool dark) {
@@ -210,6 +213,13 @@ void MainWindow::applyTheme(bool dark) {
 
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
+        // Never paint over QMenuBar / QMenu items: autoFillBackground there can
+        // hide the first menu titles on Windows (file/language disappear).
+        if (qobject_cast<QMenuBar*>(child) != nullptr || qobject_cast<QMenu*>(child) != nullptr) {
+            child->setAutoFillBackground(false);
+            child->setPalette(palette);
+            continue;
+        }
         child->setPalette(palette);
         // Force palette inheritance; some native controls ignore parent palette.
         child->setAutoFillBackground(true);
@@ -265,7 +275,28 @@ void MainWindow::applyTheme(bool dark) {
     // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
+        if (qobject_cast<QMenuBar*>(child) != nullptr || qobject_cast<QMenu*>(child) != nullptr) {
+            child->setAutoFillBackground(false);
+        }
         child->setPalette(palette);
+    }
+    // Re-assert menu titles after stylesheet changes (Windows can drop the first
+    // two bar items if titles were empty when the stylesheet was first applied).
+    if (fileMenu_ != nullptr && i18n_ != nullptr) {
+        fileMenu_->setTitle(i18n_->text("app.menu.file"));
+    }
+    if (languageMenu_ != nullptr && i18n_ != nullptr) {
+        languageMenu_->setTitle(i18n_->text("app.menu.language"));
+    }
+    if (viewMenu_ != nullptr && i18n_ != nullptr) {
+        viewMenu_->setTitle(i18n_->text("app.menu.view"));
+    }
+    if (themeMenu_ != nullptr && i18n_ != nullptr) {
+        themeMenu_->setTitle(i18n_->text("app.menu.theme"));
+    }
+    if (menuBar() != nullptr) {
+        menuBar()->setNativeMenuBar(false);
+        menuBar()->update();
     }
 
     if (waveformWidget_ != nullptr) {
