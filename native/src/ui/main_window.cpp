@@ -514,7 +514,7 @@ void MainWindow::buildVideoDock() {
         updatePlaybackDuration();
         statusBar()->showMessage(i18n_->text(
             "app.video.offset_applied",
-            {{"offset", QString::number(videoPanel_->offsetSeconds(), 'f', 3)}}),
+            {{"offset", i18n_->formatNumber(videoPanel_->offsetSeconds(), 3)}}),
             3000);
     });
     connect(videoPanel_, &VideoPanel::durationKnown, this, [this](double) {
@@ -728,7 +728,7 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
         if (!fft && !asDb) {
             QStringList powers;
             for (const dsp::Band& band : dsp::eegBands()) {
-                powers.push_back(QString("%1=%2").arg(band.key).arg(dsp::bandPower(result.spectrum, band.low, band.high), 0, 'f', 2));
+                powers.push_back(QString("%1=%2").arg(band.key).arg(i18n_->formatNumber(dsp::bandPower(result.spectrum, band.low, band.high), 2)));
             }
             psdBandSummaryLabel_->setText(powers.join(" | "));
         } else {
@@ -755,7 +755,7 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
                     ++count;
                 }
             }
-            values.push_back(QString("%1=%2").arg(band.key).arg(count > 0 ? sum / count : 0.0, 0, 'f', 2));
+            values.push_back(QString("%1=%2").arg(band.key).arg(i18n_->formatNumber(count > 0 ? sum / count : 0.0, 2)));
         }
         coherenceSummaryLabel_->setText(values.join(" | "));
         break;
@@ -841,7 +841,7 @@ void MainWindow::updatePlaybackDuration() {
 void MainWindow::addMarkerAt(double time) {
     if (!hasCurrentFile_) return;
     bool accepted = false;
-    const QString label = QInputDialog::getText(this, i18n_->text("app.marker.add_title"), i18n_->text("app.marker.add_prompt", {{"time", QString::number(time, 'f', 3)}}), QLineEdit::Normal, {}, &accepted);
+    const QString label = QInputDialog::getText(this, i18n_->text("app.marker.add_title"), i18n_->text("app.marker.add_prompt", {{"time", i18n_->formatNumber(time, 3)}}), QLineEdit::Normal, {}, &accepted);
     if (!accepted) return;
     markerStore_.add(time, label);
     if (recordController_ != nullptr && recordController_->isActive()) {
@@ -856,7 +856,7 @@ void MainWindow::refreshMarkerControls() {
     markerTable_->setRowCount(markerStore_.markers().size());
     for (int row = 0; row < markerStore_.markers().size(); ++row) {
         const Marker& marker = markerStore_.markers()[row];
-        auto* time = new QTableWidgetItem(QString::number(marker.time, 'f', 3));
+        auto* time = new QTableWidgetItem(i18n_->formatNumber(marker.time, 3));
         time->setFlags(time->flags() & ~Qt::ItemIsEditable);
         markerTable_->setItem(row, 0, time);
         markerTable_->setItem(row, 1, new QTableWidgetItem(marker.label));
