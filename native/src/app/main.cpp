@@ -163,20 +163,25 @@ int main(int argc, char** argv) {
             bool hasLanguageMenu = false;
             bool hasViewMenu = false;
             bool hasThemeMenu = false;
+            bool menuGeometryOk = true;
             for (QAction* menuAction : window.menuBar()->actions()) {
                 const QString title = menuAction->text();
-                hasFileMenu = hasFileMenu || title == i18n.text("app.menu.file");
-                hasLanguageMenu = hasLanguageMenu || title == i18n.text("app.menu.language");
-                hasViewMenu = hasViewMenu || title == i18n.text("app.menu.view");
-                hasThemeMenu = hasThemeMenu || title == i18n.text("app.menu.theme");
+                const QRect geom = window.menuBar()->actionGeometry(menuAction);
+                const bool visibleWidth = geom.width() >= 24;
+                hasFileMenu = hasFileMenu || (title == i18n.text("app.menu.file") && visibleWidth);
+                hasLanguageMenu = hasLanguageMenu || (title == i18n.text("app.menu.language") && visibleWidth);
+                hasViewMenu = hasViewMenu || (title == i18n.text("app.menu.view") && visibleWidth);
+                hasThemeMenu = hasThemeMenu || (title == i18n.text("app.menu.theme") && visibleWidth);
+                menuGeometryOk = menuGeometryOk && !title.trimmed().isEmpty() && visibleWidth;
             }
             if (light == nullptr || dark == nullptr || channels == nullptr || !hasOpen || !hasVideo || !hasQuit
-                || !hasFileMenu || !hasLanguageMenu || !hasViewMenu || !hasThemeMenu) {
+                || !hasFileMenu || !hasLanguageMenu || !hasViewMenu || !hasThemeMenu || !menuGeometryOk) {
                 std::cerr << "smoke-m8-system-ui-failed actions"
                           << " file=" << hasFileMenu
                           << " language=" << hasLanguageMenu
                           << " view=" << hasViewMenu
                           << " theme=" << hasThemeMenu
+                          << " geometry=" << menuGeometryOk
                           << "\n";
                 return 1;
             }

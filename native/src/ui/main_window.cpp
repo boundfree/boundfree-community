@@ -51,6 +51,10 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     centralStack_->addWidget(emptyPage_);
     centralStack_->addWidget(waveformWidget_);
     setCentralWidget(centralStack_);
+    // Keep the menu bar inside the Qt widget hierarchy on Windows so palette,
+    // stylesheet and action geometry are deterministic.
+    menuBar()->setNativeMenuBar(false);
+    menuBar()->setAttribute(Qt::WA_StyledBackground, true);
     buildFileMenu();
     buildLanguageMenu();
 
@@ -92,7 +96,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
 }
 
 void MainWindow::buildFileMenu() {
-    fileMenu_ = menuBar()->addMenu(QString());
+    fileMenu_ = menuBar()->addMenu(i18n_->text("app.menu.file"));
     openAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), QString());
     openAction_->setShortcut(QKeySequence::Open);
     connect(openAction_, &QAction::triggered, this, &MainWindow::chooseFile);
@@ -106,7 +110,7 @@ void MainWindow::buildFileMenu() {
 }
 
 void MainWindow::buildLanguageMenu() {
-    languageMenu_ = menuBar()->addMenu(QString());
+    languageMenu_ = menuBar()->addMenu(i18n_->text("app.menu.language"));
     const QStringList locales = i18n_->supportedLocales();
     for (const QString& locale : locales) {
         auto* action = languageMenu_->addAction(QString());
@@ -123,7 +127,7 @@ void MainWindow::buildLanguageMenu() {
 }
 
 void MainWindow::buildViewMenu() {
-    viewMenu_ = menuBar()->addMenu(QString());
+    viewMenu_ = menuBar()->addMenu(i18n_->text("app.menu.view"));
     toggleChannelsAction_ = viewMenu_->addAction(QString());
     toggleMarkersAction_ = viewMenu_->addAction(QString());
     toggleAnalysisAction_ = viewMenu_->addAction(QString());
@@ -142,7 +146,7 @@ void MainWindow::buildViewMenu() {
 }
 
 void MainWindow::buildThemeMenu() {
-    themeMenu_ = menuBar()->addMenu(QString());
+    themeMenu_ = menuBar()->addMenu(i18n_->text("app.menu.theme"));
     themeGroup_ = new QActionGroup(this);
     themeGroup_->setExclusive(true);
     lightThemeAction_ = themeMenu_->addAction(QString());
@@ -213,16 +217,10 @@ void MainWindow::applyTheme(bool dark) {
 
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
-        // Never paint over QMenuBar / QMenu items: autoFillBackground there can
-        // hide the first menu titles on Windows (file/language disappear).
-        if (qobject_cast<QMenuBar*>(child) != nullptr || qobject_cast<QMenu*>(child) != nullptr) {
-            child->setAutoFillBackground(false);
-            child->setPalette(palette);
-            continue;
-        }
+        // Palette propagation is enough. Forcing autoFillBackground on every
+        // descendant breaks QMenuBar action painting on Windows.
+        child->setAutoFillBackground(false);
         child->setPalette(palette);
-        // Force palette inheritance; some native controls ignore parent palette.
-        child->setAutoFillBackground(true);
     }
     // Windows native menu bar often ignores QPalette; style sheet keeps labels readable.
     if (!dark) {
@@ -280,22 +278,31 @@ void MainWindow::applyTheme(bool dark) {
         }
         child->setPalette(palette);
     }
-    // Re-assert menu titles after stylesheet changes (Windows can drop the first
-    // two bar items if titles were empty when the stylesheet was first applied).
-    if (fileMenu_ != nullptr && i18n_ != nullptr) {
-        fileMenu_->setTitle(i18n_->text("app.menu.file"));
-    }
-    if (languageMenu_ != nullptr && i18n_ != nullptr) {
-        languageMenu_->setTitle(i18n_->text("app.menu.language"));
-    }
-    if (viewMenu_ != nullptr && i18n_ != nullptr) {
-        viewMenu_->setTitle(i18n_->text("app.menu.view"));
-    }
-    if (themeMenu_ != nullptr && i18n_ != nullptr) {
-        themeMenu_->setTitle(i18n_->text("app.menu.theme"));
-    }
-    if (menuBar() != nullptr) {
-        menuBar()->setNativeMenuBar(false);
+    // Rebuild the top-level action row after stylesheet changes. QMenu::setTitle
+    // alone can leave zero-width action geometry for menus that were initially
+    // empty on Windows. Setting menuAction text directly and re-adding all four
+    // actions makes the visible row deterministic.
+    if (menuBar() != nullptr && i18n_ != nullptr && fileMenu_ != nullptr
+        && languageMenu_ != nullptr && viewMenu_ != nullptr && themeMenu_ != nullptr) {
+        const QString fileTitle = i18n_->text("app.menu.file");
+        const QString languageTitle = i18n_->text("app.menu.language");
+        const QString viewTitle = i18n_->text("app.menu.view");
+        const QString themeTitle = i18n_->text("app.menu.theme");
+        fileMenu_->setTitle(fileTitle);
+        languageMenu_->setTitle(languageTitle);
+        viewMenu_->setTitle(viewTitle);
+        themeMenu_->setTitle(themeTitle);
+        fileMenu_->menuAction()->setText(fileTitle);
+        languageMenu_->menuAction()->setText(languageTitle);
+        viewMenu_->menuAction()->setText(viewTitle);
+        themeMenu_->menuAction()->setText(themeTitle);
+        menuBar()->clear();
+        menuBar()->addMenu(fileMenu_);
+        menuBar()->addMenu(languageMenu_);
+        menuBar()->addMenu(viewMenu_);
+        menuBar()->addMenu(themeMenu_);
+        menuBar()->setPalette(palette);
+        menuBar()->updateGeometry();
         menuBar()->update();
     }
 
@@ -1150,17 +1157,21 @@ void MainWindow::retranslateUi() {
     setWindowTitle(i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}}));
     centralLabel_->setText(i18n_->text(emptyStateKey_, emptyStateParams_));
     fileMenu_->setTitle(i18n_->text("app.menu.file"));
+    fileMenu_->menuAction()->setText(i18n_->text("app.menu.file"));
     openAction_->setText(i18n_->text("app.action.open"));
     openVideoAction_->setText(i18n_->text("app.video.open"));
     openButton_->setText(i18n_->text("app.action.open"));
     quitAction_->setText(i18n_->text("app.action.quit"));
     languageMenu_->setTitle(i18n_->text("app.menu.language"));
+    languageMenu_->menuAction()->setText(i18n_->text("app.menu.language"));
     viewMenu_->setTitle(i18n_->text("app.menu.view"));
+    viewMenu_->menuAction()->setText(i18n_->text("app.menu.view"));
     toggleChannelsAction_->setText(i18n_->text("app.view.channels"));
     toggleMarkersAction_->setText(i18n_->text("app.view.markers"));
     toggleAnalysisAction_->setText(i18n_->text("app.view.analysis"));
     toggleVideoAction_->setText(i18n_->text("app.view.video"));
     themeMenu_->setTitle(i18n_->text("app.menu.theme"));
+    themeMenu_->menuAction()->setText(i18n_->text("app.menu.theme"));
     lightThemeAction_->setText(i18n_->text("app.theme.light"));
     darkThemeAction_->setText(i18n_->text("app.theme.dark"));
     for (QAction* action : languageActions_) {
