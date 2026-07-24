@@ -91,6 +91,29 @@ def check_version_json() -> CheckResult:
     return CheckResult(name, True, f"v{data['version']} channel={data['release_channel']}")
 
 
+def check_version_sync() -> CheckResult:
+    name = "version metadata synchronized"
+    try:
+        import importlib.util
+
+        script = REPO_ROOT / "scripts" / "version_sync.py"
+        if not script.exists():
+            return CheckResult(name, False, "missing: scripts/version_sync.py")
+        spec = importlib.util.spec_from_file_location("bf_version_sync", script)
+        if spec is None or spec.loader is None:
+            return CheckResult(name, False, "cannot load scripts/version_sync.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        failures = module.check_sync()
+    except Exception as exc:  # pragma: no cover - failure is reported as release gate detail
+        return CheckResult(name, False, f"version sync check crashed: {exc}")
+    if failures:
+        return CheckResult(name, False, "; ".join(failures))
+    version = json.loads((REPO_ROOT / "version.json").read_text(encoding="utf-8"))["version"]
+    return CheckResult(name, True, f"version={version}")
+
+
 # ---------------------------------------------------------------------------
 # PyInstaller spec
 # ---------------------------------------------------------------------------
@@ -448,6 +471,7 @@ def check_signing_policy(channel: str) -> CheckResult:
 
 CHECKS = (
     check_version_json,
+    check_version_sync,
     check_sidecar_spec,
     check_iss,
     check_branding_assets,

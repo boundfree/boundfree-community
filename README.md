@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.0-dev",
+  "version": "0.1.42-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 打包实现和 WSL2 Linux 可验证部分已完成，Windows 安装、签名与干净机发布门禁待执行。产品版本 `0.1.0-dev`。
+当前阶段：M0–M7 均已完成；M8 打包实现和 WSL2 Linux 可验证部分已完成，Windows 安装、签名与干净机发布门禁待执行。产品版本 `0.1.42-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -65,7 +65,8 @@ M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packagi
 boundfree-eeg-native/
 ├── AGENTS.md                    # 仓库级开发指导
 ├── README.md                    # 项目入口说明
-├── version.json                 # 产品版本与 IPC 协议版本源
+├── version.json                 # 产品版本与 IPC 协议版本真值
+├── version.md                   # 提交级版本记录
 ├── docs/                        # 当前核心文档与历史归档
 ├── native/                      # C++/Qt6 主程序
 ├── sidecar/                     # Python 编解码边车
@@ -75,7 +76,8 @@ boundfree-eeg-native/
 ## Branch And Version Model
 
 - 日常开发基于 `master`。
-- 当前开发以已完成的 M1–M3 能力为基础，按当前里程碑从 `master` 创建 `feature/*`、`fix/*` 或 `docs/*` 分支。
+- 当前开发以已完成的 M1–M8 能力为基础，按当前里程碑从 `master` 创建 `feature/*`、`fix/*`、`spike/*` 或 `docs/*` 分支。
 - `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
-- 普通功能分支不修改 `version.json` 的产品版本号。
+- `version.json` 是产品版本真值；根目录 [`version.md`](version.md) 从版本同步规范启用提交开始记录每次有效提交的版本、日期、作者、提交标题和提交正文。
+- 每个合入 `master` 的有效提交递增版本并更新 `version.md`；提交前运行 `python3 scripts/version_sync.py check`。
 - 产品版本和 `ipc_protocol_version` 分开维护。

@@ -62,4 +62,4 @@ last_updated: 2026-07-22
 - 当前阶段计划必须在实施前创建；已完成阶段计划更新为 `completed`，并以 `reports/` 中验收记录作为交付证据。
 - 已完成阶段的可交付结论以 `reports/` 中对应验收记录与测试结果为准。
 - 版本、IPC、错误码和 i18n 契约优先更新 [`contracts.md`](contracts.md)。
-- 分支、版本、文档格式和验证规则优先更新 [`development-guide.md`](development-guide.md)。
+- 提交级版本记录从规范启用提交开始维护在根目录 `version.md`；分支、版本号更新时机、文档格式和验证规则优先更新 [`development-guide.md`](development-guide.md)。

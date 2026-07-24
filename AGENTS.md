@@ -31,12 +31,12 @@
 
 ## Development Stage
 
-- 当前版本为 `0.1.0-dev`。
+- 当前版本为 `0.1.42-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
 - M8 打包实现与 WSL2 Linux 可验证部分已完成；Windows x64 安装包、组织证书签名及干净 Windows 10/11 发布门禁尚未执行（见 `docs/reports/m8-packaging-release-acceptance.md`）。
 - 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
-- 产品版本保持 `0.1.0-dev`，普通功能提交不修改 version.json。
+- 产品版本当前为 `0.1.41-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
 
 ## Branch And Version Rules
 
@@ -44,8 +44,9 @@
 - 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`；当前阶段不绑定历史 `feature/m1-foundation` 分支。
 - `release` 是稳定发布分支；当前可作为占位分支，但首个 `rc` 或 `stable` 版本前不得打正式 tag。
 - 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
-- `version.json` 是产品版本和 IPC 协议版本的单一人工维护来源。
-- 不要在普通 feature 分支上修改产品版本号。
+- `version.json` 是产品版本和 IPC 协议版本的单一真值来源。
+- 根目录 `version.md` 从版本同步规范启用提交开始记录每个有效提交对应的版本、日期、作者、提交标题和提交正文。
+- 每个合入 `master` 的有效提交必须运行 `python3 scripts/version_sync.py next ...` 或 `set ...` 更新版本；提交前运行 `python3 scripts/version_sync.py check`。
 - 产品版本和 `ipc_protocol_version` 必须分开维护。
 
 ## Technical Constraints
@@ -67,13 +68,14 @@
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
 - 新增共享接口时，同步更新相关契约文档和测试计划。
 - 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/development-guide.md`。
-- 代码和文档应保持小步提交。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
+- 代码和文档应保持小步提交。每次有效提交应同步更新 `version.json` 和根目录 `version.md`。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
 
 ## Verification
 
 - 声称构建、测试、格式或功能完成前，必须运行对应验证命令并检查输出。
 - 文档变更至少运行 `git diff --check HEAD`。
 - JSON 变更至少运行 `python3 -m json.tool <file>`。
+- 版本变更必须运行 `python3 scripts/version_sync.py check`。
 - C++/Qt6 工程变更应运行对应 CMake configure/build。
 - Python 边车变更应运行对应 pytest 或协议冒烟测试。
 - 性能结论必须记录环境、命令、样本和结果，不得把 WSL/Xvfb 软件渲染结果当成真实 GPU 验收。
