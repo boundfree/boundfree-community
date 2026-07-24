@@ -1328,15 +1328,19 @@ int main(int argc, char** argv) {
     const QCommandLineOption smokeSidecarOpenOpt("smoke-sidecar-open", "Start sidecar, open a file, and exit.", "path");
     const QCommandLineOption smokeOpt("smoke-ui", "Start UI and exit automatically.");
     const QCommandLineOption smokeLicenseGateOpt("smoke-license-gate", "Open the release license gate and cancel automatically.");
-    const QCommandLineOption languageOpt("language", "Set startup locale.", "locale", "zh_CN");
+    const QCommandLineOption languageOpt("language", "Set startup locale (overrides saved/system; not persisted).", "locale");
     const QCommandLineOption openFileOpt("open-file", "Open an EEG file after startup.", "path");
     const QCommandLineOption openVideoOpt("open-video", "Open a synchronized video after startup.", "path");
     parser.addOptions({versionOpt, smokeSidecarOpt, smokeSidecarOpenOpt, smokeOpt, smokeLicenseGateOpt, languageOpt, openFileOpt, openVideoOpt});
     parser.process(app);
 
+    // 启动 locale 优先级：显式 --language > 已保存设置 > 系统 locale > zh_CN。
+    // CLI 覆盖仅作用于本次运行，不写设置；菜单切换才持久化。
     bf::I18nService i18n(repoRoot);
+    const QString cliLocale = parser.value(languageOpt);
+    const QString startupLocale = bf::I18nService::resolveStartupLocale(cliLocale);
     QString i18nError;
-    if (!i18n.loadLocale(parser.value(languageOpt), &i18nError)) {
+    if (!i18n.loadLocale(startupLocale, &i18nError)) {
         std::cerr << "failed to load translations: " << i18nError.toStdString() << "\n";
         return 1;
     }

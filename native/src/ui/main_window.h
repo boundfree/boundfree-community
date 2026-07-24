@@ -148,6 +148,7 @@ private:
     QLabel* statusFileLabel_ = nullptr;
     QLabel* statusModeLabel_ = nullptr;
     bool darkTheme_ = false;
+    QActionGroup* languageGroup_ = nullptr;
     QVector<QAction*> languageActions_;
     QToolBar* browserToolbar_ = nullptr;
     QAction* previousWindowAction_ = nullptr;

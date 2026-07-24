@@ -6,8 +6,29 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia LinguistTools)
 find_package(Threads REQUIRED)
+
+# ---------------------------------------------------------------------------
+# 翻译：用 Qt6 LinguistTools/lrelease 把 native/i18n/*.ts 编译为 .qm。
+# 仅 stable + test locale（zh_CN/en_US/pseudo）产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
+# bf_app 构建前生成；install 只安装 .qm，不安装 .ts。Qt 基础翻译按可用性部署。
+# ---------------------------------------------------------------------------
+set(BF_I18N_TS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/i18n")
+set(BF_I18N_QM_DIR "${CMAKE_CURRENT_BINARY_DIR}/i18n")
+set(BF_I18N_LOCALES zh_CN en_US pseudo)
+set(BF_I18N_TS_FILES)
+foreach(_loc ${BF_I18N_LOCALES})
+    list(APPEND BF_I18N_TS_FILES "${BF_I18N_TS_DIR}/bf_app_${_loc}.ts")
+endforeach()
+# qt_add_lrelease 创建 lrelease 目标并把 .qm 写入 BF_I18N_QM_DIR。
+# 仅 stable + pseudo 产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
+qt_add_lrelease(
+    LRELEASE_TARGET bf_i18n_qm
+    QM_OUTPUT_DIRECTORY "${BF_I18N_QM_DIR}"
+    QM_FILES_OUTPUT_VARIABLE BF_I18N_QM_FILES
+    TS_FILES ${BF_I18N_TS_FILES}
+)
 
 # ---------------------------------------------------------------------------
 # License configuration.
@@ -120,6 +141,7 @@ add_executable(bf_app
 )
 target_include_directories(bf_app PRIVATE src)
 target_link_libraries(bf_app PRIVATE bf_core)
+add_dependencies(bf_app bf_i18n_qm)
 
 # ---------------------------------------------------------------------------
 # bf_spike: Spike analysis executable (next-generation product line). Reuses
@@ -139,6 +161,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/app/spike_main.cpp")
     add_executable(bf_spike ${BF_SPIKE_SOURCES})
     target_include_directories(bf_spike PRIVATE src)
     target_link_libraries(bf_spike PRIVATE bf_core)
+    add_dependencies(bf_spike bf_i18n_qm)
 endif()
 
 add_executable(bf_license_smoke
@@ -208,6 +231,7 @@ add_executable(i18n_locale_format_test src/i18n/i18n_locale_format_test.cpp)
 target_include_directories(i18n_locale_format_test PRIVATE src)
 target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(i18n_locale_format_test PRIVATE bf_core)
+add_dependencies(i18n_locale_format_test bf_i18n_qm)
 
 add_executable(processing_view_state_test src/controller/processing_view_state_test.cpp)
 target_include_directories(processing_view_state_test PRIVATE src)
@@ -237,10 +261,12 @@ install(FILES
     DESTINATION contracts
 )
 
-# i18n .ts sources (the runtime reads .ts directly; no lrelease .qm step).
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/i18n/
+# i18n .qm：发布产物只安装已验收的 stable locale；pseudo 仅留在构建目录供测试。
+# 运行时从 BF_RESOURCE_ROOT/应用目录/repo root 下的 i18n/bf_app_<locale>.qm 加载。
+install(FILES
+    "${BF_I18N_QM_DIR}/bf_app_zh_CN.qm"
+    "${BF_I18N_QM_DIR}/bf_app_en_US.qm"
     DESTINATION i18n
-    FILES_MATCHING PATTERN "*.ts"
 )
 
 # Legal assets.

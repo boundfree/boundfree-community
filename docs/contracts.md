@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-07-08
+last_updated: 2026-07-24
 ---
 
 # 基础契约
@@ -159,16 +159,21 @@ M7 扩展：`ipc.invalid_frame`、`record.invalid_state`、`record.session_not_f
 
 ## i18n Contract
 
-i18n 使用 Qt Linguist `.ts/.qm`。v1 stable 必达语言为：
+i18n 采用 Qt6 Linguist `.ts/.qm` 双轨制：
+
+- `.ts` 仅为翻译源文件（开发期维护、静态检查、lrelease 输入），**不作为运行时资产**，不进入发布包。
+- `.qm` 是唯一运行时翻译资产，由 CMake `qt_add_lrelease` 在构建期从 `.ts` 编译，`cmake --install` 安装到 `i18n/`。运行时缺失 `.qm` 即失败，**不回退 `.ts`**。
+
+v1 stable 必达语言（stable 用户菜单仅暴露这两项）：
 
 - `zh_CN`
 - `en_US`
 
-开发和静态检查保留：
+仅测试用、不进 stable 用户菜单、不进发布包但保留 `.ts` 源以供构建：
 
 - `pseudo`
 
-以下 locale 文件可继续保留，用于架构扩展和 key 完整性检查，但不作为 v1 stable 验收项：
+以下 locale 保留 `.ts` 源文件用于架构扩展和 key 完整性检查，但不产出 `.qm`、不进发布包、不作为 stable 验收项：
 
 - `zh_TW`
 - `ja_JP`
@@ -177,13 +182,36 @@ i18n 使用 Qt Linguist `.ts/.qm`。v1 stable 必达语言为：
 - `fr_FR`
 - `es_ES`
 
-M1-A 实际验证 `zh_CN`、`en_US`、`pseudo`，其他目标语言保持文件结构和 key 完整性。
+构建期仅对 `zh_CN`、`en_US`、`pseudo` 执行 lrelease 产出 `.qm`；其余 locale 不产出 `.qm`。
+
+资源查找顺序（`.qm` 必须命中其一，缺失即失败）：
+
+1. `$BF_RESOURCE_ROOT/i18n/bf_app_<locale>.qm`
+2. `<应用可执行目录>/i18n/bf_app_<locale>.qm`（发布布局：stage 根即应用目录）
+3. `<repoRoot>/native/i18n/bf_app_<locale>.qm`（开发构建产物，与 CMake lrelease 输出一致）
+4. `<repoRoot>/i18n/bf_app_<locale>.qm`（向后兼容布局）
+
+Qt 基础翻译（`qtbase_*.qm`）按同一顺序可用即安装，缺失不视为错误；发布包随附 `qtbase_zh_CN.qm`（强制）与 `qtbase_en.qm`（按存在复制，en_US 运行通常无需 translator）。
+
+应用翻译 context 固定为 `app`；`I18nService::text(key, params)` 对该 context 调用 `QTranslator::translate`，缺失 key 返回 key 本身，并对 `params` 做 `{name}` 占位符替换。
+
+启动优先级（不持久化的解析，仅决定本次运行语言）：
+
+1. CLI 覆盖（`--language`，仅作用于本次运行，不写 QSettings）
+2. 已保存设置（仅当属 stable locale 才采纳）
+3. `QLocale::system()` 对 stable 集合的最佳匹配
+4. 兜底 `zh_CN`
+
+持久化语义：
+
+- CLI 覆盖不持久化。
+- 用户菜单切换语言经 `setLocale` 持久化到 QSettings（仅 stable locale 可写入）。
+- `loadLocale` 为非持久化加载（CLI、启动初始化、测试、pseudo），不写 QSettings。
 
 规则：
 
 - 默认语言为 `zh_CN`。
-- 启动时优先读取用户设置；没有设置时匹配系统语言；无法匹配则回退 `zh_CN`。
-- 常驻控件必须支持 `retranslateUi()`。
+- 常驻控件必须支持 `retranslateUi()`，并在 `languageChanged` 信号下重译。
 - 错误文案 key 使用 `error.<code>`，例如 `error.protocol.unknown_method`。
 - 翻译占位符必须与错误码参数一致。
 - 不翻译通道名、文件路径、用户标注、实验备注、CSV/HDF5/EDF schema、IPC method、内部枚举。

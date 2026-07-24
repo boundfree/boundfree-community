@@ -69,6 +69,10 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     buildLanguageMenu();
     buildViewMenu();
     buildThemeMenu();
+    // 订阅 I18nService 语言切换信号，统一刷新常驻 UI；避免在各回调里手工 retranslate。
+    connect(i18n_, &I18nService::languageChanged, this, [this]() {
+        retranslateUi();
+    });
     recordUiTimer_.setInterval(500);
     connect(&recordUiTimer_, &QTimer::timeout, this, [this]() {
         if (recordController_ == nullptr || !recordController_->isActive()) return;
@@ -113,15 +117,31 @@ void MainWindow::buildFileMenu() {
 
 void MainWindow::buildLanguageMenu() {
     languageMenu_ = menuBar()->addMenu(i18n_->text("app.menu.language"));
+    // 语言选项互斥；stable 菜单仅展示 supportedLocales（zh_CN/en_US），
+    // pseudo 与未审校 locale 不在此列表，不暴露给用户。
+    languageGroup_ = new QActionGroup(this);
+    languageGroup_->setExclusive(true);
     const QStringList locales = i18n_->supportedLocales();
     for (const QString& locale : locales) {
         auto* action = languageMenu_->addAction(QString());
         action->setCheckable(true);
+        action->setActionGroup(languageGroup_);
         action->setData(locale);
+        // 用户菜单切换走持久化 setLocale；失败时保留当前语言，不产生半切换状态。
+        // languageChanged 信号会统一触发 retranslateUi，此处不再手工刷新。
         QObject::connect(action, &QAction::triggered, this, [this, locale]() {
+            if (locale == i18n_->locale()) {
+                return;
+            }
             QString error;
-            if (i18n_->loadLocale(locale, &error)) {
-                retranslateUi();
+            if (!i18n_->setLocale(locale, &error)) {
+                // 切换失败：恢复原选中项，避免勾选状态与实际语言不一致。
+                QSignalBlocker block(languageGroup_);
+                for (QAction* a : languageActions_) {
+                    a->setChecked(a->data().toString() == i18n_->locale());
+                }
+                qWarning("语言切换失败 locale=%s err=%s",
+                         qPrintable(locale), qPrintable(error));
             }
         });
         languageActions_.append(action);

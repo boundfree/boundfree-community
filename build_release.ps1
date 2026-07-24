@@ -7,8 +7,8 @@
     1. CMake MSVC Release build of the native app (bf_app.exe)
     2. PyInstaller freeze of the Python sidecar (boundfree_sidecar.exe)
     3. CMake install into release\stage\BoundFreeEEG
-    4. windeployqt over the staged bf_app.exe
-    5. Copy frozen sidecar + legal/version/contracts/i18n assets into stage
+    4. windeployqt over the staged bf_app.exe + precise Qt base translations
+    5. Copy frozen sidecar + legal/version/contracts into stage; assert app .qm
     6. Code signing of staged binaries (bf_app.exe + sidecar exe) — REQUIRED
        for stable/rc, OPTIONAL for dev/alpha/beta
     7. Inno Setup compile (ISCC) producing dist\BoundFreeEEG_Setup_<ver>.exe
@@ -180,16 +180,42 @@ Write-Step "3/8 CMake install -> $StageDir"
 if (Test-Path $StageDir) { Remove-Item -Recurse -Force $StageDir }
 Invoke-Native "cmake.exe" @("--install", $BuildDir, "--config", $Configuration, "--prefix", $StageDir)
 
-# 4. windeployqt
-Write-Step "4/8 windeployqt"
+# 4. windeployqt + Qt base translations
+Write-Step "4/8 windeployqt + Qt base translations"
 $WinDeployQt = Join-Path $QtRoot "bin\windeployqt.exe"
 if (-not (Test-Path $WinDeployQt)) {
     throw "windeployqt not found at: $WinDeployQt"
 }
 Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
 
-# 5. Stage sidecar + non-CMake assets
-Write-Step "5/8 Stage sidecar + version/contracts/i18n/legal"
+# Qt 基础翻译（qtbase 等）：windeployqt --no-translations 避免复制全部 Qt locale，
+# 这里精确复制 stable 语言所需的基础翻译。Qt6 约定 zh_CN 使用 qtbase_zh_CN.qm，
+# en_US 运行通常无需 translator，qtbase_en.qm 按存在即复制（不强求）。
+# zh_CN 缺失即失败：Qt 标准控件本地化是发布必备资产。
+$QtTranslationsSrc = Join-Path $QtRoot "translations"
+$QtTranslationsDst = Join-Path $StageDir "translations"
+if (-not (Test-Path $QtTranslationsSrc)) {
+    throw "Qt translations dir not found: $QtTranslationsSrc (expected under QtRoot)"
+}
+New-Item -ItemType Directory -Force -Path $QtTranslationsDst | Out-Null
+
+# qtbase_zh_CN.qm 为发布强制资产（zh_CN 标准控件本地化）。
+$QtBaseZhCn = Join-Path $QtTranslationsSrc "qtbase_zh_CN.qm"
+if (-not (Test-Path $QtBaseZhCn)) {
+    throw "Qt base translation missing: $QtBaseZhCn (required for zh_CN)"
+}
+Copy-Item $QtBaseZhCn (Join-Path $QtTranslationsDst "qtbase_zh_CN.qm") -Force
+
+# qtbase_en.qm 为可选：存在即复制（供 en_US 控件本地化），缺失不阻断发布。
+$QtBaseEn = Join-Path $QtTranslationsSrc "qtbase_en.qm"
+if (Test-Path $QtBaseEn) {
+    Copy-Item $QtBaseEn (Join-Path $QtTranslationsDst "qtbase_en_US.qm") -Force
+} else {
+    Write-Host "qtbase_en.qm not present; en_US 运行不依赖 Qt base translator" -ForegroundColor Yellow
+}
+
+# 5. Stage sidecar + version/contracts/legal; assert app .qm
+Write-Step "5/8 Stage sidecar + version/contracts/legal; assert app .qm"
 $SidecarSrc = Join-Path $RepoRoot (Join-Path "release" "sidecar-dist" | Join-Path -ChildPath "boundfree_sidecar")
 $SidecarDst = Join-Path $StageDir "sidecar"
 if (-not (Test-Path $SidecarSrc)) {
@@ -203,10 +229,15 @@ Copy-Item (Join-Path $RepoRoot "version.json") $StageDir -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $StageDir "contracts") | Out-Null
 Copy-Item (Join-Path $RepoRoot "contracts\error_codes.json") (Join-Path $StageDir "contracts") -Force
 
-# i18n (.ts) into stage\i18n
+# i18n 应用 .qm：由 CMake install 产出（native/i18n/*.ts 经 lrelease 编译为
+# bf_app_<locale>.qm，install 到 stage/i18n/）。stage 不再复制 .ts；.qm 缺失即失败。
 $I18nDst = Join-Path $StageDir "i18n"
-New-Item -ItemType Directory -Force -Path $I18nDst | Out-Null
-Copy-Item (Join-Path $NativeDir "i18n\*.ts") $I18nDst -Force
+foreach ($locale in @("zh_CN", "en_US")) {
+    $appQm = Join-Path $I18nDst "bf_app_$locale.qm"
+    if (-not (Test-Path $appQm)) {
+        throw "App translation missing: $appQm (CMake lrelease/install should produce bf_app_$locale.qm)"
+    }
+}
 
 # legal assets
 $LegalDst = Join-Path $StageDir "legal"
