@@ -39,6 +39,7 @@ AppPublisher={#BoundFreePublisher}
 AppVerName={#BoundFreeAppName} {#BoundFreeVersion}
 PrivilegesRequired=admin
 SourceDir=..
+SetupIconFile=native\assets\branding\BoundFree_app_icon.ico
 
 DefaultDirName={autopf}\BoundFree EEG
 DefaultGroupName={#BoundFreeAppName}

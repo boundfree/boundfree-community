@@ -202,6 +202,57 @@ def check_iss() -> CheckResult:
 
 
 # ---------------------------------------------------------------------------
+# Branding assets
+# ---------------------------------------------------------------------------
+
+def check_branding_assets() -> CheckResult:
+    name = "native branding assets and packaging references"
+    branding = REPO_ROOT / "native" / "assets" / "branding"
+    required = (
+        "BoundFree_LOGO_WithText.png",
+        "BoundFree_LOGO_NoText.png",
+        "BoundFree_app_icon.png",
+        "BoundFree_app_icon.ico",
+    )
+    missing = [asset for asset in required if not (branding / asset).is_file()]
+    if missing:
+        return CheckResult(name, False, f"missing branding assets: {missing}")
+
+    qrc = REPO_ROOT / "native" / "resources" / "branding.qrc"
+    rc = REPO_ROOT / "native" / "resources" / "boundfree_app.rc"
+    cmake = REPO_ROOT / "native" / "CMakeLists.txt"
+    iss = REPO_ROOT / "installer" / "BoundFreeEEG.iss"
+    required_files = (qrc, rc, cmake, iss)
+    absent = [str(candidate.relative_to(REPO_ROOT)) for candidate in required_files if not candidate.is_file()]
+    if absent:
+        return CheckResult(name, False, f"missing branding configuration: {absent}")
+
+    qrc_text = _read_text(qrc)
+    rc_text = _read_text(rc)
+    cmake_text = _read_text(cmake)
+    iss_text = _read_text(iss)
+    failures: list[str] = []
+    for asset in ("BoundFree_LOGO_WithText.png", "BoundFree_LOGO_NoText.png", "BoundFree_app_icon.png"):
+        if asset not in qrc_text:
+            failures.append(f"branding.qrc does not embed {asset}")
+    if "BoundFree_app_icon.ico" not in rc_text:
+        failures.append("Windows resource file does not reference application ICO")
+    if "target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})" not in cmake_text:
+        failures.append("bf_app does not embed branding qrc")
+    if "target_sources(bf_spike PRIVATE ${BF_BRANDING_QRC})" not in cmake_text:
+        failures.append("bf_spike does not embed branding qrc")
+    if "target_sources(bf_app PRIVATE ${BF_WINDOWS_APP_ICON_RC})" not in cmake_text:
+        failures.append("bf_app does not embed Windows application icon")
+    if "target_sources(bf_spike PRIVATE ${BF_WINDOWS_APP_ICON_RC})" not in cmake_text:
+        failures.append("bf_spike does not embed Windows application icon")
+    if not re.search(r"^SetupIconFile\s*=\s*native\\assets\\branding\\BoundFree_app_icon\.ico\s*$", iss_text, re.MULTILINE):
+        failures.append("SetupIconFile must reference the application ICO")
+    if failures:
+        return CheckResult(name, False, "; ".join(failures))
+    return CheckResult(name, True, "embedded in both apps and referenced by Windows installer")
+
+
+# ---------------------------------------------------------------------------
 # Legal assets
 # ---------------------------------------------------------------------------
 
@@ -399,6 +450,7 @@ CHECKS = (
     check_version_json,
     check_sidecar_spec,
     check_iss,
+    check_branding_assets,
     check_legal,
     check_no_private_keys,
     check_i18n_release,
