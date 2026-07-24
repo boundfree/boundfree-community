@@ -204,6 +204,11 @@ add_executable(collapsible_panel_test src/ui/collapsible_panel_test.cpp)
 target_include_directories(collapsible_panel_test PRIVATE src)
 target_link_libraries(collapsible_panel_test PRIVATE bf_core)
 
+add_executable(i18n_locale_format_test src/i18n/i18n_locale_format_test.cpp)
+target_include_directories(i18n_locale_format_test PRIVATE src)
+target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(i18n_locale_format_test PRIVATE bf_core)
+
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
 target_include_directories(spike_golden_test PRIVATE src third_party)
 
