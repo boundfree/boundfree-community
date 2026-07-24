@@ -168,11 +168,15 @@ int main(int argc, char** argv) {
                 const QString title = menuAction->text();
                 const QRect geom = window.menuBar()->actionGeometry(menuAction);
                 const bool visibleWidth = geom.width() >= 24;
-                hasFileMenu = hasFileMenu || (title == i18n.text("app.menu.file") && visibleWidth);
-                hasLanguageMenu = hasLanguageMenu || (title == i18n.text("app.menu.language") && visibleWidth);
-                hasViewMenu = hasViewMenu || (title == i18n.text("app.menu.view") && visibleWidth);
-                hasThemeMenu = hasThemeMenu || (title == i18n.text("app.menu.theme") && visibleWidth);
-                menuGeometryOk = menuGeometryOk && !title.trimmed().isEmpty() && visibleWidth;
+                const bool hitTestOk = window.menuBar()->actionAt(geom.center()) == menuAction;
+                const bool popupBound = menuAction->menu() != nullptr;
+                const bool interactive = menuAction->isEnabled() && menuAction->isVisible()
+                    && visibleWidth && hitTestOk && popupBound;
+                hasFileMenu = hasFileMenu || (title == i18n.text("app.menu.file") && interactive);
+                hasLanguageMenu = hasLanguageMenu || (title == i18n.text("app.menu.language") && interactive);
+                hasViewMenu = hasViewMenu || (title == i18n.text("app.menu.view") && interactive);
+                hasThemeMenu = hasThemeMenu || (title == i18n.text("app.menu.theme") && interactive);
+                menuGeometryOk = menuGeometryOk && !title.trimmed().isEmpty() && interactive;
             }
             if (light == nullptr || dark == nullptr || channels == nullptr || !hasOpen || !hasVideo || !hasQuit
                 || !hasFileMenu || !hasLanguageMenu || !hasViewMenu || !hasThemeMenu || !menuGeometryOk) {

@@ -278,29 +278,26 @@ void MainWindow::applyTheme(bool dark) {
         }
         child->setPalette(palette);
     }
-    // Rebuild the top-level action row after stylesheet changes. QMenu::setTitle
-    // alone can leave zero-width action geometry for menus that were initially
-    // empty on Windows. Setting menuAction text directly and re-adding all four
-    // actions makes the visible row deterministic.
+    // Preserve the original QMenuBar actions and their popup bindings. Clearing
+    // and re-adding existing QMenu objects makes some Windows styles paint the
+    // actions but lose mouse activation for the first items.
     if (menuBar() != nullptr && i18n_ != nullptr && fileMenu_ != nullptr
         && languageMenu_ != nullptr && viewMenu_ != nullptr && themeMenu_ != nullptr) {
         const QString fileTitle = i18n_->text("app.menu.file");
         const QString languageTitle = i18n_->text("app.menu.language");
         const QString viewTitle = i18n_->text("app.menu.view");
         const QString themeTitle = i18n_->text("app.menu.theme");
-        fileMenu_->setTitle(fileTitle);
-        languageMenu_->setTitle(languageTitle);
-        viewMenu_->setTitle(viewTitle);
-        themeMenu_->setTitle(themeTitle);
-        fileMenu_->menuAction()->setText(fileTitle);
-        languageMenu_->menuAction()->setText(languageTitle);
-        viewMenu_->menuAction()->setText(viewTitle);
-        themeMenu_->menuAction()->setText(themeTitle);
-        menuBar()->clear();
-        menuBar()->addMenu(fileMenu_);
-        menuBar()->addMenu(languageMenu_);
-        menuBar()->addMenu(viewMenu_);
-        menuBar()->addMenu(themeMenu_);
+        const auto updateMenuAction = [](QMenu* menu, const QString& title) {
+            menu->setTitle(title);
+            QAction* action = menu->menuAction();
+            action->setText(title);
+            action->setVisible(true);
+            action->setEnabled(true);
+        };
+        updateMenuAction(fileMenu_, fileTitle);
+        updateMenuAction(languageMenu_, languageTitle);
+        updateMenuAction(viewMenu_, viewTitle);
+        updateMenuAction(themeMenu_, themeTitle);
         menuBar()->setPalette(palette);
         menuBar()->updateGeometry();
         menuBar()->update();
