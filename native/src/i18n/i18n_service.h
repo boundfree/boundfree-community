@@ -28,7 +28,7 @@ class I18nService : public QObject {
     Q_OBJECT
 
 public:
-    // 稳定用户菜单仅暴露 zh_CN/en_US；pseudo 仅测试用，通过 loadLocale 显式加载。
+    // 稳定用户菜单暴露 zh_CN/en_US/ja_JP；pseudo 仅测试用，通过 loadLocale 显式加载。
     static const QStringList kStableLocales;
     // QSettings 兜底常量（当 QCoreApplication 未设置组织/应用名时使用）。
     static constexpr const char* kSettingsOrganization = "BoundFree";
@@ -47,7 +47,7 @@ public:
     // 失败时 translator/locale/settings 原子不变。用于 UI 语言菜单。
     bool setLocale(const QString& locale, QString* errorMessage = nullptr);
 
-    // 稳定用户菜单集合（zh_CN/en_US）。pseudo/其余 locale 不在其中。
+    // 稳定用户菜单集合（zh_CN/en_US/ja_JP）。pseudo/其余 locale 不在其中。
     QStringList supportedLocales() const;
 
     // 校验 locale 是否属于 stable 集合（大小写敏感，与 .ts/.qm 文件名一致）。

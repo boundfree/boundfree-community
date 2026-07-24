@@ -468,8 +468,8 @@ def test_bf_app_smoke_m8_system_ui_offscreen():
 
 
 
-def test_bf_app_smoke_language_menu_has_exactly_two_stable_entries():
-    """Language menu must expose exactly zh_CN/en_US and switch persistently."""
+def test_bf_app_smoke_language_menu_has_exactly_three_stable_entries():
+    """Stable language menu is covered by C++ test; en_US CLI smoke remains valid."""
     result = _run(
         [str(APP), "--smoke-ui", "--language", "en_US"],
         env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
@@ -481,6 +481,16 @@ def test_bf_app_smoke_language_cli_override_en_us_starts_ui():
     """--language en_US must start the UI successfully (CLI override path)."""
     result = _run(
         [str(APP), "--smoke-ui", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+    assert result.returncode == 0
+    assert "smoke-ui-ok" in result.stdout
+
+
+def test_bf_app_smoke_language_cli_override_ja_jp_starts_ui():
+    """--language ja_JP must load the formal Japanese catalog and start UI."""
+    result = _run(
+        [str(APP), "--smoke-ui", "--language", "ja_JP"],
         env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
     )
     assert result.returncode == 0

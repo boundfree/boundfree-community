@@ -33,6 +33,7 @@ QString settingsApplication() {
 const QStringList I18nService::kStableLocales = {
     QStringLiteral("zh_CN"),
     QStringLiteral("en_US"),
+    QStringLiteral("ja_JP"),
 };
 
 I18nService::I18nService(QString repoRoot, QObject* parent)
@@ -119,28 +120,45 @@ bool I18nService::loadLocale(const QString& locale, QString* errorMessage) {
         return false;
     }
 
-    // Qt 基础翻译：同目录下 qtbase_<locale>.qm 可用即安装。pseudo 不安装 Qt 基础翻译。
+    // Qt 基础翻译：qtbase_<locale>.qm 可用即安装。pseudo 不安装 Qt 基础翻译。
+    // 对带 territory 的 locale（如 ja_JP）优先查 qtbase_<locale>.qm（发布 stage 名为
+    // qtbase_ja_JP.qm），未命中再回退 Qt 原始 language-only 名 qtbase_<lang>.qm
+    // （如 qtbase_ja.qm）。zh_CN/en_US 仍以 qtbase_<locale>.qm 为主，language-only 为兜底。
     std::unique_ptr<QTranslator> newQt;
     if (locale != QLatin1String(kPseudoLocale)) {
         auto probe = std::make_unique<QTranslator>();
-        const QString qtFile = QStringLiteral("qtbase_%1.qm").arg(locale);
-        QStringList qtCandidates;
+        // 候选文件名：先完整 locale，再 language-only（territory locale 的发布/原始回退）。
+        const QString lang = locale.section(QLatin1Char('_'), 0, 0);
+        QStringList qtFileNames;
+        qtFileNames.append(QStringLiteral("qtbase_%1.qm").arg(locale));
+        if (!lang.isEmpty() && lang != locale) {
+            qtFileNames.append(QStringLiteral("qtbase_%1.qm").arg(lang));
+        }
+        // 搜索目录基：BF_RESOURCE_ROOT/i18n、应用目录/i18n、应用目录/translations、
+        // repoRoot/native/i18n、repoRoot/i18n。每个目录按上述文件名顺序尝试。
+        QStringList qtDirs;
         const QString envRoot = qEnvironmentVariable("BF_RESOURCE_ROOT");
         if (!envRoot.isEmpty()) {
-            qtCandidates.append(QDir(envRoot).filePath(QStringLiteral("i18n/%1").arg(qtFile)));
+            qtDirs.append(QDir(envRoot).filePath(QStringLiteral("i18n")));
         }
         const QString appDir = QCoreApplication::applicationDirPath();
         if (!appDir.isEmpty()) {
-            qtCandidates.append(QDir(appDir).filePath(QStringLiteral("i18n/%1").arg(qtFile)));
-            qtCandidates.append(QDir(appDir).filePath(QStringLiteral("translations/%1").arg(qtFile)));
+            qtDirs.append(QDir(appDir).filePath(QStringLiteral("i18n")));
+            qtDirs.append(QDir(appDir).filePath(QStringLiteral("translations")));
         }
         if (!repoRoot_.isEmpty()) {
-            qtCandidates.append(QDir(repoRoot_).filePath(QStringLiteral("native/i18n/%1").arg(qtFile)));
-            qtCandidates.append(QDir(repoRoot_).filePath(QStringLiteral("i18n/%1").arg(qtFile)));
+            qtDirs.append(QDir(repoRoot_).filePath(QStringLiteral("native/i18n")));
+            qtDirs.append(QDir(repoRoot_).filePath(QStringLiteral("i18n")));
         }
-        for (const QString& path : qtCandidates) {
-            if (QFile::exists(path) && probe->load(path)) {
-                newQt = std::move(probe);
+        for (const QString& dir : qtDirs) {
+            for (const QString& fn : qtFileNames) {
+                const QString path = QDir(dir).filePath(fn);
+                if (QFile::exists(path) && probe->load(path)) {
+                    newQt = std::move(probe);
+                    break;
+                }
+            }
+            if (newQt) {
                 break;
             }
         }
@@ -259,13 +277,16 @@ QString I18nService::bestMatchForSystemLocale() {
     if (kStableLocales.contains(name)) {
         return name;
     }
-    // 语言部分匹配：zh* -> zh_CN, en* -> en_US。
+    // 语言部分匹配：zh* -> zh_CN, en* -> en_US, ja* -> ja_JP。
     const QString lang = name.section(QLatin1Char('_'), 0, 0).toLower();
     if (lang == QLatin1String("zh")) {
         return QStringLiteral("zh_CN");
     }
     if (lang == QLatin1String("en")) {
         return QStringLiteral("en_US");
+    }
+    if (lang == QLatin1String("ja")) {
+        return QStringLiteral("ja_JP");
     }
     return {};
 }

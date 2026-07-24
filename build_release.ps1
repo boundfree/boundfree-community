@@ -189,9 +189,10 @@ if (-not (Test-Path $WinDeployQt)) {
 Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
 
 # Qt 基础翻译（qtbase 等）：windeployqt --no-translations 避免复制全部 Qt locale，
-# 这里精确复制 stable 语言所需的基础翻译。Qt6 约定 zh_CN 使用 qtbase_zh_CN.qm，
-# en_US 运行通常无需 translator，qtbase_en.qm 按存在即复制（不强求）。
-# zh_CN 缺失即失败：Qt 标准控件本地化是发布必备资产。
+# 这里精确复制 stable 语言所需的基础翻译。Qt6 约定 zh_CN 使用 qtbase_zh_CN.qm；
+# ja_JP 的 Qt 基础翻译 Qt 仅提供 language-only 的 qtbase_ja.qm，发布重命名为
+# qtbase_ja_JP.qm 以匹配运行时按 <locale> 查找的路径；en_US 运行通常无需 translator，
+# qtbase_en.qm 按存在即复制（不强求）。zh_CN/ja_JP 缺失即失败：Qt 标准控件本地化是发布必备资产。
 $QtTranslationsSrc = Join-Path $QtRoot "translations"
 $QtTranslationsDst = Join-Path $StageDir "translations"
 if (-not (Test-Path $QtTranslationsSrc)) {
@@ -205,6 +206,13 @@ if (-not (Test-Path $QtBaseZhCn)) {
     throw "Qt base translation missing: $QtBaseZhCn (required for zh_CN)"
 }
 Copy-Item $QtBaseZhCn (Join-Path $QtTranslationsDst "qtbase_zh_CN.qm") -Force
+# qtbase_ja.qm 为发布强制资产（ja_JP 标准控件本地化）。Qt6 仅提供 language-only 的
+# qtbase_ja.qm，这里重命名为 qtbase_ja_JP.qm，与应用运行时 qtbase_<locale> 查找路径一致。
+$QtBaseJa = Join-Path $QtTranslationsSrc "qtbase_ja.qm"
+if (-not (Test-Path $QtBaseJa)) {
+    throw "Qt base translation missing: $QtBaseJa (required for ja_JP)"
+}
+Copy-Item $QtBaseJa (Join-Path $QtTranslationsDst "qtbase_ja_JP.qm") -Force
 
 # qtbase_en.qm 为可选：存在即复制（供 en_US 控件本地化），缺失不阻断发布。
 $QtBaseEn = Join-Path $QtTranslationsSrc "qtbase_en.qm"
@@ -232,7 +240,7 @@ Copy-Item (Join-Path $RepoRoot "contracts\error_codes.json") (Join-Path $StageDi
 # i18n 应用 .qm：由 CMake install 产出（native/i18n/*.ts 经 lrelease 编译为
 # bf_app_<locale>.qm，install 到 stage/i18n/）。stage 不再复制 .ts；.qm 缺失即失败。
 $I18nDst = Join-Path $StageDir "i18n"
-foreach ($locale in @("zh_CN", "en_US")) {
+foreach ($locale in @("zh_CN", "en_US", "ja_JP")) {
     $appQm = Join-Path $I18nDst "bf_app_$locale.qm"
     if (-not (Test-Path $appQm)) {
         throw "App translation missing: $appQm (CMake lrelease/install should produce bf_app_$locale.qm)"

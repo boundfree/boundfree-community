@@ -11,12 +11,12 @@ find_package(Threads REQUIRED)
 
 # ---------------------------------------------------------------------------
 # 翻译：用 Qt6 LinguistTools/lrelease 把 native/i18n/*.ts 编译为 .qm。
-# 仅 stable + test locale（zh_CN/en_US/pseudo）产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
+# 仅 stable + test locale（zh_CN/en_US/ja_JP/pseudo）产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
 # bf_app 构建前生成；install 只安装 .qm，不安装 .ts。Qt 基础翻译按可用性部署。
 # ---------------------------------------------------------------------------
 set(BF_I18N_TS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/i18n")
 set(BF_I18N_QM_DIR "${CMAKE_CURRENT_BINARY_DIR}/i18n")
-set(BF_I18N_LOCALES zh_CN en_US pseudo)
+set(BF_I18N_LOCALES zh_CN en_US ja_JP pseudo)
 set(BF_I18N_TS_FILES)
 foreach(_loc ${BF_I18N_LOCALES})
     set(_ts_file "${BF_I18N_TS_DIR}/bf_app_${_loc}.ts")
@@ -288,6 +288,7 @@ install(FILES
 install(FILES
     "${BF_I18N_QM_DIR}/bf_app_zh_CN.qm"
     "${BF_I18N_QM_DIR}/bf_app_en_US.qm"
+    "${BF_I18N_QM_DIR}/bf_app_ja_JP.qm"
     DESTINATION i18n
 )
 

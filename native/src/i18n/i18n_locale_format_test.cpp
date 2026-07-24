@@ -195,31 +195,49 @@ int runTests(const QString& repoRoot) {
         }
     }
 
-    // ----- supportedLocales: stable menu only {zh_CN, en_US} --------------
+    // ----- supportedLocales: stable menu only {zh_CN, en_US, ja_JP} ------
     {
         bf::I18nService svc(repoRoot);
         const QStringList locales = svc.supportedLocales();
-        if (locales.size() != 2 || !locales.contains(QStringLiteral("zh_CN"))
-            || !locales.contains(QStringLiteral("en_US"))) {
-            std::cerr << "FAIL supportedLocales expected exactly {zh_CN, en_US}, got: "
+        if (locales.size() != 3 || !locales.contains(QStringLiteral("zh_CN"))
+            || !locales.contains(QStringLiteral("en_US"))
+            || !locales.contains(QStringLiteral("ja_JP"))) {
+            std::cerr << "FAIL supportedLocales expected exactly {zh_CN, en_US, ja_JP}, got: "
                       << locales.join(QStringLiteral(", ")).toStdString() << "\n";
             ++failures;
         } else {
-            std::cout << "PASS supportedLocales == {zh_CN, en_US}\n";
+            std::cout << "PASS supportedLocales == {zh_CN, en_US, ja_JP}\n";
         }
 
-        // isStableLocale: zh_CN/en_US true, pseudo/de_DE/fr_FR false.
-        if (!svc.isStableLocale(QStringLiteral("zh_CN")) || !svc.isStableLocale(QStringLiteral("en_US"))) {
-            std::cerr << "FAIL isStableLocale zh_CN/en_US should be true\n";
+        // isStableLocale: zh_CN/en_US/ja_JP true, pseudo/de_DE/fr_FR false.
+        if (!svc.isStableLocale(QStringLiteral("zh_CN")) || !svc.isStableLocale(QStringLiteral("en_US"))
+            || !svc.isStableLocale(QStringLiteral("ja_JP"))) {
+            std::cerr << "FAIL isStableLocale zh_CN/en_US/ja_JP should be true\n";
             ++failures;
         } else {
-            std::cout << "PASS isStableLocale zh_CN/en_US true\n";
+            std::cout << "PASS isStableLocale zh_CN/en_US/ja_JP true\n";
         }
         if (svc.isStableLocale(QStringLiteral("pseudo")) || svc.isStableLocale(QStringLiteral("de_DE"))) {
             std::cerr << "FAIL isStableLocale pseudo/de_DE should be false\n";
             ++failures;
         } else {
             std::cout << "PASS isStableLocale pseudo/de_DE false\n";
+        }
+    }
+
+    // ----- Japanese stable catalog -----------------------------------------
+    {
+        bf::I18nService svc(repoRoot);
+        if (!svc.loadLocale(QStringLiteral("ja_JP"))) {
+            std::cerr << "FAIL loadLocale ja_JP failed\n";
+            ++failures;
+        } else if (svc.locale() != QStringLiteral("ja_JP")
+                   || svc.qlocale().language() != QLocale::Japanese
+                   || svc.text(QStringLiteral("app.menu.file")) != QStringLiteral("ファイル")) {
+            std::cerr << "FAIL Japanese catalog did not load expected locale/text\n";
+            ++failures;
+        } else {
+            std::cout << "PASS Japanese stable catalog -> ファイル\n";
         }
     }
 
@@ -374,6 +392,28 @@ int runTests(const QString& repoRoot) {
                 ++failures;
             } else {
                 std::cout << "PASS setLocale pseudo did not change saved language\n";
+            }
+        }
+
+        // setLocale ja_JP must persist; subsequent non-persistent loads do not overwrite it.
+        if (!svc.setLocale(QStringLiteral("ja_JP"))) {
+            std::cerr << "FAIL setLocale ja_JP returned false\n";
+            ++failures;
+        } else {
+            QSettings s;
+            const QString saved = s.value(QStringLiteral("language")).toString();
+            if (saved != QStringLiteral("ja_JP")) {
+                std::cerr << "FAIL setLocale ja_JP did not persist (saved=\""
+                          << saved.toStdString() << "\")\n";
+                ++failures;
+            } else {
+                svc.loadLocale(QStringLiteral("zh_CN"));
+                if (s.value(QStringLiteral("language")).toString() != QStringLiteral("ja_JP")) {
+                    std::cerr << "FAIL non-persistent load overwrote saved ja_JP\n";
+                    ++failures;
+                } else {
+                    std::cout << "PASS setLocale ja_JP persisted; loadLocale remains non-persistent\n";
+                }
             }
         }
 
