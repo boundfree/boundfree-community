@@ -146,6 +146,16 @@ add_executable(bf_app
 target_include_directories(bf_app PRIVATE src)
 target_link_libraries(bf_app PRIVATE bf_core)
 add_dependencies(bf_app bf_i18n_qm)
+# Visual Studio 等多配置生成器把 exe 放在 <build>/<config>/；构建后把
+# 开发/测试所需 QM 邻接到 exe。install 仍只安装 stable QM。
+if(CMAKE_CONFIGURATION_TYPES)
+    add_custom_command(TARGET bf_app POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:bf_app>/i18n"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            ${BF_I18N_QM_FILES} "$<TARGET_FILE_DIR:bf_app>/i18n"
+        VERBATIM
+    )
+endif()
 
 # ---------------------------------------------------------------------------
 # bf_spike: Spike analysis executable (next-generation product line). Reuses
@@ -166,6 +176,14 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/app/spike_main.cpp")
     target_include_directories(bf_spike PRIVATE src)
     target_link_libraries(bf_spike PRIVATE bf_core)
     add_dependencies(bf_spike bf_i18n_qm)
+    if(CMAKE_CONFIGURATION_TYPES)
+        add_custom_command(TARGET bf_spike POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:bf_spike>/i18n"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                ${BF_I18N_QM_FILES} "$<TARGET_FILE_DIR:bf_spike>/i18n"
+            VERBATIM
+        )
+    endif()
 endif()
 
 add_executable(bf_license_smoke
