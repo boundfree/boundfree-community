@@ -7,6 +7,7 @@
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QEventLoop>
+#include <QIcon>
 #include <QFile>
 #include <QString>
 #include <QTextStream>
@@ -133,6 +134,7 @@ int main(int argc, char** argv) {
 
     // Default: start GUI normally.
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     bf::I18nService i18n(repoRoot);
     QString i18nError;
     i18n.loadLocale(QStringLiteral("en_US"), &i18nError);

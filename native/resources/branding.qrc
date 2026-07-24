@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/branding">
+        <file alias="logo_with_text.png">../assets/branding/BoundFree_LOGO_WithText.png</file>
+        <file alias="logo_no_text.png">../assets/branding/BoundFree_LOGO_NoText.png</file>
+        <file alias="app_icon.png">../assets/branding/BoundFree_app_icon.png</file>
+    </qresource>
+</RCC>

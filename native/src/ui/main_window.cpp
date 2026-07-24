@@ -18,8 +18,10 @@
 #include <QSignalBlocker>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QIcon>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QSpinBox>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -36,15 +38,22 @@ namespace bf {
 
 MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QString& repoRoot, QWidget* parent)
     : QMainWindow(parent), version_(version), repoRoot_(repoRoot), i18n_(i18n) {
+    setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     centralStack_ = new QStackedWidget(this);
     emptyPage_ = new QWidget(centralStack_);
     auto* emptyLayout = new QVBoxLayout(emptyPage_);
     emptyLayout->setAlignment(Qt::AlignCenter);
+    auto* logoLabel = new QLabel(emptyPage_);
+    logoLabel->setObjectName(QStringLiteral("brandLogo"));
+    logoLabel->setPixmap(QPixmap(QStringLiteral(":/branding/logo_with_text.png")).scaledToWidth(300, Qt::SmoothTransformation));
+    logoLabel->setAlignment(Qt::AlignCenter);
     centralLabel_ = new QLabel(emptyPage_);
     centralLabel_->setAlignment(Qt::AlignCenter);
     openButton_ = new QPushButton(emptyPage_);
     openButton_->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
     openButton_->setMinimumWidth(140);
+    emptyLayout->addWidget(logoLabel, 0, Qt::AlignCenter);
+    emptyLayout->addSpacing(12);
     emptyLayout->addWidget(centralLabel_, 0, Qt::AlignCenter);
     emptyLayout->addWidget(openButton_, 0, Qt::AlignCenter);
     waveformWidget_ = new WaveformWidget(this);

@@ -5,6 +5,10 @@ project(boundfree_eeg_native LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(BF_BRANDING_QRC "${CMAKE_CURRENT_SOURCE_DIR}/resources/branding.qrc")
+set(BF_WINDOWS_APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/boundfree_app.rc")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia LinguistTools)
 find_package(Threads REQUIRED)
@@ -145,6 +149,10 @@ add_executable(bf_app
 )
 target_include_directories(bf_app PRIVATE src)
 target_link_libraries(bf_app PRIVATE bf_core)
+target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})
+if(WIN32)
+    target_sources(bf_app PRIVATE ${BF_WINDOWS_APP_ICON_RC})
+endif()
 add_dependencies(bf_app bf_i18n_qm)
 # Visual Studio 等多配置生成器把 exe 放在 <build>/<config>/；构建后把
 # 开发/测试所需 QM 邻接到 exe。install 仍只安装 stable QM。
@@ -175,6 +183,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/app/spike_main.cpp")
     add_executable(bf_spike ${BF_SPIKE_SOURCES})
     target_include_directories(bf_spike PRIVATE src)
     target_link_libraries(bf_spike PRIVATE bf_core)
+    target_sources(bf_spike PRIVATE ${BF_BRANDING_QRC})
+    if(WIN32)
+        target_sources(bf_spike PRIVATE ${BF_WINDOWS_APP_ICON_RC})
+    endif()
     add_dependencies(bf_spike bf_i18n_qm)
     if(CMAKE_CONFIGURATION_TYPES)
         add_custom_command(TARGET bf_spike POST_BUILD

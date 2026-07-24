@@ -35,6 +35,7 @@
 #include <QImage>
 #include <QKeySequence>
 #include <QInputDialog>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
@@ -1315,6 +1316,7 @@ int main(int argc, char** argv) {
     }
 
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     // Fusion makes menu/button colors honor QPalette + stylesheets on Windows.
     if (QStyleFactory::keys().contains(QStringLiteral("Fusion"))) {
         app.setStyle(QStyleFactory::create(QStringLiteral("Fusion")));

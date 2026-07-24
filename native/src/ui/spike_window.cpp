@@ -13,6 +13,7 @@
 #include <QAction>
 #include <QFile>
 #include <QFileDialog>
+#include <QIcon>
 #include <QFileInfo>
 #include <QKeySequence>
 #include <QLabel>
@@ -59,6 +60,7 @@ SpikeWindow::SpikeWindow(const VersionInfo& version,
                          const QString& repoRoot,
                          QWidget* parent)
     : QMainWindow(parent), version_(version), i18n_(i18n), repoRoot_(repoRoot) {
+    setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     setWindowTitle(QStringLiteral("BoundFree Spike"));
 
     service_ = new SpikeAnalysisService(this);
