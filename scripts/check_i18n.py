@@ -142,9 +142,9 @@ def check_keys_and_placeholders() -> None:
 # ---------------------------------------------------------------------------
 TEXT_LITERAL_PATTERNS = [
     # QStringLiteral("...") 形式
-    re.compile(r'\.text\(\s*QStringLiteral\(\s*"((?:app|error)\.[^"]*)"\s*\)'),
+    re.compile(r'(?:\.|->)text\(\s*QStringLiteral\(\s*"((?:app|error)\.[^"]*)"\s*\)'),
     # 直接 "..." 形式（仅匹配 app.*/error.* 开头的 key）
-    re.compile(r'\.text\(\s*"((?:app|error)\.[^"]*)"'),
+    re.compile(r'(?:\.|->)text\(\s*"((?:app|error)\.[^"]*)"'),
 ]
 
 # statusKey_ / emptyStateKey_ 等成员赋值的字面量 key。

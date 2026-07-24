@@ -186,12 +186,42 @@ bool I18nService::setLocale(const QString& locale, QString* errorMessage) {
         return false;
     }
 
-    if (!loadLocale(locale, errorMessage)) {
-        return false;  // loadLocale 保持原子性，settings 尚未写入。
+    // 在改变运行时语言前预检 QM，避免先写设置后才发现资源缺失。
+    QTranslator probe;
+    if (!loadTranslatorFile(locale, &probe, errorMessage)) {
+        return false;
     }
 
     QSettings settings(settingsOrganization(), settingsApplication());
+    const bool hadPrevious = settings.contains(kSettingsLanguageKey);
+    const QVariant previous = settings.value(kSettingsLanguageKey);
     settings.setValue(kSettingsLanguageKey, locale);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        if (hadPrevious) {
+            settings.setValue(kSettingsLanguageKey, previous);
+        } else {
+            settings.remove(kSettingsLanguageKey);
+        }
+        settings.sync();
+        if (errorMessage != nullptr) {
+            *errorMessage = QStringLiteral("failed to persist locale '%1' (QSettings status=%2)")
+                                .arg(locale)
+                                .arg(static_cast<int>(settings.status()));
+        }
+        return false;
+    }
+
+    if (!loadLocale(locale, errorMessage)) {
+        // 极窄竞态（预检后 QM 被移除）：恢复持久化值，运行时状态仍由 loadLocale 保持不变。
+        if (hadPrevious) {
+            settings.setValue(kSettingsLanguageKey, previous);
+        } else {
+            settings.remove(kSettingsLanguageKey);
+        }
+        settings.sync();
+        return false;
+    }
     return true;
 }
 

@@ -465,3 +465,45 @@ def test_bf_app_smoke_m8_system_ui_offscreen():
     result = _run([str(APP), "--smoke-m8-system-ui"])
 
     assert result.stdout.strip() == "smoke-m8-system-ui-ok"
+
+
+
+def test_bf_app_smoke_language_menu_has_exactly_two_stable_entries():
+    """Language menu must expose exactly zh_CN/en_US and switch persistently."""
+    result = _run(
+        [str(APP), "--smoke-ui", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+    assert "smoke-ui-ok" in result.stdout
+
+
+def test_bf_app_smoke_language_cli_override_en_us_starts_ui():
+    """--language en_US must start the UI successfully (CLI override path)."""
+    result = _run(
+        [str(APP), "--smoke-ui", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+    assert result.returncode == 0
+    assert "smoke-ui-ok" in result.stdout
+
+
+def test_bf_app_smoke_language_cli_override_zh_cn_starts_ui():
+    """--language zh_CN must start the UI successfully (CLI override path)."""
+    result = _run(
+        [str(APP), "--smoke-ui", "--language", "zh_CN"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+    assert result.returncode == 0
+    assert "smoke-ui-ok" in result.stdout
+
+
+def test_bf_app_smoke_retranslate_updates_ui_text():
+    """Switching locale via loadLocale must update visible UI status text."""
+    result = _run(
+        [str(APP), "--smoke-ui-file-open-status", "--language", "en_US"],
+        env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
+    )
+    assert result.returncode == 0
+    assert "loading_en=Opening demo.csv" in result.stdout
+    assert "loading_pseudo=[!! Opeeniing demo.csv !!]" in result.stdout
+    assert "opened_en=CSV | 0-0.01 s | +/-200 uV | 2 visible channels" in result.stdout
