@@ -10,9 +10,20 @@
 #include <QTextStream>
 
 #ifdef Q_OS_WIN
+// winsock2 must come before windows.h so iphlpapi sees the socket types.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <winreg.h>
 #include <iphlpapi.h>
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
 #endif
 
 namespace bf {

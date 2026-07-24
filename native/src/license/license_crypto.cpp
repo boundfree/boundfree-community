@@ -224,12 +224,17 @@ bool importPublicKey(const QString& publicKeyPem, KeyHandle* outKey) {
     if (BCryptOpenAlgorithmProvider(&rsaAlg.handle, BCRYPT_RSA_ALGORITHM, nullptr, 0) != 0)
         return false;
 
+    // BCryptImportKeyPair signature (7 args):
+    //   hAlgorithm, hImportKey, pszBlobType, phKey, pbInput, cbInput, dwFlags
     BCRYPT_KEY_HANDLE keyHandle = nullptr;
     NTSTATUS status = BCryptImportKeyPair(
-        rsaAlg.handle, nullptr, BCRYPT_RSAPUBLIC_BLOB, &keyHandle,
-        nullptr, 0,
+        rsaAlg.handle,
+        nullptr,
+        BCRYPT_RSAPUBLIC_BLOB,
+        &keyHandle,
         reinterpret_cast<PUCHAR>(const_cast<char*>(blob.constData())),
-        static_cast<ULONG>(blob.size()), 0);
+        static_cast<ULONG>(blob.size()),
+        0);
     if (status != 0) return false;
 
     outKey->handle = keyHandle;
@@ -238,19 +243,20 @@ bool importPublicKey(const QString& publicKeyPem, KeyHandle* outKey) {
 
 bool verifyWithSalt(const KeyHandle& key, const QByteArray& digest,
                    const QByteArray& signature, ULONG saltLength) {
+    // BCRYPT_PSS_PADDING_INFO only has pszAlgId + cbSalt (no pbSalt field).
     BCRYPT_PSS_PADDING_INFO pssInfo;
     pssInfo.pszAlgId = BCRYPT_SHA256_ALGORITHM;
-    pssInfo.pbSalt = nullptr;
     pssInfo.cbSalt = saltLength;
 
     // CNG BCryptVerifySignature: pbHash (digest), cbHash, pbSignature, cbSignature.
     // dwFlags must be BCRYPT_PAD_PSS for PSS padding verification.
-    NTSTATUS status = BCryptVerifySignature(
+    const NTSTATUS status = BCryptVerifySignature(
         key.handle, &pssInfo,
         reinterpret_cast<PUCHAR>(const_cast<char*>(digest.constData())),
         static_cast<ULONG>(digest.size()),
         reinterpret_cast<PUCHAR>(const_cast<char*>(signature.constData())),
         static_cast<ULONG>(signature.size()), BCRYPT_PAD_PSS);
+    return status == 0;
 }
 
 }  // namespace
