@@ -236,13 +236,11 @@ void MainWindow::buildBrowserControls() {
     positionSpin_->setSingleStep(1.0);
     positionSpin_->setSuffix(" s");
     positionSpin_->setMinimumWidth(100);
-    playbackProgress_ = new QSlider(Qt::Horizontal, this);
-    playbackProgress_->setRange(0, 10000);
-    playbackProgress_->setMinimumWidth(160);
+    playbackPanel_ = new EegPlaybackPanel(this);
     browserToolbar_->addSeparator();
     browserToolbar_->addWidget(positionLabel_);
     browserToolbar_->addWidget(positionSpin_);
-    browserToolbar_->addWidget(playbackProgress_);
+    browserToolbar_->addWidget(playbackPanel_->progressSlider());
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
         if (!refreshingBrowserControls_) {
             playback_.seek(positionSpin_->value());
@@ -254,11 +252,11 @@ void MainWindow::buildBrowserControls() {
         }
     });
 
-    connect(playbackProgress_, &QSlider::sliderReleased, this, [this]() {
+    connect(playbackPanel_, &EegPlaybackPanel::progressMoved, this, [this](double fraction) {
         if (!hasCurrentFile_) {
             return;
         }
-        const double position = playback_.duration() * playbackProgress_->value() / 10000.0;
+        const double position = playback_.duration() * fraction;
         playback_.seek(position);
         if (position < signalDurationSeconds_) {
             requestWindow(position);
@@ -338,21 +336,14 @@ void MainWindow::buildBrowserControls() {
 void MainWindow::buildPlaybackControls() {
     playAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
     connect(playAction_, &QAction::triggered, this, &MainWindow::togglePlayback);
-    speedLabel_ = new QLabel(this);
-    speedCombo_ = new QComboBox(this);
-    for (double speed : PlaybackState::kSpeeds) {
-        speedCombo_->addItem(QString::number(speed) + "x", speed);
-    }
-    speedCombo_->setCurrentIndex(2);
-    connect(speedCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
-        playback_.setSpeed(speedCombo_->itemData(index).toDouble());
+    playbackPanel_->buildInto(browserToolbar_);
+    connect(playbackPanel_, &EegPlaybackPanel::speedChanged, this, [this](double speed) {
+        playback_.setSpeed(speed);
         if (videoPanel_ != nullptr) {
             videoPanel_->setRate(playback_.speed());
             syncVideoToPlayback();
         }
     });
-    browserToolbar_->addWidget(speedLabel_);
-    browserToolbar_->addWidget(speedCombo_);
     markerModeAction_ = browserToolbar_->addAction(QString());
     markerModeAction_->setCheckable(true);
     connect(markerModeAction_, &QAction::toggled, this, [this](bool enabled) { waveformWidget_->setMarkerModeEnabled(enabled); });
@@ -815,12 +806,11 @@ void MainWindow::refreshPlaybackControls() {
         const QSignalBlocker blocker(positionSpin_);
         positionSpin_->setValue(std::min(playback_.position(), positionSpin_->maximum()));
     }
-    if (playbackProgress_ != nullptr && !playbackProgress_->isSliderDown()) {
-        const QSignalBlocker blocker(playbackProgress_);
-        const int value = playback_.duration() > 0.0
-            ? static_cast<int>(10000.0 * playback_.position() / playback_.duration())
-            : 0;
-        playbackProgress_->setValue(value);
+    if (playbackPanel_ != nullptr) {
+        const double fraction = playback_.duration() > 0.0
+            ? playback_.position() / playback_.duration()
+            : 0.0;
+        playbackPanel_->setProgressFraction(fraction);
     }
 }
 
@@ -1094,7 +1084,9 @@ void MainWindow::retranslateUi() {
     markerModeAction_->setText(i18n_->text("app.marker.mode"));
     markerModeAction_->setToolTip(i18n_->text("app.marker.mode_tooltip"));
     playAction_->setToolTip(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
-    speedLabel_->setText(i18n_->text("app.playback.speed"));
+    if (playbackPanel_ != nullptr) {
+        playbackPanel_->retranslateUi(i18n_);
+    }
     markerDock_->setWindowTitle(i18n_->text("app.marker.panel"));
     markerTable_->setHorizontalHeaderLabels({i18n_->text("app.marker.time"), i18n_->text("app.marker.label"), i18n_->text("app.marker.color")});
     deleteMarkerButton_->setText(i18n_->text("app.marker.delete"));

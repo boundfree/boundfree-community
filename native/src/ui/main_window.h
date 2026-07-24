@@ -11,6 +11,7 @@
 #include "core/app_error.h"
 #include "core/version.h"
 #include "i18n/i18n_service.h"
+#include "ui/eeg_playback_panel.h"
 #include "ui/eeg_processing_panel.h"
 #include "ui/waveform_widget.h"
 #include "ui/analysis_widgets.h"
@@ -155,9 +156,7 @@ private:
     QSpinBox* firstChannelSpin_ = nullptr;
     QDockWidget* channelDock_ = nullptr;
     QAction* playAction_ = nullptr;
-    QLabel* speedLabel_ = nullptr;
-    QComboBox* speedCombo_ = nullptr;
-    QSlider* playbackProgress_ = nullptr;
+    EegPlaybackPanel* playbackPanel_ = nullptr;
     QScrollArea* channelScroll_ = nullptr;
     QWidget* channelListWidget_ = nullptr;
     QVBoxLayout* channelListLayout_ = nullptr;

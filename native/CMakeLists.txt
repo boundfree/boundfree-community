@@ -109,6 +109,8 @@ add_executable(bf_app
     src/controller/analysis_service.h
     src/ui/eeg_processing_panel.cpp
     src/ui/eeg_processing_panel.h
+    src/ui/eeg_playback_panel.cpp
+    src/ui/eeg_playback_panel.h
     src/ui/main_window.cpp
     src/ui/main_window.h
     src/ui/analysis_widgets.cpp
