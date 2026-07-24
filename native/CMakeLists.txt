@@ -88,6 +88,8 @@ set(BF_CORE_SOURCES
     src/ui/waveform_widget.h
     src/ui/video_panel.cpp
     src/ui/video_panel.h
+    src/ui/collapsible_panel.cpp
+    src/ui/collapsible_panel.h
 )
 
 add_library(bf_core STATIC ${BF_CORE_SOURCES})
@@ -197,6 +199,10 @@ target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
 
 add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
 target_include_directories(spike_dsp_test PRIVATE src third_party)
+
+add_executable(collapsible_panel_test src/ui/collapsible_panel_test.cpp)
+target_include_directories(collapsible_panel_test PRIVATE src)
+target_link_libraries(collapsible_panel_test PRIVATE bf_core)
 
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
 target_include_directories(spike_golden_test PRIVATE src third_party)
