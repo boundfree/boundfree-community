@@ -1,4 +1,5 @@
 #include "ui/main_window.h"
+#include "ui/collapsible_panel.h"
 
 #include "controller/processing_view_state.h"
 #include "render/waveform_slice.h"
@@ -302,7 +303,9 @@ void MainWindow::buildBrowserControls() {
     channelListLayout_->setContentsMargins(4, 4, 4, 4);
     channelListLayout_->setSpacing(2);
     channelScroll_->setWidget(channelListWidget_);
-    channelDock_->setWidget(channelScroll_);
+    channelPanel_ = new CollapsiblePanel(i18n_->text("app.browser.channels"), channelDock_);
+    channelPanel_->addWidget(channelScroll_);
+    channelDock_->setWidget(channelPanel_);
     addDockWidget(Qt::LeftDockWidgetArea, channelDock_);
     channelDock_->hide();
     browserToolbar_->hide();
@@ -483,7 +486,9 @@ void MainWindow::buildMarkerDock() {
     buttons->addWidget(clearMarkersButton_);
     buttons->addWidget(exportMarkersButton_);
     layout->addLayout(buttons);
-    markerDock_->setWidget(content);
+    markerPanel_ = new CollapsiblePanel(i18n_->text("app.marker.panel"), markerDock_);
+    markerPanel_->addWidget(content);
+    markerDock_->setWidget(markerPanel_);
     addDockWidget(Qt::RightDockWidgetArea, markerDock_);
     markerDock_->hide();
     connect(deleteMarkerButton_, &QPushButton::clicked, this, &MainWindow::deleteSelectedMarker);
@@ -532,7 +537,9 @@ void MainWindow::buildAnalysisDock() {
     analysisDock_ = new QDockWidget(this);
     analysisDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     analysisTabs_ = new QTabWidget(analysisDock_);
-    analysisDock_->setWidget(analysisTabs_);
+    analysisPanel_ = new CollapsiblePanel(i18n_->text("app.analysis.panel"), analysisDock_);
+    analysisPanel_->addWidget(analysisTabs_);
+    analysisDock_->setWidget(analysisPanel_);
     addDockWidget(Qt::RightDockWidgetArea, analysisDock_);
     analysisDock_->hide();
 
@@ -1056,10 +1063,12 @@ void MainWindow::retranslateUi() {
     amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
     channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
+    channelPanel_->setTitle(i18n_->text("app.browser.channels"));
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
     }
     analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
+    analysisPanel_->setTitle(i18n_->text("app.analysis.panel"));
     analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
     analysisTabs_->setTabText(1, i18n_->text("app.analysis.stft"));
     analysisTabs_->setTabText(2, i18n_->text("app.analysis.trend"));
@@ -1088,6 +1097,7 @@ void MainWindow::retranslateUi() {
         playbackPanel_->retranslateUi(i18n_);
     }
     markerDock_->setWindowTitle(i18n_->text("app.marker.panel"));
+    markerPanel_->setTitle(i18n_->text("app.marker.panel"));
     markerTable_->setHorizontalHeaderLabels({i18n_->text("app.marker.time"), i18n_->text("app.marker.label"), i18n_->text("app.marker.color")});
     deleteMarkerButton_->setText(i18n_->text("app.marker.delete"));
     clearMarkersButton_->setText(i18n_->text("app.marker.clear"));

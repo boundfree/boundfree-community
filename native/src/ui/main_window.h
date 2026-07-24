@@ -16,6 +16,7 @@
 #include "ui/waveform_widget.h"
 #include "ui/analysis_widgets.h"
 #include "ui/video_panel.h"
+#include "ui/collapsible_panel.h"
 
 #include <QActionGroup>
 #include <QCheckBox>
@@ -155,6 +156,7 @@ private:
     QLabel* firstChannelLabel_ = nullptr;
     QSpinBox* firstChannelSpin_ = nullptr;
     QDockWidget* channelDock_ = nullptr;
+    CollapsiblePanel* channelPanel_ = nullptr;
     QAction* playAction_ = nullptr;
     EegPlaybackPanel* playbackPanel_ = nullptr;
     QScrollArea* channelScroll_ = nullptr;
@@ -163,6 +165,7 @@ private:
     QVector<QCheckBox*> channelChecks_;
     QDockWidget* markerDock_ = nullptr;
     QTableWidget* markerTable_ = nullptr;
+    CollapsiblePanel* markerPanel_ = nullptr;
     QPushButton* deleteMarkerButton_ = nullptr;
     QPushButton* clearMarkersButton_ = nullptr;
     QPushButton* exportMarkersButton_ = nullptr;
@@ -186,6 +189,7 @@ private:
 
     QDockWidget* analysisDock_ = nullptr;
     QTabWidget* analysisTabs_ = nullptr;
+    CollapsiblePanel* analysisPanel_ = nullptr;
     QComboBox* psdChannelCombo_ = nullptr;
     QComboBox* psdModeCombo_ = nullptr;
     QCheckBox* psdDbCheck_ = nullptr;
