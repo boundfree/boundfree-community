@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QSlider>
 #include <QToolBar>
-#include <QWidget>
+#include <QObject>
 
 namespace bf {
 
@@ -29,10 +29,10 @@ namespace bf {
 // position (between the position spin and the window controls) via
 // progressSlider(); the speed label/combo are appended by buildInto() in the
 // playback-control region. This preserves the exact original toolbar layout.
-class EegPlaybackPanel : public QWidget {
+class EegPlaybackPanel : public QObject {
     Q_OBJECT
 public:
-    explicit EegPlaybackPanel(QWidget* parent = nullptr);
+    explicit EegPlaybackPanel(QObject* parent = nullptr);
 
     // Append a separator + speed label + speed combo to the host toolbar.
     void buildInto(QToolBar* toolbar);

@@ -10,7 +10,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QToolBar>
-#include <QWidget>
+#include <QObject>
 
 namespace bf {
 
@@ -19,10 +19,10 @@ namespace bf {
 // MainWindow; MainWindow holds a pointer and forwards state to/from it. The
 // panel does not own any DSP state itself -- it only mirrors ProcessingViewState
 // into the widgets and reports user edits via changed().
-class EegProcessingPanel : public QWidget {
+class EegProcessingPanel : public QObject {
     Q_OBJECT
 public:
-    explicit EegProcessingPanel(QWidget* parent = nullptr);
+    explicit EegProcessingPanel(QObject* parent = nullptr);
 
     // Append the reference / notch / bandpass controls to the host toolbar,
     // creating the per-notch-band check/spin pairs from the initial state. The

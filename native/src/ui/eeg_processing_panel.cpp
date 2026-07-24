@@ -4,34 +4,34 @@
 
 namespace bf {
 
-EegProcessingPanel::EegProcessingPanel(QWidget* parent)
-    : QWidget(parent) {
-    referenceLabel_ = new QLabel(this);
-    referenceCombo_ = new QComboBox(this);
+EegProcessingPanel::EegProcessingPanel(QObject* parent)
+    : QObject(parent) {
+    referenceLabel_ = new QLabel;
+    referenceCombo_ = new QComboBox;
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Raw));
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Car));
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Bipolar));
 
-    notchEnableCheck_ = new QCheckBox(this);
-    notchHarmonicsCheck_ = new QCheckBox(this);
-    notchHarmonicsSpin_ = new QSpinBox(this);
+    notchEnableCheck_ = new QCheckBox;
+    notchHarmonicsCheck_ = new QCheckBox;
+    notchHarmonicsSpin_ = new QSpinBox;
     notchHarmonicsSpin_->setRange(2, 20);
     notchHarmonicsSpin_->setMaximumWidth(70);
 
-    bandpassEnableCheck_ = new QCheckBox(this);
-    bandpassLowSpin_ = new QDoubleSpinBox(this);
+    bandpassEnableCheck_ = new QCheckBox;
+    bandpassLowSpin_ = new QDoubleSpinBox;
     bandpassLowSpin_->setRange(0.1, 400.0);
     bandpassLowSpin_->setDecimals(1);
     bandpassLowSpin_->setSuffix(" Hz");
     bandpassLowSpin_->setMaximumWidth(90);
-    bandpassHighSpin_ = new QDoubleSpinBox(this);
+    bandpassHighSpin_ = new QDoubleSpinBox;
     bandpassHighSpin_->setRange(0.5, 500.0);
     bandpassHighSpin_->setDecimals(1);
     bandpassHighSpin_->setSuffix(" Hz");
     bandpassHighSpin_->setMaximumWidth(90);
 
-    applyToSelectedButton_ = new QPushButton(this);
-    clearPerChannelButton_ = new QPushButton(this);
+    applyToSelectedButton_ = new QPushButton;
+    clearPerChannelButton_ = new QPushButton;
     applyToSelectedButton_->setMaximumWidth(180);
     clearPerChannelButton_->setMaximumWidth(180);
 }
@@ -46,9 +46,9 @@ void EegProcessingPanel::buildInto(QToolBar* toolbar, const ProcessingViewState&
     notchBandChecks_.clear();
     notchBandSpins_.clear();
     for (const NotchBandUi& band : state.notchBands) {
-        auto* chk = new QCheckBox(this);
+        auto* chk = new QCheckBox;
         chk->setChecked(band.enabled);
-        auto* spin = new QDoubleSpinBox(this);
+        auto* spin = new QDoubleSpinBox;
         spin->setRange(1.0, 500.0);
         spin->setDecimals(1);
         spin->setValue(band.frequency);

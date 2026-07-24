@@ -4,21 +4,21 @@
 
 namespace bf {
 
-EegPlaybackPanel::EegPlaybackPanel(QWidget* parent)
-    : QWidget(parent) {
+EegPlaybackPanel::EegPlaybackPanel(QObject* parent)
+    : QObject(parent) {
     buildWidgets();
 }
 
 void EegPlaybackPanel::buildWidgets() {
-    speedLabel_ = new QLabel(this);
-    speedCombo_ = new QComboBox(this);
+    speedLabel_ = new QLabel;
+    speedCombo_ = new QComboBox;
     for (double speed : PlaybackState::kSpeeds) {
         speedCombo_->addItem(QString::number(speed) + "x", speed);
     }
     speedCombo_->setCurrentIndex(2);
     speedCombo_->setMaximumWidth(80);
 
-    playbackProgress_ = new QSlider(Qt::Horizontal, this);
+    playbackProgress_ = new QSlider(Qt::Horizontal);
     playbackProgress_->setRange(0, 10000);
     playbackProgress_->setMinimumWidth(160);
 }

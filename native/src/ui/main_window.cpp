@@ -55,8 +55,6 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     // stylesheet and action geometry are deterministic.
     menuBar()->setNativeMenuBar(false);
     menuBar()->setAttribute(Qt::WA_StyledBackground, true);
-    buildFileMenu();
-    buildLanguageMenu();
 
     buildBrowserControls();
     buildProcessingControls();
@@ -65,6 +63,10 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     buildMarkerDock();
     buildVideoDock();
     buildRecordControls();
+    // Build all top-level menus consecutively after toolbar/dock layout is
+    // complete. This keeps their mouse regions in one stable QMenuBar layout.
+    buildFileMenu();
+    buildLanguageMenu();
     buildViewMenu();
     buildThemeMenu();
     recordUiTimer_.setInterval(500);
@@ -278,26 +280,9 @@ void MainWindow::applyTheme(bool dark) {
         }
         child->setPalette(palette);
     }
-    // Preserve the original QMenuBar actions and their popup bindings. Clearing
-    // and re-adding existing QMenu objects makes some Windows styles paint the
-    // actions but lose mouse activation for the first items.
-    if (menuBar() != nullptr && i18n_ != nullptr && fileMenu_ != nullptr
-        && languageMenu_ != nullptr && viewMenu_ != nullptr && themeMenu_ != nullptr) {
-        const QString fileTitle = i18n_->text("app.menu.file");
-        const QString languageTitle = i18n_->text("app.menu.language");
-        const QString viewTitle = i18n_->text("app.menu.view");
-        const QString themeTitle = i18n_->text("app.menu.theme");
-        const auto updateMenuAction = [](QMenu* menu, const QString& title) {
-            menu->setTitle(title);
-            QAction* action = menu->menuAction();
-            action->setText(title);
-            action->setVisible(true);
-            action->setEnabled(true);
-        };
-        updateMenuAction(fileMenu_, fileTitle);
-        updateMenuAction(languageMenu_, languageTitle);
-        updateMenuAction(viewMenu_, viewTitle);
-        updateMenuAction(themeMenu_, themeTitle);
+    // Menu actions are created with translated, non-empty titles after the
+    // complete window layout. Theme application must not mutate or rebind them.
+    if (menuBar() != nullptr) {
         menuBar()->setPalette(palette);
         menuBar()->updateGeometry();
         menuBar()->update();

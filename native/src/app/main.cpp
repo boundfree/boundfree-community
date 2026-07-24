@@ -169,9 +169,28 @@ int main(int argc, char** argv) {
                 const QRect geom = window.menuBar()->actionGeometry(menuAction);
                 const bool visibleWidth = geom.width() >= 24;
                 const bool hitTestOk = window.menuBar()->actionAt(geom.center()) == menuAction;
+                const QPoint globalCenter = window.menuBar()->mapToGlobal(geom.center());
+                QWidget* screenTarget = QApplication::widgetAt(globalCenter);
+                const bool screenHitOk = screenTarget == window.menuBar()
+                    || (screenTarget != nullptr && window.menuBar()->isAncestorOf(screenTarget));
+                if (!screenHitOk) {
+                    std::cerr << "menu-hit-debug title=" << title.toStdString()
+                              << " geom=" << geom.x() << "," << geom.y() << "," << geom.width() << "x" << geom.height()
+                              << " global=" << globalCenter.x() << "," << globalCenter.y()
+                              << " target=" << (screenTarget != nullptr ? screenTarget->metaObject()->className() : "null")
+                              << " targetObject=" << (screenTarget != nullptr ? screenTarget->objectName().toStdString() : std::string())
+                              << " targetGeom=";
+                    if (screenTarget != nullptr) {
+                        const QRect targetGeom = screenTarget->geometry();
+                        std::cerr << targetGeom.x() << "," << targetGeom.y() << "," << targetGeom.width() << "x" << targetGeom.height();
+                    }
+                    std::cerr << " menubar=" << window.menuBar()->geometry().x() << "," << window.menuBar()->geometry().y()
+                              << "," << window.menuBar()->geometry().width() << "x" << window.menuBar()->geometry().height()
+                              << "\n";
+                }
                 const bool popupBound = menuAction->menu() != nullptr;
                 const bool interactive = menuAction->isEnabled() && menuAction->isVisible()
-                    && visibleWidth && hitTestOk && popupBound;
+                    && visibleWidth && hitTestOk && screenHitOk && popupBound;
                 hasFileMenu = hasFileMenu || (title == i18n.text("app.menu.file") && interactive);
                 hasLanguageMenu = hasLanguageMenu || (title == i18n.text("app.menu.language") && interactive);
                 hasViewMenu = hasViewMenu || (title == i18n.text("app.menu.view") && interactive);
