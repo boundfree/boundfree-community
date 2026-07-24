@@ -19,7 +19,11 @@ set(BF_I18N_QM_DIR "${CMAKE_CURRENT_BINARY_DIR}/i18n")
 set(BF_I18N_LOCALES zh_CN en_US pseudo)
 set(BF_I18N_TS_FILES)
 foreach(_loc ${BF_I18N_LOCALES})
-    list(APPEND BF_I18N_TS_FILES "${BF_I18N_TS_DIR}/bf_app_${_loc}.ts")
+    set(_ts_file "${BF_I18N_TS_DIR}/bf_app_${_loc}.ts")
+    list(APPEND BF_I18N_TS_FILES "${_ts_file}")
+    # Qt 6.8 的 qt_add_lrelease 不可靠地处理 QM_OUTPUT_DIRECTORY；
+    # TS source property 是 Qt 6.8/6.10 都支持的输出目录契约。
+    set_source_files_properties("${_ts_file}" PROPERTIES OUTPUT_LOCATION "${BF_I18N_QM_DIR}")
 endforeach()
 # qt_add_lrelease 创建 lrelease 目标并把 .qm 写入 BF_I18N_QM_DIR。
 # 仅 stable + pseudo 产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
