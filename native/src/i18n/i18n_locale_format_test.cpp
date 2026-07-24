@@ -20,11 +20,14 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
+#include <QFile>
 #include <QJsonObject>
 #include <QLocale>
 #include <QSettings>
 #include <QString>
 #include <QStringList>
+#include <QTemporaryDir>
 
 #include <iostream>
 
@@ -376,6 +379,82 @@ int runTests(const QString& repoRoot) {
 
         // Clean up the test key.
         clearSavedLanguage();
+    }
+
+    // ----- setLocale QSettings AccessError atomicity ----------------------
+    // Isolate settings to a non-writable path so sync()/status() -> AccessError.
+    // Runtime locale/signal must stay atomic; removing sync/status checks fails this.
+    {
+        const QString prevOrg = QCoreApplication::organizationName();
+        const QString prevApp = QCoreApplication::applicationName();
+        const QString isoOrg = QStringLiteral("bf_test_i18n_access_org");
+        const QString isoApp =
+            QStringLiteral("bf_test_i18n_access_app_pid%1").arg(QCoreApplication::applicationPid());
+        QCoreApplication::setOrganizationName(isoOrg);
+        QCoreApplication::setApplicationName(isoApp);
+
+        QTemporaryDir tmp;
+        if (!tmp.isValid()) {
+            std::cerr << "FAIL AccessError test: QTemporaryDir invalid\n";
+            QCoreApplication::setOrganizationName(prevOrg);
+            QCoreApplication::setApplicationName(prevApp);
+            return 1;
+        }
+        tmp.setAutoRemove(false);
+        const QString settingsRoot = tmp.path();
+        const QByteArray xdg = qgetenv("XDG_CONFIG_HOME");
+        const QString prevSettingsPath = xdg.isEmpty()
+                                             ? (QDir::homePath() + QStringLiteral("/.config"))
+                                             : QString::fromLocal8Bit(xdg);
+        QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, settingsRoot);
+
+        const QFileDevice::Permissions ro = QFileDevice::ReadOwner | QFileDevice::ExeOwner |
+                                            QFileDevice::ReadGroup | QFileDevice::ExeGroup |
+                                            QFileDevice::ReadOther | QFileDevice::ExeOther;
+        if (!QFile::setPermissions(settingsRoot, ro)) {
+            std::cerr << "FAIL AccessError test: chmod failed\n";
+            QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, prevSettingsPath);
+            QCoreApplication::setOrganizationName(prevOrg);
+            QCoreApplication::setApplicationName(prevApp);
+            QDir(settingsRoot).removeRecursively();
+            return 1;
+        }
+
+        auto restore = [&]() {
+            const QFileDevice::Permissions rw = QFileDevice::ReadOwner | QFileDevice::WriteOwner |
+                                                QFileDevice::ExeOwner | QFileDevice::ReadGroup |
+                                                QFileDevice::ExeGroup | QFileDevice::ReadOther |
+                                                QFileDevice::ExeOther;
+            QFile::setPermissions(settingsRoot, rw);
+            QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, prevSettingsPath);
+            QCoreApplication::setOrganizationName(prevOrg);
+            QCoreApplication::setApplicationName(prevApp);
+            QDir(settingsRoot).removeRecursively();
+        };
+
+        bf::I18nService svc(repoRoot);
+        if (!svc.loadLocale(QStringLiteral("en_US"))) {
+            std::cerr << "FAIL AccessError setup loadLocale en_US failed\n";
+            restore();
+            return 1;
+        }
+
+        int signalCount = 0;
+        QObject::connect(&svc, &bf::I18nService::languageChanged, [&]() { ++signalCount; });
+
+        QString errMsg;
+        const bool ok = svc.setLocale(QStringLiteral("zh_CN"), &errMsg);
+        if (ok || svc.locale() != QStringLiteral("en_US") || signalCount != 0 || errMsg.isEmpty()) {
+            std::cerr << "FAIL setLocale AccessError atomicity ok=" << ok
+                      << " locale=\"" << svc.locale().toStdString()
+                      << "\" signalCount=" << signalCount
+                      << " err=\"" << errMsg.toStdString() << "\"\n";
+            ++failures;
+        } else {
+            std::cout << "PASS setLocale AccessError keeps en_US, no signal, error set\n";
+        }
+
+        restore();
     }
 
     // ----- resolveStartupLocale: CLI stable override ----------------------
