@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QPushButton>
 #include <QLabel>
 #include <QToolBar>
 #include <QWidget>
@@ -41,6 +42,12 @@ public:
 signals:
     // Emitted whenever the user edits any control (not during refresh).
     void changed();
+    // User clicked "apply to selected": write the current bandpass low/high/enabled
+    // as a per-channel override onto the currently visible channels. MainWindow
+    // owns channel visibility and performs the actual ProcessingViewState write.
+    void applyBandpassToSelected();
+    // User clicked "clear per-channel": remove all per-channel bandpass overrides.
+    void clearPerChannelBandpass();
 
 private:
     void connectChanged();
@@ -55,6 +62,8 @@ private:
     QCheckBox* bandpassEnableCheck_ = nullptr;
     QDoubleSpinBox* bandpassLowSpin_ = nullptr;
     QDoubleSpinBox* bandpassHighSpin_ = nullptr;
+    QPushButton* applyToSelectedButton_ = nullptr;
+    QPushButton* clearPerChannelButton_ = nullptr;
     bool refreshing_ = false;
 };
 

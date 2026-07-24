@@ -26,11 +26,20 @@ dsp::ProcessingConfig ProcessingViewState::toConfig(double fs, int nChannels) co
 
     cfg.bandpass.resize(static_cast<std::size_t>(nChannels));
     for (int ch = 0; ch < nChannels; ++ch) {
-        cfg.bandpass[static_cast<std::size_t>(ch)] = dsp::ChannelBandpassSetting{
-            globalBandpassEnabled,
-            bandpassLow,
-            bandpassHigh,
-        };
+        const auto it = perChannelBandpass.find(ch);
+        if (it != perChannelBandpass.end()) {
+            cfg.bandpass[static_cast<std::size_t>(ch)] = dsp::ChannelBandpassSetting{
+                it->second.enabled,
+                it->second.low,
+                it->second.high,
+            };
+        } else {
+            cfg.bandpass[static_cast<std::size_t>(ch)] = dsp::ChannelBandpassSetting{
+                globalBandpassEnabled,
+                bandpassLow,
+                bandpassHigh,
+            };
+        }
     }
     return cfg;
 }
@@ -44,13 +53,34 @@ QString ProcessingViewState::summary() const {
             }
         }
     }
+    QString bandpassText = globalBandpassEnabled
+        ? QString("%1-%2").arg(bandpassLow).arg(bandpassHigh)
+        : QString("off");
+    const int ovr = channelBandpassOverrideCount();
+    if (ovr > 0) {
+        bandpassText += QString("(+%1ovr)").arg(ovr);
+    }
     return QString("ref=%1 notch=%2 harm=%3 bp=%4")
         .arg(QString::fromUtf8(dsp::referenceModeToString(referenceMode)))
         .arg(notchParts.isEmpty() ? QString("off") : notchParts.join("/"))
         .arg(notchEnabled && notchHarmonics ? QString::number(notchHarmonicMultiple) : QString("off"))
-        .arg(globalBandpassEnabled
-                 ? QString("%1-%2").arg(bandpassLow).arg(bandpassHigh)
-                 : QString("off"));
+        .arg(bandpassText);
+}
+
+void ProcessingViewState::setChannelBandpass(int ch, ChannelBandpassUi setting) {
+    perChannelBandpass[ch] = setting;
+}
+
+void ProcessingViewState::clearChannelBandpass(int ch) {
+    perChannelBandpass.erase(ch);
+}
+
+void ProcessingViewState::clearAllChannelBandpass() {
+    perChannelBandpass.clear();
+}
+
+int ProcessingViewState::channelBandpassOverrideCount() const {
+    return static_cast<int>(perChannelBandpass.size());
 }
 
 dsp::Matrix matrixFromFloatChannels(const std::vector<std::vector<float>>& data) {

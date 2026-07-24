@@ -171,6 +171,14 @@
       <translation>[!! Processing !!]</translation>
     </message>
     <message>
+      <source>app.processing.apply_to_selected</source>
+      <translation>AApppllyy ttoo Seelleecctteedd</translation>
+    </message>
+    <message>
+      <source>app.processing.clear_per_channel</source>
+      <translation>Cleaar Peer-Chaanneel</translation>
+    </message>
+    <message>
       <source>app.language.zh_CN</source>
       <translation>[!! Siimplified Chiinese !!]</translation>
     </message>

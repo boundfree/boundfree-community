@@ -171,6 +171,14 @@
       <translation>Processing</translation>
     </message>
     <message>
+      <source>app.processing.apply_to_selected</source>
+      <translation>選択チャネルに適用</translation>
+    </message>
+    <message>
+      <source>app.processing.clear_per_channel</source>
+      <translation>チャネル別設定をクリア</translation>
+    </message>
+    <message>
       <source>app.language.zh_CN</source>
       <translation>Simplified Chinese</translation>
     </message>

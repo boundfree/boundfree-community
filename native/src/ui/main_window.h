@@ -114,6 +114,11 @@ private:
     void clearMarkers();
     void exportMarkers();
     void onProcessingUiChanged();
+    // Write the current global bandpass as a per-channel override on every
+    // currently visible channel.
+    void applyBandpassToSelectedChannels();
+    // Remove all per-channel bandpass overrides.
+    void clearPerChannelBandpassOverrides();
     QString channelCheckSummary() const;
     QString visibleDisplayChannelSummary() const;
     int channelCount() const;

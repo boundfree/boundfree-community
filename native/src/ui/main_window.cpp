@@ -531,6 +531,8 @@ void MainWindow::buildProcessingControls() {
     processingPanel_ = new EegProcessingPanel(this);
     processingPanel_->buildInto(browserToolbar_, processingState_);
     connect(processingPanel_, &EegProcessingPanel::changed, this, &MainWindow::onProcessingUiChanged);
+    connect(processingPanel_, &EegProcessingPanel::applyBandpassToSelected, this, &MainWindow::applyBandpassToSelectedChannels);
+    connect(processingPanel_, &EegProcessingPanel::clearPerChannelBandpass, this, &MainWindow::clearPerChannelBandpassOverrides);
 }
 
 void MainWindow::buildAnalysisDock() {
@@ -1266,6 +1268,32 @@ void MainWindow::onProcessingUiChanged() {
         return;
     }
     processingPanel_->writeToState(processingState_);
+    refreshProcessingControls();
+    applyProcessingAndDisplay();
+}
+
+void MainWindow::applyBandpassToSelectedChannels() {
+    // Write the current global bandpass (enabled/low/high) as a per-channel
+    // override onto every visible channel. Channels not visible keep whatever
+    // override they had (or fall back to global). This keeps the global knobs
+    // as the default while letting the user specialize specific channels.
+    const ChannelBandpassUi setting{
+        processingState_.globalBandpassEnabled,
+        processingState_.bandpassLow,
+        processingState_.bandpassHigh,
+    };
+    const int nChannels = channelCount();
+    for (int ch = 0; ch < nChannels; ++ch) {
+        if (viewState_.isChannelVisible(ch)) {
+            processingState_.setChannelBandpass(ch, setting);
+        }
+    }
+    refreshProcessingControls();
+    applyProcessingAndDisplay();
+}
+
+void MainWindow::clearPerChannelBandpassOverrides() {
+    processingState_.clearAllChannelBandpass();
     refreshProcessingControls();
     applyProcessingAndDisplay();
 }

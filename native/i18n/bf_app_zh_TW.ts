@@ -171,6 +171,14 @@
       <translation>處理</translation>
     </message>
     <message>
+      <source>app.processing.apply_to_selected</source>
+      <translation>套用至選中通道</translation>
+    </message>
+    <message>
+      <source>app.processing.clear_per_channel</source>
+      <translation>清除每通道覆蓋</translation>
+    </message>
+    <message>
       <source>app.language.zh_CN</source>
       <translation>Simplified Chinese</translation>
     </message>

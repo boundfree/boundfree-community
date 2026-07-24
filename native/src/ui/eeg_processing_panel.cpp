@@ -29,6 +29,11 @@ EegProcessingPanel::EegProcessingPanel(QWidget* parent)
     bandpassHighSpin_->setDecimals(1);
     bandpassHighSpin_->setSuffix(" Hz");
     bandpassHighSpin_->setMaximumWidth(90);
+
+    applyToSelectedButton_ = new QPushButton(this);
+    clearPerChannelButton_ = new QPushButton(this);
+    applyToSelectedButton_->setMaximumWidth(180);
+    clearPerChannelButton_->setMaximumWidth(180);
 }
 
 void EegProcessingPanel::buildInto(QToolBar* toolbar, const ProcessingViewState& state) {
@@ -61,6 +66,8 @@ void EegProcessingPanel::buildInto(QToolBar* toolbar, const ProcessingViewState&
     toolbar->addWidget(bandpassEnableCheck_);
     toolbar->addWidget(bandpassLowSpin_);
     toolbar->addWidget(bandpassHighSpin_);
+    toolbar->addWidget(applyToSelectedButton_);
+    toolbar->addWidget(clearPerChannelButton_);
     connectChanged();
     refreshFromState(state);
 }
@@ -93,6 +100,8 @@ void EegProcessingPanel::connectChanged() {
     connect(bandpassHighSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double) {
         if (!refreshing_) emit changed();
     });
+    connect(applyToSelectedButton_, &QPushButton::clicked, this, [this]() { emit applyBandpassToSelected(); });
+    connect(clearPerChannelButton_, &QPushButton::clicked, this, [this]() { emit clearPerChannelBandpass(); });
 }
 
 void EegProcessingPanel::refreshFromState(const ProcessingViewState& state) {
@@ -148,6 +157,12 @@ void EegProcessingPanel::retranslateUi(I18nService* i18n) {
     notchEnableCheck_->setText(i18n->text("app.processing.notch"));
     notchHarmonicsCheck_->setText(i18n->text("app.processing.harmonics"));
     bandpassEnableCheck_->setText(i18n->text("app.processing.bandpass"));
+    if (applyToSelectedButton_ != nullptr) {
+        applyToSelectedButton_->setText(i18n->text("app.processing.apply_to_selected"));
+    }
+    if (clearPerChannelButton_ != nullptr) {
+        clearPerChannelButton_->setText(i18n->text("app.processing.clear_per_channel"));
+    }
 }
 
 }  // namespace bf

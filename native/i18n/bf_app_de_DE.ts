@@ -171,6 +171,14 @@
       <translation>Processing</translation>
     </message>
     <message>
+      <source>app.processing.apply_to_selected</source>
+      <translation>Auf ausgewählte anwenden</translation>
+    </message>
+    <message>
+      <source>app.processing.clear_per_channel</source>
+      <translation>Pro-Kanal löschen</translation>
+    </message>
+    <message>
       <source>app.language.zh_CN</source>
       <translation>Simplified Chinese</translation>
     </message>

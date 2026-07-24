@@ -209,6 +209,10 @@ target_include_directories(i18n_locale_format_test PRIVATE src)
 target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(i18n_locale_format_test PRIVATE bf_core)
 
+add_executable(processing_view_state_test src/controller/processing_view_state_test.cpp)
+target_include_directories(processing_view_state_test PRIVATE src)
+target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
+
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
 target_include_directories(spike_golden_test PRIVATE src third_party)
 
