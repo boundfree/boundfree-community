@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.43-dev
+当前版本：0.1.44-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+chore: 完善Windows发布交接与验收
+
+版本：0.1.44-dev
+日期：2026-07-28
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：chore
+
+提交标题：
+chore: 完善Windows发布交接与验收
+
+提交正文：
+```text
+新增 WSL 到 Windows 的源码同步、Windows handoff 预检和发布验收脚本。安装器改用仓库内简体中文语言文件，并支持用户级 Inno Setup 安装路径。Windows 端已完成构建、stage、安装包和授权手工验证。
+```
 
 ---
 

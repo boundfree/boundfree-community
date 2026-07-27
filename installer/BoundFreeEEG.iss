@@ -11,7 +11,7 @@
 ; stale files), and registers a clean uninstaller.
 
 #ifndef BoundFreeVersion
-  #define BoundFreeVersion "0.1.0-dev"
+  #define BoundFreeVersion "0.1.42-dev"
 #endif
 
 ; Win32 VS_VERSIONINFO (VersionInfoVersion / VersionInfoProductVersion)
@@ -63,10 +63,10 @@ OutputDir=dist
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
-Name: "zh"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "zh"; MessagesFile: "compiler:Default.isl,installer\installer_languages\ChineseSimplified.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupToDo: "optional*"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; Flags: unchecked
 
 [Files]
 ; The entire staged release tree lives under release\stage\BoundFreeEEG.
