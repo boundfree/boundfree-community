@@ -85,9 +85,13 @@ def test_bf_app_normal_ui_flow_opens_generated_csv():
 
 
 def test_bf_app_smoke_sidecar_handshake():
+    version = json.loads((ROOT / "version.json").read_text(encoding="utf-8"))
     result = _run([str(APP), "--smoke-sidecar"])
 
-    assert result.stdout.strip() == "smoke-sidecar-ok product_version=0.1.0-dev ipc_protocol_version=1"
+    assert result.stdout.strip() == (
+        f'smoke-sidecar-ok product_version={version["version"]} '
+        f'ipc_protocol_version={version["ipc_protocol_version"]}'
+    )
 
 
 def test_bf_app_smoke_sidecar_open_missing_file_reports_file_error(tmp_path):

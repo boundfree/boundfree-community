@@ -34,6 +34,7 @@ def test_sidecar_version_matches_version_json():
 
 def test_sidecar_hello_returns_product_and_protocol_versions():
     from boundfree_sidecar.protocol import handle_request
+    version = json.loads((ROOT / "version.json").read_text(encoding="utf-8"))
 
     response = handle_request({"id": "request-1", "method": "hello", "params": {}})
 
@@ -41,8 +42,8 @@ def test_sidecar_hello_returns_product_and_protocol_versions():
         "id": "request-1",
         "ok": True,
         "result": {
-            "product_version": "0.1.0-dev",
-            "ipc_protocol_version": 1,
+            "product_version": version["version"],
+            "ipc_protocol_version": version["ipc_protocol_version"],
         },
     }
 
@@ -100,6 +101,7 @@ def test_sidecar_stdio_process_handles_hello_and_unknown_method():
     与非 ASCII 方法名往返。
     """
     from boundfree_sidecar.framing import read_json_frame, write_json_frame
+    version = json.loads((ROOT / "version.json").read_text(encoding="utf-8"))
 
     process = _stdio_process()
     try:
@@ -118,8 +120,8 @@ def test_sidecar_stdio_process_handles_hello_and_unknown_method():
         hello = _round_trip({"id": "stdio-1", "method": "hello", "params": {}})
         assert hello["id"] == "stdio-1"
         assert hello["ok"] is True
-        assert hello["result"]["product_version"] == "0.1.0-dev"
-        assert hello["result"]["ipc_protocol_version"] == 1
+        assert hello["result"]["product_version"] == version["version"]
+        assert hello["result"]["ipc_protocol_version"] == version["ipc_protocol_version"]
 
         bad = _round_trip({"id": "stdio-2", "method": "bad_method", "params": {}})
         assert bad["id"] == "stdio-2"
