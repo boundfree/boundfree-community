@@ -219,8 +219,11 @@ if(WIN32)
 endif()
 
 # Generate the embedded public key header when BF_REQUIRE_LICENSE=ON.
-# Must run after bf_app and bf_license_smoke targets exist so target_* calls
-# resolve. The header contains SubjectPublicKeyInfo PEM only (no private key).
+# Must run after bf_core / bf_app / bf_license_smoke targets exist.
+# license_manager.cpp lives in bf_core, so the embed macro and include path
+# MUST be applied to bf_core (not only bf_app). Otherwise the static library
+# is compiled with an empty embeddedPublicKey() and runtime reports
+# reason=not_configured even though bf_app has BF_REQUIRE_LICENSE=1.
 if(BF_REQUIRE_LICENSE)
     if(NOT BF_LICENSE_PUBLIC_KEY_FILE OR NOT EXISTS "${BF_LICENSE_PUBLIC_KEY_FILE}")
         message(FATAL_ERROR
@@ -239,9 +242,12 @@ ${_bf_license_pem}
 )BFPEM\";
 }}  // namespace bf::license_detail
 ")
-    # BF_REQUIRE_LICENSE=1 lets main.cpp enforce startup license check.
-    target_compile_definitions(bf_app PRIVATE BF_REQUIRE_LICENSE=1 BF_LICENSE_PUBLIC_KEY_HEADER)
-    target_include_directories(bf_app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    # bf_core owns LicenseManager; embed the public key into that translation unit.
+    target_compile_definitions(bf_core PUBLIC BF_LICENSE_PUBLIC_KEY_HEADER)
+    target_include_directories(bf_core PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+    # bf_app startup gate (main.cpp ensureOfflineLicense).
+    target_compile_definitions(bf_app PRIVATE BF_REQUIRE_LICENSE=1)
+    # Standalone license smoke also verifies the embed path.
     target_compile_definitions(bf_license_smoke PRIVATE BF_LICENSE_PUBLIC_KEY_HEADER)
     target_include_directories(bf_license_smoke PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 endif()

@@ -99,6 +99,10 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+if ($env:OS -ne "Windows_NT") {
+    throw "build_release.ps1 must run in native Windows PowerShell. Run WSL checks first, then build from a Windows x64 Native Tools Command Prompt or PowerShell session."
+}
+
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $NativeDir = Join-Path $RepoRoot "native"
 $SidecarDir = Join-Path $RepoRoot "sidecar"
@@ -111,29 +115,48 @@ function Write-Step([string]$msg) {
     Write-Host "==> $msg" -ForegroundColor Cyan
 }
 
-function Invoke-Native([string]$exe, [string[]]$args, [string]$workDir) {
+function Invoke-Native([string]$exe, [string[]]$CommandArgs, [string]$workDir) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $exe
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
-    $psi.WorkingDirectory = if ($workDir) { $workDir } else { (Get-Location).Path }
-    foreach ($a in $args) { $psi.ArgumentList.Add($a) }
-    $p = [System.Diagnostics.Process]::Start($psi)
-    $stdoutTask = $p.StandardOutput.ReadToEndAsync()
-    $stderrTask = $p.StandardError.ReadToEndAsync()
-    $p.WaitForExit()
-    $out = $stdoutTask.Result
-    $err = $stderrTask.Result
-    if ($out) { Write-Host $out }
-    if ($err) { Write-Host $err -ForegroundColor Yellow }
-    if ($p.ExitCode -ne 0) {
-        throw "Command failed (exit $($p.ExitCode)): $exe $($args -join ' ')"
+    $psi.WorkingDirectory = if ($workDir) { $workDir } else { $RepoRoot }
+    # Every release argument is passed as one quoted Windows command-line token.
+    # Release inputs do not contain double quotes or trailing separators.
+    $psi.Arguments = (($CommandArgs | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join ' ')
+    $process = [System.Diagnostics.Process]::Start($psi)
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
+    if ($stdout) { Write-Host $stdout }
+    if ($stderr) { Write-Host $stderr -ForegroundColor Yellow }
+    if ($process.ExitCode -ne 0) {
+        throw "Command failed (exit $($process.ExitCode)): $exe $($CommandArgs -join ' ')"
     }
 }
 
 # Read product version + channel to drive signing policy and ISCC version.
 if (-not $Python) { $Python = "python" }
+# ProcessStartInfo with UseShellExecute=false does not resolve ".\path" relative
+# executables. Normalize user-supplied paths against the repo root first.
+if ($Python -match '[\\/]' -or $Python -match '^\.[\\/]') {
+    if (-not [System.IO.Path]::IsPathRooted($Python)) {
+        $Python = Join-Path $RepoRoot $Python
+    }
+    $Python = [System.IO.Path]::GetFullPath($Python)
+}
+if (-not [System.IO.Path]::IsPathRooted($LicensePublicKeyFile)) {
+    $LicensePublicKeyFile = Join-Path $RepoRoot $LicensePublicKeyFile
+}
+$LicensePublicKeyFile = [System.IO.Path]::GetFullPath($LicensePublicKeyFile)
+if (-not [System.IO.Path]::IsPathRooted($QtRoot)) {
+    $QtRoot = Join-Path $RepoRoot $QtRoot
+}
+$QtRoot = [System.IO.Path]::GetFullPath($QtRoot)
+
 $VersionJson = Get-Content -Raw (Join-Path $RepoRoot "version.json") | ConvertFrom-Json
 $ProductVersion = $VersionJson.version
 $ReleaseChannel = $VersionJson.release_channel
@@ -155,13 +178,19 @@ Write-Host "version=$ProductVersion channel=$ReleaseChannel"
 Write-Host "QtRoot=$QtRoot Python=$Python Configuration=$Configuration"
 Write-Host "StageDir=$StageDir signing_required=$ChannelRequiresSigning"
 
-if (-not (Test-Path $QtRoot)) {
+if (-not (Test-Path -LiteralPath $QtRoot)) {
     throw "QtRoot not found: $QtRoot"
 }
+if ($Python -match '[\\/]' -and -not (Test-Path -LiteralPath $Python)) {
+    throw "Python executable not found: $Python"
+}
+
+# Verify Python build dependencies before starting the expensive CMake/PyInstaller pipeline.
+Invoke-Native $Python @("-c", "import PyInstaller, h5py, mne, neo, pyedflib; print('sidecar-build-dependencies-ok')")
 
 # License public key is mandatory: release builds must embed a release public
 # key so offline license verification is enforced. Private keys are never used.
-if (-not (Test-Path $LicensePublicKeyFile)) {
+if (-not (Test-Path -LiteralPath $LicensePublicKeyFile)) {
     throw "LicensePublicKeyFile not found: $LicensePublicKeyFile"
 }
 Write-Host "LicensePublicKeyFile=$LicensePublicKeyFile"
@@ -183,43 +212,31 @@ Invoke-Native "cmake.exe" @("--install", $BuildDir, "--config", $Configuration, 
 # 4. windeployqt + Qt base translations
 Write-Step "4/8 windeployqt + Qt base translations"
 $WinDeployQt = Join-Path $QtRoot "bin\windeployqt.exe"
+$QtTranslationsSrc = Join-Path $QtRoot "translations"
+$QtTranslationsDst = Join-Path $StageDir "translations"
 if (-not (Test-Path $WinDeployQt)) {
     throw "windeployqt not found at: $WinDeployQt"
 }
-Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
-
-# Qt 基础翻译（qtbase 等）：windeployqt --no-translations 避免复制全部 Qt locale，
-# 这里精确复制 stable 语言所需的基础翻译。Qt6 约定 zh_CN 使用 qtbase_zh_CN.qm；
-# ja_JP 的 Qt 基础翻译 Qt 仅提供 language-only 的 qtbase_ja.qm，发布重命名为
-# qtbase_ja_JP.qm 以匹配运行时按 <locale> 查找的路径；en_US 运行通常无需 translator，
-# qtbase_en.qm 按存在即复制（不强求）。zh_CN/ja_JP 缺失即失败：Qt 标准控件本地化是发布必备资产。
-$QtTranslationsSrc = Join-Path $QtRoot "translations"
-$QtTranslationsDst = Join-Path $StageDir "translations"
 if (-not (Test-Path $QtTranslationsSrc)) {
     throw "Qt translations dir not found: $QtTranslationsSrc (expected under QtRoot)"
 }
-New-Item -ItemType Directory -Force -Path $QtTranslationsDst | Out-Null
-
-# qtbase_zh_CN.qm 为发布强制资产（zh_CN 标准控件本地化）。
 $QtBaseZhCn = Join-Path $QtTranslationsSrc "qtbase_zh_CN.qm"
+$QtBaseJa = Join-Path $QtTranslationsSrc "qtbase_ja.qm"
+$QtBaseEn = Join-Path $QtTranslationsSrc "qtbase_en.qm"
 if (-not (Test-Path $QtBaseZhCn)) {
     throw "Qt base translation missing: $QtBaseZhCn (required for zh_CN)"
 }
-Copy-Item $QtBaseZhCn (Join-Path $QtTranslationsDst "qtbase_zh_CN.qm") -Force
-# qtbase_ja.qm 为发布强制资产（ja_JP 标准控件本地化）。Qt6 仅提供 language-only 的
-# qtbase_ja.qm，这里重命名为 qtbase_ja_JP.qm，与应用运行时 qtbase_<locale> 查找路径一致。
-$QtBaseJa = Join-Path $QtTranslationsSrc "qtbase_ja.qm"
 if (-not (Test-Path $QtBaseJa)) {
     throw "Qt base translation missing: $QtBaseJa (required for ja_JP)"
 }
+Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
+New-Item -ItemType Directory -Force -Path $QtTranslationsDst | Out-Null
+Copy-Item $QtBaseZhCn (Join-Path $QtTranslationsDst "qtbase_zh_CN.qm") -Force
 Copy-Item $QtBaseJa (Join-Path $QtTranslationsDst "qtbase_ja_JP.qm") -Force
-
-# qtbase_en.qm 为可选：存在即复制（供 en_US 控件本地化），缺失不阻断发布。
-$QtBaseEn = Join-Path $QtTranslationsSrc "qtbase_en.qm"
 if (Test-Path $QtBaseEn) {
     Copy-Item $QtBaseEn (Join-Path $QtTranslationsDst "qtbase_en_US.qm") -Force
 } else {
-    Write-Host "qtbase_en.qm not present; en_US 运行不依赖 Qt base translator" -ForegroundColor Yellow
+    Write-Host "qtbase_en.qm not present; en_US runtime does not require it" -ForegroundColor Yellow
 }
 
 # 5. Stage sidecar + version/contracts/legal; assert app .qm
@@ -236,14 +253,16 @@ Copy-Item -Recurse $SidecarSrc $SidecarDst
 Copy-Item (Join-Path $RepoRoot "version.json") $StageDir -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $StageDir "contracts") | Out-Null
 Copy-Item (Join-Path $RepoRoot "contracts\error_codes.json") (Join-Path $StageDir "contracts") -Force
+# Runtime public-key fallback beside bf_app.exe. The release binary should
+# already embed the key via bf_core; this file is a second path for diagnostics
+# and for any build that missed the embed macro.
+Copy-Item $LicensePublicKeyFile (Join-Path $StageDir "license_public.pem") -Force
 
-# i18n 应用 .qm：由 CMake install 产出（native/i18n/*.ts 经 lrelease 编译为
-# bf_app_<locale>.qm，install 到 stage/i18n/）。stage 不再复制 .ts；.qm 缺失即失败。
-$I18nDst = Join-Path $StageDir "i18n"
+# App translations are produced by CMake install. Check their final stage paths directly.
 foreach ($locale in @("zh_CN", "en_US", "ja_JP")) {
-    $appQm = Join-Path $I18nDst "bf_app_$locale.qm"
+    $appQm = Join-Path $StageDir "i18n\bf_app_$locale.qm"
     if (-not (Test-Path $appQm)) {
-        throw "App translation missing: $appQm (CMake lrelease/install should produce bf_app_$locale.qm)"
+        throw "App translation missing: $appQm (CMake lrelease/install should produce it)"
     }
 }
 
@@ -288,6 +307,36 @@ if ($ChannelRequiresSigning) {
     Invoke-Sign (Join-Path $SidecarDst "boundfree_sidecar.exe")
 } else {
     Write-Step "6/8 Sign staged binaries (skipped: channel=$ReleaseChannel, SkipSigning=$SkipSigning)"
+}
+
+# Prefer an explicit -IsccPath. When the default system install is absent,
+# accept the per-user location used by the winget Inno Setup package.
+if (-not (Test-Path $IsccPath)) {
+    $UserIsccPath = Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe"
+    if (Test-Path $UserIsccPath) {
+        $IsccPath = $UserIsccPath
+    }
+}
+# The Chinese Inno Setup translation is not shipped by every user-level Inno
+# installation. Fetch the MIT translation into the installer directory so the
+# .iss file has a reproducible project-local input.
+$InstallerLanguageDir = Join-Path $RepoRoot "installer\installer_languages"
+$ChineseLanguageFile = Join-Path $InstallerLanguageDir "ChineseSimplified.isl"
+if (-not (Test-Path $ChineseLanguageFile)) {
+    New-Item -ItemType Directory -Force -Path $InstallerLanguageDir | Out-Null
+    Write-Step "Preparing Inno Setup Chinese translation"
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/kira-96/Inno-Setup-Chinese-Simplified-Translation/master/ChineseSimplified.isl" -OutFile $ChineseLanguageFile
+    } catch {
+        throw "Unable to download ChineseSimplified.isl: $($_.Exception.Message)"
+    }
+}
+if (-not (Test-Path $ChineseLanguageFile)) {
+    throw "ChineseSimplified.isl missing: $ChineseLanguageFile"
+}
+$ChineseLanguageContent = Get-Content -Raw -LiteralPath $ChineseLanguageFile
+if ($ChineseLanguageContent -notmatch "(?m)^\[LangOptions\]$" -or $ChineseLanguageContent -notmatch "(?m)^LanguageName=") {
+    throw "ChineseSimplified.isl is not a valid Inno Setup language file: $ChineseLanguageFile"
 }
 
 # 7. Inno Setup compile (embeds the signed staged tree)
