@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Dependencies this release does NOT ship. Declaring them in legal assets
 # would be a leftover from the old PySide6 reference build.
@@ -96,7 +96,7 @@ def check_version_sync() -> CheckResult:
     try:
         import importlib.util
 
-        script = REPO_ROOT / "scripts" / "version_sync.py"
+        script = REPO_ROOT / "scripts" / "common" / "version_sync.py"
         if not script.exists():
             return CheckResult(name, False, "missing: scripts/version_sync.py")
         spec = importlib.util.spec_from_file_location("bf_version_sync", script)
@@ -368,7 +368,7 @@ def check_no_private_keys() -> CheckResult:
 def check_i18n_release() -> CheckResult:
     """Validate that the release pipeline ships .qm and never .ts at runtime."""
     name = "i18n .qm-only release (no .ts staging)"
-    path = REPO_ROOT / "build_release.ps1"
+    path = REPO_ROOT / "scripts" / "windows" / "build_release.ps1"
     if not path.exists():
         return CheckResult(name, False, "build_release.ps1 missing")
     src = _read_text(path)
@@ -420,7 +420,7 @@ def check_i18n_release() -> CheckResult:
 def check_signing_policy(channel: str) -> CheckResult:
     """Validate build_release.ps1 signing semantics for the given channel."""
     name = f"build_release.ps1 signing policy (channel={channel})"
-    path = REPO_ROOT / "build_release.ps1"
+    path = REPO_ROOT / "scripts" / "windows" / "build_release.ps1"
     if not path.exists():
         return CheckResult(name, False, "build_release.ps1 missing")
     src = _read_text(path)

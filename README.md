@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.47-dev",
+  "version": "0.1.48-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 打包实现和 WSL2 Linux 可验证部分已完成，Windows 安装、签名与干净机发布门禁待执行。产品版本 `0.1.47-dev`。
+当前阶段：M0–M7 均已完成；M8 打包实现和 WSL2 Linux 可验证部分已完成，Windows 安装、签名与干净机发布门禁待执行。产品版本 `0.1.48-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -81,3 +81,31 @@ boundfree-eeg-native/
 - `version.json` 是产品版本真值；根目录 [`version.md`](version.md) 从版本同步规范启用提交开始记录每次有效提交的版本、日期、作者、提交标题和提交正文。
 - 每个合入 `master` 的有效提交递增版本并更新 `version.md`；提交前运行 `python3 scripts/version_sync.py check`。
 - 产品版本和 `ipc_protocol_version` 分开维护。
+
+## Windows Dev Build
+
+WSL2 仓库是唯一源码；Windows 仓库仅用于 MSVC、Qt、安装包和真实桌面验证。首次在 WSL2 创建本机配置：
+
+```bash
+cp config/windows-dev.example.json config/windows-dev.local.json
+```
+
+编辑 `config/windows-dev.local.json` 填入 `wsl_sync_target` 和 `qt_root`。
+
+从 WSL2 单向同步到已存在的 Windows 验证副本：
+
+```bash
+./scripts/wsl/sync_to_windows.sh
+```
+
+目标目录为空目录或全新建时，追加 `--init` 自动初始化并跳过 `version.json` 校验：
+
+```bash
+./scripts/wsl/sync_to_windows.sh --init
+```
+
+随后在 Windows 10/11 的同步仓库根目录运行：
+
+```powershell
+.\scripts\windows\build_windows.ps1
+```

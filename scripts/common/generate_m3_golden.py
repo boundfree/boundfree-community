@@ -111,7 +111,7 @@ class Pipeline:
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     out_dir = root / "tests" / "golden" / "m3"
     out_dir.mkdir(parents=True, exist_ok=True)
 

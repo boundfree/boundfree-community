@@ -11,7 +11,7 @@ import platform
 import subprocess
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_APP = ROOT / "native" / "build" / "bf_app"
 REQUIRED_CHANNELS = (64, 128, 256)
 

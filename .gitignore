@@ -21,3 +21,6 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .venv/
+
+# Per-machine Windows build and WSL synchronization paths
+config/windows-dev.local.json

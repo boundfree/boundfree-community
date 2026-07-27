@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 I18N_DIR = ROOT / "native" / "i18n"
 NATIVE_SRC = ROOT / "native" / "src"
 ERROR_CODES_PATH = ROOT / "contracts" / "error_codes.json"

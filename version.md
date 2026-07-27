@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.47-dev
+当前版本：0.1.48-dev
 
 版本真值：`version.json`
 
@@ -34,6 +34,23 @@
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
 
 ---
+
+chore: 重构脚本目录并精简WSL-Windows开发链路
+
+版本：0.1.48-dev
+日期：2026-07-29
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：chore
+
+提交标题：
+chore: 重构脚本目录并精简WSL-Windows开发链路
+
+提交正文：
+```text
+将脚本从 scripts/ 扁平目录重组为 scripts/common/、scripts/windows/、scripts/wsl/ 三个职能子目录；新增 config/windows-dev.local.json 配置体系替代硬编码路径；删除冗余的 prepare_windows_handoff.sh 和 run_windows.cmd；同步更新所有测试、installer 及文档中的脚本路径引用。
+```
 
 fix: 按内容校验CSV信号格式
 

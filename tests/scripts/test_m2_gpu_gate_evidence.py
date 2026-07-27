@@ -7,7 +7,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "scripts" / "collect_m2_gpu_gate_evidence.py"
+SCRIPT = ROOT / "scripts" / "common" / "collect_m2_gpu_gate_evidence.py"
 
 spec = importlib.util.spec_from_file_location("collect_m2_gpu_gate_evidence", SCRIPT)
 gpu_gate = importlib.util.module_from_spec(spec)

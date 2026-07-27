@@ -103,7 +103,7 @@ if ($env:OS -ne "Windows_NT") {
     throw "build_release.ps1 must run in native Windows PowerShell. Run WSL checks first, then build from a Windows x64 Native Tools Command Prompt or PowerShell session."
 }
 
-$RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
 $NativeDir = Join-Path $RepoRoot "native"
 $SidecarDir = Join-Path $RepoRoot "sidecar"
 $BuildDir = Join-Path $NativeDir "build-windows"

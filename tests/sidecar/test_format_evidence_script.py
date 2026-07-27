@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_collect_m2_format_evidence_dry_run_reports_skips_as_non_evidence():
     result = subprocess.run(
-        ["python3", "scripts/collect_m2_format_evidence.py", "--dry-run"],
+        ["python3", "scripts/common/collect_m2_format_evidence.py", "--dry-run"],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

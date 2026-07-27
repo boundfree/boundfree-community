@@ -15,11 +15,12 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VERSION_JSON = ROOT / "version.json"
 VERSION_MD = ROOT / "version.md"
 README = ROOT / "README.md"
 AGENTS = ROOT / "AGENTS.md"
+ISS = ROOT / "installer" / "BoundFreeEEG.iss"
 
 VERSION_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$")
 CHANNELS = {"dev", "alpha", "beta", "rc", "stable"}
@@ -83,6 +84,7 @@ def set_version(version: str, channel: str | None) -> None:
     write_version_json(data)
     update_readme_version(version)
     update_agents_version(version)
+    update_installer_version(version)
     update_version_md_current(version)
     print(f"version updated to {version} channel={chosen_channel}")
 
@@ -110,6 +112,21 @@ def update_agents_version(version: str) -> None:
     text = re.sub(r"当前版本为 `[^`]+`", f"当前版本为 `{version}`", text, count=1)
     text = re.sub(r"产品版本当前为 `[^`]+`；每个有效提交必须递增产品版本并更新根目录 `version.md`。", f"产品版本当前为 `{version}`；每个有效提交必须递增产品版本并更新根目录 `version.md`。", text, count=1)
     AGENTS.write_text(text, encoding="utf-8")
+
+
+def update_installer_version(version: str) -> None:
+    if not ISS.exists():
+        raise SystemExit("installer/BoundFreeEEG.iss missing")
+    text = ISS.read_text(encoding="utf-8")
+    updated, count = re.subn(
+        r'(#define\s+BoundFreeVersion\s+")[^"]+("\s*)',
+        rf'\g<1>{version}\g<2>',
+        text,
+        count=1,
+    )
+    if count != 1:
+        raise SystemExit("installer/BoundFreeEEG.iss missing BoundFreeVersion fallback")
+    ISS.write_text(updated, encoding="utf-8")
 
 
 def update_version_md_current(version: str) -> None:
@@ -176,6 +193,10 @@ def check_sync() -> list[str]:
     agents = AGENTS.read_text(encoding="utf-8")
     if f"当前版本为 `{version}`" not in agents:
         failures.append("AGENTS current version mismatch")
+    if not ISS.exists():
+        failures.append("installer/BoundFreeEEG.iss missing")
+    elif not re.search(rf'#define\s+BoundFreeVersion\s+"{re.escape(version)}"', ISS.read_text(encoding="utf-8")):
+        failures.append("installer/BoundFreeEEG.iss fallback version mismatch")
     return failures
 
 

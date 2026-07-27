@@ -25,7 +25,7 @@ def test_file_open_status_keys_are_present_in_all_locales():
 
 def test_i18n_static_check_passes():
     subprocess.run(
-        [sys.executable, "scripts/check_i18n.py"],
+        [sys.executable, "scripts/common/check_i18n.py"],
         cwd=ROOT,
         text=True,
         check=True,

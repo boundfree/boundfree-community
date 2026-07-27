@@ -57,7 +57,7 @@ def make_template_biphasic(pre: int, post: int, amplitude: float = 70.0) -> np.n
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     out_dir = root / "tests" / "golden" / "spike"
     out_dir.mkdir(parents=True, exist_ok=True)
 

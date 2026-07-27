@@ -16,8 +16,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = ROOT / "sidecar" / "boundfree_sidecar.spec"
 ISS = ROOT / "installer" / "BoundFreeEEG.iss"
-PS1 = ROOT / "build_release.ps1"
-CHECK = ROOT / "scripts" / "check_release_assets.py"
+PS1 = ROOT / "scripts" / "windows" / "build_release.ps1"
+CHECK = ROOT / "scripts" / "common" / "check_release_assets.py"
 LEGAL = ROOT / "legal"
 VERSION = ROOT / "version.json"
 
@@ -125,8 +125,8 @@ class TestPs1:
         t = _text(PS1)
         for kw in ("version.json", "error_codes.json", "legal", "i18n"):
             assert kw in t.lower() or kw in t
-        assert re.search(r"\.ts", t)
-
+        assert ".qm" in t
+        assert not re.search(r"Copy-Item.*i18n[\\/]\*\.ts", t)
     def test_no_dev_venv_in_staging(self):
         t = _text(PS1)
         for pat in (r"Copy-Item.*\.venv", r"Stage.*venv"):
@@ -137,6 +137,25 @@ class TestPs1:
         assert "boundfree_sidecar.spec" in t
         assert re.search(r"windeployqt", t, re.IGNORECASE)
         assert re.search(r"ISCC|iscc\.exe", t, re.IGNORECASE)
+
+    def test_repo_root_resolution(self):
+        """仓库根目录计算必须基于 $PSScriptRoot 向上两级 (Join-Path $PSScriptRoot '..\\..') 并经 Resolve-Path 解析，
+        不得再使用错误的 $MyInvocation.MyCommand.Definition 双 Split-Path 形式。
+        """
+        t = _text(PS1)
+        assert "$PSScriptRoot" in t, "build_release.ps1 必须使用 $PSScriptRoot 计算根目录"
+        assert re.search(r"Join-Path\s+\$PSScriptRoot\s+[\"']\.\.[\/\\]\.\.[\"']", t), (
+            "仓库根目录计算必须使用 Join-Path $PSScriptRoot '..\\..'"
+        )
+        assert re.search(r"Resolve-Path\s+.*\$PSScriptRoot", t), (
+            "仓库根目录计算必须包含 Resolve-Path"
+        )
+        assert "$MyInvocation.MyCommand.Definition" not in t, (
+            "不得再使用 $MyInvocation.MyCommand.Definition 提取脚本路径"
+        )
+        assert not re.search(r"Split-Path\s+-Parent\s*\(\s*Split-Path\s+-Parent\s+\$MyInvocation", t, re.IGNORECASE), (
+            "不得使用 Split-Path -Parent (Split-Path -Parent $MyInvocation...) 双级父路径计算形式"
+        )
 
 
 # -- Legal assets ------------------------------------------------------------

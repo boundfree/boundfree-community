@@ -18,7 +18,7 @@
 
 [CmdletBinding()]
 param(
-    [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string] $RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
     [string] $StageDir,
     [string] $InstallerPath,
     [switch] $SkipInstaller

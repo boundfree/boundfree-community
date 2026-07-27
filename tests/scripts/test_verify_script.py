@@ -24,7 +24,7 @@ def _usable_bash() -> str | None:
 
 
 def test_m1_foundation_verify_script_exists_and_supports_fast_mode():
-    script = ROOT / "scripts" / "verify_m1_foundation.sh"
+    script = ROOT / "scripts" / "wsl" / "verify_m1_foundation.sh"
     assert script.exists()
 
     bash = _usable_bash()

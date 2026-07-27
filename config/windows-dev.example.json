@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "wsl_sync_target": "/mnt/c/Users/YourName/source/BoundFree/boundfree-eeg-native",
+  "qt_root": "E:\\Qt\\6.8.2\\msvc2022_64",
+  "bootstrap_python": "py",
+  "bootstrap_python_args": ["-3.12"],
+  "venv_dir": ".venv",
+  "iscc_path": "",
+  "license_public_key_file": "license_public.pem",
+  "configuration": "Release"
+}
