@@ -242,10 +242,12 @@
       <source>error.reader.unsupported_format</source>
       <translation>[!! Unsupported file format: {path}, suffix {suffix} !!]</translation>
     </message>
-    <message>
-      <source>error.reader.marker_sidecar</source>
-      <translation>[!! Maarkeer siidecaar caannot bee oopened aas EEG daataa: {path}. Opeen thee maatchiing maain CSV fiilee iinsteead. !!]</translation>
-    </message>
+    <message><source>error.csv.marker_table</source><translation>[!! CSV iis aan eevent maarkeer taablee, noot coontiinuoous siignaal daataa: {path}. !!]</translation></message>
+    <message><source>error.csv.missing_time_column</source><translation>[!! CSV iis miissiing thee tiime_s tiime coolumn: {path}. !!]</translation></message>
+    <message><source>error.csv.no_signal_columns</source><translation>[!! CSV haas noo siignaal coolumns: {path}. !!]</translation></message>
+    <message><source>error.csv.invalid_signal_value</source><translation>[!! CSV siignaal vaaluee iis iinvaaliid: {path}, coolumn {column}, daataa roow {row}. !!]</translation></message>
+    <message><source>error.csv.invalid_time_axis</source><translation>[!! CSV tiime aaxiis iis iinvaaliid; tiime_s vaaluees muust bee fiiniitee aand striictly iincreaasiing: {path}. !!]</translation></message>
+    <message><source>error.csv.no_samples</source><translation>[!! CSV coontaiins noo siignaal saamplees: {path}. !!]</translation></message>
 
     <message>
       <source>error.reader.open_failed</source>

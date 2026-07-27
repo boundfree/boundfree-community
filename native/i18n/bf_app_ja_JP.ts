@@ -242,10 +242,12 @@
       <source>error.reader.unsupported_format</source>
       <translation>サポートされていないファイル形式です：{path}、拡張子 {suffix}</translation>
     </message>
-    <message>
-      <source>error.reader.marker_sidecar</source>
-      <translation>注釈側車ファイルは EEG データとして開けません：{path}。対応する主 CSV ファイルを開いてください。</translation>
-    </message>
+    <message><source>error.csv.marker_table</source><translation>この CSV は連続信号データではなくイベント注釈表です：{path}。</translation></message>
+    <message><source>error.csv.missing_time_column</source><translation>CSV に時刻列 time_s がありません：{path}。</translation></message>
+    <message><source>error.csv.no_signal_columns</source><translation>CSV に信号列がありません：{path}。</translation></message>
+    <message><source>error.csv.invalid_signal_value</source><translation>CSV 信号値が無効です：{path}、列 {column}、データ行 {row}。</translation></message>
+    <message><source>error.csv.invalid_time_axis</source><translation>CSV 時間軸が無効です。time_s は有限で厳密に増加する数値である必要があります：{path}。</translation></message>
+    <message><source>error.csv.no_samples</source><translation>CSV に信号サンプルがありません：{path}。</translation></message>
 
     <message>
       <source>error.reader.open_failed</source>

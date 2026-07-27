@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import error_payload, make_error
-from .readers.errors import OptionalDependencyMissing
+from .readers.errors import CsvSchemaError, OptionalDependencyMissing
 from .readers.registry import reader_for_path
 from .sessions import FileSessionRegistry
 from .version import load_version
@@ -66,8 +66,6 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
     path = Path(raw_path)
     if not path.exists():
         return error_response(request_id, "file.not_found", {"path": raw_path})
-    if path.suffix.lower() == ".csv" and path.stem.endswith("_markers"):
-        return error_response(request_id, "reader.marker_sidecar", {"path": raw_path})
     reader = reader_for_path(path)
     if reader is None:
         return error_response(request_id, "reader.unsupported_format", {"path": raw_path, "suffix": path.suffix.lower()})
@@ -79,6 +77,8 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
             "dependency": exc.dependency,
             "reason": exc.reason or str(exc),
         })
+    except CsvSchemaError as exc:
+        return error_response(request_id, exc.code, {"path": raw_path, **exc.params})
     except Exception as exc:
         return error_response(request_id, "reader.open_failed", {"path": raw_path, "reason": str(exc)})
     session = _sessions.add(path, meta.fs, meta.n_channels, meta.n_samples, meta.ch_names, reader)
@@ -120,6 +120,8 @@ def _handle_get_slice(request_id: Any, params: dict[str, Any]) -> dict[str, Any]
             "dependency": exc.dependency,
             "reason": exc.reason or str(exc),
         })
+    except CsvSchemaError as exc:
+        return error_response(request_id, exc.code, {"path": str(session.path), **exc.params})
     except Exception as exc:
         return error_response(request_id, "reader.open_failed", {"path": str(session.path), "reason": str(exc)})
     return success_response(request_id, {

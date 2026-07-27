@@ -242,10 +242,12 @@
       <source>error.reader.unsupported_format</source>
       <translation>Unsupported file format: {path}, suffix {suffix}</translation>
     </message>
-    <message>
-      <source>error.reader.marker_sidecar</source>
-      <translation>標註側車不能作為腦電資料開啟：{path}。請開啟同名主 CSV 檔案。</translation>
-    </message>
+    <message><source>error.csv.marker_table</source><translation>此 CSV 是事件標註表，不包含連續信號：{path}。</translation></message>
+    <message><source>error.csv.missing_time_column</source><translation>CSV 缺少時間欄 time_s：{path}。</translation></message>
+    <message><source>error.csv.no_signal_columns</source><translation>CSV 沒有信號欄：{path}。</translation></message>
+    <message><source>error.csv.invalid_signal_value</source><translation>CSV 信號值無效：{path}，欄 {column}，資料列 {row}。</translation></message>
+    <message><source>error.csv.invalid_time_axis</source><translation>CSV 時間軸無效；time_s 必須為有限且嚴格遞增的數值：{path}。</translation></message>
+    <message><source>error.csv.no_samples</source><translation>CSV 不包含信號樣本：{path}。</translation></message>
 
     <message>
       <source>error.reader.open_failed</source>

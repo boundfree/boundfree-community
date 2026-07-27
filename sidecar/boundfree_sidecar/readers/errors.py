@@ -20,3 +20,12 @@ class OptionalDependencyMissing(RuntimeError):
         if reason:
             message = f"{message}: {reason}"
         super().__init__(message)
+
+
+class CsvSchemaError(RuntimeError):
+    """CSV 内容不符合连续信号数据 schema。"""
+
+    def __init__(self, code: str, params: dict[str, object] | None = None) -> None:
+        self.code = code
+        self.params = params or {}
+        super().__init__(code)

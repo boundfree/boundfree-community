@@ -242,10 +242,12 @@
       <source>error.reader.unsupported_format</source>
       <translation>暂不支持该文件格式：{path}，后缀 {suffix}</translation>
     </message>
-    <message>
-      <source>error.reader.marker_sidecar</source>
-      <translation>标注侧车不能作为脑电数据打开：{path}。请打开同名主 CSV 文件。</translation>
-    </message>
+    <message><source>error.csv.marker_table</source><translation>该 CSV 是事件标注表，不包含连续信号：{path}。</translation></message>
+    <message><source>error.csv.missing_time_column</source><translation>CSV 缺少时间列 time_s：{path}。</translation></message>
+    <message><source>error.csv.no_signal_columns</source><translation>CSV 没有信号列：{path}。</translation></message>
+    <message><source>error.csv.invalid_signal_value</source><translation>CSV 信号值无效：{path}，列 {column}，数据行 {row}。</translation></message>
+    <message><source>error.csv.invalid_time_axis</source><translation>CSV 时间轴无效；time_s 必须为有限且严格递增的数值：{path}。</translation></message>
+    <message><source>error.csv.no_samples</source><translation>CSV 不包含信号样本：{path}。</translation></message>
 
     <message>
       <source>error.reader.open_failed</source>

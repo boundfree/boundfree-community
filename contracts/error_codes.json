@@ -44,10 +44,40 @@
       "description": "No sidecar reader is available for the requested file format."
     },
     {
-      "code": "reader.marker_sidecar",
+      "code": "csv.marker_table",
       "params": ["path"],
       "retryable": false,
-      "description": "Marker sidecar CSV files must be loaded through their matching EEG CSV file."
+      "description": "CSV is an event marker table, not continuous signal data."
+    },
+    {
+      "code": "csv.missing_time_column",
+      "params": ["path"],
+      "retryable": false,
+      "description": "CSV continuous signal data requires a time_s column."
+    },
+    {
+      "code": "csv.no_signal_columns",
+      "params": ["path"],
+      "retryable": false,
+      "description": "CSV continuous signal data requires at least one signal column."
+    },
+    {
+      "code": "csv.invalid_signal_value",
+      "params": ["path", "column", "row"],
+      "retryable": false,
+      "description": "CSV signal data contains a non-finite or non-numeric value."
+    },
+    {
+      "code": "csv.invalid_time_axis",
+      "params": ["path"],
+      "retryable": false,
+      "description": "CSV time_s values must be finite and strictly increasing."
+    },
+    {
+      "code": "csv.no_samples",
+      "params": ["path"],
+      "retryable": false,
+      "description": "CSV continuous signal data contains no samples."
     },
     {
       "code": "reader.open_failed",

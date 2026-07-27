@@ -242,10 +242,12 @@
       <source>error.reader.unsupported_format</source>
       <translation>Unsupported file format: {path}, suffix {suffix}</translation>
     </message>
-    <message>
-      <source>error.reader.marker_sidecar</source>
-      <translation>Marker sidecar cannot be opened as EEG data: {path}. Open the matching main CSV file instead.</translation>
-    </message>
+    <message><source>error.csv.marker_table</source><translation>CSV is an event marker table, not continuous signal data: {path}.</translation></message>
+    <message><source>error.csv.missing_time_column</source><translation>CSV is missing the time_s time column: {path}.</translation></message>
+    <message><source>error.csv.no_signal_columns</source><translation>CSV has no signal columns: {path}.</translation></message>
+    <message><source>error.csv.invalid_signal_value</source><translation>CSV signal value is invalid: {path}, column {column}, data row {row}.</translation></message>
+    <message><source>error.csv.invalid_time_axis</source><translation>CSV time axis is invalid; time_s values must be finite and strictly increasing: {path}.</translation></message>
+    <message><source>error.csv.no_samples</source><translation>CSV contains no signal samples: {path}.</translation></message>
 
     <message>
       <source>error.reader.open_failed</source>

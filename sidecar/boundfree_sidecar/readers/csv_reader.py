@@ -1,8 +1,9 @@
 import csv
+import math
 from pathlib import Path
 
 from .base import FileMetadata, Reader, SliceData
-
+from .errors import CsvSchemaError
 
 class CsvReader(Reader):
     format_name = "CSV"
@@ -11,6 +12,52 @@ class CsvReader(Reader):
         super().__init__(path)
         self._rows: list[dict[str, str]] | None = None
         self._metadata: FileMetadata | None = None
+
+    @staticmethod
+    def _number(value: str | None) -> float | None:
+        try:
+            number = float(value) if value is not None else None
+        except ValueError:
+            return None
+        return number if number is not None and math.isfinite(number) else None
+
+    def _validated_csv(self) -> tuple[list[str], int, float, float | None]:
+        with self.path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            headers = reader.fieldnames
+            if headers is None or "time_s" not in headers:
+                raise CsvSchemaError("csv.missing_time_column")
+
+            channels = [header for header in headers if header and header != "time_s"]
+            if not channels:
+                raise CsvSchemaError("csv.no_signal_columns")
+
+            if headers == ["time_s", "label"]:
+                raise CsvSchemaError("csv.marker_table")
+            n_samples = 0
+            first_time = 0.0
+            second_time: float | None = None
+            previous_time: float | None = None
+            for row_number, row in enumerate(reader, start=1):
+
+                time = self._number(row.get("time_s"))
+                if time is None or (previous_time is not None and time <= previous_time):
+                    raise CsvSchemaError("csv.invalid_time_axis")
+                previous_time = time
+                if n_samples == 0:
+                    first_time = time
+                elif n_samples == 1:
+                    second_time = time
+
+                for channel in channels:
+                    if self._number(row.get(channel)) is None:
+                        raise CsvSchemaError(
+                            "csv.invalid_signal_value", {"column": channel, "row": row_number})
+                n_samples += 1
+
+        if n_samples == 0:
+            raise CsvSchemaError("csv.no_samples")
+        return channels, n_samples, first_time, second_time
 
     def _load_events(self) -> list[dict[str, object]]:
         markers_path = self.path.with_name(self.path.stem + "_markers.csv")
@@ -26,20 +73,7 @@ class CsvReader(Reader):
         if self._metadata is not None:
             return self._metadata
 
-        with self.path.open("r", encoding="utf-8", newline="") as f:
-            reader = csv.DictReader(f)
-            first_row = next(reader, None)
-            if first_row is None:
-                raise ValueError("CSV contains no samples")
-
-            ch_names = [name for name in first_row.keys() if name != "time_s"]
-            first_time = float(first_row["time_s"])
-            second_row = next(reader, None)
-            second_time = float(second_row["time_s"]) if second_row is not None else None
-            n_samples = 1 if second_row is None else 2
-
-            for _ in reader:
-                n_samples += 1
+        ch_names, n_samples, first_time, second_time = self._validated_csv()
 
         fs = 1.0 / (second_time - first_time) if second_time is not None else 1.0
         duration = n_samples / fs
