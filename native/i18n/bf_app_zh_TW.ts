@@ -243,6 +243,11 @@
       <translation>Unsupported file format: {path}, suffix {suffix}</translation>
     </message>
     <message>
+      <source>error.reader.marker_sidecar</source>
+      <translation>標註側車不能作為腦電資料開啟：{path}。請開啟同名主 CSV 檔案。</translation>
+    </message>
+
+    <message>
       <source>error.reader.open_failed</source>
       <translation>Reader failed: {reason}</translation>
     </message>

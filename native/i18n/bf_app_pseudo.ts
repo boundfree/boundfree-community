@@ -243,6 +243,11 @@
       <translation>[!! Unsupported file format: {path}, suffix {suffix} !!]</translation>
     </message>
     <message>
+      <source>error.reader.marker_sidecar</source>
+      <translation>[!! Maarkeer siidecaar caannot bee oopened aas EEG daataa: {path}. Opeen thee maatchiing maain CSV fiilee iinsteead. !!]</translation>
+    </message>
+
+    <message>
       <source>error.reader.open_failed</source>
       <translation>[!! Reader failed: {reason} !!]</translation>
     </message>

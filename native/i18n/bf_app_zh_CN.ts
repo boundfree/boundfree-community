@@ -243,6 +243,11 @@
       <translation>暂不支持该文件格式：{path}，后缀 {suffix}</translation>
     </message>
     <message>
+      <source>error.reader.marker_sidecar</source>
+      <translation>标注侧车不能作为脑电数据打开：{path}。请打开同名主 CSV 文件。</translation>
+    </message>
+
+    <message>
       <source>error.reader.open_failed</source>
       <translation>读取器失败：{reason}</translation>
     </message>

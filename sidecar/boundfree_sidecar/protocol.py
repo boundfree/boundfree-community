@@ -66,6 +66,8 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
     path = Path(raw_path)
     if not path.exists():
         return error_response(request_id, "file.not_found", {"path": raw_path})
+    if path.suffix.lower() == ".csv" and path.stem.endswith("_markers"):
+        return error_response(request_id, "reader.marker_sidecar", {"path": raw_path})
     reader = reader_for_path(path)
     if reader is None:
         return error_response(request_id, "reader.unsupported_format", {"path": raw_path, "suffix": path.suffix.lower()})

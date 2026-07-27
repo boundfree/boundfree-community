@@ -243,6 +243,11 @@
       <translation>Unsupported file format: {path}, suffix {suffix}</translation>
     </message>
     <message>
+      <source>error.reader.marker_sidecar</source>
+      <translation>Marker sidecar cannot be opened as EEG data: {path}. Open the matching main CSV file instead.</translation>
+    </message>
+
+    <message>
       <source>error.reader.open_failed</source>
       <translation>Reader failed: {reason}</translation>
     </message>

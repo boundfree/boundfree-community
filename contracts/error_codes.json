@@ -44,6 +44,12 @@
       "description": "No sidecar reader is available for the requested file format."
     },
     {
+      "code": "reader.marker_sidecar",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Marker sidecar CSV files must be loaded through their matching EEG CSV file."
+    },
+    {
       "code": "reader.open_failed",
       "params": ["path", "reason"],
       "retryable": false,

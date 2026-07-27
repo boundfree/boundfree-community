@@ -243,6 +243,11 @@
       <translation>サポートされていないファイル形式です：{path}、拡張子 {suffix}</translation>
     </message>
     <message>
+      <source>error.reader.marker_sidecar</source>
+      <translation>注釈側車ファイルは EEG データとして開けません：{path}。対応する主 CSV ファイルを開いてください。</translation>
+    </message>
+
+    <message>
       <source>error.reader.open_failed</source>
       <translation>リーダーが失敗しました：{reason}</translation>
     </message>
