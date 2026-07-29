@@ -83,7 +83,8 @@
       "code": "reader.open_failed",
       "params": ["path", "reason"],
       "retryable": false,
-      "description": "Sidecar reader failed while opening or reading the requested file."
+      "description": "Sidecar reader failed while opening or reading the requested file.",
+      "_note": "path is wire-only (logging) and intentionally omitted from user-facing i18n strings."
     },
     {
       "code": "reader.optional_dependency_missing",

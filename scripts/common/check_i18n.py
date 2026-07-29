@@ -113,6 +113,9 @@ def check_keys_and_placeholders() -> None:
     for entry in error_codes:
         key = f"error.{entry['code']}"
         expected_params = {f"{{{param}}}" for param in entry["params"]}
+        # reader.open_failed: error_codes.json declares params ["path", "reason"] —
+        # path is wire-only for logging and intentionally omitted from user-facing
+        # translations. TS only carries {reason}. See the _note in error_codes.json.
         if entry["code"] == "reader.open_failed":
             if baseline_placeholders[key] != {"{reason}"}:
                 raise AssertionError(

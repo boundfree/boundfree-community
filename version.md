@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.48-dev
+当前版本：0.1.49-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,28 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+fix: 澄清 reader.open_failed 错误码的线协议参数与 UI 翻译的分离设计
+
+版本：0.1.49-dev
+日期：2026-07-29
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：fix
+
+提交标题：
+fix: 澄清 reader.open_failed 错误码的线协议参数与 UI 翻译的分离设计
+
+提交正文：
+```text
+error_codes.json 中 reader.open_failed 的 params 包含 path 和 reason，
+但 path 为线协议专用（日志/诊断），有意从用户可见 i18n 字符串中省略。
+在 error_codes.json 添加 _note 字段说明此设计，并在 check_i18n.py 的
+特殊豁免处补全注释，避免未来维护者将其误判为 bug。
+```
 
 ---
 
