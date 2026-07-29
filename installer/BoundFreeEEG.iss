@@ -11,7 +11,7 @@
 ; stale files), and registers a clean uninstaller.
 
 #ifndef BoundFreeVersion
-  #define BoundFreeVersion "0.1.48-dev"
+  #define BoundFreeVersion "0.1.50-dev"
 #endif
 
 ; Win32 VS_VERSIONINFO (VersionInfoVersion / VersionInfoProductVersion)

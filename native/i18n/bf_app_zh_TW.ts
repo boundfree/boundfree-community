@@ -8,135 +8,135 @@
     </message>
     <message>
       <source>app.main.empty_state</source>
-      <translation>No file open</translation>
+      <translation>尚未開啟檔案</translation>
     </message>
     <message>
       <source>app.menu.file</source>
-      <translation>File</translation>
+      <translation>檔案</translation>
     </message>
     <message>
       <source>app.menu.language</source>
-      <translation>Language</translation>
+      <translation>語言</translation>
     </message>
     <message>
       <source>app.menu.view</source>
-      <translation>app.menu.view</translation>
+      <translation>檢視</translation>
     </message>
     <message>
       <source>app.menu.theme</source>
-      <translation>app.menu.theme</translation>
+      <translation>主題</translation>
     </message>
     <message>
       <source>app.theme.light</source>
-      <translation>app.theme.light</translation>
+      <translation>亮色</translation>
     </message>
     <message>
       <source>app.theme.dark</source>
-      <translation>app.theme.dark</translation>
+      <translation>暗色</translation>
     </message>
     <message>
       <source>app.view.channels</source>
-      <translation>app.view.channels</translation>
+      <translation>通道面板</translation>
     </message>
     <message>
       <source>app.view.markers</source>
-      <translation>app.view.markers</translation>
+      <translation>標註面板</translation>
     </message>
     <message>
       <source>app.view.analysis</source>
-      <translation>app.view.analysis</translation>
+      <translation>分析面板</translation>
     </message>
     <message>
       <source>app.view.video</source>
-      <translation>app.view.video</translation>
+      <translation>視訊面板</translation>
     </message>
     <message>
       <source>app.status.mode.idle</source>
-      <translation>app.status.mode.idle</translation>
+      <translation>閒置</translation>
     </message>
     <message>
       <source>app.status.mode.playback</source>
-      <translation>app.status.mode.playback</translation>
+      <translation>回放</translation>
     </message>
     <message>
       <source>app.status.mode.recording</source>
-      <translation>app.status.mode.recording</translation>
+      <translation>錄製</translation>
     </message>
     <message>
       <source>app.action.open</source>
-      <translation>Open File</translation>
+      <translation>開啟檔案</translation>
     </message>
     <message>
       <source>app.action.quit</source>
-      <translation>Quit</translation>
+      <translation>結束</translation>
     </message>
     <message>
       <source>app.dialog.open_title</source>
-      <translation>Open EEG File</translation>
+      <translation>開啟 EEG 檔案</translation>
     </message>
     <message>
       <source>app.dialog.open_filter</source>
-      <translation>EEG files (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;All files (*)</translation>
+      <translation>EEG 檔案 (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;所有檔案 (*)</translation>
     </message>
     <message>
       <source>app.browser.previous</source>
-      <translation>Previous window</translation>
+      <translation>上一個視窗</translation>
     </message>
     <message>
       <source>app.browser.next</source>
-      <translation>Next window</translation>
+      <translation>下一個視窗</translation>
     </message>
     <message>
       <source>app.browser.position</source>
-      <translation>Start</translation>
+      <translation>起始</translation>
     </message>
     <message>
       <source>app.browser.window</source>
-      <translation>Window</translation>
+      <translation>視窗</translation>
     </message>
     <message>
       <source>app.browser.amplitude</source>
-      <translation>Amplitude</translation>
+      <translation>振幅</translation>
     </message>
     <message>
       <source>app.browser.first_channel</source>
-      <translation>First channel</translation>
+      <translation>第一通道</translation>
     </message>
     <message>
       <source>app.browser.channels</source>
-      <translation>Channels</translation>
+      <translation>通道</translation>
     </message>
     <message>
       <source>app.status.ready</source>
-      <translation>Ready</translation>
+      <translation>就緒</translation>
     </message>
     <message>
       <source>app.status.sidecar_connecting</source>
-      <translation>Connecting sidecar</translation>
+      <translation>正在連線至邊車</translation>
     </message>
     <message>
       <source>app.status.sidecar_connected</source>
-      <translation>Sidecar connected</translation>
+      <translation>邊車已連線</translation>
     </message>
     <message>
       <source>app.status.sidecar_failed</source>
-      <translation>Sidecar connection failed: {error}</translation>
+      <translation>邊車連線失敗：{error}</translation>
     </message>
     <message>
       <source>app.status.file_opening</source>
-      <translation>Opening {path}</translation>
+      <translation>正在開啟 {path}</translation>
     </message>
     <message>
       <source>app.status.file_failed</source>
-      <translation>Could not open file: {error}</translation>
+      <translation>無法開啟檔案：{error}</translation>
     </message>
     <message>
       <source>app.status.file_opened</source>
-      <translation>{format} | {fs} Hz | {n_channels} channels</translation>
+      <translation>{format} | {fs} Hz | {n_channels} 個通道</translation>
     </message>
     <message>
       <source>app.status.file_window</source>
-      <translation>{format} | {t0}-{t1} s | +/-{amplitude} uV | {n_visible} visible channels</translation>
+      <translation>{format} | {t0}-{t1} 秒 | +/-{amplitude} uV | {n_visible} 個可見通道</translation>
     </message>
     <message>
       <source>app.processing.reference</source>
@@ -172,19 +172,19 @@
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
-      <translation>套用至選中通道</translation>
+      <translation>套用至選取的通道</translation>
     </message>
     <message>
       <source>app.processing.clear_per_channel</source>
-      <translation>清除每通道覆蓋</translation>
+      <translation>清除每個通道的覆寫</translation>
     </message>
     <message>
       <source>app.language.zh_CN</source>
-      <translation>Simplified Chinese</translation>
+      <translation>簡體中文</translation>
     </message>
     <message>
       <source>app.language.zh_TW</source>
-      <translation>Traditional Chinese</translation>
+      <translation>繁體中文</translation>
     </message>
     <message>
       <source>app.language.en_US</source>
@@ -192,55 +192,55 @@
     </message>
     <message>
       <source>app.language.ja_JP</source>
-      <translation>Japanese</translation>
+      <translation>日本語</translation>
     </message>
     <message>
       <source>app.language.ko_KR</source>
-      <translation>Korean</translation>
+      <translation>한국어</translation>
     </message>
     <message>
       <source>app.language.de_DE</source>
-      <translation>German</translation>
+      <translation>Deutsch</translation>
     </message>
     <message>
       <source>app.language.fr_FR</source>
-      <translation>French</translation>
+      <translation>Français</translation>
     </message>
     <message>
       <source>app.language.es_ES</source>
-      <translation>Spanish</translation>
+      <translation>Español</translation>
     </message>
     <message>
       <source>app.language.pseudo</source>
-      <translation>Pseudo</translation>
+      <translation>偽在地化</translation>
     </message>
     <message>
       <source>error.protocol.invalid_json</source>
-      <translation>Protocol message is not valid JSON</translation>
+      <translation>協定訊息不是有效的 JSON</translation>
     </message>
     <message>
       <source>error.protocol.missing_field</source>
-      <translation>Protocol message is missing field: {field}</translation>
+      <translation>協定訊息缺少欄位：{field}</translation>
     </message>
     <message>
       <source>error.protocol.unknown_method</source>
-      <translation>Unknown protocol method: {method}</translation>
+      <translation>未知的協定方法：{method}</translation>
     </message>
     <message>
       <source>error.protocol.version_mismatch</source>
-      <translation>Protocol version mismatch, expected {expected}, got {actual}</translation>
+      <translation>協定版本不一致，預期 {expected}，實際為 {actual}</translation>
     </message>
     <message>
       <source>error.protocol.invalid_params</source>
-      <translation>Invalid protocol parameter: {field}, {reason}</translation>
+      <translation>協定參數無效：{field}，{reason}</translation>
     </message>
     <message>
       <source>error.file.not_found</source>
-      <translation>File does not exist: {path}</translation>
+      <translation>檔案不存在：{path}</translation>
     </message>
     <message>
       <source>error.reader.unsupported_format</source>
-      <translation>Unsupported file format: {path}, suffix {suffix}</translation>
+      <translation>不支援的檔案格式：{path}，副檔名 {suffix}</translation>
     </message>
     <message><source>error.csv.marker_table</source><translation>此 CSV 是事件標註表，不包含連續信號：{path}。</translation></message>
     <message><source>error.csv.missing_time_column</source><translation>CSV 缺少時間欄 time_s：{path}。</translation></message>
@@ -251,7 +251,7 @@
 
     <message>
       <source>error.reader.open_failed</source>
-      <translation>Reader failed: {reason}</translation>
+      <translation>讀取器失敗：{reason}</translation>
     </message>
     <message>
       <source>error.reader.optional_dependency_missing</source>
@@ -259,187 +259,187 @@
     </message>
     <message>
       <source>error.reader.session_not_found</source>
-      <translation>File session does not exist: {handle}</translation>
+      <translation>檔案工作階段不存在：{handle}</translation>
     </message>
     <message>
       <source>error.reader.slice_out_of_range</source>
-      <translation>Slice is outside file duration: {handle}, {t0}-{t1}, duration {duration}</translation>
+      <translation>切片超出檔案時長：{handle}，{t0}-{t1}，時長 {duration}</translation>
     </message>
     <message>
       <source>error.ipc.sidecar_start_failed</source>
-      <translation>Could not start sidecar: {reason}</translation>
+      <translation>無法啟動邊車：{reason}</translation>
     </message>
     <message>
       <source>error.ipc.sidecar_timeout</source>
-      <translation>Sidecar operation timed out: {operation}, {timeout_ms} ms</translation>
+      <translation>邊車操作逾時：{operation}，{timeout_ms} ms</translation>
     </message>
     <message>
       <source>error.ipc.sidecar_exited</source>
-      <translation>Sidecar exited unexpectedly with code: {exit_code}</translation>
+      <translation>邊車意外結束，結束碼：{exit_code}</translation>
     </message>
     <message>
       <source>error.sidecar.initialization_failed</source>
-      <translation>Sidecar initialization failed: {reason}</translation>
+      <translation>邊車初始化失敗：{reason}</translation>
     </message>
     <message>
       <source>error.license.missing</source>
-      <translation>Offline license file is missing: {path}</translation>
+      <translation>缺少離線授權檔案：{path}</translation>
     </message>
     <message>
       <source>error.license.invalid_signature</source>
-      <translation>Offline license signature is invalid: {reason}</translation>
+      <translation>離線授權簽章無效：{reason}</translation>
     </message>
     <message>
       <source>error.license.expired</source>
-      <translation>Offline license expired at: {expires_at}</translation>
+      <translation>離線授權已過期：{expires_at}</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
-      <translation>Internal error: {operation}</translation>
+      <translation>內部錯誤：{operation}</translation>
     </message>
     <message>
       <source>app.analysis.panel</source>
-      <translation>Analysis</translation>
+      <translation>分析</translation>
     </message>
     <message>
       <source>app.analysis.psd</source>
-      <translation>PSD</translation>
+      <translation>功率譜密度</translation>
     </message>
     <message>
       <source>app.analysis.fft</source>
-      <translation>FFT amplitude</translation>
+      <translation>FFT 振幅頻譜</translation>
     </message>
     <message>
       <source>app.analysis.stft</source>
-      <translation>STFT</translation>
+      <translation>STFT 時頻圖</translation>
     </message>
     <message>
       <source>app.analysis.trend</source>
-      <translation>Band power trend</translation>
+      <translation>頻帶功率趨勢</translation>
     </message>
     <message>
       <source>app.analysis.coherence</source>
-      <translation>Coherence</translation>
+      <translation>同調性</translation>
     </message>
     <message>
       <source>app.analysis.db</source>
-      <translation>PSD (dB)</translation>
+      <translation>功率譜密度 (dB)</translation>
     </message>
     <message>
       <source>app.analysis.psd_unit</source>
-      <translation>PSD (uV^2/Hz)</translation>
+      <translation>功率譜密度 (uV^2/Hz)</translation>
     </message>
     <message>
       <source>app.analysis.welch</source>
-      <translation>Welch PSD</translation>
+      <translation>Welch 功率譜</translation>
     </message>
     <message>
       <source>app.analysis.db_display</source>
-      <translation>dB</translation>
+      <translation>dB 顯示</translation>
     </message>
     <message>
       <source>app.analysis.high_time</source>
-      <translation>High time</translation>
+      <translation>高時間解析度</translation>
     </message>
     <message>
       <source>app.analysis.balanced</source>
-      <translation>Balanced</translation>
+      <translation>平衡</translation>
     </message>
     <message>
       <source>app.analysis.high_frequency</source>
-      <translation>High frequency</translation>
+      <translation>高頻率解析度</translation>
     </message>
     <message>
       <source>error.analysis.same_channel</source>
-      <translation>Select two different channels.</translation>
+      <translation>請選擇兩個不同的通道。</translation>
     </message>
     <message>
       <source>error.analysis.failed</source>
-      <translation>Analysis failed.</translation>
+      <translation>分析失敗。</translation>
     </message>
     <message>
       <source>error.analysis.invalid_input</source>
-      <translation>Analysis input is invalid.</translation>
+      <translation>分析輸入無效。</translation>
     </message>
     <message>
       <source>error.analysis.invalid_channel</source>
-      <translation>Analysis channel is invalid.</translation>
+      <translation>分析通道無效。</translation>
     </message>
     <message>
       <source>app.analysis.amplitude</source>
-      <translation>Amplitude (uV)</translation>
+      <translation>振幅 (uV)</translation>
     </message>
     <message>
       <source>app.analysis.time</source>
-      <translation>Time (s)</translation>
+      <translation>時間 (s)</translation>
     </message>
     <message>
       <source>app.analysis.frequency</source>
-      <translation>Frequency (Hz)</translation>
+      <translation>頻率 (Hz)</translation>
     </message>
     <message>
       <source>app.analysis.empty</source>
-      <translation>No analysis data</translation>
+      <translation>目前沒有分析資料</translation>
     </message>
-    <message><source>app.playback.play</source><translation>Play</translation></message>
-    <message><source>app.playback.pause</source><translation>Pause</translation></message>
-    <message><source>app.playback.speed</source><translation>Speed</translation></message>
-    <message><source>app.marker.mode</source><translation>Marker mode</translation></message>
-    <message><source>app.marker.mode_tooltip</source><translation>Click the waveform to add an event marker</translation></message>
-    <message><source>app.marker.panel</source><translation>Event markers</translation></message>
-    <message><source>app.marker.time</source><translation>Time (s)</translation></message>
-    <message><source>app.marker.label</source><translation>Label</translation></message>
-    <message><source>app.marker.color</source><translation>Color</translation></message>
-    <message><source>app.marker.delete</source><translation>Delete selected</translation></message>
-    <message><source>app.marker.clear</source><translation>Clear all</translation></message>
-    <message><source>app.marker.export</source><translation>Export CSV</translation></message>
-    <message><source>app.marker.add_title</source><translation>Add marker</translation></message>
-    <message><source>app.marker.add_prompt</source><translation>Time: {time} s; enter a label (optional)</translation></message>
-    <message><source>app.video.panel</source><translation>Video sync</translation></message>
-    <message><source>app.video.open</source><translation>Open video</translation></message>
-    <message><source>app.video.offset</source><translation>Offset</translation></message>
-    <message><source>app.video.offset_tooltip</source><translation>EEG time corresponding to the first video frame</translation></message>
-    <message><source>app.video.apply</source><translation>Apply</translation></message>
-    <message><source>app.video.apply_tooltip</source><translation>Apply the offset and synchronize to the current EEG time</translation></message>
-    <message><source>app.video.not_loaded</source><translation>No video loaded</translation></message>
-    <message><source>app.video.filter</source><translation>Video files (*.mp4 *.avi *.mov *.mkv *.wmv *.m4v);;All files (*)</translation></message>
-    <message><source>app.video.loaded</source><translation>Video loaded: {name}</translation></message>
-    <message><source>app.video.offset_applied</source><translation>Video offset applied: {offset} s</translation></message>
-    <message><source>app.video.load_failed</source><translation>Could not load video: {detail}</translation></message>
-    <message><source>app.record.start</source><translation>Start recording</translation></message>
-    <message><source>app.record.stop</source><translation>Stop recording</translation></message>
-    <message><source>app.record.started</source><translation>Recording started</translation></message>
-    <message><source>app.record.completed</source><translation>Recording completed: {samples} samples</translation></message>
-    <message><source>app.record.no_file</source><translation>Open an EEG file first</translation></message>
-    <message><source>app.record.metadata</source><translation>Recording metadata</translation></message>
-    <message><source>app.record.animal_id</source><translation>Animal ID</translation></message>
-    <message><source>app.record.exp_type</source><translation>Experiment type</translation></message>
-    <message><source>app.record.notes</source><translation>Notes</translation></message>
-    <message><source>app.record.output_dir</source><translation>Select recording directory</translation></message>
-    <message><source>app.record.status</source><translation>REC {elapsed}; samples {samples}; dropped {dropped}</translation></message>
-    <message><source>app.record.low_disk</source><translation>Disk space below 500 MiB; REC {elapsed}; samples {samples}; dropped {dropped}</translation></message>
-    <message><source>app.export.action</source><translation>Export segment</translation></message>
-    <message><source>app.export.title</source><translation>Export EEG segment</translation></message>
-    <message><source>app.export.start</source><translation>Start time (s)</translation></message>
-    <message><source>app.export.end</source><translation>End time (s)</translation></message>
+    <message><source>app.playback.play</source><translation>播放</translation></message>
+    <message><source>app.playback.pause</source><translation>暫停</translation></message>
+    <message><source>app.playback.speed</source><translation>倍速</translation></message>
+    <message><source>app.marker.mode</source><translation>標註模式</translation></message>
+    <message><source>app.marker.mode_tooltip</source><translation>點選波形以新增事件標註</translation></message>
+    <message><source>app.marker.panel</source><translation>事件標註</translation></message>
+    <message><source>app.marker.time</source><translation>時間 (s)</translation></message>
+    <message><source>app.marker.label</source><translation>標籤</translation></message>
+    <message><source>app.marker.color</source><translation>顏色</translation></message>
+    <message><source>app.marker.delete</source><translation>刪除選取項目</translation></message>
+    <message><source>app.marker.clear</source><translation>清除全部</translation></message>
+    <message><source>app.marker.export</source><translation>匯出 CSV</translation></message>
+    <message><source>app.marker.add_title</source><translation>新增標註</translation></message>
+    <message><source>app.marker.add_prompt</source><translation>時間：{time} 秒；請輸入標籤（可留空）</translation></message>
+    <message><source>app.video.panel</source><translation>視訊同步</translation></message>
+    <message><source>app.video.open</source><translation>開啟視訊</translation></message>
+    <message><source>app.video.offset</source><translation>偏移</translation></message>
+    <message><source>app.video.offset_tooltip</source><translation>視訊第一幀對應的 EEG 時間</translation></message>
+    <message><source>app.video.apply</source><translation>套用</translation></message>
+    <message><source>app.video.apply_tooltip</source><translation>套用偏移並同步至目前的 EEG 時間</translation></message>
+    <message><source>app.video.not_loaded</source><translation>尚未載入視訊</translation></message>
+    <message><source>app.video.filter</source><translation>視訊檔案 (*.mp4 *.avi *.mov *.mkv *.wmv *.m4v);;所有檔案 (*)</translation></message>
+    <message><source>app.video.loaded</source><translation>已載入視訊：{name}</translation></message>
+    <message><source>app.video.offset_applied</source><translation>已套用視訊偏移：{offset} 秒</translation></message>
+    <message><source>app.video.load_failed</source><translation>無法載入視訊：{detail}</translation></message>
+    <message><source>app.record.start</source><translation>開始錄製</translation></message>
+    <message><source>app.record.stop</source><translation>停止錄製</translation></message>
+    <message><source>app.record.started</source><translation>錄製已開始</translation></message>
+    <message><source>app.record.completed</source><translation>錄製完成：{samples} 個樣本</translation></message>
+    <message><source>app.record.no_file</source><translation>請先開啟 EEG 檔案</translation></message>
+    <message><source>app.record.metadata</source><translation>錄製中繼資料</translation></message>
+    <message><source>app.record.animal_id</source><translation>動物編號</translation></message>
+    <message><source>app.record.exp_type</source><translation>實驗類型</translation></message>
+    <message><source>app.record.notes</source><translation>備註</translation></message>
+    <message><source>app.record.output_dir</source><translation>選擇錄製目錄</translation></message>
+    <message><source>app.record.status</source><translation>REC {elapsed}；樣本 {samples}；捨棄 {dropped}</translation></message>
+    <message><source>app.record.low_disk</source><translation>磁碟可用空間低於 500 MiB；REC {elapsed}；樣本 {samples}；捨棄 {dropped}</translation></message>
+    <message><source>app.export.action</source><translation>匯出片段</translation></message>
+    <message><source>app.export.title</source><translation>匯出 EEG 片段</translation></message>
+    <message><source>app.export.start</source><translation>開始時間（秒）</translation></message>
+    <message><source>app.export.end</source><translation>結束時間（秒）</translation></message>
     <message><source>app.export.filter</source><translation>EDF (*.edf);;HDF5 (*.h5 *.hdf5);;CSV (*.csv)</translation></message>
-    <message><source>app.export.running</source><translation>Exporting segment</translation></message>
-    <message><source>app.export.completed</source><translation>Export completed: {path}</translation></message>
-    <message><source>error.ipc.invalid_frame</source><translation>Invalid sidecar frame: {reason}</translation></message>
-    <message><source>error.record.invalid_state</source><translation>Recording is unavailable in state {state}</translation></message>
-    <message><source>error.record.session_not_found</source><translation>Recording session not found: {handle}</translation></message>
-    <message><source>error.record.open_failed</source><translation>Could not create recording files in {path}: {reason}</translation></message>
-    <message><source>error.record.invalid_chunk</source><translation>Invalid recording chunk: {reason}</translation></message>
-    <message><source>error.record.writer_failed</source><translation>Recording session {handle} failed: {reason}</translation></message>
-    <message><source>error.record.close_timeout</source><translation>Recording session {handle} did not close within {timeout_ms} ms</translation></message>
-    <message><source>error.export.invalid_range</source><translation>Export range {t0}-{t1} s exceeds duration {duration} s</translation></message>
-    <message><source>error.export.unsupported_format</source><translation>Export path {path} has unsupported format {suffix}</translation></message>
-    <message><source>error.export.busy</source><translation>Another export is already running</translation></message>
-    <message><source>error.export.failed</source><translation>Segment export to {path} failed: {reason}</translation></message>
-    <message><source>app.license.title</source><translation>app.license.title</translation></message>
-    <message><source>app.license.prompt</source><translation>app.license.prompt {machine_id} {error}</translation></message>
-    <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
-    <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
+    <message><source>app.export.running</source><translation>正在匯出片段</translation></message>
+    <message><source>app.export.completed</source><translation>匯出完成：{path}</translation></message>
+    <message><source>error.ipc.invalid_frame</source><translation>邊車資料幀無效：{reason}</translation></message>
+    <message><source>error.record.invalid_state</source><translation>目前狀態無法錄製：{state}</translation></message>
+    <message><source>error.record.session_not_found</source><translation>找不到錄製工作階段：{handle}</translation></message>
+    <message><source>error.record.open_failed</source><translation>無法在 {path} 建立錄製檔案：{reason}</translation></message>
+    <message><source>error.record.invalid_chunk</source><translation>錄製資料區塊無效：{reason}</translation></message>
+    <message><source>error.record.writer_failed</source><translation>錄製工作階段 {handle} 寫入失敗：{reason}</translation></message>
+    <message><source>error.record.close_timeout</source><translation>錄製工作階段 {handle} 未能在 {timeout_ms} ms 內關閉</translation></message>
+    <message><source>error.export.invalid_range</source><translation>匯出範圍 {t0}-{t1} 秒超出時長 {duration} 秒</translation></message>
+    <message><source>error.export.unsupported_format</source><translation>匯出路徑 {path} 的格式 {suffix} 不受支援</translation></message>
+    <message><source>error.export.busy</source><translation>已有其他匯出工作正在執行</translation></message>
+    <message><source>error.export.failed</source><translation>匯出片段至 {path} 失敗：{reason}</translation></message>
+    <message><source>app.license.title</source><translation>BoundFree EEG 離線授權</translation></message>
+    <message><source>app.license.prompt</source><translation>機器碼：{machine_id}&#10;&#10;目前狀態：{error}&#10;&#10;請輸入離線授權碼：</translation></message>
+    <message><source>app.license.save_failed</source><translation>授權有效，但無法儲存授權檔案。</translation></message>
+    <message><source>app.license.activated</source><translation>離線授權已啟用。</translation></message>
 
     <message><source>app.spike.export.action</source><translation>匯出 Spike 結果</translation></message>
     <message><source>app.spike.export.no_result</source><translation>無可匯出的 Spike 結果</translation></message>

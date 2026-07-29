@@ -34,6 +34,7 @@ const QStringList I18nService::kStableLocales = {
     QStringLiteral("zh_CN"),
     QStringLiteral("en_US"),
     QStringLiteral("ja_JP"),
+    QStringLiteral("zh_TW"),
 };
 
 I18nService::I18nService(QString repoRoot, QObject* parent)

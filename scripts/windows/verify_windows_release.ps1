@@ -94,6 +94,7 @@ Write-Host "stage=$StageDir"
     @{ Path = (Join-Path $StageDir "i18n\bf_app_zh_CN.qm"); Description = "Simplified Chinese translation" },
     @{ Path = (Join-Path $StageDir "i18n\bf_app_en_US.qm"); Description = "English translation" },
     @{ Path = (Join-Path $StageDir "i18n\bf_app_ja_JP.qm"); Description = "Japanese translation" },
+    @{ Path = (Join-Path $StageDir "i18n\bf_app_zh_TW.qm"); Description = "Traditional Chinese translation" },
     @{ Path = (Join-Path $StageDir "legal"); Description = "Legal assets directory" },
     @{ Path = $csvFixture; Description = "CSV fixture" },
     @{ Path = $edfFixture; Description = "EDF fixture" }

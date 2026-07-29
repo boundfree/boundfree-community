@@ -126,7 +126,7 @@ void MainWindow::buildFileMenu() {
 
 void MainWindow::buildLanguageMenu() {
     languageMenu_ = menuBar()->addMenu(i18n_->text("app.menu.language"));
-    // 语言选项互斥；stable 菜单仅展示 supportedLocales（zh_CN/en_US），
+    // 语言选项互斥；stable 菜单仅展示 supportedLocales（zh_CN/en_US/ja_JP/zh_TW），
     // pseudo 与未审校 locale 不在此列表，不暴露给用户。
     languageGroup_ = new QActionGroup(this);
     languageGroup_->setExclusive(true);

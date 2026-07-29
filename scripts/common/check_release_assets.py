@@ -379,11 +379,11 @@ def check_i18n_release() -> CheckResult:
         failures.append("stage still copies native/i18n/*.ts (must use CMake-installed .qm)")
 
     # 2. The pipeline must assert stable app .qm files exist in stage. The
-    #    script builds the filename via a foreach loop over zh_CN/en_US/ja_JP,
+    #    script builds the filename via a foreach loop over zh_CN/en_US/ja_JP/zh_TW,
     #    so we require the locale list and the .qm existence guard (Test-Path +
     #    throw on missing).
-    if not re.search(r'@\(\s*"zh_CN"\s*,\s*"en_US"\s*,\s*"ja_JP"\s*\)', src):
-        failures.append("stable locale list @(\"zh_CN\",\"en_US\",\"ja_JP\") not found")
+    if not re.search(r'@\(\s*"zh_CN"\s*,\s*"en_US"\s*,\s*"ja_JP"\s*,\s*"zh_TW"\s*\)', src):
+        failures.append("stable locale list @(\"zh_CN\",\"en_US\",\"ja_JP\",\"zh_TW\") not found")
     if not re.search(r"bf_app_\$\S*\.qm", src) and "bf_app_" not in src:
         failures.append("no bf_app_<locale>.qm path construction found")
     if "App translation missing" not in src:
@@ -405,7 +405,7 @@ def check_i18n_release() -> CheckResult:
         ts_files = sorted(p.name for p in stage.glob("*.ts"))
         if ts_files:
             failures.append(f"stage/i18n contains .ts (runtime asset leaked): {ts_files}")
-        for locale in ("zh_CN", "en_US", "ja_JP"):
+        for locale in ("zh_CN", "en_US", "ja_JP", "zh_TW"):
             if not (stage / f"bf_app_{locale}.qm").exists():
                 failures.append(f"stage/i18n missing bf_app_{locale}.qm")
 

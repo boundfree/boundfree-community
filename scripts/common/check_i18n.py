@@ -20,7 +20,9 @@ NATIVE_SRC = ROOT / "native" / "src"
 ERROR_CODES_PATH = ROOT / "contracts" / "error_codes.json"
 
 # 全部 locale 的 .ts 源文件（stable + pseudo + 未审校）。
-# stable 用户菜单仅暴露 zh_CN/en_US；pseudo 仅测试；其余 locale 保留源文件但不产出 .qm。
+# stable 用户菜单仅暴露 zh_CN/en_US/ja_JP/zh_TW；pseudo 仅测试；
+# de_DE/fr_FR/es_ES/ko_KR 的 .ts 翻译已完成但暂不激活（不产出 .qm、不进菜单），
+# 保留源文件供未来本地化扩展时直接启用。静态检查覆盖全部 locale 以保持一致性。
 LOCALES = ["zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "de_DE", "fr_FR", "es_ES", "pseudo"]
 
 PLACEHOLDER_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")

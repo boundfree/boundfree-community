@@ -195,27 +195,28 @@ int runTests(const QString& repoRoot) {
         }
     }
 
-    // ----- supportedLocales: stable menu only {zh_CN, en_US, ja_JP} ------
+    // ----- supportedLocales: stable menu {zh_CN, en_US, ja_JP, zh_TW} ------
     {
         bf::I18nService svc(repoRoot);
         const QStringList locales = svc.supportedLocales();
-        if (locales.size() != 3 || !locales.contains(QStringLiteral("zh_CN"))
+        if (locales.size() != 4 || !locales.contains(QStringLiteral("zh_CN"))
             || !locales.contains(QStringLiteral("en_US"))
-            || !locales.contains(QStringLiteral("ja_JP"))) {
-            std::cerr << "FAIL supportedLocales expected exactly {zh_CN, en_US, ja_JP}, got: "
+            || !locales.contains(QStringLiteral("ja_JP"))
+            || !locales.contains(QStringLiteral("zh_TW"))) {
+            std::cerr << "FAIL supportedLocales expected exactly {zh_CN, en_US, ja_JP, zh_TW}, got: "
                       << locales.join(QStringLiteral(", ")).toStdString() << "\n";
             ++failures;
         } else {
-            std::cout << "PASS supportedLocales == {zh_CN, en_US, ja_JP}\n";
+            std::cout << "PASS supportedLocales == {zh_CN, en_US, ja_JP, zh_TW}\n";
         }
 
-        // isStableLocale: zh_CN/en_US/ja_JP true, pseudo/de_DE/fr_FR false.
+        // isStableLocale: zh_CN/en_US/ja_JP/zh_TW true, pseudo/de_DE/fr_FR false.
         if (!svc.isStableLocale(QStringLiteral("zh_CN")) || !svc.isStableLocale(QStringLiteral("en_US"))
-            || !svc.isStableLocale(QStringLiteral("ja_JP"))) {
-            std::cerr << "FAIL isStableLocale zh_CN/en_US/ja_JP should be true\n";
+            || !svc.isStableLocale(QStringLiteral("ja_JP")) || !svc.isStableLocale(QStringLiteral("zh_TW"))) {
+            std::cerr << "FAIL isStableLocale zh_CN/en_US/ja_JP/zh_TW should be true\n";
             ++failures;
         } else {
-            std::cout << "PASS isStableLocale zh_CN/en_US/ja_JP true\n";
+            std::cout << "PASS isStableLocale zh_CN/en_US/ja_JP/zh_TW true\n";
         }
         if (svc.isStableLocale(QStringLiteral("pseudo")) || svc.isStableLocale(QStringLiteral("de_DE"))) {
             std::cerr << "FAIL isStableLocale pseudo/de_DE should be false\n";

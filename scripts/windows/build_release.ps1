@@ -259,7 +259,7 @@ Copy-Item (Join-Path $RepoRoot "contracts\error_codes.json") (Join-Path $StageDi
 Copy-Item $LicensePublicKeyFile (Join-Path $StageDir "license_public.pem") -Force
 
 # App translations are produced by CMake install. Check their final stage paths directly.
-foreach ($locale in @("zh_CN", "en_US", "ja_JP")) {
+foreach ($locale in @("zh_CN", "en_US", "ja_JP", "zh_TW")) {
     $appQm = Join-Path $StageDir "i18n\bf_app_$locale.qm"
     if (-not (Test-Path $appQm)) {
         throw "App translation missing: $appQm (CMake lrelease/install should produce it)"

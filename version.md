@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.49-dev
+当前版本：0.1.50-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,39 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+feat: 添加繁体中文(zh_TW)为第四稳定语言
+
+版本：0.1.50-dev
+日期：2026-07-29
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：feat
+
+提交标题：
+feat: 添加繁体中文(zh_TW)为第四稳定语言
+
+提交正文：
+```text
+将 zh_TW 从待审校 locale 提升为 stable locale，加入语言菜单、CMake
+lrelease 构建和发布资产检查。bf_app_zh_TW.ts 原有 156 个英文占位翻译
+已替换为完整繁体中文（保留 PSD/STFT/FFT 等技术缩写）。同时为暂不激活
+的 de_DE/fr_FR/es_ES/ko_KR 添加设计注释，说明保留 .ts 供未来扩展。
+
+涉及文件：
+- native/i18n/bf_app_zh_TW.ts: 完整繁体翻译 (162 keys)
+- native/src/i18n/i18n_service.{h,cpp}: kStableLocales 加入 zh_TW
+- native/CMakeLists.txt: lrelease 和 install 加入 zh_TW
+- native/src/i18n/i18n_locale_format_test.cpp: 测试更新 3→4
+- native/src/ui/main_window.cpp: 注释同步
+- scripts/windows/build_release.ps1: locale 循环加入 zh_TW
+- scripts/windows/verify_windows_release.ps1: 资产检查加入 zh_TW
+- scripts/common/check_release_assets.py: locale 列表加入 zh_TW
+- scripts/common/check_i18n.py: 注释说明非 stable locale 保留策略
+```
 
 ---
 
