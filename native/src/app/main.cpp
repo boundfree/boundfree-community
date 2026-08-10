@@ -14,6 +14,7 @@
 #include "ipc/sidecar_client.h"
 #include "license/machine_id.h"
 #include "license/license_manager.h"
+#include "ui/activation_dialog.h"
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
@@ -57,11 +58,25 @@ namespace {
 
 bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
     bf::LicenseManager manager(version.version, repoRoot);
+
+    // Level 1: check saved license.dat (no network, instant)
     bf::LicenseResult result = manager.checkSavedLicense();
     if (result.ok()) {
         return true;
     }
 
+    // Automated smoke gate must not wait for the interactive online dialog.
+    if (smokeGate) {
+        return false;
+    }
+    {
+        bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n));
+        if (dlg.exec() == QDialog::Accepted) {
+            return true;
+        }
+    }
+
+    // Level 3: offline paste fallback (preserve original logic)
     while (true) {
         const QString errorText = i18n.text(QString("error.%1").arg(result.error.code), result.error.params);
         bool accepted = false;

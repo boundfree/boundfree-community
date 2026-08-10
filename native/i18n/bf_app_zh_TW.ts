@@ -445,5 +445,33 @@
     <message><source>app.spike.export.no_result</source><translation>無可匯出的 Spike 結果</translation></message>
     <message><source>app.spike.export.completed</source><translation>已匯出 {rows} 個 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 匯出失敗：{reason}</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG 啟用</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>本機機器碼</translation></message>
+    <message><source>app.activation.copy</source><translation>複製</translation></message>
+    <message><source>app.activation.copied</source><translation>已複製到剪貼簿</translation></message>
+    <message><source>app.activation.request</source><translation>申請啟用</translation></message>
+    <message><source>app.activation.request_hint</source><translation>提交後等待管理員審批</translation></message>
+    <message><source>app.activation.invite_code</source><translation>我有邀請碼</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>輸入邀請碼立即啟用</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>請輸入邀請碼（格式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.offline_section</source><translation>或直接貼上啟用碼（離線 / 已取得後使用）</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>在此貼上啟用碼...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>啟用</translation></message>
+    <message><source>app.activation.activated</source><translation>啟用成功！即將進入主介面。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>等待管理員審批中...（每 30 秒自動重新整理）</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>重新整理狀態</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>網路無法使用，請檢查網路連線或使用離線啟用碼</translation></message>
+    <message><source>app.activation.registering</source><translation>正在提交申請...</translation></message>
+    <message><source>app.activation.activating</source><translation>正在啟用...</translation></message>
+    <message><source>app.activation.verifying</source><translation>正在驗證啟用碼...</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>等待審批</translation></message>
+    <message><source>app.activation.status_active</source><translation>已啟用</translation></message>
+    <message><source>app.activation.status_expired</source><translation>已過期</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>已撤銷</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>未找到啟用記錄</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>啟用碼無效，請檢查後重試</translation></message>
+    <message><source>app.activation.save_failed</source><translation>啟用碼有效但無法儲存，請檢查磁碟權限</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>已拒絕</translation></message>
+    <message><source>app.activation.request_failed</source><translation>啟用請求失敗，請稍後重試或使用離線啟用碼</translation></message>
   </context>
 </TS>

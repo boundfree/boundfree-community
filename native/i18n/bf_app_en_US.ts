@@ -444,5 +444,33 @@
     <message><source>app.spike.export.no_result</source><translation>No spike result to export</translation></message>
     <message><source>app.spike.export.completed</source><translation>Exported {rows} spike events to {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike export failed: {reason}</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
+    <message><source>app.activation.copy</source><translation>Copy</translation></message>
+    <message><source>app.activation.copied</source><translation>Copied to clipboard</translation></message>
+    <message><source>app.activation.request</source><translation>Request Activation</translation></message>
+    <message><source>app.activation.request_hint</source><translation>Submit and wait for admin approval</translation></message>
+    <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>Enter invite code to activate instantly</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code (format: BF-XXXX-YYYY)</translation></message>
+    <message><source>app.activation.offline_section</source><translation>Or paste license key (offline / after receiving)</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>
+    <message><source>app.activation.activated</source><translation>Activation successful! Entering main interface.</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>Waiting for admin approval... (auto-refresh every 30s)</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>Network unavailable. Please check your connection or use offline license key.</translation></message>
+    <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>
+    <message><source>app.activation.activating</source><translation>Activating...</translation></message>
+    <message><source>app.activation.verifying</source><translation>Verifying license key...</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>Pending Approval</translation></message>
+    <message><source>app.activation.status_active</source><translation>Active</translation></message>
+    <message><source>app.activation.status_expired</source><translation>Expired</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>Revoked</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>Invalid license key. Please check and try again.</translation></message>
+    <message><source>app.activation.save_failed</source><translation>License key is valid but cannot be saved. Check disk permissions.</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
+    <message><source>app.activation.request_failed</source><translation>Activation request failed. Please try again later or use an offline license key.</translation></message>
   </context>
 </TS>

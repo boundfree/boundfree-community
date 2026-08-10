@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(BF_BRANDING_QRC "${CMAKE_CURRENT_SOURCE_DIR}/resources/branding.qrc")
 set(BF_WINDOWS_APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/boundfree_app.rc")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia Network LinguistTools)
 find_package(Threads REQUIRED)
 
 # ---------------------------------------------------------------------------
@@ -109,6 +109,8 @@ set(BF_CORE_SOURCES
     src/license/license_key.h
     src/license/license_manager.cpp
     src/license/license_manager.h
+    src/license/online_activation_client.cpp
+    src/license/online_activation_client.h
     src/render/minmax_decimator.cpp
     src/render/minmax_decimator.h
     src/render/waveform_slice.cpp
@@ -124,7 +126,7 @@ set(BF_CORE_SOURCES
 add_library(bf_core STATIC ${BF_CORE_SOURCES})
 target_include_directories(bf_core PUBLIC src)
 target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia bf_dsp)
+target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
 if(WIN32)
     target_link_libraries(bf_core PUBLIC bcrypt iphlpapi)
 endif()
@@ -144,11 +146,13 @@ add_executable(bf_app
     src/ui/eeg_playback_panel.h
     src/ui/main_window.cpp
     src/ui/main_window.h
+    src/ui/activation_dialog.cpp
+    src/ui/activation_dialog.h
     src/ui/analysis_widgets.cpp
     src/ui/analysis_widgets.h
 )
 target_include_directories(bf_app PRIVATE src)
-target_link_libraries(bf_app PRIVATE bf_core)
+target_link_libraries(bf_app PRIVATE bf_core Qt6::Network)
 target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})
 if(WIN32)
     target_sources(bf_app PRIVATE ${BF_WINDOWS_APP_ICON_RC})
@@ -276,6 +280,10 @@ add_dependencies(i18n_locale_format_test bf_i18n_qm)
 add_executable(processing_view_state_test src/controller/processing_view_state_test.cpp)
 target_include_directories(processing_view_state_test PRIVATE src)
 target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
+
+add_executable(online_activation_client_test src/license/online_activation_client_test.cpp)
+target_include_directories(online_activation_client_test PRIVATE src)
+target_link_libraries(online_activation_client_test PRIVATE bf_core Qt6::Network)
 
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
 target_include_directories(spike_golden_test PRIVATE src third_party)

@@ -445,5 +445,33 @@
     <message><source>app.spike.export.no_result</source><translation>エクスポートする Spike 結果がありません</translation></message>
     <message><source>app.spike.export.completed</source><translation>{rows} 件の Spike イベントを {path} にエクスポートしました</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike のエクスポートに失敗しました：{reason}</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG アクティベーション</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>マシン ID</translation></message>
+    <message><source>app.activation.copy</source><translation>コピー</translation></message>
+    <message><source>app.activation.copied</source><translation>クリップボードにコピーしました</translation></message>
+    <message><source>app.activation.request</source><translation>アクティベーションを申請</translation></message>
+    <message><source>app.activation.request_hint</source><translation>送信後に管理者の承認をお待ちください</translation></message>
+    <message><source>app.activation.invite_code</source><translation>招待コードを持っています</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>招待コードを入力してすぐにアクティベート</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>招待コードを入力してください（形式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.offline_section</source><translation>またはライセンスキーを貼り付け（オフライン / 受領後に使用）</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>ライセンスキーをここに貼り付け...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>アクティベート</translation></message>
+    <message><source>app.activation.activated</source><translation>アクティベーション成功！メイン画面に入ります。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>管理者の承認待ち...（30秒ごとに自動更新）</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>ステータスを更新</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>ネットワークに接続できません。接続を確認するか、オフラインライセンスキーを使用してください。</translation></message>
+    <message><source>app.activation.registering</source><translation>申請を送信中...</translation></message>
+    <message><source>app.activation.activating</source><translation>アクティベート中...</translation></message>
+    <message><source>app.activation.verifying</source><translation>ライセンスキーを検証中...</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>承認待ち</translation></message>
+    <message><source>app.activation.status_active</source><translation>アクティブ</translation></message>
+    <message><source>app.activation.status_expired</source><translation>期限切れ</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>失効</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>見つかりません</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>ライセンスキーが無効です。確認してもう一度お試しください。</translation></message>
+    <message><source>app.activation.save_failed</source><translation>ライセンスキーは有効ですが保存できません。ディスクの権限を確認してください。</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>拒否されました</translation></message>
+    <message><source>app.activation.request_failed</source><translation>アクティベーション要求に失敗しました。後でもう一度試すか、オフラインライセンスキーを使用してください。</translation></message>
   </context>
 </TS>

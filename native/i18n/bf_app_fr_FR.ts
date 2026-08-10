@@ -440,6 +440,34 @@
     <message><source>app.license.prompt</source><translation>app.license.prompt {machine_id} {error}</translation></message>
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
+    <message><source>app.activation.copy</source><translation>Copy</translation></message>
+    <message><source>app.activation.copied</source><translation>Copied</translation></message>
+    <message><source>app.activation.request</source><translation>Request Activation</translation></message>
+    <message><source>app.activation.request_hint</source><translation>Submit and wait for admin approval</translation></message>
+    <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>Enter an invite code to activate instantly</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code</translation></message>
+    <message><source>app.activation.offline_section</source><translation>Or paste a license key</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>
+    <message><source>app.activation.activated</source><translation>Activation successful</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>Waiting for admin approval...</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>Network unavailable</translation></message>
+    <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>
+    <message><source>app.activation.activating</source><translation>Activating...</translation></message>
+    <message><source>app.activation.verifying</source><translation>Verifying license key...</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>Pending Approval</translation></message>
+    <message><source>app.activation.status_active</source><translation>Active</translation></message>
+    <message><source>app.activation.status_expired</source><translation>Expired</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>Revoked</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>Invalid license key</translation></message>
+    <message><source>app.activation.save_failed</source><translation>License key could not be saved</translation></message>
+    <message><source>app.activation.request_failed</source><translation>Activation request failed</translation></message>
 
     <message><source>app.spike.export.action</source><translation>Exporter les résultats Spike...</translation></message>
     <message><source>app.spike.export.no_result</source><translation>Aucun résultat Spike à exporter</translation></message>

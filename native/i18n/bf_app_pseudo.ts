@@ -440,6 +440,34 @@
     <message><source>app.license.prompt</source><translation>[!! Maachiinee ID: {machine_id}&#10;&#10;Cuurreent staatuus: {error}&#10;&#10;Eenteer the ooffliinee liiceensee keey: !!]</translation></message>
     <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
     <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
+    <message><source>app.activation.title</source><translation>[!! BoouundFreee EEG Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee ID !!]</translation></message>
+    <message><source>app.activation.copy</source><translation>[!! Coopy !!]</translation></message>
+    <message><source>app.activation.copied</source><translation>[!! Coopied !!]</translation></message>
+    <message><source>app.activation.request</source><translation>[!! Reequueest Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.request_hint</source><translation>[!! Suubmit aand waait foor aadmin aapprroovaal !!]</translation></message>
+    <message><source>app.activation.invite_code</source><translation>[!! I haave aan iinvitee coode !!]</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>[!! Eenteer iinvitee coode too aactiivaatee !!]</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>[!! Eenteer iinvitee coode !!]</translation></message>
+    <message><source>app.activation.offline_section</source><translation>[!! Oor paastee a liiceensee keey !!]</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee liiceensee keey heeree... !!]</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>[!! Aactiivaatee !!]</translation></message>
+    <message><source>app.activation.activated</source><translation>[!! Aactiivaatiioon suuccessfuul !!]</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>[!! Waaitiing foor aadmin aapprroovaal... !!]</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>[!! Reeffreesh staatuus !!]</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>[!! Neetwork uunavailablee !!]</translation></message>
+    <message><source>app.activation.registering</source><translation>[!! Suubmittting reequueest... !!]</translation></message>
+    <message><source>app.activation.activating</source><translation>[!! Aactiivaatiing... !!]</translation></message>
+    <message><source>app.activation.verifying</source><translation>[!! Veerifying liiceensee keey... !!]</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>[!! Peending aapprroovaal !!]</translation></message>
+    <message><source>app.activation.status_active</source><translation>[!! Aactivee !!]</translation></message>
+    <message><source>app.activation.status_expired</source><translation>[!! Eexpired !!]</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>[!! Reevooked !!]</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>[!! Reejected !!]</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>[!! Noot foound !!]</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>[!! Iinvaaliid liiceensee keey !!]</translation></message>
+    <message><source>app.activation.save_failed</source><translation>[!! Liiceensee keey coould noot bee saaveed !!]</translation></message>
+    <message><source>app.activation.request_failed</source><translation>[!! Aactiivaatiioon reequueest faileed !!]</translation></message>
     <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
     <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>

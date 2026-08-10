@@ -445,5 +445,33 @@
     <message><source>app.spike.export.no_result</source><translation>无可导出的 Spike 结果</translation></message>
     <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG 激活</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>
+    <message><source>app.activation.copy</source><translation>复制</translation></message>
+    <message><source>app.activation.copied</source><translation>已复制到剪贴板</translation></message>
+    <message><source>app.activation.request</source><translation>申请激活</translation></message>
+    <message><source>app.activation.request_hint</source><translation>提交后等待管理员审批</translation></message>
+    <message><source>app.activation.invite_code</source><translation>我有邀请码</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>输入邀请码立即激活</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>请输入邀请码（格式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.offline_section</source><translation>或直接粘贴激活码（离线/已获取后使用）</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>在此粘贴激活码...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>激活</translation></message>
+    <message><source>app.activation.activated</source><translation>激活成功！即将进入主界面。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>等待管理员审批中...（每 30 秒自动刷新）</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>刷新状态</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>网络不可用，请检查网络连接或使用离线激活码</translation></message>
+    <message><source>app.activation.registering</source><translation>正在提交申请...</translation></message>
+    <message><source>app.activation.activating</source><translation>正在激活...</translation></message>
+    <message><source>app.activation.verifying</source><translation>正在验证激活码...</translation></message>
+    <message><source>app.activation.status_pending_approval</source><translation>等待审批</translation></message>
+    <message><source>app.activation.status_active</source><translation>已激活</translation></message>
+    <message><source>app.activation.status_expired</source><translation>已过期</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>已吊销</translation></message>
+    <message><source>app.activation.status_not_found</source><translation>未找到激活记录</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>激活码无效，请检查后重试</translation></message>
+    <message><source>app.activation.save_failed</source><translation>激活码有效但无法保存，请检查磁盘权限</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>已拒绝</translation></message>
+    <message><source>app.activation.request_failed</source><translation>激活请求失败，请稍后重试或使用离线激活码</translation></message>
   </context>
 </TS>
