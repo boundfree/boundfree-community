@@ -326,8 +326,10 @@ void ActivationDialog::onStatusReceived(const QString& status, const QString& me
 void ActivationDialog::onNetworkError(const QString& detail) {
     stopPolling();
     state_ = IDLE;
-    Q_UNUSED(detail);
-    setState(i18n_->text("app.activation.network_unavailable"), true);
+    const QString base = i18n_->text("app.activation.network_unavailable");
+    const QString text = detail.isEmpty() ? base
+                                          : base + QStringLiteral(" (") + detail + QStringLiteral(")");
+    setState(text, true);
 }
 
 }  // namespace bf

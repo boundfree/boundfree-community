@@ -172,11 +172,11 @@
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
-      <translation>AApppllyy ttoo Seelleecctteedd</translation>
+      <translation>[!! AApppllyy ttoo Seelleecctteedd !!]</translation>
     </message>
     <message>
       <source>app.processing.clear_per_channel</source>
-      <translation>Cleaar Peer-Chaanneel</translation>
+      <translation>[!! Cleaar Peer-Chaanneel !!]</translation>
     </message>
     <message>
       <source>app.language.zh_CN</source>
@@ -255,7 +255,7 @@
     </message>
     <message>
       <source>error.reader.optional_dependency_missing</source>
-      <translation>[Ŕéàðéŕ ñééðš óþţîóñàļ ðéþéñðéñçý {dependency}: {path} ({reason})]</translation>
+      <translation>[!! Ŕéàðéŕ ñééðš óþţîóñàļ ðéþéñðéñçý {dependency}: {path} ({reason}) !!]</translation>
     </message>
     <message>
       <source>error.reader.session_not_found</source>

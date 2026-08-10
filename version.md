@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.53-dev
+当前版本：0.1.54-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+fix: 修复激活流程三处 bug 及 pseudo.ts 格式瑕疵
+
+版本：0.1.54-dev
+日期：2026-08-10
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：fix
+
+提交标题：
+fix: 修复激活流程三处 bug 及 pseudo.ts 格式瑕疵
+
+提交正文：
+```text
+(1) onNetworkError 不再 Q_UNUSED 丢弃网络细节，非空 detail 以括号拼接到 network_unavailable 后展示。(2) handleRegisterResponse 202 解析 request_id 为空时转 activationFailed 而非无感继续轮询。(3) extractErrorCode 移除不可达的 activation.network_error 死代码分支。(4) pseudo.ts 三处 [!! !!] 格式瑕疵修正。
+```
 
 ---
 

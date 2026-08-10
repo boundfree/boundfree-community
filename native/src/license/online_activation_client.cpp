@@ -137,7 +137,12 @@ void OnlineActivationClient::handleRegisterResponse(QNetworkReply* reply, const 
     }
     if (statusCode > 0) {
         if (statusCode == 202) {
-            emit registrationSubmitted(parseJsonObject(data).value("request_id").toString());
+            const QString requestId = parseJsonObject(data).value("request_id").toString();
+            if (requestId.isEmpty()) {
+                emit activationFailed(QStringLiteral("activation.request_failed"), {});
+            } else {
+                emit registrationSubmitted(requestId);
+            }
         } else if (extractErrorCode(reply, data) == QStringLiteral("activation.already_exists")) {
             emit registrationAlreadyExists();
         } else {
@@ -212,9 +217,9 @@ QString OnlineActivationClient::extractErrorCode(QNetworkReply* reply, const QBy
     if (!code.isEmpty()) {
         return code;
     }
-    const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    return statusCode > 0 ? QStringLiteral("activation.request_failed")
-                          : QStringLiteral("activation.network_error");
+    // Note: extractErrorCode is only called when statusCode > 0;
+    // the ": network_error" branch below was unreachable dead code.
+    return QStringLiteral("activation.request_failed");
 }
 
 QJsonObject OnlineActivationClient::extractErrorParams(const QByteArray& data) {
