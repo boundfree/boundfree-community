@@ -471,7 +471,9 @@
     <message><source>app.activation.status_not_found</source><translation>未找到激活记录</translation></message>
     <message><source>app.activation.invalid_key</source><translation>激活码无效，请检查后重试</translation></message>
     <message><source>app.activation.save_failed</source><translation>激活码有效但无法保存，请检查磁盘权限</translation></message>
+    <message><source>app.activation.error_detail</source><translation>服务器拒绝了激活请求（错误代码：{code}）</translation></message>
     <message><source>app.activation.status_rejected</source><translation>已拒绝</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>该设备已绑定其他许可证，请联系管理员释放原设备绑定后重新激活</translation></message>
     <message><source>app.activation.request_failed</source><translation>激活请求失败，请稍后重试或使用离线激活码</translation></message>
   </context>
 </TS>

@@ -141,7 +141,8 @@ void OnlineActivationClient::handleRegisterResponse(QNetworkReply* reply, const 
         } else if (extractErrorCode(reply, data) == QStringLiteral("activation.already_exists")) {
             emit registrationAlreadyExists();
         } else {
-            emit activationFailed(extractErrorCode(reply, data), extractErrorMessage(reply, data));
+            const QString errorCode = extractErrorCode(reply, data);
+            emit activationFailed(errorCode, extractErrorParams(data));
         }
     } else {
         emit networkError(reply->errorString());
@@ -166,7 +167,7 @@ void OnlineActivationClient::handleActivateResponse(QNetworkReply* reply, const 
         const QString key = response.value("license_key").toString();
         const QDate expiresAt = parseExpiresAt(response);
         if (key.isEmpty() || !expiresAt.isValid()) {
-            emit activationFailed(QStringLiteral("activation.invalid_response"), QString());
+            emit activationFailed(QStringLiteral("activation.invalid_response"), {});
         } else {
             emit activationSuccess(key, expiresAt);
         }
@@ -174,7 +175,7 @@ void OnlineActivationClient::handleActivateResponse(QNetworkReply* reply, const 
                extractErrorCode(reply, data) == QStringLiteral("activation.pending_approval")) {
         emit statusReceived(QStringLiteral("pending_approval"), QString(), QDate());
     } else if (statusCode > 0) {
-        emit activationFailed(extractErrorCode(reply, data), extractErrorMessage(reply, data));
+        emit activationFailed(extractErrorCode(reply, data), extractErrorParams(data));
     } else {
         emit networkError(reply->errorString());
     }
@@ -198,7 +199,7 @@ void OnlineActivationClient::handleStatusResponse(QNetworkReply* reply, const QS
         emit statusReceived(response.value("status").toString(), response.value("reason").toString(),
                             parseExpiresAt(response));
     } else if (statusCode > 0) {
-        emit activationFailed(extractErrorCode(reply, data), extractErrorMessage(reply, data));
+        emit activationFailed(extractErrorCode(reply, data), extractErrorParams(data));
     } else {
         emit networkError(reply->errorString());
     }
@@ -216,10 +217,8 @@ QString OnlineActivationClient::extractErrorCode(QNetworkReply* reply, const QBy
                           : QStringLiteral("activation.network_error");
 }
 
-QString OnlineActivationClient::extractErrorMessage(QNetworkReply* reply, const QByteArray& data) {
-    Q_UNUSED(reply);
-    Q_UNUSED(data);
-    return QString();
+QJsonObject OnlineActivationClient::extractErrorParams(const QByteArray& data) {
+    return parseJsonObject(data).value("error").toObject().value("params").toObject();
 }
 
 }  // namespace bf

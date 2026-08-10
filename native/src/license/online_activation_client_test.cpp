@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
         app.quit();
     });
     QObject::connect(&client, &bf::OnlineActivationClient::activationFailed, &app,
-                     [&](const QString&, const QString&) { unexpectedFailure = true; app.quit(); });
+                     [&](const QString&, const QJsonObject&) { unexpectedFailure = true; app.quit(); });
     QObject::connect(&client, &bf::OnlineActivationClient::networkError, &app,
                      [&](const QString&) { unexpectedFailure = true; app.quit(); });
 

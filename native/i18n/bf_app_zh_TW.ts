@@ -471,7 +471,9 @@
     <message><source>app.activation.status_not_found</source><translation>未找到啟用記錄</translation></message>
     <message><source>app.activation.invalid_key</source><translation>啟用碼無效，請檢查後重試</translation></message>
     <message><source>app.activation.save_failed</source><translation>啟用碼有效但無法儲存，請檢查磁碟權限</translation></message>
+    <message><source>app.activation.error_detail</source><translation>伺服器拒絕啟用請求（錯誤代碼：{code}）。</translation></message>
     <message><source>app.activation.status_rejected</source><translation>已拒絕</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>此裝置已綁定其他授權，請聯絡管理員釋放原裝置綁定後再重新啟用</translation></message>
     <message><source>app.activation.request_failed</source><translation>啟用請求失敗，請稍後重試或使用離線啟用碼</translation></message>
   </context>
 </TS>

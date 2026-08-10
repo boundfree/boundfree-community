@@ -471,7 +471,9 @@
     <message><source>app.activation.status_not_found</source><translation>見つかりません</translation></message>
     <message><source>app.activation.invalid_key</source><translation>ライセンスキーが無効です。確認してもう一度お試しください。</translation></message>
     <message><source>app.activation.save_failed</source><translation>ライセンスキーは有効ですが保存できません。ディスクの権限を確認してください。</translation></message>
+    <message><source>app.activation.error_detail</source><translation>サーバーがアクティベーション要求を拒否しました（エラーコード：{code}）。</translation></message>
     <message><source>app.activation.status_rejected</source><translation>拒否されました</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>このデバイスは別のライセンスに紐付いています。再度アクティベートする前に、管理者に以前のデバイス紐付けの解除を依頼してください。</translation></message>
     <message><source>app.activation.request_failed</source><translation>アクティベーション要求に失敗しました。後でもう一度試すか、オフラインライセンスキーを使用してください。</translation></message>
   </context>
 </TS>

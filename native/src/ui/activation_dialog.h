@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QNetworkAccessManager>
+#include <QJsonObject>
 
 namespace bf {
 
@@ -32,7 +33,7 @@ private slots:
     void onRegistrationSubmitted(const QString& requestId);
     void onRegistrationAlreadyExists();
     void onActivationSuccess(const QString& licenseKey, const QDate& expiresAt);
-    void onActivationFailed(const QString& errorCode, const QString& message);
+    void onActivationFailed(const QString& errorCode, const QJsonObject& params);
     void onStatusReceived(const QString& status, const QString& message, const QDate& expiresAt);
     void onNetworkError(const QString& detail);
 

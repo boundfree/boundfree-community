@@ -43,6 +43,17 @@ QString statusText(I18nService* i18n, const QString& status) {
     return i18n->text("app.activation.request_failed");
 }
 
+QString activationErrorText(I18nService* i18n, const QString& errorCode,
+                            const QJsonObject& params) {
+    if (errorCode == QStringLiteral("activation.expired_or_revoked")) {
+        return statusText(i18n, params.value("status").toString());
+    }
+    if (errorCode == QStringLiteral("activation.machine_already_bound")) {
+        return i18n->text("app.activation.status_machine_already_bound");
+    }
+    return i18n->text("app.activation.error_detail", {{"code", errorCode}});
+}
+
 }  // namespace
 
 ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& version,
@@ -269,12 +280,10 @@ void ActivationDialog::onActivationSuccess(const QString& licenseKey, const QDat
     accept();
 }
 
-void ActivationDialog::onActivationFailed(const QString& errorCode, const QString& message) {
+void ActivationDialog::onActivationFailed(const QString& errorCode, const QJsonObject& params) {
     stopPolling();
     state_ = IDLE;
-    Q_UNUSED(errorCode);
-    const QString errorText = message.isEmpty() ? i18n_->text("app.activation.request_failed") : message;
-    setState(errorText, true);
+    setState(activationErrorText(i18n_, errorCode, params), true);
 }
 
 void ActivationDialog::onStatusReceived(const QString& status, const QString& message, const QDate& expiresAt) {

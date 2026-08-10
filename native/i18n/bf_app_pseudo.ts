@@ -465,8 +465,10 @@
     <message><source>app.activation.status_revoked</source><translation>[!! Reevooked !!]</translation></message>
     <message><source>app.activation.status_rejected</source><translation>[!! Reejected !!]</translation></message>
     <message><source>app.activation.status_not_found</source><translation>[!! Noot foound !!]</translation></message>
+    <message><source>app.activation.error_detail</source><translation>[!! Thee seerveer reejected aactiivaatiioon reequueest (eerror coodee: {code}). !!]</translation></message>
     <message><source>app.activation.invalid_key</source><translation>[!! Iinvaaliid liiceensee keey !!]</translation></message>
     <message><source>app.activation.save_failed</source><translation>[!! Liiceensee keey coould noot bee saaveed !!]</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>[!! Deeviiice iis boound too aanootheer liiceensee. Aask aadmin too releeaasee iit fiirst. !!]</translation></message>
     <message><source>app.activation.request_failed</source><translation>[!! Aactiivaatiioon reequueest faileed !!]</translation></message>
     <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>

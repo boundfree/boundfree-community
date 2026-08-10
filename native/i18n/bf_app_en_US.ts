@@ -470,7 +470,9 @@
     <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
     <message><source>app.activation.invalid_key</source><translation>Invalid license key. Please check and try again.</translation></message>
     <message><source>app.activation.save_failed</source><translation>License key is valid but cannot be saved. Check disk permissions.</translation></message>
+    <message><source>app.activation.error_detail</source><translation>The server rejected the activation request (error code: {code}).</translation></message>
     <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>This device is bound to another license. Ask the administrator to release its prior device binding before activating again.</translation></message>
     <message><source>app.activation.request_failed</source><translation>Activation request failed. Please try again later or use an offline license key.</translation></message>
   </context>
 </TS>

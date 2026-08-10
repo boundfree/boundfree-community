@@ -465,8 +465,10 @@
     <message><source>app.activation.status_revoked</source><translation>Revoked</translation></message>
     <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
     <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>Invalid license key</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>Invalid license key. Please check and try again.</translation></message>
+    <message><source>app.activation.error_detail</source><translation>The server rejected the activation request (error code: {code}).</translation></message>
     <message><source>app.activation.save_failed</source><translation>License key could not be saved</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>This device is bound to another license. Ask the administrator to release its prior device binding before activating again.</translation></message>
     <message><source>app.activation.request_failed</source><translation>Activation request failed</translation></message>
 
     <message><source>app.spike.export.action</source><translation>Spike 결과 내보내기...</translation></message>

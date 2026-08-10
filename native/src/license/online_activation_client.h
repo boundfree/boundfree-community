@@ -34,7 +34,7 @@ public:
 signals:
     void registrationSubmitted(const QString& requestId);
     void activationSuccess(const QString& licenseKey, const QDate& expiresAt);
-    void activationFailed(const QString& errorCode, const QString& message);
+    void activationFailed(const QString& errorCode, const QJsonObject& params);
     void statusReceived(const QString& status, const QString& message, const QDate& expiresAt);
     void networkError(const QString& detail);
     void registrationAlreadyExists();
@@ -51,7 +51,7 @@ private:
                               bool usedIpFallback);
     static bool shouldRetryViaFallback(QNetworkReply* reply, int statusCode);
     static QString extractErrorCode(QNetworkReply* reply, const QByteArray& data);
-    static QString extractErrorMessage(QNetworkReply* reply, const QByteArray& data);
+    static QJsonObject extractErrorParams(const QByteArray& data);
 
     QNetworkAccessManager* nam_;
     QUrl serverUrl_;
