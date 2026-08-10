@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.54-dev
+当前版本：0.1.55-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+feat: 修复激活对话框邀请码内联输入与启动吊销核验
+
+版本：0.1.55-dev
+日期：2026-08-10
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：feat
+
+提交标题：
+feat: 修复激活对话框邀请码内联输入与启动吊销核验
+
+提交正文：
+```text
+(1) 邀请码改为对话框内内联 QLineEdit + 按钮，去掉嵌套 QInputDialog，新增两个 i18n 键。(2) ensureOfflineLicense Level 1 本地通过后调用 checkAndHandleRevocation，8 秒超时 fail-open；服务端返回 revoked/rejected 时删除 license.dat 并重新进入激活流程。
+```
 
 ---
 

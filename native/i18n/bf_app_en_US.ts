@@ -445,6 +445,7 @@
     <message><source>app.spike.export.completed</source><translation>Exported {rows} spike events to {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike export failed: {reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>Your license has been revoked. Please re-activate.</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied to clipboard</translation></message>
@@ -453,6 +454,8 @@
     <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>Enter invite code to activate instantly</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code (format: BF-XXXX-YYYY)</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>Invite Code Activation</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>Enter invite code</translation></message>
     <message><source>app.activation.offline_section</source><translation>Or paste license key (offline / after receiving)</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
     <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>

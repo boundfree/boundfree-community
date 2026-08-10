@@ -446,6 +446,7 @@
     <message><source>app.spike.export.completed</source><translation>{rows} 件の Spike イベントを {path} にエクスポートしました</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike のエクスポートに失敗しました：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG アクティベーション</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>ライセンスが失効しました。再アクティベートしてください。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>マシン ID</translation></message>
     <message><source>app.activation.copy</source><translation>コピー</translation></message>
     <message><source>app.activation.copied</source><translation>クリップボードにコピーしました</translation></message>
@@ -454,6 +455,8 @@
     <message><source>app.activation.invite_code</source><translation>招待コードを持っています</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>招待コードを入力してすぐにアクティベート</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>招待コードを入力してください（形式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>招待コードで認証</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>招待コードを入力</translation></message>
     <message><source>app.activation.offline_section</source><translation>またはライセンスキーを貼り付け（オフライン / 受領後に使用）</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>ライセンスキーをここに貼り付け...</translation></message>
     <message><source>app.activation.activate_btn</source><translation>アクティベート</translation></message>

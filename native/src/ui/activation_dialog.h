@@ -23,6 +23,13 @@ public:
     ActivationDialog(LicenseManager* manager, const VersionInfo& version,
                      I18nService* i18n, QWidget* parent = nullptr);
 
+    // Startup online revocation check (fail-open): returns false and removes
+    // the saved license only when the server explicitly reports revoked/rejected.
+    static bool checkAndHandleRevocation(
+        LicenseManager* manager,
+        const VersionInfo& version,
+        I18nService* i18n);
+
 private slots:
     void onRequestActivation();
     void onInviteCode();
@@ -54,6 +61,7 @@ private:
     QPushButton* copyBtn_;
     QPushButton* requestBtn_;
     QPushButton* inviteBtn_;
+    QLineEdit* inviteCodeEdit_;
     QPlainTextEdit* offlineKeyEdit_;
     QPushButton* offlineActivateBtn_;
     QLabel* statusLabel_;

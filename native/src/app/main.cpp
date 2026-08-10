@@ -62,7 +62,15 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
     // Level 1: check saved license.dat (no network, instant)
     bf::LicenseResult result = manager.checkSavedLicense();
     if (result.ok()) {
-        return true;
+        // Online revocation check: fail-open on network error / timeout.
+        // Removes license.dat and falls through to activation dialog
+        // only when server explicitly returns revoked/rejected.
+        if (bf::ActivationDialog::checkAndHandleRevocation(
+                &manager, version, const_cast<bf::I18nService*>(&i18n))) {
+            return true;
+        }
+        // result already consumed; re-read so Level 3 has a valid error message.
+        result = manager.checkSavedLicense();
     }
 
     // Automated smoke gate must not wait for the interactive online dialog.

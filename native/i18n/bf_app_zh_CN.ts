@@ -446,6 +446,7 @@
     <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG 激活</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>激活码已被吊销，请重新激活。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>
     <message><source>app.activation.copy</source><translation>复制</translation></message>
     <message><source>app.activation.copied</source><translation>已复制到剪贴板</translation></message>
@@ -454,6 +455,8 @@
     <message><source>app.activation.invite_code</source><translation>我有邀请码</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>输入邀请码立即激活</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>请输入邀请码（格式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>邀请码激活</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>输入邀请码</translation></message>
     <message><source>app.activation.offline_section</source><translation>或直接粘贴激活码（离线/已获取后使用）</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>在此粘贴激活码...</translation></message>
     <message><source>app.activation.activate_btn</source><translation>激活</translation></message>

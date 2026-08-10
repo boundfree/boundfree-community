@@ -446,6 +446,7 @@
     <message><source>app.spike.export.completed</source><translation>已匯出 {rows} 個 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 匯出失敗：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG 啟用</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>啟動碼已被撤銷，請重新啟動。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本機機器碼</translation></message>
     <message><source>app.activation.copy</source><translation>複製</translation></message>
     <message><source>app.activation.copied</source><translation>已複製到剪貼簿</translation></message>
@@ -454,6 +455,8 @@
     <message><source>app.activation.invite_code</source><translation>我有邀請碼</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>輸入邀請碼立即啟用</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>請輸入邀請碼（格式：BF-XXXX-YYYY）</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>邀請碼啟動</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>輸入邀請碼</translation></message>
     <message><source>app.activation.offline_section</source><translation>或直接貼上啟用碼（離線 / 已取得後使用）</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>在此貼上啟用碼...</translation></message>
     <message><source>app.activation.activate_btn</source><translation>啟用</translation></message>

@@ -441,6 +441,7 @@
     <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
     <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
     <message><source>app.activation.title</source><translation>[!! BoouundFreee EEG Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>[!! Yoouur liiceensee haas beeen reevoookeed. Pleeaasee ree-aactiivaatee. !!]</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee ID !!]</translation></message>
     <message><source>app.activation.copy</source><translation>[!! Coopy !!]</translation></message>
     <message><source>app.activation.copied</source><translation>[!! Coopied !!]</translation></message>
@@ -449,6 +450,8 @@
     <message><source>app.activation.invite_code</source><translation>[!! I haave aan iinvitee coode !!]</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>[!! Eenteer iinvitee coode too aactiivaatee !!]</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>[!! Eenteer iinvitee coode !!]</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>[!! Iinviiitee Coodee Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>[!! Eenteer iinviiitee cooddee !!]</translation></message>
     <message><source>app.activation.offline_section</source><translation>[!! Oor paastee a liiceensee keey !!]</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee liiceensee keey heeree... !!]</translation></message>
     <message><source>app.activation.activate_btn</source><translation>[!! Aactiivaatee !!]</translation></message>

@@ -441,6 +441,7 @@
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>Ihre Lizenz wurde widerrufen. Bitte erneut aktivieren.</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied</translation></message>
@@ -449,6 +450,8 @@
     <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
     <message><source>app.activation.invite_code_hint</source><translation>Enter an invite code to activate instantly</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>Aktivierung per Einladungscode</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>Einladungscode eingeben</translation></message>
     <message><source>app.activation.offline_section</source><translation>Or paste a license key</translation></message>
     <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
     <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>

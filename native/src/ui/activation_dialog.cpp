@@ -8,11 +8,12 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QEventLoop>
+#include <QFile>
 #include <QNetworkProxy>
 #include <QtGlobal>
 #include <QFrame>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QMessageBox>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -84,6 +85,7 @@ ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& v
       copyBtn_(nullptr),
       requestBtn_(nullptr),
       inviteBtn_(nullptr),
+      inviteCodeEdit_(nullptr),
       offlineKeyEdit_(nullptr),
       offlineActivateBtn_(nullptr),
       statusLabel_(nullptr),
@@ -114,6 +116,52 @@ ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& v
     connect(pollTimer_, &QTimer::timeout, this, &ActivationDialog::onRefreshStatus);
 }
 
+bool ActivationDialog::checkAndHandleRevocation(
+    LicenseManager* manager, const VersionInfo& version, I18nService* i18n) {
+    Q_UNUSED(version);
+    QNetworkAccessManager nam;
+    nam.setProxy(QNetworkProxy(QNetworkProxy::NoProxy));
+    OnlineActivationClient client(
+        &nam,
+        QUrl(qEnvironmentVariable("BF_ACTIVATION_SERVER_URL",
+                                  "https://license-activate.unitc.cn")));
+
+    const QString machineId = machineIdCanonical(readMachineGuid());
+    bool revoked = false;
+
+    QEventLoop loop;
+    QTimer timeout;
+    timeout.setSingleShot(true);
+    timeout.setInterval(8000); // 8 秒超时 → fail-open
+
+    QObject::connect(&client, &OnlineActivationClient::statusReceived,
+        [&](const QString& status, const QString&, const QDate&) {
+            if (status == QLatin1String("revoked") ||
+                status == QLatin1String("rejected")) {
+                revoked = true;
+            }
+            loop.quit();
+        });
+    QObject::connect(&client, &OnlineActivationClient::networkError,
+        [&](const QString&) { loop.quit(); }); // fail-open
+    QObject::connect(&client, &OnlineActivationClient::activationFailed,
+        [&](const QString&, const QJsonObject&) { loop.quit(); }); // fail-open
+    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+
+    client.checkStatus(machineId);
+    timeout.start();
+    loop.exec();
+
+    if (revoked) {
+        QFile::remove(manager->licenseFilePath());
+        QMessageBox::warning(nullptr,
+            i18n->text("app.activation.title"),
+            i18n->text("app.activation.revoked_on_server"));
+        return false;
+    }
+    return true;
+}
+
 void ActivationDialog::buildUi() {
     setWindowTitle(i18n_->text("app.activation.title"));
     setMinimumSize(520, 480);
@@ -130,31 +178,32 @@ void ActivationDialog::buildUi() {
     machineLayout->addWidget(copyBtn_);
     layout->addLayout(machineLayout);
 
-    auto* onlineButtons = new QHBoxLayout;
-    auto* requestLayout = new QVBoxLayout;
     requestBtn_ = new QPushButton(i18n_->text("app.activation.request"), this);
     requestBtn_->setMinimumHeight(60);
+    layout->addWidget(requestBtn_);
     auto* requestHint = new QLabel(i18n_->text("app.activation.request_hint"), this);
     requestHint->setAlignment(Qt::AlignHCenter);
-    requestLayout->addWidget(requestBtn_);
-    requestLayout->addWidget(requestHint);
-
-    auto* inviteLayout = new QVBoxLayout;
-    inviteBtn_ = new QPushButton(i18n_->text("app.activation.invite_code"), this);
-    inviteBtn_->setMinimumHeight(60);
-    auto* inviteHint = new QLabel(i18n_->text("app.activation.invite_code_hint"), this);
-    inviteHint->setAlignment(Qt::AlignHCenter);
-    inviteLayout->addWidget(inviteBtn_);
-    inviteLayout->addWidget(inviteHint);
-
-    onlineButtons->addLayout(requestLayout);
-    onlineButtons->addLayout(inviteLayout);
-    layout->addLayout(onlineButtons);
+    layout->addWidget(requestHint);
 
     auto* separator = new QFrame(this);
     separator->setFrameShape(QFrame::HLine);
     separator->setFrameShadow(QFrame::Sunken);
     layout->addWidget(separator);
+
+    layout->addWidget(new QLabel(i18n_->text("app.activation.invite_code_section"), this));
+
+    auto* inviteRow = new QHBoxLayout;
+    inviteCodeEdit_ = new QLineEdit(this);
+    inviteCodeEdit_->setPlaceholderText(i18n_->text("app.activation.invite_code_placeholder"));
+    inviteBtn_ = new QPushButton(i18n_->text("app.activation.invite_code"), this);
+    inviteRow->addWidget(inviteCodeEdit_, 1);
+    inviteRow->addWidget(inviteBtn_);
+    layout->addLayout(inviteRow);
+
+    auto* separator2 = new QFrame(this);
+    separator2->setFrameShape(QFrame::HLine);
+    separator2->setFrameShadow(QFrame::Sunken);
+    layout->addWidget(separator2);
     layout->addWidget(new QLabel(i18n_->text("app.activation.offline_section"), this));
 
     offlineKeyEdit_ = new QPlainTextEdit(this);
@@ -188,6 +237,7 @@ void ActivationDialog::setState(const QString& stateLabel, bool showStatusBar) {
     const bool waitingApproval = state_ == WAITING_APPROVAL;
     requestBtn_->setEnabled(!onlineRequestPending && !waitingApproval);
     inviteBtn_->setEnabled(!onlineRequestPending && !waitingApproval);
+    inviteCodeEdit_->setEnabled(!onlineRequestPending && !waitingApproval);
     refreshBtn_->setEnabled(!onlineRequestPending);
     offlineActivateBtn_->setEnabled(state_ != VERIFYING);
 }
@@ -209,15 +259,9 @@ void ActivationDialog::onRequestActivation() {
 }
 
 void ActivationDialog::onInviteCode() {
-    bool accepted = false;
-    const QString inviteCode = QInputDialog::getText(
-        this,
-        i18n_->text("app.activation.title"),
-        i18n_->text("app.activation.invite_code_prompt"),
-        QLineEdit::Normal,
-        QString(),
-        &accepted).trimmed();
-    if (!accepted || inviteCode.isEmpty()) {
+    const QString inviteCode = inviteCodeEdit_->text().trimmed();
+    if (inviteCode.isEmpty()) {
+        setState(i18n_->text("app.activation.invalid_key"), true);
         return;
     }
 
@@ -293,6 +337,7 @@ void ActivationDialog::onActivationSuccess(const QString& licenseKey, const QDat
     stopPolling();
     QMessageBox::information(this, i18n_->text("app.activation.title"),
                              i18n_->text("app.activation.activated"));
+    inviteCodeEdit_->clear();
     accept();
 }
 
