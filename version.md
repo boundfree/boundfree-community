@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.52-dev
+当前版本：0.1.53-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+fix: 补充在线激活业务错误码的完整映射
+
+版本：0.1.53-dev
+日期：2026-08-10
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：fix
+
+提交标题：
+fix: 补充在线激活业务错误码的完整映射
+
+提交正文：
+```text
+activationErrorText 增加 already_exists / invalid_invite_code / invite_revoked / invite_already_used / signing_failed 五个错误码的精准翻译，全部 9 种语言同步补充对应 i18n 条目。未知错误码降级为 error_detail（含错误码）而非通用的 request_failed，方便用户反馈。
+```
 
 ---
 

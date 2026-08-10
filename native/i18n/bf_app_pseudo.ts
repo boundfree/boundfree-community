@@ -470,6 +470,11 @@
     <message><source>app.activation.save_failed</source><translation>[!! Liiceensee keey coould noot bee saaveed !!]</translation></message>
     <message><source>app.activation.status_machine_already_bound</source><translation>[!! Deeviiice iis boound too aanootheer liiceensee. Aask aadmin too releeaasee iit fiirst. !!]</translation></message>
     <message><source>app.activation.request_failed</source><translation>[!! Aactiivaatiioon reequueest faileed !!]</translation></message>
+    <message><source>app.activation.error_already_exists</source><translation>[!! Deeviiice hhaas rreecooord (staatuus: {status}). Coonntaact aaddmiin. !!]</translation></message>
+    <message><source>app.activation.error_invalid_invite_code</source><translation>[!! Iinvitee coode iis iinvaaliid. !!]</translation></message>
+    <message><source>app.activation.error_invite_revoked</source><translation>[!! Iinvitee coode waas reevooked. !!]</translation></message>
+    <message><source>app.activation.error_invite_already_used</source><translation>[!! Iinvitee coode aallreeaady useed. !!]</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>[!! Seerveer coouldnt siign liiceensee. !!]</translation></message>
     <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
     <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>

@@ -475,5 +475,10 @@
     <message><source>app.activation.status_rejected</source><translation>已拒絕</translation></message>
     <message><source>app.activation.status_machine_already_bound</source><translation>此裝置已綁定其他授權，請聯絡管理員釋放原裝置綁定後再重新啟用</translation></message>
     <message><source>app.activation.request_failed</source><translation>啟用請求失敗，請稍後重試或使用離線啟用碼</translation></message>
+    <message><source>app.activation.error_already_exists</source><translation>該裝置已有啟用記錄（狀態：{status}），如需重新啟用請聯絡管理員</translation></message>
+    <message><source>app.activation.error_invalid_invite_code</source><translation>邀請碼無效或格式錯誤，請檢查後重試</translation></message>
+    <message><source>app.activation.error_invite_revoked</source><translation>該邀請碼已被撤銷，請聯絡管理員取得新邀請碼</translation></message>
+    <message><source>app.activation.error_invite_already_used</source><translation>該邀請碼已被其他裝置使用，請聯絡管理員取得新邀請碼</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>伺服器簽發啟用碼失敗，請聯絡管理員</translation></message>
   </context>
 </TS>

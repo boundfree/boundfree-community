@@ -51,6 +51,22 @@ QString activationErrorText(I18nService* i18n, const QString& errorCode,
     if (errorCode == QStringLiteral("activation.machine_already_bound")) {
         return i18n->text("app.activation.status_machine_already_bound");
     }
+    if (errorCode == QStringLiteral("activation.already_exists")) {
+        const QString status = params.value("current_status").toString();
+        return i18n->text("app.activation.error_already_exists", {{"status", statusText(i18n, status)}});
+    }
+    if (errorCode == QStringLiteral("activation.invalid_invite_code")) {
+        return i18n->text("app.activation.error_invalid_invite_code");
+    }
+    if (errorCode == QStringLiteral("activation.invite_revoked")) {
+        return i18n->text("app.activation.error_invite_revoked");
+    }
+    if (errorCode == QStringLiteral("activation.invite_already_used")) {
+        return i18n->text("app.activation.error_invite_already_used");
+    }
+    if (errorCode == QStringLiteral("activation.signing_failed")) {
+        return i18n->text("app.activation.error_signing_failed");
+    }
     return i18n->text("app.activation.error_detail", {{"code", errorCode}});
 }
 

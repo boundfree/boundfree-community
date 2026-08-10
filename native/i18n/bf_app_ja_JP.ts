@@ -475,5 +475,10 @@
     <message><source>app.activation.status_rejected</source><translation>拒否されました</translation></message>
     <message><source>app.activation.status_machine_already_bound</source><translation>このデバイスは別のライセンスに紐付いています。再度アクティベートする前に、管理者に以前のデバイス紐付けの解除を依頼してください。</translation></message>
     <message><source>app.activation.request_failed</source><translation>アクティベーション要求に失敗しました。後でもう一度試すか、オフラインライセンスキーを使用してください。</translation></message>
+    <message><source>app.activation.error_already_exists</source><translation>このデバイスにはすでにレコードがあります（ステータス：{status}）。再度アクティベートする必要がある場合は管理者にお問い合わせください。</translation></message>
+    <message><source>app.activation.error_invalid_invite_code</source><translation>招待コードが無効または形式が正しくありません。確認してもう一度お試しください。</translation></message>
+    <message><source>app.activation.error_invite_revoked</source><translation>この招待コードは失効しています。管理者に新しいコードを依頼してください。</translation></message>
+    <message><source>app.activation.error_invite_already_used</source><translation>この招待コードはすでに別のデバイスで使用されています。管理者に新しいコードを依頼してください。</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>サーバーがライセンスに署名できませんでした。管理者にお問い合わせください。</translation></message>
   </context>
 </TS>

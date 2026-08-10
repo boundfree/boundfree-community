@@ -470,6 +470,11 @@
     <message><source>app.activation.save_failed</source><translation>License key could not be saved</translation></message>
     <message><source>app.activation.status_machine_already_bound</source><translation>This device is bound to another license. Ask the administrator to release its prior device binding before activating again.</translation></message>
     <message><source>app.activation.request_failed</source><translation>Activation request failed</translation></message>
+    <message><source>app.activation.error_already_exists</source><translation>This device already has a record (status: {status}). Contact the administrator if you need to re-activate.</translation></message>
+    <message><source>app.activation.error_invalid_invite_code</source><translation>The invite code is invalid or malformed. Please check and try again.</translation></message>
+    <message><source>app.activation.error_invite_revoked</source><translation>This invite code has been revoked. Ask the administrator for a new one.</translation></message>
+    <message><source>app.activation.error_invite_already_used</source><translation>This invite code has already been used by another device. Ask the administrator for a new one.</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>The server could not sign the license. Contact the administrator.</translation></message>
 
     <message><source>app.spike.export.action</source><translation>Spike 결과 내보내기...</translation></message>
     <message><source>app.spike.export.no_result</source><translation>내보낼 Spike 결과가 없습니다</translation></message>

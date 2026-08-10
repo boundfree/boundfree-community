@@ -475,5 +475,10 @@
     <message><source>app.activation.status_rejected</source><translation>已拒绝</translation></message>
     <message><source>app.activation.status_machine_already_bound</source><translation>该设备已绑定其他许可证，请联系管理员释放原设备绑定后重新激活</translation></message>
     <message><source>app.activation.request_failed</source><translation>激活请求失败，请稍后重试或使用离线激活码</translation></message>
+    <message><source>app.activation.error_already_exists</source><translation>该设备已有激活记录（状态：{status}），如需重新激活请联系管理员</translation></message>
+    <message><source>app.activation.error_invalid_invite_code</source><translation>邀请码无效或格式错误，请检查后重试</translation></message>
+    <message><source>app.activation.error_invite_revoked</source><translation>该邀请码已被吊销，请联系管理员获取新邀请码</translation></message>
+    <message><source>app.activation.error_invite_already_used</source><translation>该邀请码已被其他设备使用，请联系管理员获取新邀请码</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>服务器签发激活码失败，请联系管理员</translation></message>
   </context>
 </TS>
