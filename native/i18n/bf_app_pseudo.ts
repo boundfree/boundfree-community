@@ -441,7 +441,7 @@
     <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
     <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
     <message><source>app.activation.title</source><translation>[!! BoouundFreee EEG Aactiivaatiioon !!]</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>[!! Yoouur liiceensee haas beeen reevoookeed. Pleeaasee ree-aactiivaatee. !!]</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>[!! Yoouur liiceensee iis noo loongeer aactiivee oon the seerveer. Pleeaasee ree-aactiivaatee. !!]</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee ID !!]</translation></message>
     <message><source>app.activation.copy</source><translation>[!! Coopy !!]</translation></message>
     <message><source>app.activation.copied</source><translation>[!! Coopied !!]</translation></message>

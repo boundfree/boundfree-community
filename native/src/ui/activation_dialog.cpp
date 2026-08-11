@@ -127,7 +127,7 @@ bool ActivationDialog::checkAndHandleRevocation(
                                   "https://license-activate.unitc.cn")));
 
     const QString machineId = machineIdCanonical(readMachineGuid());
-    bool revoked = false;
+    bool invalidated = false;
 
     QEventLoop loop;
     QTimer timeout;
@@ -137,8 +137,9 @@ bool ActivationDialog::checkAndHandleRevocation(
     QObject::connect(&client, &OnlineActivationClient::statusReceived,
         [&](const QString& status, const QString&, const QDate&) {
             if (status == QLatin1String("revoked") ||
-                status == QLatin1String("rejected")) {
-                revoked = true;
+                status == QLatin1String("rejected") ||
+                status == QLatin1String("not_found")) {
+                invalidated = true;
             }
             loop.quit();
         });
@@ -152,7 +153,7 @@ bool ActivationDialog::checkAndHandleRevocation(
     timeout.start();
     loop.exec();
 
-    if (revoked) {
+    if (invalidated) {
         QFile::remove(manager->licenseFilePath());
         QMessageBox::warning(nullptr,
             i18n->text("app.activation.title"),

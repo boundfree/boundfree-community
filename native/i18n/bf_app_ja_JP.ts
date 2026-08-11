@@ -446,7 +446,7 @@
     <message><source>app.spike.export.completed</source><translation>{rows} 件の Spike イベントを {path} にエクスポートしました</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike のエクスポートに失敗しました：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG アクティベーション</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>ライセンスが失効しました。再アクティベートしてください。</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>ライセンスはサーバー上で無効になりました。再アクティベートしてください。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>マシン ID</translation></message>
     <message><source>app.activation.copy</source><translation>コピー</translation></message>
     <message><source>app.activation.copied</source><translation>クリップボードにコピーしました</translation></message>

@@ -62,9 +62,9 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
     // Level 1: check saved license.dat (no network, instant)
     bf::LicenseResult result = manager.checkSavedLicense();
     if (result.ok()) {
-        // Online revocation check: fail-open on network error / timeout.
-        // Removes license.dat and falls through to activation dialog
-        // only when server explicitly returns revoked/rejected.
+        // Online status check: fail-open on network error / timeout.
+        // Removes license.dat and falls through to activation dialog only
+        // when the server explicitly invalidated this machine's authorization.
         if (bf::ActivationDialog::checkAndHandleRevocation(
                 &manager, version, const_cast<bf::I18nService*>(&i18n))) {
             return true;

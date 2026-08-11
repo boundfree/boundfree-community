@@ -441,7 +441,7 @@
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>Votre licence a été révoquée. Veuillez la réactiver.</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>Votre licence n'est plus active sur le serveur. Veuillez la réactiver.</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied</translation></message>

@@ -73,6 +73,8 @@ int main(int argc, char** argv) {
                     R"({"error":{"code":"activation.pending_approval","params":{}}})"});
     server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 200,
                     R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"rejected","reason":"institution_not_authorized","expires_at":null})"});
+    server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 200,
+                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"not_found","reason":null,"expires_at":null})"});
 
     QNetworkAccessManager manager;
     bf::OnlineActivationClient client(
@@ -80,7 +82,8 @@ int main(int argc, char** argv) {
 
     bool registrationRecovered = false;
     bool pendingReceived = false;
-    bool statusReceived = false;
+    bool rejectedReceived = false;
+    bool notFoundReceived = false;
     bool unexpectedFailure = false;
 
     QObject::connect(&client, &bf::OnlineActivationClient::registrationAlreadyExists, &app, [&] {
@@ -94,8 +97,12 @@ int main(int argc, char** argv) {
             client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
             return;
         }
-        statusReceived = status == QStringLiteral("rejected") &&
-                         reason == QStringLiteral("institution_not_authorized");
+        if (status == QStringLiteral("rejected")) {
+            rejectedReceived = reason == QStringLiteral("institution_not_authorized");
+            client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
+            return;
+        }
+        notFoundReceived = status == QStringLiteral("not_found") && reason.isEmpty();
         app.quit();
     });
     QObject::connect(&client, &bf::OnlineActivationClient::activationFailed, &app,
@@ -107,8 +114,8 @@ int main(int argc, char** argv) {
     client.registerDevice(QStringLiteral("00112233445566778899AABBCCDDEEFF"), QStringLiteral("0.1.50-dev"));
     app.exec();
 
-    const bool passed = registrationRecovered && pendingReceived && statusReceived &&
-                        !unexpectedFailure && server.valid();
+    const bool passed = registrationRecovered && pendingReceived && rejectedReceived &&
+                        notFoundReceived && !unexpectedFailure && server.valid();
     std::cout << (passed ? "online-activation-client-test: PASS\n"
                          : "online-activation-client-test: FAIL\n");
     return passed ? 0 : 1;

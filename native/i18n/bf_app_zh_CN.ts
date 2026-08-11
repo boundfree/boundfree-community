@@ -446,7 +446,7 @@
     <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG 激活</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>激活码已被吊销，请重新激活。</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>授权已被注销或吊销，请重新激活。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>
     <message><source>app.activation.copy</source><translation>复制</translation></message>
     <message><source>app.activation.copied</source><translation>已复制到剪贴板</translation></message>

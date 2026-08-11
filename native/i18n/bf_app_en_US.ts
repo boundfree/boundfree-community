@@ -445,7 +445,7 @@
     <message><source>app.spike.export.completed</source><translation>Exported {rows} spike events to {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike export failed: {reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>Your license has been revoked. Please re-activate.</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>Your license is no longer active on the server. Please re-activate.</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied to clipboard</translation></message>
