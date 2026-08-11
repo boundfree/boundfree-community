@@ -235,6 +235,7 @@ void ActivationDialog::buildUi() {
     layout->addWidget(inviteHint);
     auto* inviteRow = new QHBoxLayout;
     inviteCodeEdit_ = new QLineEdit(this);
+    inviteCodeEdit_->setObjectName("inviteCodeEdit");
     inviteCodeEdit_->setPlaceholderText(i18n_->text("app.activation.invite_code_placeholder"));
     inviteBtn_ = new QPushButton(i18n_->text("app.activation.invite_code"), this);
     inviteRow->addWidget(inviteCodeEdit_, 1);

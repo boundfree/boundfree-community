@@ -294,6 +294,14 @@ target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
 add_executable(online_activation_client_test src/license/online_activation_client_test.cpp)
 target_include_directories(online_activation_client_test PRIVATE src)
 target_link_libraries(online_activation_client_test PRIVATE bf_core Qt6::Network)
+add_executable(activation_dialog_test
+    src/ui/activation_dialog_test.cpp
+    src/ui/activation_dialog.cpp
+)
+target_include_directories(activation_dialog_test PRIVATE src)
+target_compile_definitions(activation_dialog_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(activation_dialog_test PRIVATE bf_core Qt6::Widgets Qt6::Network)
+add_dependencies(activation_dialog_test bf_i18n_qm)
 
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
 target_include_directories(spike_golden_test PRIVATE src third_party)
