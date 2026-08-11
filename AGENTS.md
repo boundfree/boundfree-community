@@ -31,12 +31,12 @@
 
 ## Development Stage
 
-- 当前版本为 `0.1.53-dev`。
+- 当前版本为 `0.1.57-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
 - M8 打包实现与 WSL2 Linux 可验证部分已完成；Windows x64 安装包、组织证书签名及干净 Windows 10/11 发布门禁尚未执行（见 `docs/reports/m8-packaging-release-acceptance.md`）。
 - 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
-- 产品版本当前为 `0.1.53-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
+- 产品版本当前为 `0.1.57-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
 
 ## Branch And Version Rules
 
@@ -46,7 +46,7 @@
 - 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
 - `version.json` 是产品版本和 IPC 协议版本的单一真值来源。
 - 根目录 `version.md` 从版本同步规范启用提交开始记录每个有效提交对应的版本、日期、作者、提交标题和提交正文。
-- 每个合入 `master` 的有效提交必须运行 `python3 scripts/version_sync.py next ...` 或 `set ...` 更新版本；提交前运行 `python3 scripts/version_sync.py check`。
+- 每个合入 `master` 的有效提交必须运行 `python3 scripts/version_sync.py next ...`（或 `set ...`）更新版本。该命令自动同步五处版本号：`version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss`；禁止手工只改 `version.json` 绕过流程。提交前运行 `python3 scripts/version_sync.py check` 校验五处版本号一致（不一致会报 FAIL）。
 - 产品版本和 `ipc_protocol_version` 必须分开维护。
 
 ## Technical Constraints

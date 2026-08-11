@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.56-dev
+当前版本：0.1.57-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+chore: 明确版本自动同步流程并同步文档版本号
+
+版本：0.1.57-dev
+日期：2026-08-11
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：chore
+
+提交标题：
+chore: 明确版本自动同步流程并同步文档版本号
+
+提交正文：
+```text
+AGENTS.md（仓库级与工作区级）补充版本流程约束：每次版本递增必须走 scripts/common/version_sync.py next/set，由脚本自动同步 version.json、version.md、README.md、AGENTS.md、installer/BoundFreeEEG.iss 五处版本号，提交前 check 校验一致，禁止手工只改 version.json。同步 README.md、AGENTS.md、installer/BoundFreeEEG.iss 三处滞后版本号。
+```
 
 ---
 
