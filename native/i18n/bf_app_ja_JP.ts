@@ -483,5 +483,7 @@
     <message><source>app.activation.error_invite_revoked</source><translation>この招待コードは失効しています。管理者に新しいコードを依頼してください。</translation></message>
     <message><source>app.activation.error_invite_already_used</source><translation>この招待コードはすでに別のデバイスで使用されています。管理者に新しいコードを依頼してください。</translation></message>
     <message><source>app.activation.error_signing_failed</source><translation>サーバーがライセンスに署名できませんでした。管理者にお問い合わせください。</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>マシン ID の形式が無効です。管理者にお問い合わせください。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>アクティベーション要求が多すぎます。{retry_after} 秒後にもう一度お試しください。</translation></message>
   </context>
 </TS>

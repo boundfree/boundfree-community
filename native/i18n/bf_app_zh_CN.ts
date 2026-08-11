@@ -483,5 +483,7 @@
     <message><source>app.activation.error_invite_revoked</source><translation>该邀请码已被吊销，请联系管理员获取新邀请码</translation></message>
     <message><source>app.activation.error_invite_already_used</source><translation>该邀请码已被其他设备使用，请联系管理员获取新邀请码</translation></message>
     <message><source>app.activation.error_signing_failed</source><translation>服务器签发激活码失败，请联系管理员</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>本机机器码格式无效，请联系管理员。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>激活请求过于频繁，请在 {retry_after} 秒后重试。</translation></message>
   </context>
 </TS>

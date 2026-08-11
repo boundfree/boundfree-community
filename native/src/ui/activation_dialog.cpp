@@ -46,6 +46,13 @@ QString statusText(I18nService* i18n, const QString& status) {
 
 QString activationErrorText(I18nService* i18n, const QString& errorCode,
                             const QJsonObject& params) {
+    if (errorCode == QStringLiteral("activation.machine_id_required") ||
+        errorCode == QStringLiteral("activation.invalid_machine_id")) {
+        return i18n->text("app.activation.error_invalid_machine_id");
+    }
+    if (errorCode == QStringLiteral("activation.not_found")) {
+        return i18n->text("app.activation.status_not_found");
+    }
     if (errorCode == QStringLiteral("activation.expired_or_revoked")) {
         return statusText(i18n, params.value("status").toString());
     }
@@ -68,7 +75,12 @@ QString activationErrorText(I18nService* i18n, const QString& errorCode,
     if (errorCode == QStringLiteral("activation.signing_failed")) {
         return i18n->text("app.activation.error_signing_failed");
     }
-    return i18n->text("app.activation.error_detail", {{"code", errorCode}});
+    if (errorCode == QStringLiteral("rate_limit.exceeded")) {
+        return i18n->text("app.activation.error_rate_limited", {
+            {"retry_after", QString::number(params.value("retry_after").toInt())},
+        });
+    }
+    return i18n->text("app.activation.request_failed");
 }
 
 }  // namespace
@@ -135,7 +147,7 @@ bool ActivationDialog::checkAndHandleRevocation(
     timeout.setInterval(8000); // 8 秒超时 → fail-open
 
     QObject::connect(&client, &OnlineActivationClient::statusReceived,
-        [&](const QString& status, const QString&, const QDate&) {
+        [&](const QString& status, const QDate&) {
             if (status == QLatin1String("revoked") ||
                 status == QLatin1String("rejected") ||
                 status == QLatin1String("not_found")) {
@@ -348,7 +360,7 @@ void ActivationDialog::onActivationFailed(const QString& errorCode, const QJsonO
     setState(activationErrorText(i18n_, errorCode, params), true);
 }
 
-void ActivationDialog::onStatusReceived(const QString& status, const QString& message, const QDate& expiresAt) {
+void ActivationDialog::onStatusReceived(const QString& status, const QDate& expiresAt) {
     Q_UNUSED(expiresAt);
     if (status == QStringLiteral("active")) {
         state_ = ACTIVATING;
@@ -366,7 +378,7 @@ void ActivationDialog::onStatusReceived(const QString& status, const QString& me
 
     state_ = IDLE;
     stopPolling();
-    setState(message.isEmpty() ? statusText(i18n_, status) : message, true);
+    setState(statusText(i18n_, status), true);
 }
 
 void ActivationDialog::onNetworkError(const QString& detail) {

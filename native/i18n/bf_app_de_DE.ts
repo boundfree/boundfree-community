@@ -478,6 +478,8 @@
     <message><source>app.activation.error_invite_revoked</source><translation>This invite code has been revoked. Ask the administrator for a new one.</translation></message>
     <message><source>app.activation.error_invite_already_used</source><translation>This invite code has already been used by another device. Ask the administrator for a new one.</translation></message>
     <message><source>app.activation.error_signing_failed</source><translation>The server could not sign the license. Contact the administrator.</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>The machine ID is invalid. Contact the administrator.</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>Too many activation requests. Please try again in {retry_after} seconds.</translation></message>
 
     <message><source>app.spike.export.action</source><translation>Spike-Ergebnisse exportieren...</translation></message>
     <message><source>app.spike.export.no_result</source><translation>Kein Spike-Ergebnis zum Exportieren</translation></message>

@@ -35,7 +35,7 @@ signals:
     void registrationSubmitted(const QString& requestId);
     void activationSuccess(const QString& licenseKey, const QDate& expiresAt);
     void activationFailed(const QString& errorCode, const QJsonObject& params);
-    void statusReceived(const QString& status, const QString& message, const QDate& expiresAt);
+    void statusReceived(const QString& status, const QDate& expiresAt);
     void networkError(const QString& detail);
     void registrationAlreadyExists();
 

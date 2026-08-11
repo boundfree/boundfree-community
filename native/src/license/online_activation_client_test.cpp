@@ -72,9 +72,15 @@ int main(int argc, char** argv) {
     server.enqueue({"/api/v1/activate", 202,
                     R"({"error":{"code":"activation.pending_approval","params":{}}})"});
     server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 200,
-                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"rejected","reason":"institution_not_authorized","expires_at":null})"});
+                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"rejected","expires_at":null})"});
     server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 200,
-                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"not_found","reason":null,"expires_at":null})"});
+                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"not_found","expires_at":null})"});
+    server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 200,
+                    R"({"machine_id":"00112233445566778899AABBCCDDEEFF","status":"active","expires_at":"2030-01-01"})"});
+    server.enqueue({"/api/v1/activate", 200,
+                    R"({"code":"activation.license_issued","machine_id":"00112233445566778899AABBCCDDEEFF","license_key":"signed-license","expires_at":"2030-01-01"})"});
+    server.enqueue({"/api/v1/status?machine_id=00112233445566778899AABBCCDDEEFF", 429,
+                    R"({"error":{"code":"rate_limit.exceeded","params":{"retry_after":42}}})"});
 
     QNetworkAccessManager manager;
     bf::OnlineActivationClient client(
@@ -84,6 +90,8 @@ int main(int argc, char** argv) {
     bool pendingReceived = false;
     bool rejectedReceived = false;
     bool notFoundReceived = false;
+    bool activationSucceeded = false;
+    bool rateLimitReceived = false;
     bool unexpectedFailure = false;
 
     QObject::connect(&client, &bf::OnlineActivationClient::registrationAlreadyExists, &app, [&] {
@@ -91,22 +99,42 @@ int main(int argc, char** argv) {
         client.fetchLicense(QStringLiteral("00112233445566778899AABBCCDDEEFF"), QStringLiteral("0.1.50-dev"));
     });
     QObject::connect(&client, &bf::OnlineActivationClient::statusReceived, &app,
-                     [&](const QString& status, const QString& reason, const QDate&) {
+                     [&](const QString& status, const QDate&) {
         if (status == QStringLiteral("pending_approval")) {
             pendingReceived = true;
             client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
             return;
         }
         if (status == QStringLiteral("rejected")) {
-            rejectedReceived = reason == QStringLiteral("institution_not_authorized");
+            rejectedReceived = true;
             client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
             return;
         }
-        notFoundReceived = status == QStringLiteral("not_found") && reason.isEmpty();
+        if (status == QStringLiteral("not_found")) {
+            notFoundReceived = true;
+            client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
+            return;
+        }
+        if (status == QStringLiteral("active")) {
+            client.fetchLicense(QStringLiteral("00112233445566778899AABBCCDDEEFF"),
+                                QStringLiteral("0.1.50-dev"));
+            return;
+        }
+        unexpectedFailure = true;
         app.quit();
     });
+    QObject::connect(&client, &bf::OnlineActivationClient::activationSuccess, &app,
+                     [&](const QString& key, const QDate& expiresAt) {
+        activationSucceeded = key == QStringLiteral("signed-license") &&
+                            expiresAt == QDate(2030, 1, 1);
+        client.checkStatus(QStringLiteral("00112233445566778899AABBCCDDEEFF"));
+    });
     QObject::connect(&client, &bf::OnlineActivationClient::activationFailed, &app,
-                     [&](const QString&, const QJsonObject&) { unexpectedFailure = true; app.quit(); });
+                     [&](const QString& code, const QJsonObject& params) {
+        rateLimitReceived = code == QStringLiteral("rate_limit.exceeded") &&
+                            params.value("retry_after").toInt() == 42;
+        app.quit();
+    });
     QObject::connect(&client, &bf::OnlineActivationClient::networkError, &app,
                      [&](const QString&) { unexpectedFailure = true; app.quit(); });
 
@@ -115,7 +143,8 @@ int main(int argc, char** argv) {
     app.exec();
 
     const bool passed = registrationRecovered && pendingReceived && rejectedReceived &&
-                        notFoundReceived && !unexpectedFailure && server.valid();
+                        notFoundReceived && activationSucceeded && rateLimitReceived &&
+                        !unexpectedFailure && server.valid();
     std::cout << (passed ? "online-activation-client-test: PASS\n"
                          : "online-activation-client-test: FAIL\n");
     return passed ? 0 : 1;

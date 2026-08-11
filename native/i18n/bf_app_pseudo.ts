@@ -478,6 +478,8 @@
     <message><source>app.activation.error_invite_revoked</source><translation>[!! Iinvitee coode waas reevooked. !!]</translation></message>
     <message><source>app.activation.error_invite_already_used</source><translation>[!! Iinvitee coode aallreeaady useed. !!]</translation></message>
     <message><source>app.activation.error_signing_failed</source><translation>[!! Seerveer coouldnt siign liiceensee. !!]</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>[!! Maachiinee ID iis iinvaaliid. Coonntaact aaddmiin. !!]</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>[!! Tooo maany aactiivaatiioon reequueests. Try aagaain iin {retry_after} secoonds. !!]</translation></message>
     <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
     <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>

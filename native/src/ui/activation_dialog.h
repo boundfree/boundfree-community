@@ -23,8 +23,9 @@ public:
     ActivationDialog(LicenseManager* manager, const VersionInfo& version,
                      I18nService* i18n, QWidget* parent = nullptr);
 
-    // Startup online revocation check (fail-open): returns false and removes
-    // the saved license only when the server explicitly reports revoked/rejected.
+    // Startup online authorization check (fail-open): returns false and removes
+    // the saved license only when the server explicitly reports revoked, rejected,
+    // or not_found for this machine.
     static bool checkAndHandleRevocation(
         LicenseManager* manager,
         const VersionInfo& version,
@@ -41,7 +42,7 @@ private slots:
     void onRegistrationAlreadyExists();
     void onActivationSuccess(const QString& licenseKey, const QDate& expiresAt);
     void onActivationFailed(const QString& errorCode, const QJsonObject& params);
-    void onStatusReceived(const QString& status, const QString& message, const QDate& expiresAt);
+    void onStatusReceived(const QString& status, const QDate& expiresAt);
     void onNetworkError(const QString& detail);
 
 private:

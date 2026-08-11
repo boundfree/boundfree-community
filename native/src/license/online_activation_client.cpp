@@ -178,7 +178,7 @@ void OnlineActivationClient::handleActivateResponse(QNetworkReply* reply, const 
         }
     } else if (statusCode > 0 &&
                extractErrorCode(reply, data) == QStringLiteral("activation.pending_approval")) {
-        emit statusReceived(QStringLiteral("pending_approval"), QString(), QDate());
+        emit statusReceived(QStringLiteral("pending_approval"), QDate());
     } else if (statusCode > 0) {
         emit activationFailed(extractErrorCode(reply, data), extractErrorParams(data));
     } else {
@@ -201,8 +201,7 @@ void OnlineActivationClient::handleStatusResponse(QNetworkReply* reply, const QS
     }
     if (statusCode == 200) {
         const QJsonObject response = parseJsonObject(data);
-        emit statusReceived(response.value("status").toString(), response.value("reason").toString(),
-                            parseExpiresAt(response));
+        emit statusReceived(response.value("status").toString(), parseExpiresAt(response));
     } else if (statusCode > 0) {
         emit activationFailed(extractErrorCode(reply, data), extractErrorParams(data));
     } else {

@@ -483,5 +483,7 @@
     <message><source>app.activation.error_invite_revoked</source><translation>該邀請碼已被撤銷，請聯絡管理員取得新邀請碼</translation></message>
     <message><source>app.activation.error_invite_already_used</source><translation>該邀請碼已被其他裝置使用，請聯絡管理員取得新邀請碼</translation></message>
     <message><source>app.activation.error_signing_failed</source><translation>伺服器簽發啟用碼失敗，請聯絡管理員</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>本機機器碼格式無效，請聯絡管理員。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>啟用請求過於頻繁，請在 {retry_after} 秒後重試。</translation></message>
   </context>
 </TS>
