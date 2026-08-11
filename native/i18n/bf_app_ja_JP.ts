@@ -450,18 +450,22 @@
     <message><source>app.activation.machine_id_label</source><translation>マシン ID</translation></message>
     <message><source>app.activation.copy</source><translation>コピー</translation></message>
     <message><source>app.activation.copied</source><translation>クリップボードにコピーしました</translation></message>
-    <message><source>app.activation.request</source><translation>アクティベーションを申請</translation></message>
-    <message><source>app.activation.request_hint</source><translation>送信後に管理者の承認をお待ちください</translation></message>
-    <message><source>app.activation.invite_code</source><translation>招待コードを持っています</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>招待コードを入力してすぐにアクティベート</translation></message>
+    <message><source>app.activation.online_section</source><translation>オンラインアクティベーション</translation></message>
+    <message><source>app.activation.online_hint</source><translation>オンラインの認証方法を選択してください。</translation></message>
+    <message><source>app.activation.request</source><translation>オンライン認証を申請</translation></message>
+    <message><source>app.activation.request_hint</source><translation>このマシン ID を送信し、管理者の承認をお待ちください</translation></message>
+    <message><source>app.activation.invite_code</source><translation>招待コードでアクティベート</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>管理者から発行された招待コードを入力してください。インターネット接続が必要です。</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>招待コードを入力してください（形式：BF-XXXX-YYYY）</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>招待コードで認証</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>招待コードを使用</translation></message>
     <message><source>app.activation.invite_code_placeholder</source><translation>招待コードを入力</translation></message>
-    <message><source>app.activation.offline_section</source><translation>またはライセンスキーを貼り付け（オフライン / 受領後に使用）</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>ライセンスキーをここに貼り付け...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>アクティベート</translation></message>
+    <message><source>app.activation.offline_section</source><translation>インターネットに接続できませんか？オフラインライセンスを使用</translation></message>
+    <message><source>app.activation.offline_description</source><translation>オフラインライセンスは管理者またはオフライン発行ツールから提供されます。招待コードではなく、通常は長いライセンス文です。</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>オフラインライセンス</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>オフラインライセンス文をここに貼り付け...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>検証してアクティベート</translation></message>
     <message><source>app.activation.activated</source><translation>アクティベーション成功！メイン画面に入ります。</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>管理者の承認待ち...（30秒ごとに自動更新）</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>管理者の承認待ち…（30秒ごとに自動更新）。申請は送信済みのため、招待コードは使用できません。方法を変更する場合は管理者にお問い合わせください。</translation></message>
     <message><source>app.activation.status_refresh</source><translation>ステータスを更新</translation></message>
     <message><source>app.activation.network_unavailable</source><translation>ネットワークに接続できません。接続を確認するか、オフラインライセンスキーを使用してください。</translation></message>
     <message><source>app.activation.registering</source><translation>申請を送信中...</translation></message>

@@ -450,18 +450,22 @@
     <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>
     <message><source>app.activation.copy</source><translation>复制</translation></message>
     <message><source>app.activation.copied</source><translation>已复制到剪贴板</translation></message>
-    <message><source>app.activation.request</source><translation>申请激活</translation></message>
-    <message><source>app.activation.request_hint</source><translation>提交后等待管理员审批</translation></message>
-    <message><source>app.activation.invite_code</source><translation>我有邀请码</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>输入邀请码立即激活</translation></message>
+    <message><source>app.activation.online_section</source><translation>在线激活</translation></message>
+    <message><source>app.activation.online_hint</source><translation>请选择一种在线授权方式。</translation></message>
+    <message><source>app.activation.request</source><translation>申请在线授权</translation></message>
+    <message><source>app.activation.request_hint</source><translation>提交本机机器码后等待管理员审批</translation></message>
+    <message><source>app.activation.invite_code</source><translation>输入邀请码并激活</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>输入管理员发放的邀请码，需要联网。</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>请输入邀请码（格式：BF-XXXX-YYYY）</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>邀请码激活</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>使用邀请码</translation></message>
     <message><source>app.activation.invite_code_placeholder</source><translation>输入邀请码</translation></message>
-    <message><source>app.activation.offline_section</source><translation>或直接粘贴激活码（离线/已获取后使用）</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>在此粘贴激活码...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>激活</translation></message>
+    <message><source>app.activation.offline_section</source><translation>无法联网？使用离线许可证</translation></message>
+    <message><source>app.activation.offline_description</source><translation>离线许可证由管理员或离线签发工具提供。它不是邀请码，通常是一段较长的许可证文本。</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>离线许可证</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>在此粘贴离线许可证文本...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>验证并激活</translation></message>
     <message><source>app.activation.activated</source><translation>激活成功！即将进入主界面。</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>等待管理员审批中...（每 30 秒自动刷新）</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>等待管理员审批中…（每 30 秒自动刷新）。申请已提交，不能改用邀请码；如需更换方式请联系管理员。</translation></message>
     <message><source>app.activation.status_refresh</source><translation>刷新状态</translation></message>
     <message><source>app.activation.network_unavailable</source><translation>网络不可用，请检查网络连接或使用离线激活码</translation></message>
     <message><source>app.activation.registering</source><translation>正在提交申请...</translation></message>

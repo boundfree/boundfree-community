@@ -35,7 +35,6 @@
 #include <QFile>
 #include <QImage>
 #include <QKeySequence>
-#include <QInputDialog>
 #include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -60,8 +59,7 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
     bf::LicenseManager manager(version.version, repoRoot);
 
     // Level 1: check saved license.dat (no network, instant)
-    bf::LicenseResult result = manager.checkSavedLicense();
-    if (result.ok()) {
+    if (manager.checkSavedLicense().ok()) {
         // Online status check: fail-open on network error / timeout.
         // Removes license.dat and falls through to activation dialog only
         // when the server explicitly invalidated this machine's authorization.
@@ -69,8 +67,6 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
                 &manager, version, const_cast<bf::I18nService*>(&i18n))) {
             return true;
         }
-        // result already consumed; re-read so Level 3 has a valid error message.
-        result = manager.checkSavedLicense();
     }
 
     // Automated smoke gate must not wait for the interactive online dialog.
@@ -84,38 +80,7 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
         }
     }
 
-    // Level 3: offline paste fallback (preserve original logic)
-    while (true) {
-        const QString errorText = i18n.text(QString("error.%1").arg(result.error.code), result.error.params);
-        bool accepted = false;
-        if (smokeGate) {
-            QTimer::singleShot(0, []() {
-                if (QWidget* modal = QApplication::activeModalWidget()) {
-                    modal->close();
-                }
-            });
-        }
-        const QString key = QInputDialog::getMultiLineText(
-            nullptr,
-            i18n.text("app.license.title"),
-            i18n.text("app.license.prompt", {{"machine_id", bf::currentMachineId()}, {"error", errorText}}),
-            QString(),
-            &accepted);
-        if (!accepted) {
-            return false;
-        }
-
-        result = manager.verifyKey(key);
-        if (!result.ok()) {
-            continue;
-        }
-        if (!manager.saveLicense(key)) {
-            QMessageBox::warning(nullptr, i18n.text("app.license.title"), i18n.text("app.license.save_failed"));
-            continue;
-        }
-        QMessageBox::information(nullptr, i18n.text("app.license.title"), i18n.text("app.license.activated"));
-        return true;
-    }
+    return false;
 }
 
 }  // namespace

@@ -445,18 +445,22 @@
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied</translation></message>
-    <message><source>app.activation.request</source><translation>Request Activation</translation></message>
-    <message><source>app.activation.request_hint</source><translation>Submit and wait for admin approval</translation></message>
-    <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>Enter an invite code to activate instantly</translation></message>
+    <message><source>app.activation.online_section</source><translation>Online Activation</translation></message>
+    <message><source>app.activation.online_hint</source><translation>Choose an online authorization method.</translation></message>
+    <message><source>app.activation.request</source><translation>Request Online Authorization</translation></message>
+    <message><source>app.activation.request_hint</source><translation>Submit this machine ID and wait for administrator approval</translation></message>
+    <message><source>app.activation.invite_code</source><translation>Activate with Invite Code</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>Enter the invite code issued by your administrator. An internet connection is required.</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>초대 코드 활성화</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>초대 코드 입력</translation></message>
-    <message><source>app.activation.offline_section</source><translation>Or paste a license key</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>Use an Invite Code</translation></message>
+    <message><source>app.activation.invite_code_placeholder</source><translation>Enter invite code</translation></message>
+    <message><source>app.activation.offline_section</source><translation>No internet connection? Use an offline license</translation></message>
+    <message><source>app.activation.offline_description</source><translation>An offline license is provided by an administrator. It is not an invite code.</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>Offline License</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>Paste offline license text here...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>Verify and Activate</translation></message>
     <message><source>app.activation.activated</source><translation>Activation successful</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>Waiting for admin approval...</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>Waiting for administrator approval. Your request is submitted; invite code unavailable.</translation></message>
     <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
     <message><source>app.activation.network_unavailable</source><translation>Network unavailable</translation></message>
     <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>

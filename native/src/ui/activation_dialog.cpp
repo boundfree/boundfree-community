@@ -10,11 +10,13 @@
 #include <QClipboard>
 #include <QEventLoop>
 #include <QFile>
-#include <QNetworkProxy>
-#include <QtGlobal>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QMessageBox>
+#include <QNetworkProxy>
+#include <QPlainTextEdit>
+#include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -177,34 +179,60 @@ bool ActivationDialog::checkAndHandleRevocation(
 
 void ActivationDialog::buildUi() {
     setWindowTitle(i18n_->text("app.activation.title"));
-    setMinimumSize(520, 480);
-    resize(540, 520);
+    setMinimumSize(560, 560);
+    resize(600, 620);
 
     auto* layout = new QVBoxLayout(this);
-    auto* machineLayout = new QHBoxLayout;
-    auto* machineLabel = new QLabel(i18n_->text("app.activation.machine_id_label"), this);
-    machineIdEdit_ = new QLineEdit(displayMachineId_, this);
+    layout->setContentsMargins(28, 28, 28, 24);
+    layout->setSpacing(12);
+
+    auto* title = new QLabel(i18n_->text("app.activation.title"), this);
+    title->setObjectName("activationTitle");
+    layout->addWidget(title);
+
+    auto* machinePanel = new QFrame(this);
+    machinePanel->setObjectName("machinePanel");
+    auto* machineLayout = new QHBoxLayout(machinePanel);
+    machineLayout->setContentsMargins(14, 12, 14, 12);
+    auto* machineLabel = new QLabel(i18n_->text("app.activation.machine_id_label"), machinePanel);
+    machineIdEdit_ = new QLineEdit(displayMachineId_, machinePanel);
     machineIdEdit_->setReadOnly(true);
-    copyBtn_ = new QPushButton(i18n_->text("app.activation.copy"), this);
+    copyBtn_ = new QPushButton(i18n_->text("app.activation.copy"), machinePanel);
     machineLayout->addWidget(machineLabel);
     machineLayout->addWidget(machineIdEdit_, 1);
     machineLayout->addWidget(copyBtn_);
-    layout->addLayout(machineLayout);
+    layout->addWidget(machinePanel);
+
+    auto* onlineTitle = new QLabel(i18n_->text("app.activation.online_section"), this);
+    onlineTitle->setObjectName("sectionTitle");
+    layout->addWidget(onlineTitle);
+    auto* onlineHint = new QLabel(i18n_->text("app.activation.online_hint"), this);
+    onlineHint->setObjectName("sectionHint");
+    onlineHint->setWordWrap(true);
+    layout->addWidget(onlineHint);
 
     requestBtn_ = new QPushButton(i18n_->text("app.activation.request"), this);
-    requestBtn_->setMinimumHeight(60);
+    requestBtn_->setObjectName("primaryAction");
+    requestBtn_->setMinimumHeight(44);
+    requestBtn_->setToolTip(i18n_->text("app.activation.request_hint"));
     layout->addWidget(requestBtn_);
     auto* requestHint = new QLabel(i18n_->text("app.activation.request_hint"), this);
-    requestHint->setAlignment(Qt::AlignHCenter);
+    requestHint->setObjectName("actionHint");
+    requestHint->setWordWrap(true);
     layout->addWidget(requestHint);
 
     auto* separator = new QFrame(this);
     separator->setFrameShape(QFrame::HLine);
-    separator->setFrameShadow(QFrame::Sunken);
+    separator->setObjectName("sectionSeparator");
     layout->addWidget(separator);
 
-    layout->addWidget(new QLabel(i18n_->text("app.activation.invite_code_section"), this));
-
+    auto* inviteTitle = new QLabel(i18n_->text("app.activation.invite_code_section"), this);
+    inviteTitle->setObjectName("sectionTitle");
+    layout->addWidget(inviteTitle);
+    auto* inviteHint = new QLabel(i18n_->text("app.activation.invite_code_hint"), this);
+    inviteHint->setObjectName("sectionHint");
+    inviteHint->setWordWrap(true);
+    layout->addWidget(inviteHint);
     auto* inviteRow = new QHBoxLayout;
     inviteCodeEdit_ = new QLineEdit(this);
     inviteCodeEdit_->setPlaceholderText(i18n_->text("app.activation.invite_code_placeholder"));
@@ -213,32 +241,66 @@ void ActivationDialog::buildUi() {
     inviteRow->addWidget(inviteBtn_);
     layout->addLayout(inviteRow);
 
-    auto* separator2 = new QFrame(this);
-    separator2->setFrameShape(QFrame::HLine);
-    separator2->setFrameShadow(QFrame::Sunken);
-    layout->addWidget(separator2);
-    layout->addWidget(new QLabel(i18n_->text("app.activation.offline_section"), this));
+    auto* offlineToggle = new QToolButton(this);
+    offlineToggle->setObjectName("offlineToggle");
+    offlineToggle->setText(i18n_->text("app.activation.offline_section"));
+    offlineToggle->setCheckable(true);
+    offlineToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    offlineToggle->setArrowType(Qt::RightArrow);
+    layout->addWidget(offlineToggle);
 
-    offlineKeyEdit_ = new QPlainTextEdit(this);
+    auto* offlinePanel = new QFrame(this);
+    offlinePanel->setObjectName("offlinePanel");
+    auto* offlineLayout = new QVBoxLayout(offlinePanel);
+    offlineLayout->setContentsMargins(14, 12, 14, 12);
+    offlineLayout->setSpacing(8);
+    auto* offlineHint = new QLabel(i18n_->text("app.activation.offline_description"), offlinePanel);
+    offlineHint->setObjectName("sectionHint");
+    offlineHint->setWordWrap(true);
+    offlineLayout->addWidget(offlineHint);
+    auto* offlineLabel = new QLabel(i18n_->text("app.activation.offline_license_label"), offlinePanel);
+    offlineLayout->addWidget(offlineLabel);
+    offlineKeyEdit_ = new QPlainTextEdit(offlinePanel);
     offlineKeyEdit_->setPlaceholderText(i18n_->text("app.activation.paste_placeholder"));
-    layout->addWidget(offlineKeyEdit_);
-    offlineActivateBtn_ = new QPushButton(i18n_->text("app.activation.activate_btn"), this);
-    layout->addWidget(offlineActivateBtn_, 0, Qt::AlignRight);
+    offlineKeyEdit_->setMinimumHeight(96);
+    offlineLayout->addWidget(offlineKeyEdit_);
+    offlineActivateBtn_ = new QPushButton(i18n_->text("app.activation.activate_btn"), offlinePanel);
+    offlineLayout->addWidget(offlineActivateBtn_, 0, Qt::AlignRight);
+    offlinePanel->hide();
+    layout->addWidget(offlinePanel);
 
     auto* statusLayout = new QHBoxLayout;
     statusLabel_ = new QLabel(this);
+    statusLabel_->setObjectName("statusLabel");
+    statusLabel_->setWordWrap(true);
     refreshBtn_ = new QPushButton(i18n_->text("app.activation.status_refresh"), this);
     statusLayout->addWidget(statusLabel_, 1);
-    statusLayout->addWidget(refreshBtn_);
+    statusLayout->addWidget(refreshBtn_, 0, Qt::AlignTop);
     layout->addLayout(statusLayout);
     statusLabel_->hide();
     refreshBtn_->hide();
+    layout->addStretch();
+
+    setStyleSheet(
+        "QLabel#activationTitle { font-size: 22px; font-weight: 600; }"
+        "QLabel#sectionTitle { font-size: 15px; font-weight: 600; }"
+        "QLabel#sectionHint, QLabel#actionHint { color: palette(mid); }"
+        "QFrame#machinePanel, QFrame#offlinePanel { border: 1px solid palette(mid); border-radius: 8px; }"
+        "QFrame#sectionSeparator { color: palette(mid); }"
+        "QToolButton#offlineToggle { font-weight: 600; text-align: left; padding: 8px 4px; }"
+        "QPushButton#primaryAction { font-weight: 600; }"
+        "QLabel#statusLabel { padding: 6px 0; }"
+    );
 
     connect(copyBtn_, &QPushButton::clicked, this, &ActivationDialog::onCopyMachineId);
     connect(requestBtn_, &QPushButton::clicked, this, &ActivationDialog::onRequestActivation);
     connect(inviteBtn_, &QPushButton::clicked, this, &ActivationDialog::onInviteCode);
     connect(offlineActivateBtn_, &QPushButton::clicked, this, &ActivationDialog::onOfflineActivate);
     connect(refreshBtn_, &QPushButton::clicked, this, &ActivationDialog::onRefreshStatus);
+    connect(offlineToggle, &QToolButton::toggled, this, [offlineToggle, offlinePanel](bool expanded) {
+        offlineToggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+        offlinePanel->setVisible(expanded);
+    });
 }
 
 void ActivationDialog::setState(const QString& stateLabel, bool showStatusBar) {

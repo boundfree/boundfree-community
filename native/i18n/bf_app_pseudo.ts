@@ -445,18 +445,22 @@
     <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee ID !!]</translation></message>
     <message><source>app.activation.copy</source><translation>[!! Coopy !!]</translation></message>
     <message><source>app.activation.copied</source><translation>[!! Coopied !!]</translation></message>
-    <message><source>app.activation.request</source><translation>[!! Reequueest Aactiivaatiioon !!]</translation></message>
-    <message><source>app.activation.request_hint</source><translation>[!! Suubmit aand waait foor aadmin aapprroovaal !!]</translation></message>
-    <message><source>app.activation.invite_code</source><translation>[!! I haave aan iinvitee coode !!]</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>[!! Eenteer iinvitee coode too aactiivaatee !!]</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>[!! Eenteer iinvitee coode !!]</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>[!! Iinviiitee Coodee Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.online_section</source><translation>[!! Oonliinee Aactiivaatiioon !!]</translation></message>
+    <message><source>app.activation.online_hint</source><translation>[!! Choosee aan oonliinee aauuthooriizaatiioon meethood. !!]</translation></message>
+    <message><source>app.activation.request</source><translation>[!! Reequueest Oonliinee Aauuthooriizaatiioon !!]</translation></message>
+    <message><source>app.activation.request_hint</source><translation>[!! Suubmit thiis maachiinee ID aand waait foor aadmiin aapprroovaal !!]</translation></message>
+    <message><source>app.activation.invite_code</source><translation>[!! Aactiivaatee wiith Iinviiitee Coodee !!]</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>[!! Eenteer the iinviiitee coodee iissueed by yoour aadmiiniistraatoor. Iinteerneet coonneectiioon reequiireed. !!]</translation></message>
+    <message><source>app.activation.invite_code_prompt</source><translation>[!! Eenteer iinviiitee coodee !!]</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>[!! Uusee aan Iinviiitee Coodee !!]</translation></message>
     <message><source>app.activation.invite_code_placeholder</source><translation>[!! Eenteer iinviiitee cooddee !!]</translation></message>
-    <message><source>app.activation.offline_section</source><translation>[!! Oor paastee a liiceensee keey !!]</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee liiceensee keey heeree... !!]</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>[!! Aactiivaatee !!]</translation></message>
+    <message><source>app.activation.offline_section</source><translation>[!! Noo iinteerneet? Uusee aan ooffliinee liiceensee !!]</translation></message>
+    <message><source>app.activation.offline_description</source><translation>[!! Aan ooffliinee liiceensee iis prooviideed by aan aadmiiniistraatoor. Iit iis noot aan iinviiitee coodee. !!]</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>[!! Ooffliinee Liiceensee !!]</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee ooffliinee liiceensee teext heeree... !!]</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>[!! Veeriify aand Aactiivaatee !!]</translation></message>
     <message><source>app.activation.activated</source><translation>[!! Aactiivaatiioon suuccessfuul !!]</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>[!! Waaitiing foor aadmin aapprroovaal... !!]</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>[!! Waaitiing foor aadmiiniistraatoor aapprroovaal… Yoour reequueest iis suubmiitteed; iinviiitee coodee uunaavaaiilaablee. !!]</translation></message>
     <message><source>app.activation.status_refresh</source><translation>[!! Reeffreesh staatuus !!]</translation></message>
     <message><source>app.activation.network_unavailable</source><translation>[!! Neetwork uunavailablee !!]</translation></message>
     <message><source>app.activation.registering</source><translation>[!! Suubmittting reequueest... !!]</translation></message>

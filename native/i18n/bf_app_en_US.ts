@@ -449,18 +449,22 @@
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
     <message><source>app.activation.copied</source><translation>Copied to clipboard</translation></message>
-    <message><source>app.activation.request</source><translation>Request Activation</translation></message>
-    <message><source>app.activation.request_hint</source><translation>Submit and wait for admin approval</translation></message>
-    <message><source>app.activation.invite_code</source><translation>I Have an Invite Code</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>Enter invite code to activate instantly</translation></message>
+    <message><source>app.activation.online_section</source><translation>Online Activation</translation></message>
+    <message><source>app.activation.online_hint</source><translation>Choose an online authorization method.</translation></message>
+    <message><source>app.activation.request</source><translation>Request Online Authorization</translation></message>
+    <message><source>app.activation.request_hint</source><translation>Submit this machine ID and wait for administrator approval</translation></message>
+    <message><source>app.activation.invite_code</source><translation>Activate with Invite Code</translation></message>
+    <message><source>app.activation.invite_code_hint</source><translation>Enter the invite code issued by your administrator. An internet connection is required.</translation></message>
     <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code (format: BF-XXXX-YYYY)</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>Invite Code Activation</translation></message>
+    <message><source>app.activation.invite_code_section</source><translation>Use an Invite Code</translation></message>
     <message><source>app.activation.invite_code_placeholder</source><translation>Enter invite code</translation></message>
-    <message><source>app.activation.offline_section</source><translation>Or paste license key (offline / after receiving)</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>Paste license key here...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>
+    <message><source>app.activation.offline_section</source><translation>No internet connection? Use an offline license</translation></message>
+    <message><source>app.activation.offline_description</source><translation>An offline license is provided by an administrator or the offline issuance tool. It is not an invite code and is usually a longer license text.</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>Offline License</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>Paste offline license text here...</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>Verify and Activate</translation></message>
     <message><source>app.activation.activated</source><translation>Activation successful! Entering main interface.</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>Waiting for admin approval... (auto-refresh every 30s)</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>Waiting for administrator approval… (auto-refresh every 30 seconds). Your request is submitted, so an invite code is unavailable. Contact the administrator to change method.</translation></message>
     <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
     <message><source>app.activation.network_unavailable</source><translation>Network unavailable. Please check your connection or use offline license key.</translation></message>
     <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>
