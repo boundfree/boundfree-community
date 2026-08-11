@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.55-dev
+当前版本：0.1.56-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+fix: Linux 接入 OpenSSL 验签后端，打通在线激活验证
+
+版本：0.1.56-dev
+日期：2026-08-11
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：fix
+
+提交标题：
+fix: Linux 接入 OpenSSL 验签后端，打通在线激活验证
+
+提交正文：
+```text
+非 Windows 构建的 license_crypto 验签后端从空实现（恒 false）改为 OpenSSL EVP：RSA-PSS/MGF1-SHA256，RSA_PSS_SALTLEN_AUTO 恢复盐长（等价 Python PSS.AUTO 与 CNG 盐长扫描），输入原始消息、内部 SHA256，与 Windows CNG 分支语义一致。CMake 在非 Windows 平台 find_package(OpenSSL) 并链接 OpenSSL::Crypto（bf_core / bf_license_smoke）。bf_license_smoke 新增 OpenSSL 往返测试：生成 RSA-2048 临时密钥、EVP_DigestSign 以 MAX 盐长签名（镜像服务器行为）、验证接受与篡改/垃圾签名/空公钥拒绝；同步更新"后端可用"与"无效 Key"断言。修复后 WSL2/CI 可完整走通在线激活闭环，并已用 license-authority Key Pair B 签发真实激活码端到端验证通过（Valid / WrongMachine / 篡改拒绝）。
+```
 
 ---
 

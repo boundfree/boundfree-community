@@ -12,6 +12,11 @@ set(BF_WINDOWS_APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/boundfree_app.
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia Network LinguistTools)
 find_package(Threads REQUIRED)
+if(NOT WIN32)
+    # RSA-2048 PSS verification backend on Linux/WSL2 (license_crypto.cpp).
+    # Windows uses the CNG backend and needs no OpenSSL.
+    find_package(OpenSSL REQUIRED)
+endif()
 
 # ---------------------------------------------------------------------------
 # 翻译：用 Qt6 LinguistTools/lrelease 把 native/i18n/*.ts 编译为 .qm。
@@ -127,6 +132,9 @@ add_library(bf_core STATIC ${BF_CORE_SOURCES})
 target_include_directories(bf_core PUBLIC src)
 target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
+if(NOT WIN32)
+    target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
+endif()
 if(WIN32)
     target_link_libraries(bf_core PUBLIC bcrypt iphlpapi)
 endif()
@@ -220,6 +228,8 @@ target_compile_definitions(bf_license_smoke PRIVATE BF_REPO_ROOT="${CMAKE_CURREN
 target_link_libraries(bf_license_smoke PRIVATE Qt6::Core)
 if(WIN32)
     target_link_libraries(bf_license_smoke PRIVATE bcrypt iphlpapi)
+else()
+    target_link_libraries(bf_license_smoke PRIVATE OpenSSL::Crypto)
 endif()
 
 # Generate the embedded public key header when BF_REQUIRE_LICENSE=ON.

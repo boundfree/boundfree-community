@@ -28,7 +28,8 @@ public:
     const QString& publicKeyPem() const;
     // True when a release public key is present (embed or runtime file).
     bool isConfigured() const;
-    // True when the RSA crypto backend is available (Windows CNG).
+    // True when the RSA crypto backend is available (Windows CNG, other
+    // platforms OpenSSL).
     bool isBackendAvailable() const;
 
     // license.dat I/O. loadSavedLicense() returns the raw key string or

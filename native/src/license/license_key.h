@@ -19,7 +19,7 @@ namespace bf {
 // Expired           | payload.expiry is before today.
 // KeyFormatError    | Envelope structure (base64url / length prefix / JSON) bad.
 // NotConfigured     | No release public key configured (BF_REQUIRE_LICENSE=OFF).
-// BackendNotAvailable| Crypto backend unavailable (non-Windows without CNG).
+// BackendNotAvailable| Crypto backend unavailable (Windows CNG / OpenSSL).
 enum class LicenseStatus {
     Valid,
     Missing,
@@ -69,8 +69,8 @@ LicenseResult decodeLicenseEnvelope(const QString& licenseKey, QByteArray* outPa
 //
 // On success status is Valid and payload is populated. Pure at the envelope
 // level; signature verification delegates to the platform crypto backend
-// (Windows CNG). When the backend is unavailable the status is
-// BackendNotAvailable so the Linux build can compile and report.
+// (Windows CNG, other platforms OpenSSL). When the backend is unavailable the
+// status is BackendNotAvailable.
 LicenseResult verifyLicenseEnvelope(const QByteArray& payloadBytes, const QByteArray& signature,
                                     const QString& publicKeyPem, const QString& localMachineIdCanonical,
                                     const QString& productVersion, const QString& todayIso = QString());

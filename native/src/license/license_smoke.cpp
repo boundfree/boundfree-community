@@ -1,5 +1,6 @@
-// Internal smoke test for the license module. Pure functions only on Linux;
-// on Windows this also exercises the CNG backend when a public key is supplied.
+// Internal smoke test for the license module. On Linux/WSL2 this exercises the
+// OpenSSL verification backend (round-trip sign/verify); on Windows it
+// exercises the CNG backend when a public key is supplied.
 // Not linked into bf_app; standalone executable bf_license_smoke.
 #include "license/license_crypto.h"
 #include "license/license_key.h"
@@ -15,6 +16,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QtEndian>
+
+#ifndef Q_OS_WIN
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#endif
 
 #include <cstdio>
 #include <cstdlib>
@@ -122,15 +130,12 @@ void testVerifyWithoutKey() {
     bf::LicenseResult r = bf::verifyLicenseKey(key, QString(), "0B9C91576A069C39FA9C30B9C0086DFA", "0.1.0-dev");
     check(r.status == bf::LicenseStatus::NotConfigured, "empty public key -> NotConfigured");
 
-    // BackendNotAvailable on Linux when key present.
+    // A malformed public key (or a dummy signature) must fail verification on
+    // every backend: CNG on Windows, OpenSSL elsewhere.
     bf::LicenseResult r2 = bf::verifyLicenseKey(key, "-----BEGIN PUBLIC KEY-----\nMIIBIjAN\n-----END PUBLIC KEY-----\n",
                                                 "0B9C91576A069C39FA9C30B9C0086DFA", "0.1.0-dev");
-#ifdef Q_OS_WIN
-    check(r2.status == bf::LicenseStatus::InvalidSignature || r2.status == bf::LicenseStatus::KeyFormatError,
-          "Windows CNG rejects dummy key");
-#else
-    check(r2.status == bf::LicenseStatus::BackendNotAvailable, "Linux without CNG -> BackendNotAvailable");
-#endif
+    check(r2.status == bf::LicenseStatus::InvalidSignature,
+          "dummy key rejected by backend");
 }
 
 void testManagerLifecycle() {
@@ -143,13 +148,85 @@ void testManagerLifecycle() {
     check(saved.status == bf::LicenseStatus::Missing || saved.status == bf::LicenseStatus::Valid,
           "checkSavedLicense missing or valid");
 
-    // Backend availability.
-#ifdef Q_OS_WIN
-    check(mgr.isBackendAvailable(), "Windows CNG backend available");
-#else
-    check(!mgr.isBackendAvailable(), "Linux no CNG backend");
-#endif
+    // Backend availability: CNG on Windows, OpenSSL elsewhere.
+    check(mgr.isBackendAvailable(), "verification backend available");
 }
+
+#ifndef Q_OS_WIN
+void testOpenSslVerifyRoundTrip() {
+    std::cout << "[openssl_verify]\n";
+    // Generate a throwaway RSA-2048 key, PSS-SHA256 sign a fixed message
+    // (MAX salt length, mirroring the server's issue_license_key), then
+    // verify with our OpenSSL backend. Also checks tamper/wrong-key rejection.
+    const QByteArray message =
+        QByteArrayLiteral("BoundFree-EEG round-trip verification message");
+
+    EVP_PKEY_CTX* genCtx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+    EVP_PKEY* pkey = nullptr;
+    const bool generated = genCtx != nullptr
+        && EVP_PKEY_keygen_init(genCtx) > 0
+        && EVP_PKEY_CTX_set_rsa_keygen_bits(genCtx, 2048) > 0
+        && EVP_PKEY_keygen(genCtx, &pkey) > 0;
+    check(generated, "RSA-2048 key generated");
+    EVP_PKEY_CTX_free(genCtx);
+    if (!generated) {
+        return;
+    }
+
+    // Serialize the public key to SubjectPublicKeyInfo PEM, the same shape as
+    // license_public.pem consumed by LicenseManager.
+    BIO* pemBio = BIO_new(BIO_s_mem());
+    const bool pemOk = pemBio != nullptr && PEM_write_bio_PUBKEY(pemBio, pkey) == 1;
+    check(pemOk, "public key PEM serialized");
+    QByteArray pem;
+    if (pemOk) {
+        char* data = nullptr;
+        const long len = BIO_get_mem_data(pemBio, &data);
+        pem = QByteArray(data, static_cast<int>(len));
+    }
+    BIO_free(pemBio);
+
+    // Sign with PSS/MGF1-SHA256 and MAX salt length (server behavior).
+    // EVP_DigestSign digests the message internally, matching Python's
+    // private_key.sign(payload, PSS(MGF1(SHA256), MAX_LENGTH), SHA256()).
+    EVP_MD_CTX* mdCtx = EVP_MD_CTX_new();
+    EVP_PKEY_CTX* pctx = nullptr;
+    bool signedOk = mdCtx != nullptr
+        && EVP_DigestSignInit(mdCtx, &pctx, EVP_sha256(), nullptr, pkey) > 0
+        && EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) > 0
+        && EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_MAX) > 0
+        && EVP_PKEY_CTX_set_signature_md(pctx, EVP_sha256()) > 0
+        && EVP_DigestSignUpdate(mdCtx,
+                                reinterpret_cast<const unsigned char*>(message.constData()),
+                                static_cast<size_t>(message.size())) > 0;
+    QByteArray signature;
+    if (signedOk) {
+        size_t sigLen = 0;
+        signedOk = EVP_DigestSignFinal(mdCtx, nullptr, &sigLen) > 0;
+        signature.resize(static_cast<int>(sigLen));
+        signedOk = signedOk
+            && EVP_DigestSignFinal(mdCtx,
+                                   reinterpret_cast<unsigned char*>(signature.data()),
+                                   &sigLen) > 0;
+        signature.resize(static_cast<int>(sigLen));
+    }
+    EVP_MD_CTX_free(mdCtx);
+    EVP_PKEY_free(pkey);
+    check(signedOk && signature.size() == 256, "PSS signature generated (256 bytes)");
+    if (!signedOk || signature.size() != 256) {
+        return;
+    }
+
+    check(bf::license_crypto::verifyRsaPssSha256(pem, message, signature),
+          "valid signature accepted");
+    check(!bf::license_crypto::verifyRsaPssSha256(pem, message + "tampered", signature),
+          "tampered message rejected");
+    check(!bf::license_crypto::verifyRsaPssSha256(pem, message, QByteArray(256, '\x00')),
+          "garbage signature rejected");
+    check(!bf::license_crypto::verifyRsaPssSha256(QString(), message, signature),
+          "empty public key rejected");
+}
+#endif
 
 }  // namespace
 
@@ -203,6 +280,9 @@ int main(int argc, char** argv) {
     testEnvelopeDecode();
     testVerifyWithoutKey();
     testManagerLifecycle();
+#ifndef Q_OS_WIN
+    testOpenSslVerifyRoundTrip();
+#endif
     testSpkiParser();
 
     std::cout << "\n";

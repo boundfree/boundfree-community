@@ -293,16 +293,61 @@ bool verifyRsaPssSha256(const QString& publicKeyPem, const QByteArray& messageBy
     return false;
 }
 
-#else  // Non-Windows
+#else  // Non-Windows (OpenSSL backend)
 
-bool isBackendAvailable() { return false; }
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
+bool isBackendAvailable() { return true; }
 
 bool verifyRsaPssSha256(const QString& publicKeyPem, const QByteArray& messageBytes,
                         const QByteArray& signatureBytes) {
-    Q_UNUSED(publicKeyPem)
-    Q_UNUSED(messageBytes)
-    Q_UNUSED(signatureBytes)
-    return false;
+    // RSA-2048 PSS signature must be exactly the modulus size (256 bytes).
+    if (signatureBytes.size() != 256) {
+        return false;
+    }
+
+    // Parse the SubjectPublicKeyInfo PEM into an EVP_PKEY.
+    const QByteArray pemUtf8 = publicKeyPem.toUtf8();
+    BIO* bio = BIO_new_mem_buf(pemUtf8.constData(), -1);
+    if (bio == nullptr) {
+        return false;
+    }
+    EVP_PKEY* pkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
+    BIO_free(bio);
+    if (pkey == nullptr) {
+        return false;
+    }
+
+    bool ok = false;
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pkey, nullptr);
+    if (ctx != nullptr) {
+        // PSS padding / MGF1-SHA256 with AUTO salt length: the salt is
+        // recovered from the signature, equivalent to Python's PSS.AUTO and
+        // the CNG salt-length scan above.
+        if (EVP_PKEY_verify_init(ctx) > 0
+            && EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PSS_PADDING) > 0
+            && EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx, RSA_PSS_SALTLEN_AUTO) > 0
+            && EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256()) > 0) {
+            // EVP_PKEY_verify treats its input as the message digest (no
+            // internal hashing), so hash the message first — the same
+            // contract as the CNG backend (BCryptVerifySignature).
+            const QByteArray digest =
+                QCryptographicHash::hash(messageBytes, QCryptographicHash::Sha256);
+            ok = EVP_PKEY_verify(
+                     ctx,
+                     reinterpret_cast<const unsigned char*>(signatureBytes.constData()),
+                     static_cast<size_t>(signatureBytes.size()),
+                     reinterpret_cast<const unsigned char*>(digest.constData()),
+                     static_cast<size_t>(digest.size()))
+                 == 1;
+        }
+        EVP_PKEY_CTX_free(ctx);
+    }
+    EVP_PKEY_free(pkey);
+    return ok;
 }
 
 #endif
