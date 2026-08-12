@@ -179,8 +179,7 @@ bool ActivationDialog::checkAndHandleRevocation(
 
 void ActivationDialog::buildUi() {
     setWindowTitle(i18n_->text("app.activation.title"));
-    setMinimumSize(560, 560);
-    resize(600, 620);
+    setMinimumSize(560, 520);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(28, 28, 28, 24);
@@ -196,8 +195,11 @@ void ActivationDialog::buildUi() {
     machineLayout->setContentsMargins(14, 12, 14, 12);
     auto* machineLabel = new QLabel(i18n_->text("app.activation.machine_id_label"), machinePanel);
     machineIdEdit_ = new QLineEdit(displayMachineId_, machinePanel);
+    machineIdEdit_->setObjectName("machineIdEdit");
     machineIdEdit_->setReadOnly(true);
+    machineIdEdit_->setMinimumHeight(34);
     copyBtn_ = new QPushButton(i18n_->text("app.activation.copy"), machinePanel);
+    copyBtn_->setObjectName("secondaryAction");
     machineLayout->addWidget(machineLabel);
     machineLayout->addWidget(machineIdEdit_, 1);
     machineLayout->addWidget(copyBtn_);
@@ -213,7 +215,6 @@ void ActivationDialog::buildUi() {
 
     requestBtn_ = new QPushButton(i18n_->text("app.activation.request"), this);
     requestBtn_->setObjectName("primaryAction");
-    requestBtn_->setMinimumHeight(44);
     requestBtn_->setToolTip(i18n_->text("app.activation.request_hint"));
     layout->addWidget(requestBtn_);
     auto* requestHint = new QLabel(i18n_->text("app.activation.request_hint"), this);
@@ -236,8 +237,10 @@ void ActivationDialog::buildUi() {
     auto* inviteRow = new QHBoxLayout;
     inviteCodeEdit_ = new QLineEdit(this);
     inviteCodeEdit_->setObjectName("inviteCodeEdit");
+    inviteCodeEdit_->setMinimumHeight(34);
     inviteCodeEdit_->setPlaceholderText(i18n_->text("app.activation.invite_code_placeholder"));
     inviteBtn_ = new QPushButton(i18n_->text("app.activation.invite_code"), this);
+    inviteBtn_->setObjectName("secondaryAction");
     inviteRow->addWidget(inviteCodeEdit_, 1);
     inviteRow->addWidget(inviteBtn_);
     layout->addLayout(inviteRow);
@@ -248,6 +251,7 @@ void ActivationDialog::buildUi() {
     offlineToggle->setCheckable(true);
     offlineToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     offlineToggle->setArrowType(Qt::RightArrow);
+    offlineToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->addWidget(offlineToggle);
 
     auto* offlinePanel = new QFrame(this);
@@ -266,6 +270,7 @@ void ActivationDialog::buildUi() {
     offlineKeyEdit_->setMinimumHeight(96);
     offlineLayout->addWidget(offlineKeyEdit_);
     offlineActivateBtn_ = new QPushButton(i18n_->text("app.activation.activate_btn"), offlinePanel);
+    offlineActivateBtn_->setObjectName("secondaryAction");
     offlineLayout->addWidget(offlineActivateBtn_, 0, Qt::AlignRight);
     offlinePanel->hide();
     layout->addWidget(offlinePanel);
@@ -273,8 +278,8 @@ void ActivationDialog::buildUi() {
     auto* statusLayout = new QHBoxLayout;
     statusLabel_ = new QLabel(this);
     statusLabel_->setObjectName("statusLabel");
-    statusLabel_->setWordWrap(true);
     refreshBtn_ = new QPushButton(i18n_->text("app.activation.status_refresh"), this);
+    refreshBtn_->setObjectName("secondaryAction");
     statusLayout->addWidget(statusLabel_, 1);
     statusLayout->addWidget(refreshBtn_, 0, Qt::AlignTop);
     layout->addLayout(statusLayout);
@@ -288,8 +293,15 @@ void ActivationDialog::buildUi() {
         "QLabel#sectionHint, QLabel#actionHint { color: palette(mid); }"
         "QFrame#machinePanel, QFrame#offlinePanel { border: 1px solid palette(mid); border-radius: 8px; }"
         "QFrame#sectionSeparator { color: palette(mid); }"
-        "QToolButton#offlineToggle { font-weight: 600; text-align: left; padding: 8px 4px; }"
-        "QPushButton#primaryAction { font-weight: 600; }"
+        "QPushButton, QToolButton { min-height: 34px; padding: 0 14px; border: 1px solid palette(mid); border-radius: 4px; background: palette(button); color: palette(button-text); }"
+        "QLineEdit { min-height: 34px; padding: 0 8px; border: 1px solid palette(mid); border-radius: 4px; background: palette(base); color: palette(text); }"
+        "QPlainTextEdit { padding: 6px 8px; border: 1px solid palette(mid); border-radius: 4px; background: palette(base); color: palette(text); }"
+        "QPushButton:hover, QToolButton:hover { background: palette(light); }"
+        "QPushButton:pressed, QToolButton:pressed { background: palette(mid); }"
+        "QPushButton:disabled, QToolButton:disabled { color: palette(mid); }"
+        "QPushButton#primaryAction { font-weight: 600; background: palette(highlight); color: palette(highlighted-text); border-color: palette(highlight); }"
+        "QPushButton#primaryAction:hover { background: palette(dark); border-color: palette(dark); }"
+        "QToolButton#offlineToggle { text-align: left; padding: 0 10px; }"
         "QLabel#statusLabel { padding: 6px 0; }"
     );
 
@@ -298,10 +310,23 @@ void ActivationDialog::buildUi() {
     connect(inviteBtn_, &QPushButton::clicked, this, &ActivationDialog::onInviteCode);
     connect(offlineActivateBtn_, &QPushButton::clicked, this, &ActivationDialog::onOfflineActivate);
     connect(refreshBtn_, &QPushButton::clicked, this, &ActivationDialog::onRefreshStatus);
-    connect(offlineToggle, &QToolButton::toggled, this, [offlineToggle, offlinePanel](bool expanded) {
+    connect(offlineToggle, &QToolButton::toggled, this, [this, offlineToggle, offlinePanel, layout](bool expanded) {
         offlineToggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
         offlinePanel->setVisible(expanded);
+        layout->activate();
+        const int requiredHeight = qMax(minimumHeight(), layout->sizeHint().height());
+        if (expanded) {
+            if (height() < requiredHeight) {
+                resize(width(), requiredHeight);
+            }
+        } else if (height() > requiredHeight) {
+            resize(width(), requiredHeight);
+        }
     });
+
+    // 初始窗口高度按折叠态内容所需，避免硬编码高度留下大块空白。
+    layout->activate();
+    resize(600, qMax(minimumHeight(), layout->sizeHint().height()));
 }
 
 void ActivationDialog::setState(const QString& stateLabel, bool showStatusBar) {

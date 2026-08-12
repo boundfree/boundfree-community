@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QFrame>
+#include <QLayout>
 #include <QLineEdit>
 #include <QMetaObject>
 #include <QPushButton>
@@ -24,7 +25,9 @@ bool expect(bool condition, const char* message) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    qputenv("QT_QPA_PLATFORM", "offscreen");
+    if (!qEnvironmentVariableIsSet("BF_QT_PLATFORM")) {
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+    }
     QApplication app(argc, argv);
 
     bf::I18nService i18n(QStringLiteral(BF_REPO_ROOT));
@@ -34,12 +37,13 @@ int main(int argc, char** argv) {
     }
 
     bf::VersionInfo version;
-    version.version = QStringLiteral("0.1.60-dev");
+    version.version = QStringLiteral("0.1.61-dev");
     bf::LicenseManager manager(version.version, QStringLiteral(BF_REPO_ROOT));
     bf::ActivationDialog dialog(&manager, version, &i18n);
 
     auto* offlineToggle = dialog.findChild<QToolButton*>(QStringLiteral("offlineToggle"));
     auto* offlinePanel = dialog.findChild<QFrame*>(QStringLiteral("offlinePanel"));
+    auto* machineIdEdit = dialog.findChild<QLineEdit*>(QStringLiteral("machineIdEdit"));
     auto* inviteEdit = dialog.findChild<QLineEdit*>(QStringLiteral("inviteCodeEdit"));
     QPushButton* inviteButton = nullptr;
     for (QPushButton* button : dialog.findChildren<QPushButton*>()) {
@@ -51,12 +55,32 @@ int main(int argc, char** argv) {
 
     bool passed = expect(offlineToggle != nullptr, "offline toggle is missing") &&
                   expect(offlinePanel != nullptr, "offline panel is missing") &&
+                  expect(machineIdEdit != nullptr, "machine ID input is missing") &&
                   expect(inviteEdit != nullptr, "invite input is missing") &&
                   expect(inviteButton != nullptr, "invite button is missing");
     if (passed) {
+        dialog.show();
+        app.processEvents();
+        passed = expect(machineIdEdit->height() == inviteEdit->height(),
+                        "machine ID and invite inputs are misaligned") && passed;
+        passed = expect(inviteButton->height() == inviteEdit->height(),
+                        "invite button and input are misaligned") && passed;
+    }
+    if (passed) {
         passed = expect(offlinePanel->isHidden(), "offline panel is visible by default");
+        const int initialHeight = dialog.height();
         offlineToggle->click();
+        app.processEvents();
         passed = expect(!offlinePanel->isHidden(), "offline panel did not expand") && passed;
+        passed = expect(offlinePanel->geometry().bottom() <= dialog.rect().bottom(),
+                        "offline panel is clipped at the default window size") && passed;
+        passed = expect(dialog.height() >= initialHeight,
+                        "dialog did not grow when expanding") && passed;
+        offlineToggle->click();
+        app.processEvents();
+        passed = expect(offlinePanel->isHidden(), "offline panel did not collapse") && passed;
+        passed = expect(dialog.height() <= initialHeight,
+                        "dialog did not shrink back after collapsing") && passed;
         passed = expect(QMetaObject::invokeMethod(
                             &dialog, "onRegistrationSubmitted", Qt::DirectConnection,
                             Q_ARG(QString, QStringLiteral("request-id"))),
