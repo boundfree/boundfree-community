@@ -294,6 +294,26 @@
       <translation>離線授權已過期：{expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>目前系統時間早於此裝置上一次成功使用的記錄，請校準日期時間；若問題仍持續，可線上重新啟用或聯絡供應商。上次使用時間：{last_seen_utc}；目前時間：{current_utc}。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>本機授權時間保護狀態缺失，請線上重新啟用或聯絡供應商。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>本機授權時間保護狀態損毀或疑似遭到竄改，請線上重新啟用或聯絡供應商。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>無法更新本機授權時間保護狀態，請檢查使用者資料目錄的寫入權限後重試。</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>無法儲存本機授權檔案，請檢查使用者資料目錄的寫入權限後重試。</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>內部錯誤：{operation}</translation>
     </message>

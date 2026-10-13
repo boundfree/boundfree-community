@@ -58,11 +58,19 @@ namespace {
 bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
     bf::LicenseManager manager(version.version, repoRoot);
 
-    // Level 1: check saved license.dat (no network, instant)
-    if (manager.checkSavedLicense().ok()) {
-        // Online status check: fail-open on network error / timeout.
-        // Removes license.dat and falls through to activation dialog only
-        // when the server explicitly invalidated this machine's authorization.
+    // Level 1: check saved license.dat exactly once (no network, instant).
+    // The result — including structured clock-watermark failures — is kept
+    // and handed to the activation dialog so the startup failure is shown
+    // in the status bar instead of being lost.
+    const bf::LicenseResult startupCheck = manager.checkSavedLicense();
+    if (startupCheck.ok()) {
+        // Legacy keys are offline-compatible: do not let an absent or stale
+        // server record invalidate a locally verified offline authorization.
+        if (!bf::ActivationDialog::requiresOnlineStatusCheck(startupCheck)) {
+            return true;
+        }
+        // Server-managed keys retain remote revocation checks and fail open on
+        // a network error or timeout.
         if (bf::ActivationDialog::checkAndHandleRevocation(
                 &manager, version, const_cast<bf::I18nService*>(&i18n))) {
             return true;
@@ -74,7 +82,8 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
         return false;
     }
     {
-        bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n));
+        bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n),
+                                 startupCheck);
         if (dlg.exec() == QDialog::Accepted) {
             return true;
         }

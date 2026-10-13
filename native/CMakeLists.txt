@@ -106,6 +106,8 @@ set(BF_CORE_SOURCES
     src/i18n/i18n_service.h
     src/ipc/sidecar_client.cpp
     src/ipc/sidecar_client.h
+    src/license/clock_rollback.cpp
+    src/license/clock_rollback.h
     src/license/machine_id.cpp
     src/license/machine_id.h
     src/license/license_crypto.cpp
@@ -222,6 +224,8 @@ add_executable(bf_license_smoke
     src/license/license_key.h
     src/license/license_manager.cpp
     src/license/license_manager.h
+    src/license/clock_rollback.cpp
+    src/license/clock_rollback.h
 )
 target_include_directories(bf_license_smoke PRIVATE src)
 target_compile_definitions(bf_license_smoke PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
@@ -294,6 +298,17 @@ target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
 add_executable(online_activation_client_test src/license/online_activation_client_test.cpp)
 target_include_directories(online_activation_client_test PRIVATE src)
 target_link_libraries(online_activation_client_test PRIVATE bf_core Qt6::Network)
+add_executable(clock_rollback_test src/license/clock_rollback_test.cpp)
+target_include_directories(clock_rollback_test PRIVATE src)
+target_link_libraries(clock_rollback_test PRIVATE bf_core Qt6::Core)
+# LicenseManager clock-watermark end-to-end test. Unix-only: generates a
+# throwaway RSA-2048 key pair in memory via OpenSSL (no Windows CNG
+# private-key signing path) and redirects XDG_DATA_HOME into a QTemporaryDir.
+if(NOT WIN32)
+    add_executable(license_manager_clock_test src/license/license_manager_clock_test.cpp)
+    target_include_directories(license_manager_clock_test PRIVATE src)
+    target_link_libraries(license_manager_clock_test PRIVATE bf_core Qt6::Core OpenSSL::Crypto)
+endif()
 add_executable(activation_dialog_test
     src/ui/activation_dialog_test.cpp
     src/ui/activation_dialog.cpp

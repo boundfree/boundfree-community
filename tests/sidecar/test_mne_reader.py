@@ -6,7 +6,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 HAS_MNE = importlib.util.find_spec("mne") is not None
-EDF_SAMPLE = ROOT.parent / "boundfree-eeg-upper-computer" / "samples" / "mark.edf"
+_EDF_CANDIDATE = ROOT.parent / "boundfree-eeg-upper-computer" / "samples" / "mark.edf"
+_EDF_ARCHIVE = ROOT.parent / "archive" / "boundfree-eeg-upper-computer" / "samples" / "mark.edf"
+EDF_SAMPLE = _EDF_CANDIDATE if _EDF_CANDIDATE.exists() else _EDF_ARCHIVE
 
 
 @pytest.mark.skipif(not HAS_MNE, reason="mne is not installed")

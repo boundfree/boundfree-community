@@ -294,6 +294,26 @@
       <translation>Offline license expired at: {expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>The system clock is earlier than the last successful use recorded for this device. Please calibrate the date and time. If the problem persists, re-activate online or contact the supplier. Last seen: {last_seen_utc}; current: {current_utc}.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>The local license time protection state is missing. Please re-activate online or contact the supplier.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>The local license time protection state is corrupted or may have been tampered with. Please re-activate online or contact the supplier.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>The local license time protection state could not be updated. Check the write permission of the user data directory and try again.</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>The local license file could not be saved. Check the write permission of the user data directory and try again.</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>Internal error: {operation}</translation>
     </message>

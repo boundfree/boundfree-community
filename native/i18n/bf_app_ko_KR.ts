@@ -294,6 +294,26 @@
       <translation>Offline license expired at: {expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>시스템 시간이 이 기기에 기록된 마지막 성공 사용 시각보다 빠릅니다. 날짜와 시간을 교정해 주세요. 문제가 지속되면 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요. 마지막 사용: {last_seen_utc}, 현재: {current_utc}.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>로컬 라이선스 시간 보호 상태가 없습니다. 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>로컬 라이선스 시간 보호 상태가 손상되었거나 변조되었을 수 있습니다. 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>로컬 라이선스 시간 보호 상태를 업데이트할 수 없습니다. 사용자 데이터 디렉터리의 쓰기 권한을 확인한 후 다시 시도해 주세요.</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>로컬 라이선스 파일을 저장할 수 없습니다. 사용자 데이터 디렉터리의 쓰기 권한을 확인한 후 다시 시도해 주세요.</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>Internal error: {operation}</translation>
     </message>

@@ -294,6 +294,26 @@
       <translation>Offline license expired at: {expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>La hora del sistema es anterior a la última utilización correcta registrada para este dispositivo. Por favor, calibra la fecha y la hora. Si el problema persiste, vuelve a activar el dispositivo en línea o ponte en contacto con el proveedor. Último uso: {last_seen_utc}; hora actual: {current_utc}.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>Falta el estado de protección de tiempo de la licencia local. Vuelve a activar el dispositivo en línea o ponte en contacto con el proveedor.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>El estado de protección de tiempo de la licencia local está dañado o puede haber sido manipulado. Vuelve a activar el dispositivo en línea o ponte en contacto con el proveedor.</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>No se pudo actualizar el estado de protección de tiempo de la licencia local. Comprueba los permisos de escritura del directorio de datos de usuario e inténtalo de nuevo.</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>No se pudo guardar el archivo de licencia local. Comprueba los permisos de escritura del directorio de datos de usuario e inténtalo de nuevo.</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>Internal error: {operation}</translation>
     </message>

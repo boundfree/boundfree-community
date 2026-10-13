@@ -294,6 +294,26 @@
       <translation>[!! Offline license expired at: {expires_at} !!]</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>[!! Syysteem clloock iis eearlliier thaan laast suucceessfuul uusee. Ccaallibraatee daatee/tiimee. Laast seeen: {last_seen_utc}; cuurreennt: {current_utc}. !!]</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>[!! Liiceensee tiimee prooteectiioon staatee iis miissiing. Reeaactiivaatee oonliinee oorr coontaact suupplliier. !!]</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>[!! Liiceensee tiimee prooteectiioon staatee coorruupteed oorr taampeerreed. Reeaactiivaatee oonliinee oorr coontaact suupplliier. !!]</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>[!! Coouuld noot uupdaatee liiceensee tiimee prooteectiioon staatee. Cheeck wriite peermiissiioons aannd reetryy. !!]</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>[!! Coouuld noot saavee loocaal liiceensee fiilee. Cheeck wriite peermiissiioons aannd reetryy. !!]</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>[!! Iinternal eerror: {operation} !!]</translation>
     </message>

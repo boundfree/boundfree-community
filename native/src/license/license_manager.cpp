@@ -1,11 +1,14 @@
 #include "license/license_manager.h"
 
+#include "license/clock_rollback.h"
 #include "license/license_crypto.h"
 #include "license/machine_id.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QProcessEnvironment>
 #include <QSaveFile>
 #include <QStandardPaths>
@@ -65,6 +68,75 @@ QString licenseDataDir() {
 #endif
 }
 
+// Maps a clock watermark module outcome to the structured license contract.
+// Only the rollback timestamps are user-displayable params (Qt ISO UTC
+// strings); file paths and module diagnostics never leave this module, so
+// the UI cannot surface them.
+LicenseResult mapClockRollbackResult(const ClockRollbackResult& clock) {
+    LicenseResult result;
+    switch (clock.status) {
+    case ClockRollbackStatus::Ok:
+        result.status = LicenseStatus::Valid;
+        return result;
+    case ClockRollbackStatus::MissingState:
+        result.status = LicenseStatus::ClockStateMissing;
+        result.error = makeError("license.clock_state_missing");
+        return result;
+    case ClockRollbackStatus::CorruptedState:
+        result.status = LicenseStatus::ClockStateCorrupted;
+        result.error = makeError("license.clock_state_corrupted");
+        return result;
+    case ClockRollbackStatus::RollbackDetected:
+        result.status = LicenseStatus::ClockRollback;
+        result.error = makeError(
+            "license.clock_rollback",
+            {{"last_seen_utc", clock.lastSeenUtc.toString(Qt::ISODateWithMs)},
+             {"current_utc", clock.currentUtc.toString(Qt::ISODateWithMs)}});
+        return result;
+    case ClockRollbackStatus::WriteFailure:
+        result.status = LicenseStatus::ClockStateWriteFailure;
+        result.error = makeError("license.clock_state_write_failed");
+        return result;
+    }
+    // Unreachable; keeps the compiler happy with an explicit failure.
+    result.status = LicenseStatus::ClockStateCorrupted;
+    result.error = makeError("license.clock_state_corrupted");
+    return result;
+}
+
+LicenseResult saveFailedResult() {
+    LicenseResult result;
+    result.status = LicenseStatus::SaveFailed;
+    result.error = makeError("license.save_failed");
+    return result;
+}
+
+// Atomically persists a (already verified) license key as license.dat.
+// QSaveFile with the direct-write fallback disabled: the file appears via
+// rename only, never as a partially written file.
+LicenseResult writeLicenseFileAtomically(const QString& licensePath, const QString& licenseKey) {
+    const QString dir = QFileInfo(licensePath).dir().absolutePath();
+    if (!QDir().mkpath(dir)) {
+        return saveFailedResult();
+    }
+    QSaveFile file(licensePath);
+    file.setDirectWriteFallback(false);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return saveFailedResult();
+    }
+    const QByteArray data = licenseKey.trimmed().toUtf8();
+    if (file.write(data) != data.size()) {
+        file.cancelWriting();
+        return saveFailedResult();
+    }
+    if (!file.commit()) {
+        return saveFailedResult();
+    }
+    LicenseResult result;
+    result.status = LicenseStatus::Valid;
+    return result;
+}
+
 }  // namespace
 
 LicenseManager::LicenseManager(QString productVersion, QString resourceRoot)
@@ -109,22 +181,70 @@ QString LicenseManager::loadSavedLicense() const {
     return QString::fromUtf8(file.readAll()).trimmed();
 }
 
-bool LicenseManager::saveLicense(const QString& licenseKey) const {
-    const QString dir = licenseDataDir();
-    if (!QDir().mkpath(dir)) {
-        return false;
+QString LicenseManager::clockWatermarkFilePath() const {
+    return QDir(licenseDataDir()).filePath(".last_run");
+}
+
+ClockRollbackResult LicenseManager::checkClockRollback() const {
+    return checkAndAdvanceClockWatermark(clockWatermarkFilePath(), resolveLocalMachineIdCanonical());
+}
+
+LicenseResult LicenseManager::saveLicense(const QString& licenseKey) const {
+    // The key must verify against the configured public key and this
+    // machine's fingerprint BEFORE any watermark or license write happens.
+    // Invalid keys never touch watermark state or license.dat.
+    const LicenseResult verified = verifyKey(licenseKey);
+    if (!verified.ok()) {
+        return verified;
     }
-    QSaveFile file(licenseFilePath());
-    file.setDirectWriteFallback(false);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        return false;
+
+    const QString licensePath = licenseFilePath();
+    const QString watermarkPath = clockWatermarkFilePath();
+    const QString machineId = resolveLocalMachineIdCanonical();
+
+    // First authorization: license.dat absent. Establish the clock watermark
+    // first and only write the license when that succeeded. A pre-existing
+    // watermark state is checked/advanced by the module, never reset.
+    if (!QFile::exists(licensePath)) {
+        const ClockRollbackResult clock = initializeClockWatermark(watermarkPath, machineId);
+        if (!clock.ok()) {
+            return mapClockRollbackResult(clock);
+        }
+    } else {
+        // Existing license: the watermark must be present, valid, and not
+        // rolled back before license.dat may be overwritten. Missing,
+        // corrupted, rolled-back, or unwritable state blocks the save. This
+        // path never calls resetClockWatermarkAfterOnlineAuthorization.
+        const ClockRollbackResult clock = checkAndAdvanceClockWatermark(watermarkPath, machineId);
+        if (!clock.ok()) {
+            return mapClockRollbackResult(clock);
+        }
     }
-    const QByteArray data = licenseKey.trimmed().toUtf8();
-    if (file.write(data) != data.size()) {
-        file.cancelWriting();
-        return false;
+
+    return writeLicenseFileAtomically(licensePath, licenseKey);
+}
+
+LicenseResult LicenseManager::saveOnlineLicense(const QString& licenseKey) const {
+    // Never trust the caller's "the server already verified" assumption: the
+    // key must verify locally against the configured public key and this
+    // machine's fingerprint before anything is written.
+    const LicenseResult verified = verifyKey(licenseKey);
+    if (!verified.ok()) {
+        return verified;
     }
-    return file.commit();
+    // The server just granted this machine a license, so the local watermark
+    // may be missing, corrupted, or rolled back from an earlier upgrade.
+    // Reset it to now — the only path allowed to overwrite watermark state.
+    // Reset never reports anything but Ok or WriteFailure (the latter maps
+    // to ClockStateWriteFailure / license.clock_state_write_failed below;
+    // missing/corrupted/rollback are impossible outcomes here).
+    const ClockRollbackResult clock = resetClockWatermarkAfterOnlineAuthorization(
+        clockWatermarkFilePath(), resolveLocalMachineIdCanonical());
+    if (!clock.ok()) {
+        return mapClockRollbackResult(clock);
+    }
+    // Watermark established; only now persist license.dat atomically.
+    return writeLicenseFileAtomically(licenseFilePath(), licenseKey);
 }
 
 LicenseResult LicenseManager::verifyKey(const QString& licenseKey) const {
@@ -146,7 +266,19 @@ LicenseResult LicenseManager::checkSavedLicense() const {
         result.error = makeError("license.missing", {{"path", licenseFilePath()}});
         return result;
     }
-    return verifyKey(key);
+    const LicenseResult verified = verifyKey(key);
+    if (!verified.ok()) {
+        return verified;
+    }
+    // Key is valid; the clock watermark must still hold. Missing, corrupted,
+    // rolled-back, or unwritable state is a hard structured failure — never
+    // treated as Missing or a key-format error, never auto-repaired.
+    const ClockRollbackResult clock =
+        checkAndAdvanceClockWatermark(clockWatermarkFilePath(), resolveLocalMachineIdCanonical());
+    if (!clock.ok()) {
+        return mapClockRollbackResult(clock);
+    }
+    return verified;
 }
 
 }  // namespace bf

@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QFrame>
+#include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QMetaObject>
@@ -39,7 +40,18 @@ int main(int argc, char** argv) {
     bf::VersionInfo version;
     version.version = QStringLiteral("0.1.61-dev");
     bf::LicenseManager manager(version.version, QStringLiteral(BF_REPO_ROOT));
-    bf::ActivationDialog dialog(&manager, version, &i18n);
+
+    // Startup check failure (clock rollback) must reach the dialog status bar
+    // as localized text with both UTC timestamps.
+    const QString lastSeenUtc = QStringLiteral("2026-08-01T10:00:00.000Z");
+    const QString currentUtc = QStringLiteral("2026-08-12T08:00:00.000Z");
+    bf::LicenseResult startupResult;
+    startupResult.status = bf::LicenseStatus::ClockRollback;
+    startupResult.error =
+        bf::makeError("license.clock_rollback",
+                      {{"last_seen_utc", lastSeenUtc}, {"current_utc", currentUtc}});
+
+    bf::ActivationDialog dialog(&manager, version, &i18n, startupResult);
 
     auto* offlineToggle = dialog.findChild<QToolButton*>(QStringLiteral("offlineToggle"));
     auto* offlinePanel = dialog.findChild<QFrame*>(QStringLiteral("offlinePanel"));
@@ -58,6 +70,22 @@ int main(int argc, char** argv) {
                   expect(machineIdEdit != nullptr, "machine ID input is missing") &&
                   expect(inviteEdit != nullptr, "invite input is missing") &&
                   expect(inviteButton != nullptr, "invite button is missing");
+    bf::LicenseResult legacyLicense;
+    legacyLicense.status = bf::LicenseStatus::Valid;
+    passed = expect(!bf::ActivationDialog::requiresOnlineStatusCheck(legacyLicense),
+                    "legacy offline license must not query server status") && passed;
+
+    bf::LicenseResult onlineLicense;
+    onlineLicense.status = bf::LicenseStatus::Valid;
+    onlineLicense.payload.insert(QStringLiteral("mode"), QStringLiteral("online"));
+    passed = expect(bf::ActivationDialog::requiresOnlineStatusCheck(onlineLicense),
+                    "online license must query server status") && passed;
+
+    bf::LicenseResult managedOfflineLicense;
+    managedOfflineLicense.status = bf::LicenseStatus::Valid;
+    managedOfflineLicense.payload.insert(QStringLiteral("mode"), QStringLiteral("managed_offline"));
+    passed = expect(bf::ActivationDialog::requiresOnlineStatusCheck(managedOfflineLicense),
+                    "managed offline license must query server status") && passed;
     if (passed) {
         dialog.show();
         app.processEvents();
@@ -65,6 +93,23 @@ int main(int argc, char** argv) {
                         "machine ID and invite inputs are misaligned") && passed;
         passed = expect(inviteButton->height() == inviteEdit->height(),
                         "invite button and input are misaligned") && passed;
+
+        // The startup clock-rollback failure is shown in the status bar with
+        // the en_US translation of both UTC timestamps.
+        auto* statusLabel = dialog.findChild<QLabel*>(QStringLiteral("statusLabel"));
+        passed = expect(statusLabel != nullptr, "status label is missing") && passed;
+        if (statusLabel != nullptr) {
+            passed = expect(statusLabel->isVisible(),
+                            "status label is hidden for the clock rollback startup failure") && passed;
+            const QString expected = i18n.text(
+                "error.license.clock_rollback",
+                {{"last_seen_utc", lastSeenUtc}, {"current_utc", currentUtc}});
+            passed = expect(statusLabel->text() == expected,
+                            "status label does not show the localized clock rollback text") && passed;
+            passed = expect(statusLabel->text().contains(lastSeenUtc) &&
+                                statusLabel->text().contains(currentUtc),
+                            "status label does not show both UTC timestamps") && passed;
+        }
     }
     if (passed) {
         passed = expect(offlinePanel->isHidden(), "offline panel is visible by default");

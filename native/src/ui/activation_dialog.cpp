@@ -85,10 +85,39 @@ QString activationErrorText(I18nService* i18n, const QString& errorCode,
     return i18n->text("app.activation.request_failed");
 }
 
+QString licenseErrorText(I18nService* i18n, const QString& errorCode,
+                         const QJsonObject& params) {
+    // Structured license time-watermark / save errors. These are the only
+    // license codes whose params are user-displayable (rollback timestamps);
+    // path/reason params never reach the UI (contract: no local paths or
+    // internal diagnostics shown to users).
+    if (errorCode == QStringLiteral("license.clock_rollback")) {
+        return i18n->text("error.license.clock_rollback",
+                          {{"last_seen_utc", params.value("last_seen_utc").toString()},
+                           {"current_utc", params.value("current_utc").toString()}});
+    }
+    if (errorCode == QStringLiteral("license.clock_state_missing")) {
+        return i18n->text("error.license.clock_state_missing");
+    }
+    if (errorCode == QStringLiteral("license.clock_state_corrupted")) {
+        return i18n->text("error.license.clock_state_corrupted");
+    }
+    if (errorCode == QStringLiteral("license.clock_state_write_failed")) {
+        return i18n->text("error.license.clock_state_write_failed");
+    }
+    if (errorCode == QStringLiteral("license.save_failed")) {
+        return i18n->text("error.license.save_failed");
+    }
+    // Historical results (no error.code, or legacy license.* codes carrying
+    // non-displayable path/reason params) fall back to the generic text.
+    return i18n->text("app.activation.invalid_key");
+}
+
 }  // namespace
 
 ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& version,
-                                   I18nService* i18n, QWidget* parent)
+                                   I18nService* i18n, const LicenseResult& initialLicenseResult,
+                                   QWidget* parent)
     : QDialog(parent),
       manager_(manager),
       i18n_(i18n),
@@ -128,6 +157,31 @@ ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& v
     buildUi();
     pollTimer_->setInterval(30'000);
     connect(pollTimer_, &QTimer::timeout, this, &ActivationDialog::onRefreshStatus);
+
+    // Startup license check failure is surfaced immediately in the status
+    // bar (structured error.code + params → localized text). The reference
+    // is consumed here and never stored; a healthy result keeps the bar
+    // hidden (revocation-reopened dialogs already informed the user).
+    if (!initialLicenseResult.ok()) {
+        setState(licenseErrorText(i18n_, initialLicenseResult.error.code,
+                                  initialLicenseResult.error.params),
+                 true);
+        // buildUi() sized the dialog while the status bar was hidden. Account
+        // for a localized startup error now so it is not clipped and the
+        // offline-panel collapse restores a stable content-driven height.
+        if (QLayout* rootLayout = layout()) {
+            rootLayout->activate();
+            resize(width(), qMax(minimumHeight(), rootLayout->sizeHint().height()));
+        }
+    }
+}
+
+bool ActivationDialog::requiresOnlineStatusCheck(const LicenseResult& savedLicense) {
+    if (!savedLicense.ok()) {
+        return false;
+    }
+    const QString mode = savedLicense.payload.value("mode").toString();
+    return mode == QLatin1String("online") || mode == QLatin1String("managed_offline");
 }
 
 bool ActivationDialog::checkAndHandleRevocation(
@@ -278,6 +332,7 @@ void ActivationDialog::buildUi() {
     auto* statusLayout = new QHBoxLayout;
     statusLabel_ = new QLabel(this);
     statusLabel_->setObjectName("statusLabel");
+    statusLabel_->setWordWrap(true);
     refreshBtn_ = new QPushButton(i18n_->text("app.activation.status_refresh"), this);
     refreshBtn_->setObjectName("secondaryAction");
     statusLayout->addWidget(statusLabel_, 1);
@@ -379,17 +434,10 @@ void ActivationDialog::onOfflineActivate() {
         return;
     }
 
-    state_ = VERIFYING;
-    setState(i18n_->text("app.activation.verifying"), true);
-    const LicenseResult result = manager_->verifyKey(key);
-    if (!result.ok()) {
+    const LicenseResult saved = manager_->saveLicense(key);
+    if (!saved.ok()) {
         state_ = IDLE;
-        setState(i18n_->text("app.activation.invalid_key"), true);
-        return;
-    }
-    if (!manager_->saveLicense(key)) {
-        state_ = IDLE;
-        setState(i18n_->text("app.activation.save_failed"), true);
+        setState(licenseErrorText(i18n_, saved.error.code, saved.error.params), true);
         return;
     }
 
@@ -423,15 +471,12 @@ void ActivationDialog::onRegistrationAlreadyExists() {
 
 void ActivationDialog::onActivationSuccess(const QString& licenseKey, const QDate& expiresAt) {
     Q_UNUSED(expiresAt);
-    const LicenseResult result = manager_->verifyKey(licenseKey);
-    if (!result.ok()) {
+    // Server granted this machine a license: persist via the online path,
+    // the only one allowed to reset a rolled-back/missing watermark.
+    const LicenseResult saved = manager_->saveOnlineLicense(licenseKey);
+    if (!saved.ok()) {
         state_ = IDLE;
-        setState(i18n_->text("app.activation.invalid_key"), true);
-        return;
-    }
-    if (!manager_->saveLicense(licenseKey)) {
-        state_ = IDLE;
-        setState(i18n_->text("app.activation.save_failed"), true);
+        setState(licenseErrorText(i18n_, saved.error.code, saved.error.params), true);
         return;
     }
 

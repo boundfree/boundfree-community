@@ -294,6 +294,26 @@
       <translation>オフラインライセンスの有効期限が切れました：{expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>システム時計がこのデバイスの最終成功使用記録より早い時刻になっています。日付と時刻を調整してください。問題が続く場合は、オンラインで再アクティベートするか、販売元にご連絡ください。最終使用時刻：{last_seen_utc}；現在時刻：{current_utc}。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>本機のライセンス時間保護状態がありません。オンラインで再アクティベートするか、販売元にご連絡ください。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>本機のライセンス時間保護状態が破損しているか、改ざんされた可能性があります。オンラインで再アクティベートするか、販売元にご連絡ください。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>本機のライセンス時間保護状態を更新できませんでした。ユーザーデータディレクトリの書き込み権限を確認して、もう一度お試しください。</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>本機のライセンスファイルを保存できませんでした。ユーザーデータディレクトリの書き込み権限を確認して、もう一度お試しください。</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>内部エラー：{operation}</translation>
     </message>

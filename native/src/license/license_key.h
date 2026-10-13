@@ -10,16 +10,21 @@ namespace bf {
 // License verification status codes. Stable contract; consumed by the UI layer
 // which maps these to i18n messages. Do NOT embed user-visible text here.
 //
-// Status            | Meaning
-// -------------------+-----------------------------------------------------
-// Valid             | Signature verified, machine matches, not expired.
-// Missing           | No license.dat file present.
-// InvalidSignature  | Envelope or RSA-2048 PSS signature rejected.
-// WrongMachine      | payload.machine_id does not match local machine id.
-// Expired           | payload.expiry is before today.
-// KeyFormatError    | Envelope structure (base64url / length prefix / JSON) bad.
-// NotConfigured     | No release public key configured (BF_REQUIRE_LICENSE=OFF).
-// BackendNotAvailable| Crypto backend unavailable (Windows CNG / OpenSSL).
+// Status                 | Meaning
+// -----------------------+-----------------------------------------------------
+// Valid                  | Signature verified, machine matches, not expired.
+// Missing                | No license.dat file present.
+// InvalidSignature       | Envelope or RSA-2048 PSS signature rejected.
+// WrongMachine           | payload.machine_id does not match local machine id.
+// Expired                | payload.expiry is before today.
+// KeyFormatError         | Envelope structure (base64url / length prefix / JSON) bad.
+// NotConfigured          | No release public key configured (BF_REQUIRE_LICENSE=OFF).
+// BackendNotAvailable    | Crypto backend unavailable (Windows CNG / OpenSSL).
+// ClockRollback          | Clock moved backwards beyond tolerance (watermark kept).
+// ClockStateMissing      | Clock watermark state file absent while a license exists.
+// ClockStateCorrupted    | Clock watermark state file invalid, tampered, or unreadable.
+// ClockStateWriteFailure | Clock watermark state file could not be created/written.
+// SaveFailed             | license.dat could not be written.
 enum class LicenseStatus {
     Valid,
     Missing,
@@ -29,6 +34,11 @@ enum class LicenseStatus {
     KeyFormatError,
     NotConfigured,
     BackendNotAvailable,
+    ClockRollback,
+    ClockStateMissing,
+    ClockStateCorrupted,
+    ClockStateWriteFailure,
+    SaveFailed,
 };
 
 // Structured license outcome: status + payload (on success) + AppError envelope.

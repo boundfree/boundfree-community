@@ -7,14 +7,10 @@ import sys
 import numpy as np
 
 
-REF = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "..",
-    "..",
-    "boundfree-eeg-upper-computer",
-    "boundfree_eeg",
-)
+_REF_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+_UPPER_CANDIDATE = os.path.join(_REF_ROOT, "boundfree-eeg-upper-computer", "boundfree_eeg")
+_UPPER_ARCHIVE = os.path.join(_REF_ROOT, "archive", "boundfree-eeg-upper-computer", "boundfree_eeg")
+REF = _UPPER_CANDIDATE if os.path.exists(_UPPER_CANDIDATE) else _UPPER_ARCHIVE
 sys.path.insert(0, os.path.abspath(REF))
 
 from eeg_io.readers import read_file_lazy  # noqa: E402

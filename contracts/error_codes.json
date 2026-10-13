@@ -147,6 +147,36 @@
       "description": "Offline license is expired."
     },
     {
+      "code": "license.clock_rollback",
+      "params": ["last_seen_utc", "current_utc"],
+      "retryable": false,
+      "description": "System clock is earlier than the last successful use recorded for this device."
+    },
+    {
+      "code": "license.clock_state_missing",
+      "params": [],
+      "retryable": false,
+      "description": "Local license time protection state is missing."
+    },
+    {
+      "code": "license.clock_state_corrupted",
+      "params": [],
+      "retryable": false,
+      "description": "Local license time protection state is corrupted or may have been tampered with."
+    },
+    {
+      "code": "license.clock_state_write_failed",
+      "params": [],
+      "retryable": false,
+      "description": "Local license time protection state could not be written."
+    },
+    {
+      "code": "license.save_failed",
+      "params": [],
+      "retryable": false,
+      "description": "Local license file could not be saved."
+    },
+    {
       "code": "analysis.invalid_input",
       "params": [],
       "retryable": false,

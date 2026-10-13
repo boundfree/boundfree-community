@@ -294,6 +294,26 @@
       <translation>离线授权已过期：{expires_at}</translation>
     </message>
     <message>
+      <source>error.license.clock_rollback</source>
+      <translation>当前系统时间早于此设备上一次成功使用的记录，请校准日期时间；若问题仍持续，可在线重新激活或联系供应商。上次使用时间：{last_seen_utc}；当前时间：{current_utc}。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_missing</source>
+      <translation>本机授权时间保护状态缺失，请在线重新激活或联系供应商。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_corrupted</source>
+      <translation>本机授权时间保护状态损坏或疑似被篡改，请在线重新激活或联系供应商。</translation>
+    </message>
+    <message>
+      <source>error.license.clock_state_write_failed</source>
+      <translation>无法更新本机授权时间保护状态，请检查用户数据目录的写权限后重试。</translation>
+    </message>
+    <message>
+      <source>error.license.save_failed</source>
+      <translation>无法保存本机授权文件，请检查用户数据目录的写权限后重试。</translation>
+    </message>
+    <message>
       <source>error.internal.unexpected</source>
       <translation>内部错误：{operation}</translation>
     </message>

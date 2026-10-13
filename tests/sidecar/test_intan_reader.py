@@ -11,7 +11,9 @@ SIDECAAR = ROOT / "sidecar"
 HAS_NEO = importlib.util.find_spec("neo") is not None
 
 # 旧参考仓库样本目录；Intan RHD/RHS 样本若存在则用于真实读取测试。
-INTAN_SAMPLE_DIR = ROOT.parent / "boundfree-eeg-upper-computer" / "samples"
+_INTAN_CANDIDATE = ROOT.parent / "boundfree-eeg-upper-computer" / "samples"
+_INTAN_ARCHIVE = ROOT.parent / "archive" / "boundfree-eeg-upper-computer" / "samples"
+INTAN_SAMPLE_DIR = _INTAN_CANDIDATE if _INTAN_CANDIDATE.exists() else _INTAN_ARCHIVE
 
 
 def _find_intan_sample() -> Path | None:
