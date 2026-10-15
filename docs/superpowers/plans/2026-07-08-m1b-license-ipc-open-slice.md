@@ -18,7 +18,7 @@ last_updated: 2026-07-08
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; do not modify `../boundfree-eeg-upper-computer`.
+- Work in `boundfree-community`; do not modify `../boundfree-eeg-upper-computer`.
 - Keep `version.json` unchanged at `0.1.0-dev`.
 - File parsing stays in the Python sidecar; C++ does not parse EEG research formats.
 - Backends return `code + params`; user-visible text stays in Qt i18n files.
@@ -186,7 +186,7 @@ Run:
 ```bash
 python3 -m json.tool contracts/error_codes.json
 python -m pytest tests/contracts -q
-python scripts/check_i18n.py
+python scripts/common/check_i18n.py
 ```
 
 Expected: JSON prints formatted content; pytest reports all contract tests passing; i18n check reports success.
@@ -787,7 +787,7 @@ BoundFree EEG 0.1.0-dev
 Run:
 
 ```bash
-./scripts/verify_m1_foundation.sh --fast
+./scripts/wsl/verify_m1_foundation.sh --fast
 ```
 
 Expected: `M1 foundation verification passed`.

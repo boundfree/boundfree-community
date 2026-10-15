@@ -3,6 +3,7 @@
 #include "render/waveform_slice.h"
 #include "controller/marker_store.h"
 
+#include <QLocale>
 #include <QWidget>
 
 #include <optional>
@@ -20,6 +21,8 @@ public:
     void setCursorTime(double time);
     void setMarkerModeEnabled(bool enabled);
     void setDarkTheme(bool dark);
+    void setAxisLabels(const QString& timeLabel, const QString& amplitudeLabel);
+    void setNumberLocale(const QLocale& locale);
     const WaveformDisplayModel& cachedDisplayModel(int maxVisibleChannels = 32) const;
     int displayModelBuildCount() const { return displayModelBuildCount_; }
 
@@ -39,6 +42,9 @@ private:
     mutable std::optional<WaveformDisplayModel> cachedModel_;
     QVector<Marker> markers_;
     double cursorTime_ = 0.0;
+    QString timeAxisLabel_ = QStringLiteral("Time (s)");
+    QString amplitudeAxisLabel_ = QStringLiteral("Amplitude (uV)");
+    QLocale numberLocale_;
     mutable int cachedMaxVisibleChannels_ = -1;
     bool markerModeEnabled_ = false;
     bool darkTheme_ = false;

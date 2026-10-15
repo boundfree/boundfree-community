@@ -123,6 +123,6 @@
     "timestamp_abs_tol_s": 6.666666666666667e-05
   },
   "golden_scheme": "Self-consistent regression golden (detect_timestamps.npy, snippet_len, cluster_sizes.npy, sort_labels.npy) is produced by the C++ spike_golden_test on first run (auto-generate mode when the files are absent) and frozen; subsequent runs compare against the frozen artifacts. Structural correctness (detect count vs ground truth, sort purity vs ground-truth template labels) is asserted against meta.json ground_truth every run. sortSpikes uses hand-written Jacobi + custom PRNG (seed=42), so it is NOT byte-aligned with sklearn/scipy; only self-consistency is frozen.",
-  "generator": "scripts/generate_spike_golden.py",
+  "generator": "scripts/common/generate_spike_golden.py",
   "product_version_note": "Product version stays 0.1.0-dev; do not bump."
 }

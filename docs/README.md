@@ -35,7 +35,7 @@ last_updated: 2026-07-22
 | [`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md) | M5 回放状态、事件标注、CSV 往返和 UI 文件流记录 |
 | [`reports/m6-video-sync-acceptance.md`](reports/m6-video-sync-acceptance.md) | M6 视频格式、同步状态、帧节流与主窗口文件流记录 |
 | [`reports/m7-record-export-acceptance.md`](reports/m7-record-export-acceptance.md) | M7 录制、背压、三格式导出与回读验收记录 |
-| [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md) | M8 打包实现、Linux 可验证证据与未完成 Windows 发布门禁 |
+| [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md) | M8 打包实现、Linux 可验证证据、Windows 自动化验收执行记录与未完成发布门禁 |
 
 ## 历史归档
 

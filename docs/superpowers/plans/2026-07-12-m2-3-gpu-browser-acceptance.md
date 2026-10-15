@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; do not modify `../boundfree-eeg-upper-computer`.
+- Work in `boundfree-community`; do not modify `../boundfree-eeg-upper-computer`.
 - Current product version remains `0.1.0-dev`; ordinary feature work must not change `version.json`.
 - File format ownership remains in the Python sidecar; Native must not directly parse scientific file formats.
 - Sidecar and backend errors remain `code + params`; UI maps errors through i18n.
@@ -849,8 +849,8 @@ Run these commands in order:
 ```bash
 cmake --build native/build
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n -q
-./scripts/verify_m1_foundation.sh --fast
-python3 scripts/collect_m2_format_evidence.py --dry-run
+./scripts/wsl/verify_m1_foundation.sh --fast
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 git diff --check HEAD
 ```
 

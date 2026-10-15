@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Validates a Windows BoundFree EEG dev release after build_release.ps1.
 
@@ -18,7 +18,7 @@
 
 [CmdletBinding()]
 param(
-    [string] $RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
+    [string] $RepoRoot,
     [string] $StageDir,
     [string] $InstallerPath,
     [switch] $SkipInstaller
@@ -26,6 +26,12 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# $PSScriptRoot is empty inside param() default expressions under Windows
+# PowerShell 5.1, so the repository root is resolved here instead.
+if (-not $RepoRoot) {
+    $RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+}
 
 function Invoke-Checked {
     param(
@@ -36,8 +42,18 @@ function Invoke-Checked {
     )
 
     Write-Host "==> $Name" -ForegroundColor Cyan
-    $result = & $Executable @Arguments 2>&1
-    $exitCode = $LASTEXITCODE
+    # Windows PowerShell 5.1 turns a native command's stderr output into a
+    # terminating NativeCommandError while $ErrorActionPreference is Stop, and
+    # the app writes diagnostic lines (menu-hit-debug, ...) to stderr. Relax the
+    # preference for the call and keep fail/pass driven by the exit code.
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $result = & $Executable @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     $result | ForEach-Object { Write-Host $_ }
     if ($exitCode -ne 0) {
         throw "$Name failed with exit code $exitCode."

@@ -21,7 +21,7 @@ M4 在 M3 处理后的静态窗口数据上提供 PSD/FFT、STFT、频段功率�
 
 ## SciPy 对齐参数
 
-黄金数据由 `scripts/generate_m4_golden.py` 生成，完整参数和容差见 `tests/golden/m4/meta.json`：
+黄金数据由 `scripts/common/generate_m4_golden.py` 生成，完整参数和容差见 `tests/golden/m4/meta.json`：
 
 - FFT：`np.hanning` 对称窗，`abs(rfft) * 2 / window.sum()`，不去趋势。
 - Welch：`scipy.signal.welch(window="hann", detrend="constant", scaling="density", nperseg=256, noverlap=128)`。
@@ -32,7 +32,7 @@ M4 在 M3 处理后的静态窗口数据上提供 PSD/FFT、STFT、频段功率�
 ## 验证命令
 
 ```bash
-python3 scripts/generate_m4_golden.py
+python3 scripts/common/generate_m4_golden.py
 cmake -B native/build -S native
 cmake --build native/build --target bf_app m3_dsp_test m4_spectral_test
 native/build/m4_spectral_test tests/golden/m4
@@ -42,7 +42,7 @@ QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-m4-render
 PYTHONPATH=sidecar QT_QPA_PLATFORM=offscreen \
   python3 -m pytest tests/native/test_m4_spectral_binary.py \
   tests/native/test_m4_analysis_smoke.py tests/native/test_bf_app.py -q
-python3 scripts/check_i18n.py
+python3 scripts/common/check_i18n.py
 ```
 
 ## 结果

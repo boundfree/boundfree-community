@@ -300,7 +300,7 @@ def main() -> int:
             "频段功率: 闭区间 [low,high] 频点求和 * df, 基于 Welch 线性 PSD。",
             "时间轴: scipy time=(nperseg/2 + k*step)/fs + t_start; C++ tStart+(start+n/2)/fs 一致。",
         ],
-        "generator": "scripts/generate_m4_golden.py",
+        "generator": "scripts/common/generate_m4_golden.py",
         "scipy_version": __import__("scipy").__version__,
         "numpy_version": np.__version__,
     }

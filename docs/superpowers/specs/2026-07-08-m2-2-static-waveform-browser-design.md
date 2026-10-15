@@ -137,7 +137,7 @@ The final M2-2 verification set should include:
 ```bash
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n -q
 cmake --build native/build
-./scripts/verify_m1_foundation.sh --fast
+./scripts/wsl/verify_m1_foundation.sh --fast
 git diff --check HEAD
 ```
 

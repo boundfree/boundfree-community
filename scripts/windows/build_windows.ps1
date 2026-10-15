@@ -56,7 +56,7 @@ if ($env:OS -ne "Windows_NT") {
 }
 
 # ---- Paths ------------------------------------------------------------------
-# $PSScriptRoot = ...boundfree-eeg-native\scripts\windows
+# $PSScriptRoot = ...boundfree-community\scripts\windows
 # Repo root is two levels up.
 $RepoRoot    = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
 $ConfigPath  = Join-Path $RepoRoot "config\windows-dev.local.json"

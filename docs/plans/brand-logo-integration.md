@@ -30,7 +30,7 @@ last_updated: 2026-07-25
 - 修改 `native/src/app/main.cpp` 与 `native/src/app/spike_main.cpp`：在创建窗口前设置 `QApplication` 图标。
 - 修改 `native/src/ui/main_window.{h,cpp}`：在 EEG 空白欢迎页显示受 Qt 资源管理的原始 Logo，按保留纵横比缩放，不依赖工作目录或安装目录。
 - 修改 `installer/BoundFreeEEG.iss`：用同一 `.ico` 设置安装器图标；保留卸载显示图标继续指向已带图标的 `bf_app.exe`。
-- 修改 `scripts/check_release_assets.py` 和对应发布资产测试：验证 PNG/ICO 存在、CMake/安装器引用一致，防止打包时静默遗漏。
+- 修改 `scripts/common/check_release_assets.py` 和对应发布资产测试：验证 PNG/ICO 存在、CMake/安装器引用一致，防止打包时静默遗漏。
 
 ## Changes
 
@@ -49,5 +49,5 @@ last_updated: 2026-07-25
 
 1. 运行 CMake configure/build，覆盖 `bf_app`、`bf_spike` 与资源编译。
 2. 运行受影响的 Native UI smoke/品牌资源测试，确认 `:/` 资源有效、应用图标非空且 EEG 欢迎页存在 Logo。
-3. 运行 `python3 scripts/check_release_assets.py` 和发布资产测试，确认安装器引用及文件布局有效。
+3. 运行 `python3 scripts/common/check_release_assets.py` 和发布资产测试，确认安装器引用及文件布局有效。
 4. 在 Windows x64 Release stage 启动 EEG 与 Spike，人工确认窗口/任务栏图标、欢迎页 Logo、`bf_app.exe` 图标及 Inno Setup 安装器图标；该项作为 M8 Windows 发布门禁证据的一部分。

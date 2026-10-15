@@ -131,7 +131,7 @@
     "\u9891\u6bb5\u529f\u7387: \u95ed\u533a\u95f4 [low,high] \u9891\u70b9\u6c42\u548c * df, \u57fa\u4e8e Welch \u7ebf\u6027 PSD\u3002",
     "\u65f6\u95f4\u8f74: scipy time=(nperseg/2 + k*step)/fs + t_start; C++ tStart+(start+n/2)/fs \u4e00\u81f4\u3002"
   ],
-  "generator": "scripts/generate_m4_golden.py",
+  "generator": "scripts/common/generate_m4_golden.py",
   "scipy_version": "1.15.3",
   "numpy_version": "2.2.6"
 }

@@ -52,7 +52,7 @@ M6 视频同步实现与自动化验收通过。视频由 M5 EEG 位置时钟驱
 - `pytest tests/native/test_m6_video_sync.py -q`：PASS，3 项。
 - `pytest tests/native tests/sidecar -q`：PASS，94 项。
 - M3/M4 黄金二进制与 M5 回放 smoke：PASS。
-- `python3 scripts/check_i18n.py`：PASS。
+- `python3 scripts/common/check_i18n.py`：PASS。
 
 ## 环境与边界
 

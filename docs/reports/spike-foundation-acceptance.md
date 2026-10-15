@@ -41,10 +41,10 @@ cmake --build native/build --target bf_app bf_spike spike_dsp_test
 cmake --build native/build --target spike_golden_test m3_dsp_test m4_spectral_test
 native/build/spike_dsp_test
 native/build/spike_golden_test tests/golden/spike
-python3 scripts/generate_spike_golden.py   # 生成器可复现（md5 稳定）
+python3 scripts/common/generate_spike_golden.py   # 生成器可复现（md5 稳定）
 QT_QPA_PLATFORM=offscreen native/build/bf_spike --smoke-spike-open <30kHz_spiky.csv>
 QT_QPA_PLATFORM=offscreen PYTHONPATH=sidecar native/build/bf_spike --smoke-spike-export <in.csv> <out.csv>
-python3 scripts/check_i18n.py
+python3 scripts/common/check_i18n.py
 PYTHONPATH=sidecar QT_QPA_PLATFORM=offscreen python3 -m pytest tests -q
 ```
 
@@ -55,7 +55,7 @@ Spike sorting 用手写 Jacobi 特征分解 + 自写确定性 PRNG（seed=42）�
 1. **结构正确性校验**（每次运行都断言）：`meta.json` 记录合成信号的 ground-truth 注入峰索引与模板标签；测试断言检测匹配率 ≥95%（±2 样本容差）、sorting 簇纯度 ≥0.8。
 2. **确定性自洽回归黄金**：C++ 引擎首跑冻结自身输出（detect_timestamps / cluster_sizes / sort_labels），后续逐位比对（maxAbsErr=0、diffs=0 为通过），防止算法回归。
 
-生成器 `scripts/generate_spike_golden.py` 固定 numpy seed=20260724，产出可复现（`input_signal.npy` / `meta.json` md5 稳定）。
+生成器 `scripts/common/generate_spike_golden.py` 固定 numpy seed=20260724，产出可复现（`input_signal.npy` / `meta.json` md5 稳定）。
 
 ## 结果
 

@@ -99,7 +99,10 @@ def test_bf_app_smoke_sidecar_open_missing_file_reports_file_error(tmp_path):
 
     result = _run([str(APP), "--smoke-sidecar-open", str(missing)])
 
-    assert result.stdout.strip() == f"smoke-sidecar-open-error code=file.not_found path={missing}"
+    output = result.stdout.strip()
+    assert output.startswith("smoke-sidecar-open-error file.not_found params=")
+    # Params are dumped as compact JSON, so Windows separators appear escaped.
+    assert str(missing).replace("\\", "\\\\") in output
 
 
 def test_bf_app_smoke_machine_id_from_fixed_inputs():
@@ -193,7 +196,15 @@ def test_bf_app_smoke_waveform_render_offscreen():
         env_overrides={"QT_QPA_PLATFORM": "offscreen", "PYTHONPATH": str(ROOT / "sidecar")},
     )
 
-    assert result.stdout.strip().startswith("smoke-waveform-render-ok image=640x320 non_background_pixels=")
+    output = result.stdout.strip()
+    assert output.startswith("smoke-waveform-render-ok image=640x320 non_background_pixels=")
+    fields = dict(item.split("=", 1) for item in output.split() if "=" in item)
+    # These bands exclude the plot frame and tick marks, so the counts can only be
+    # produced by axis text; the empty-data case proves the axes survive with no
+    # visible channel, where the left gutter legitimately has no channel labels.
+    assert int(fields["axis_time_text_pixels"]) > 0
+    assert int(fields["axis_gutter_text_pixels"]) > 0
+    assert int(fields["empty_axis_time_text_pixels"]) > 0
 
 
 @pytest.mark.parametrize(

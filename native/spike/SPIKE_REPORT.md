@@ -131,7 +131,7 @@ IPC:
 LD_LIBRARY_PATH=/home/vsonic12138/miniconda3/envs/bf-qt6-spike/lib:$LD_LIBRARY_PATH \
   ./build/ipc_bench \
   /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-eeg-upper-computer/.venv_build/bin/python \
-  /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-eeg-native/sidecar/spike/sidecar.py \
+  /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community/sidecar/spike/sidecar.py \
   synthetic://256x1000x200
 ```
 

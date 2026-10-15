@@ -100,7 +100,7 @@ UI 与 i18n：
 
 ```bash
 QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-ui
-python scripts/check_i18n.py
+python scripts/common/check_i18n.py
 ```
 
 以上命令是阶段目标。文档收口提交只要求运行文档和 JSON 校验。

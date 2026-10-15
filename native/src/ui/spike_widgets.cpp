@@ -1,5 +1,7 @@
 #include "ui/spike_widgets.h"
 
+#include "ui/plot_style.h"
+
 #include <QPainter>
 #include <QPainterPath>
 #include <QRect>
@@ -11,45 +13,11 @@
 namespace bf {
 namespace {
 
-// Margins/theme colors consistent with analysis_widgets.cpp.
-constexpr int kLeft = 54;
-constexpr int kRight = 16;
-constexpr int kTop = 28;
-constexpr int kBottom = 36;
-
 // Default PSTH / ISI bins (tunable internal constants; bin count derived from duration/range, duration never hardcoded).
 constexpr double kPsthBinMs = 50.0;
 constexpr double kIsiBinMs = 1.0;
 constexpr double kIsiRangeMs = 50.0;
 constexpr double kRefractoryMs = 1.0;  // Refractory-violation highlight upper bound
-
-struct ThemePalette {
-    QColor background;
-    QColor grid;
-    QColor label;
-    QColor empty;
-};
-
-ThemePalette themePalette(bool dark) {
-    if (dark) {
-        return {
-            QColor("#1E1B2E"),
-            QColor("#6B7280"),
-            QColor("#F5F3FF"),
-            QColor("#C4B5FD"),
-        };
-    }
-    return {
-        QColor("#FFFFFF"),
-        QColor("#C4B5FD"),
-        QColor("#1F1235"),
-        QColor("#6B5B95"),
-    };
-}
-
-QRect plotRect(const QWidget& widget) {
-    return widget.rect().adjusted(kLeft, kTop, -kRight, -kBottom);
-}
 
 // Stable cluster color rotation: color by cluster.id so it stays consistent across redraws/reordering.
 QColor clusterColor(int id) {
@@ -67,7 +35,7 @@ QColor clusterColor(int id) {
     return palette[((id % n) + n) % n];
 }
 
-void drawEmpty(QPainter& painter, const ThemePalette& t, const QRect& plot, const QString& title, const QString& emptyLabel) {
+void drawEmpty(QPainter& painter, const plot::Palette& t, const QRect& plot, const QString& title, const QString& emptyLabel) {
     painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
     painter.setPen(t.label);
@@ -98,10 +66,10 @@ void SpikeClusterWidget::setDarkTheme(bool dark) {
 
 void SpikeClusterWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
 
     const QString title = "Spike waveforms";
     const QString xLabel = "Time (ms)";
@@ -226,10 +194,10 @@ void SpikeRasterWidget::setDarkTheme(bool dark) {
 
 void SpikeRasterWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
 
     const QString title = "Spike raster";
     const QString xLabel = "Time (s)";
@@ -280,7 +248,7 @@ void SpikeRasterWidget::paintEvent(QPaintEvent*) {
 
         // Cluster id label (left, outside the plot).
         painter.setPen(t.label);
-        painter.drawText(QRect(0, static_cast<int>(plot.top() + rowH * ci), kLeft - 4, static_cast<int>(rowH)),
+        painter.drawText(QRect(0, static_cast<int>(plot.top() + rowH * ci), plot::kAnalysisMargins.left - 4, static_cast<int>(rowH)),
                          Qt::AlignRight | Qt::AlignVCenter, QString::number(cluster.id));
 
         // tick。
@@ -322,10 +290,10 @@ void SpikePsthWidget::setDarkTheme(bool dark) {
 
 void SpikePsthWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
 
     const QString title = "PSTH";
     const QString xLabel = "Time (s)";
@@ -422,10 +390,10 @@ void SpikeIsiWidget::setDarkTheme(bool dark) {
 
 void SpikeIsiWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
 
     const QString title = "ISI histogram";
     const QString xLabel = "ISI (ms)";

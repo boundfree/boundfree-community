@@ -4,7 +4,7 @@ Verifies:
 1. config/windows-dev.example.json exists, is parseable JSON, contains all schema fields,
    and contains no sensitive private key or PFX fields.
 2. config/windows-dev.local.json is ignored by .gitignore.
-3. scripts/sync_to_windows.sh reads config/windows-dev.local.json and wsl_sync_target,
+3. scripts/wsl/sync_to_windows.sh reads config/windows-dev.local.json and wsl_sync_target,
    while allowing explicit positional parameter override.
 """
 
@@ -76,7 +76,7 @@ class TestWindowsDevConfig:
 
 class TestWslSyncScript:
     def test_sync_script_reads_local_config_and_target(self):
-        """scripts/sync_to_windows.sh must read config/windows-dev.local.json and wsl_sync_target."""
+        """scripts/wsl/sync_to_windows.sh must read config/windows-dev.local.json and wsl_sync_target."""
         t = _text(SYNC_SCRIPT)
         assert "windows-dev.local.json" in t, "sync_to_windows.sh must check/read config/windows-dev.local.json"
         assert "wsl_sync_target" in t, "sync_to_windows.sh must parse wsl_sync_target field"

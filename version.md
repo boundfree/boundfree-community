@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.63-dev
+当前版本：0.1.64-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,39 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+fix: 统一绘图口径并修复波形坐标轴标签排布
+
+版本：0.1.64-dev
+日期：2026-10-15
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：fix
+
+提交标题：
+fix: 统一绘图口径并修复波形坐标轴标签排布
+
+提交正文：
+```text
+新增 native/ui/plot_style.h 作为波形浏览器、频谱、时频、Spike 四个绘图组件共用的边距、主题配色与 1/2/5 刻度算法真值来源，analysis_widgets.cpp 与 spike_widgets.cpp 删除各自的重复副本。
+
+波形浏览器改为：±幅度刻度只标最外两行并整体限制在绘图区内，通道名按文字高度抽稀并按可用宽度省略，时间刻度文字夹在控件内避免右缘裁切，没有可见通道时仍绘制坐标轴。
+
+刻度数值改由 I18nService::qlocale() 传入的 locale 渲染，不再使用系统 locale。
+
+新增 plot_style_test 覆盖边距、刻度算法、轴数值格式化与标签抽稀判定；--smoke-waveform-render 的断言改为只统计轴文字像素，并新增无可见通道用例。
+
+顺带修正 Windows 验收脚本在出厂 Windows PowerShell 5.1 下无法运行的三处问题：脚本缺少 UTF-8 BOM 导致中文 here-string 解析失败；param() 默认值引用 $PSScriptRoot（5.1 下为空）导致启动即报错；Invoke-Checked 的 2>&1 会把原生命令 stderr 当致命错误，而系统 UI smoke 的诊断行正是走 stderr。
+
+bf_app 的边车 smoke 失败时改为打印 code 与线协议 params（含 reason），无需改跑 UI 即可定位边车侧异常原因。
+
+同步状态记录与 SOP 文档：M8 验收记录补入 Windows x64 构建、安装包生成与自动化验收的执行证据（工具链、命令、安装包 SHA-256、验收产物目录）并调整发布门禁勾选；README 与 docs/README 同步当前状态，README 的 Windows Dev Build 段补入验收步骤与已知坑（WSL 启动时资源根回退、边车冷启动首次打开 MNE 格式的 3 秒超时、脚本的 PowerShell 5.1 兼容要求、工作副本改名后需重建 build 目录）。全仓库扫除失效的 scripts 路径引用（scripts/*.py → scripts/common/*.py、scripts/verify_m1_foundation.sh 与 scripts/sync_to_windows.sh → scripts/wsl/、scripts/build_windows.ps1 → scripts/windows/），覆盖当前文档、历史验收报告、golden 生成器与 meta.json、以及相应测试断言。
+
+Windows 工作副本目录由 `E:\workspace\BoudFree\boundfree-eeg-native` 改名为 `E:\workspace\BoudFree\boundfree-community`，本机 `config/windows-dev.local.json` 的 `wsl_sync_target` 同步更新；仓库内 `boundfree-eeg-native` 名称引用（AGENTS/README/docs/native-spike 命令示例/构建脚本注释）统一为 `boundfree-community`。
+```
 
 ---
 
@@ -467,7 +500,7 @@ chore: 启用提交级版本同步规则
 
 版本号从 0.1.42-dev 开始按每个有效提交递增 PATCH；MINOR 用于阶段性公开能力边界，MAJOR 用于正式稳定大版本或不兼容产品边界。
 
-新增 scripts/version_sync.py 管理 next/set/check，发布资产检查接入版本同步门禁。旧历史不回写逐条记录，后续提交从本规范开始执行。
+新增 scripts/common/version_sync.py 管理 next/set/check，发布资产检查接入版本同步门禁。旧历史不回写逐条记录，后续提交从本规范开始执行。
 ```
 
 ---

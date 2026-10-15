@@ -1197,6 +1197,8 @@ void MainWindow::retranslateUi() {
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
     amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
+    waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"), i18n_->text("app.analysis.amplitude"));
+    waveformWidget_->setNumberLocale(i18n_->qlocale());
     channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
     channelPanel_->setTitle(i18n_->text("app.browser.channels"));
     if (processingPanel_ != nullptr) {

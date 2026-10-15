@@ -573,7 +573,7 @@ Expected: 打印 DSP 各函数累计耗时。记录 256ch 下重参考/陷波/�
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ../../boundfree-eeg-native && git add native/spike/profile_python_baseline.md
+cd ../../boundfree-community && git add native/spike/profile_python_baseline.md
 git commit -m "spike: 旧 Python 版性能画像基线"
 ```
 

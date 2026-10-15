@@ -156,7 +156,7 @@ def main() -> int:
             "uses hand-written Jacobi + custom PRNG (seed=42), so it is NOT "
             "byte-aligned with sklearn/scipy; only self-consistency is frozen."
         ),
-        "generator": "scripts/generate_spike_golden.py",
+        "generator": "scripts/common/generate_spike_golden.py",
         "product_version_note": "Product version stays 0.1.0-dev; do not bump.",
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")

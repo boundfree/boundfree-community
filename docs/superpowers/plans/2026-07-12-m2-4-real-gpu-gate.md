@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; do not modify `../boundfree-eeg-upper-computer`.
+- Work in `boundfree-community`; do not modify `../boundfree-eeg-upper-computer`.
 - Current product version remains `0.1.0-dev`; ordinary M2-4 work must not change `version.json`.
 - No DSP, playback, event marker, video sync, export, recording, packaging, or hardware acquisition work.
 - No direct Native scientific file parsing.
@@ -29,7 +29,7 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `scripts/collect_m2_gpu_gate_evidence.py` | New script that parses benchmark JSON, detects development-only environments, classifies M2 GPU gate status, optionally runs benchmark scenarios, and prints JSON plus Markdown evidence blocks. |
+| `scripts/common/collect_m2_gpu_gate_evidence.py` | New script that parses benchmark JSON, detects development-only environments, classifies M2 GPU gate status, optionally runs benchmark scenarios, and prints JSON plus Markdown evidence blocks. |
 | `tests/scripts/test_m2_gpu_gate_evidence.py` | New pytest coverage for parsing, aggregation, classification, dry-run behavior, and report-block formatting. |
 | `tests/native/test_bf_app.py` | Existing native smoke coverage remains the source of truth for the `bf_app --smoke-waveform-benchmark --json` producer. |
 | `docs/reports/m2-rendering-gpu-gate.md` | Canonical M2 GPU gate record; add M2-4 runbook, evidence format, and conservative status. |
@@ -42,7 +42,7 @@
 ### Task 1: GPU Gate Evidence Model And Classification
 
 **Files:**
-- Create: `scripts/collect_m2_gpu_gate_evidence.py`
+- Create: `scripts/common/collect_m2_gpu_gate_evidence.py`
 - Create: `tests/scripts/test_m2_gpu_gate_evidence.py`
 
 **Interfaces:**
@@ -198,11 +198,11 @@ Run:
 python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py -q
 ```
 
-Expected: FAIL because `scripts/collect_m2_gpu_gate_evidence.py` does not exist.
+Expected: FAIL because `scripts/common/collect_m2_gpu_gate_evidence.py` does not exist.
 
 - [x] **Step 3: Implement model, parsing, classification, and Markdown formatting**
 
-Create `scripts/collect_m2_gpu_gate_evidence.py` with this content:
+Create `scripts/common/collect_m2_gpu_gate_evidence.py` with this content:
 
 ```python
 #!/usr/bin/env python3
@@ -385,7 +385,7 @@ Expected: `6 passed`.
 Run:
 
 ```bash
-git add scripts/collect_m2_gpu_gate_evidence.py tests/scripts/test_m2_gpu_gate_evidence.py
+git add scripts/common/collect_m2_gpu_gate_evidence.py tests/scripts/test_m2_gpu_gate_evidence.py
 git commit -m "feat: add m2 gpu gate evidence model"
 ```
 
@@ -394,7 +394,7 @@ git commit -m "feat: add m2 gpu gate evidence model"
 ### Task 2: GPU Gate Evidence CLI And Scenario Runner
 
 **Files:**
-- Modify: `scripts/collect_m2_gpu_gate_evidence.py`
+- Modify: `scripts/common/collect_m2_gpu_gate_evidence.py`
 - Modify: `tests/scripts/test_m2_gpu_gate_evidence.py`
 - Test: `tests/native/test_bf_app.py`
 
@@ -549,7 +549,7 @@ Expected: FAIL because the script has no CLI yet.
 
 - [x] **Step 3: Implement CLI helpers and scenario runner**
 
-Replace `scripts/collect_m2_gpu_gate_evidence.py` with this complete content:
+Replace `scripts/common/collect_m2_gpu_gate_evidence.py` with this complete content:
 
 ```python
 #!/usr/bin/env python3
@@ -884,7 +884,7 @@ Run:
 
 ```bash
 python3 -m pytest tests/scripts/test_m2_gpu_gate_evidence.py tests/native/test_bf_app.py::test_bf_app_smoke_waveform_benchmark_json_reports_gate_status -q
-python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --dry-run
 ```
 
 Expected: pytest exits 0; dry-run exits 0 and prints JSON with `"gate": "Open"` and `"development_reasons": ["dry-run"]`.
@@ -894,7 +894,7 @@ Expected: pytest exits 0; dry-run exits 0 and prints JSON with `"gate": "Open"` 
 Run:
 
 ```bash
-git add scripts/collect_m2_gpu_gate_evidence.py tests/scripts/test_m2_gpu_gate_evidence.py
+git add scripts/common/collect_m2_gpu_gate_evidence.py tests/scripts/test_m2_gpu_gate_evidence.py
 git commit -m "feat: add m2 gpu gate evidence cli"
 ```
 
@@ -909,7 +909,7 @@ git commit -m "feat: add m2 gpu gate evidence cli"
 - Test: `tests/scripts/test_m2_gpu_gate_evidence.py`
 
 **Interfaces:**
-- Consumes: `scripts/collect_m2_gpu_gate_evidence.py --dry-run` and `--from-json`.
+- Consumes: `scripts/common/collect_m2_gpu_gate_evidence.py --dry-run` and `--from-json`.
 - Produces: documented M2-4 runbook and evidence block format. The feature checklist remains unchecked unless real evidence is recorded.
 
 - [x] **Step 1: Write failing documentation consistency test**
@@ -921,7 +921,7 @@ def test_gpu_gate_report_documents_m2_4_runner_and_open_gate():
     report = (ROOT / "docs" / "reports" / "m2-rendering-gpu-gate.md").read_text(encoding="utf-8")
 
     assert "## M2-4 Runbook" in report
-    assert "scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report
+    assert "scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report
     assert "Current gate status: Open." in report
     assert "Development/offscreen results must not be copied as acceptance evidence." in report
 ```
@@ -943,18 +943,18 @@ In `docs/reports/m2-rendering-gpu-gate.md`, add this section after `## M2-3 Stat
 ```markdown
 ## M2-4 Runbook
 
-M2-4 uses `scripts/collect_m2_gpu_gate_evidence.py` to run or format the 64/128/256 channel benchmark set.
+M2-4 uses `scripts/common/collect_m2_gpu_gate_evidence.py` to run or format the 64/128/256 channel benchmark set.
 
 Development dry-run:
 
 ```bash
-python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --dry-run
 ```
 
 Real GPU/display run template:
 
 ```bash
-python3 scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run \
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run \
   --environment-label "real-windows-gpu" \
   --os-display "Windows 11 desktop" \
   --gpu-model "record GPU model" \
@@ -1034,9 +1034,9 @@ Run:
 ```bash
 cmake --build native/build
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n tests/scripts -q
-./scripts/verify_m1_foundation.sh --fast
-python3 scripts/collect_m2_format_evidence.py --dry-run
-python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
+./scripts/wsl/verify_m1_foundation.sh --fast
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --dry-run
 git diff --check HEAD
 ```
 

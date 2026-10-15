@@ -421,7 +421,7 @@ def test_gpu_gate_report_documents_m2_4_runner_and_current_gate():
     report = (ROOT / "docs" / "reports" / "m2-rendering-gpu-gate.md").read_text(encoding="utf-8")
 
     assert "## M2-4 Runbook" in report
-    assert "scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report
+    assert "scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report
     assert "Current gate status: Passed." in report
     assert "Development/offscreen results must not be copied as acceptance evidence." in report
     assert "If the run happens under WSL, Xvfb, Mesa software rendering, or `QT_QPA_PLATFORM=offscreen`, the gate remains `Open`." in report

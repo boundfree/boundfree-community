@@ -285,6 +285,11 @@ add_executable(collapsible_panel_test src/ui/collapsible_panel_test.cpp)
 target_include_directories(collapsible_panel_test PRIVATE src)
 target_link_libraries(collapsible_panel_test PRIVATE bf_core)
 
+# 共享绘图口径（边距/配色/刻度算法）是纯头文件，只依赖 Qt，不链接 bf_core。
+add_executable(plot_style_test src/ui/plot_style_test.cpp)
+target_include_directories(plot_style_test PRIVATE src)
+target_link_libraries(plot_style_test PRIVATE Qt6::Widgets)
+
 add_executable(i18n_locale_format_test src/i18n/i18n_locale_format_test.cpp)
 target_include_directories(i18n_locale_format_test PRIVATE src)
 target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")

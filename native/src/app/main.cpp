@@ -19,6 +19,7 @@
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
 #include "ui/analysis_widgets.h"
+#include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
 #include "ui/video_panel.h"
 
@@ -33,6 +34,7 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFontMetrics>
 #include <QImage>
 #include <QKeySequence>
 #include <QIcon>
@@ -94,6 +96,16 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
 
 }  // namespace
 #endif
+
+namespace {
+
+// smoke 失败诊断：打印错误码与线协议参数（含 reason），无需改跑 UI 就能定位失败原因。
+QString formatErrorDetail(const bf::AppError& error) {
+    const QByteArray params = QJsonDocument(error.params).toJson(QJsonDocument::Compact);
+    return QString("%1 params=%2").arg(error.code, QString::fromUtf8(params));
+}
+
+}  // namespace
 
 int main(int argc, char** argv) {
     const QString repoRoot = bf::VersionService::detectRepoRoot(QString::fromLocal8Bit(argv[0]));
@@ -556,8 +568,7 @@ int main(int argc, char** argv) {
             const bf::SidecarOpenResult opened = sidecar.openFile(path);
             sidecar.stop();
             if (!opened.ok) {
-                std::cout << "smoke-sidecar-open-error code=" << opened.error.code.toStdString()
-                          << " path=" << opened.error.params.value("path").toString().toStdString() << "\n";
+                std::cout << "smoke-sidecar-open-error " << formatErrorDetail(opened.error).toStdString() << "\n";
                 return 0;
             }
             std::cout << "smoke-sidecar-open-ok handle=" << opened.handle.toStdString()
@@ -591,7 +602,7 @@ int main(int argc, char** argv) {
             const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
             sidecar.stop();
             if (!opened.ok) {
-                std::cerr << "smoke-open-file-failed code=" << opened.error.code.toStdString() << "\n";
+                std::cerr << "smoke-open-file-failed " << formatErrorDetail(opened.error).toStdString() << "\n";
                 return 1;
             }
             std::cout << "smoke-open-file-ok format=" << opened.format.toStdString()
@@ -613,7 +624,7 @@ int main(int argc, char** argv) {
             const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
             if (!opened.ok) {
                 sidecar.stop();
-                std::cerr << "smoke-open-slice-failed code=" << opened.error.code.toStdString() << "\n";
+                std::cerr << "smoke-open-slice-failed " << formatErrorDetail(opened.error).toStdString() << "\n";
                 return 1;
             }
             const double t0 = QString::fromLocal8Bit(argv[i + 2]).toDouble();
@@ -1172,10 +1183,32 @@ int main(int argc, char** argv) {
             widget.resize(640, 320);
             widget.setSlice(slice);
 
-            QImage image(widget.size(), QImage::Format_ARGB32);
-            image.fill(QColor("#00FF00"));
-            widget.render(&image);
+            const auto renderToImage = [](bf::WaveformWidget& target) {
+                QImage rendered(target.size(), QImage::Format_ARGB32);
+                rendered.fill(QColor("#00FF00"));
+                target.render(&rendered);
+                return rendered;
+            };
+            // Axis regions come from the shared plot margins, and the two text
+            // bands deliberately exclude the frame line and the tick marks so
+            // the counts can only be produced by axis text, never by a line.
+            const bf::plot::Margins margins = bf::plot::kWaveformMargins;
+            const QRectF area = bf::plot::plotArea(widget, margins);
+            const int textHeight = QFontMetrics(widget.font()).height();
+            const QRgb waveformBackground = QColor("#FFFFFF").rgba();
+            const auto countTextPixels = [&](const QImage& image, int x0, int x1, int y0, int y1) {
+                int count = 0;
+                for (int y = std::max(0, y0); y < std::min(image.height(), y1); ++y) {
+                    for (int x = std::max(0, x0); x < std::min(image.width(), x1); ++x) {
+                        if (image.pixel(x, y) != waveformBackground) {
+                            ++count;
+                        }
+                    }
+                }
+                return count;
+            };
 
+            const QImage image = renderToImage(widget);
             int nonBackground = 0;
             const QRgb background = QColor("#00FF00").rgba();
             for (int y = 0; y < image.height(); ++y) {
@@ -1185,9 +1218,40 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            const int timeTextPixels = countTextPixels(image,
+                                                       static_cast<int>(area.left()) - 40,
+                                                       static_cast<int>(area.right()) + 1,
+                                                       static_cast<int>(area.bottom()) + 6,
+                                                       static_cast<int>(area.bottom()) + 7 + textHeight);
+            const int gutterTextPixels = countTextPixels(image,
+                                                         24,
+                                                         static_cast<int>(area.left()) - 12,
+                                                         static_cast<int>(area.top()),
+                                                         static_cast<int>(area.bottom()));
 
-            std::cout << "smoke-waveform-render-ok image=640x320 non_background_pixels=" << nonBackground << "\n";
-            return nonBackground > 0 ? 0 : 1;
+            // No visible channel: the coordinate system must still render.
+            bf::WaveformWidget emptyWidget;
+            bf::WaveformSlice emptySlice;
+            emptySlice.fs = 100.0;
+            emptySlice.t0 = 0.0;
+            emptySlice.t1 = 0.06;
+            emptyWidget.resize(640, 320);
+            emptyWidget.setSlice(emptySlice);
+            const QImage emptyImage = renderToImage(emptyWidget);
+            const QRectF emptyArea = bf::plot::plotArea(emptyWidget, margins);
+            const int emptyTimeTextPixels = countTextPixels(emptyImage,
+                                                            static_cast<int>(emptyArea.left()) - 40,
+                                                            static_cast<int>(emptyArea.right()) + 1,
+                                                            static_cast<int>(emptyArea.bottom()) + 6,
+                                                            static_cast<int>(emptyArea.bottom()) + 7 + textHeight);
+
+            std::cout << "smoke-waveform-render-ok image=640x320 non_background_pixels=" << nonBackground
+                      << " axis_time_text_pixels=" << timeTextPixels
+                      << " axis_gutter_text_pixels=" << gutterTextPixels
+                      << " empty_axis_time_text_pixels=" << emptyTimeTextPixels << "\n";
+            // The empty case has no channel rows, so its left gutter legitimately
+            // stays empty; only the shared time axis is asserted there.
+            return nonBackground > 0 && timeTextPixels > 0 && gutterTextPixels > 0 && emptyTimeTextPixels > 0 ? 0 : 1;
         }
         if (arg == "--smoke-m7-record" && i + 2 < argc) {
             QCoreApplication app(argc, argv);

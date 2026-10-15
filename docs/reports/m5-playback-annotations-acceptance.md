@@ -58,7 +58,7 @@ PYTHONPATH=sidecar QT_QPA_PLATFORM=offscreen python3 -m pytest \
   tests/native/test_bf_app.py \
   tests/sidecar -q
 python3 -m json.tool contracts/error_codes.json >/dev/null
-python3 scripts/check_i18n.py
+python3 scripts/common/check_i18n.py
 git diff --check HEAD
 ```
 

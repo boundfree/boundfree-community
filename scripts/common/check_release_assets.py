@@ -13,7 +13,7 @@ This script parses (not merely greps) the packaging artifacts and asserts:
   * No private key material or keygen script is present in the tree.
 
 Exit code 0 = all checks pass; 1 = one or more failures. Run from the repo
-root: ``python3 scripts/check_release_assets.py``.
+root: ``python3 scripts/common/check_release_assets.py``.
 """
 
 from __future__ import annotations
@@ -98,10 +98,10 @@ def check_version_sync() -> CheckResult:
 
         script = REPO_ROOT / "scripts" / "common" / "version_sync.py"
         if not script.exists():
-            return CheckResult(name, False, "missing: scripts/version_sync.py")
+            return CheckResult(name, False, "missing: scripts/common/version_sync.py")
         spec = importlib.util.spec_from_file_location("bf_version_sync", script)
         if spec is None or spec.loader is None:
-            return CheckResult(name, False, "cannot load scripts/version_sync.py")
+            return CheckResult(name, False, "cannot load scripts/common/version_sync.py")
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)

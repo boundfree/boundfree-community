@@ -1,4 +1,4 @@
-"""Static contract tests for scripts/build_windows.ps1 — the one-shot Windows dev build entry.
+"""Static contract tests for scripts/windows/build_windows.ps1 — the one-shot Windows dev build entry.
 
 Verifies the observable safety and orchestration contracts: platform gate,
 channel allowlist, mandatory SkipSigning, .venv lifecycle, license key handling,

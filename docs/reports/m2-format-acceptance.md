@@ -30,7 +30,7 @@ Last updated: 2026-07-21
 ## Evidence Collection Command
 
 ```bash
-python3 scripts/collect_m2_format_evidence.py --dry-run
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 ```
 
 Only rows with `status: accepted` and non-empty `evidence` may be reflected as completed checklist items. `dependency-skipped`, `sample-skipped`, and `not-implemented` are not acceptance evidence.
@@ -46,7 +46,7 @@ PYTHONPATH=sidecar python3 -m pytest \
   tests/sidecar/test_mne_reader.py \
   tests/sidecar/test_mne_generated_formats.py \
   tests/sidecar/test_format_evidence_script.py -q
-python3 scripts/collect_m2_format_evidence.py --dry-run
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 ```
 
 Result:

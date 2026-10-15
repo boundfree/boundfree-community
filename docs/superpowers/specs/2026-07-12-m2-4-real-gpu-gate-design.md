@@ -137,8 +137,8 @@ Repository verification remains:
 ```bash
 cmake --build native/build
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n -q
-./scripts/verify_m1_foundation.sh --fast
-python3 scripts/collect_m2_format_evidence.py --dry-run
+./scripts/wsl/verify_m1_foundation.sh --fast
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 git diff --check HEAD
 ```
 

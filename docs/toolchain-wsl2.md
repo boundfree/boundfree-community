@@ -46,11 +46,11 @@ cmake --build --preset wsl2-qt6-conda
 M1-A 基础验证：
 
 ```bash
-scripts/verify_m1_foundation.sh
+scripts/wsl/verify_m1_foundation.sh
 ```
 
 快速验证跳过 CMake build 和 UI smoke，适合已经构建过的本地迭代：
 
 ```bash
-scripts/verify_m1_foundation.sh --fast
+scripts/wsl/verify_m1_foundation.sh --fast
 ```

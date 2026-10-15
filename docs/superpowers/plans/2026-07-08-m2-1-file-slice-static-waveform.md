@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; use `../boundfree-eeg-upper-computer` only as a reference implementation, sample source, and golden-file source.
+- Work in `boundfree-community`; use `../boundfree-eeg-upper-computer` only as a reference implementation, sample source, and golden-file source.
 - Do not modify `../boundfree-eeg-upper-computer` in this plan.
 - v1 stable is a C++/Qt6 Native general EEG/LFP/electrophysiology file analysis product.
 - v1 stable does not include self-developed ADS1299/ESP32-C3 BLE acquisition closure; hardware acquisition enters v1.1/v2.
@@ -1509,7 +1509,7 @@ Run:
 ```bash
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n -q
 cmake --build native/build
-./scripts/verify_m1_foundation.sh --fast
+./scripts/wsl/verify_m1_foundation.sh --fast
 git diff --check HEAD
 ```
 

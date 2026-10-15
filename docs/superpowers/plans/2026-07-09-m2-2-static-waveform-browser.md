@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; use `../boundfree-eeg-upper-computer` only as a reference implementation, sample source, and golden-file source.
+- Work in `boundfree-community`; use `../boundfree-eeg-upper-computer` only as a reference implementation, sample source, and golden-file source.
 - Do not modify `../boundfree-eeg-upper-computer`.
 - v1 stable is a C++/Qt6 Native general EEG/LFP/electrophysiology file analysis product.
 - v1 stable does not include self-developed ADS1299/ESP32-C3 BLE acquisition closure; hardware acquisition enters v1.1/v2.
@@ -48,7 +48,7 @@
 | `native/CMakeLists.txt` | Register new controller source files. |
 | `native/i18n/bf_app_*.ts` | Add complete keys for M2-2 browser status and controls. |
 | `tests/native/test_bf_app.py` | Add smoke tests for view state, stale result handling, browser controls, and benchmark output. |
-| `scripts/collect_m2_format_evidence.py` | Runs optional dependency checks and writes a machine-readable summary for documentation. |
+| `scripts/common/collect_m2_format_evidence.py` | Runs optional dependency checks and writes a machine-readable summary for documentation. |
 | `tests/sidecar/test_format_evidence_script.py` | Verifies evidence script records skipped dependency gates as non-evidence. |
 | `docs/reports/m2-rendering-gpu-gate.md` | Record benchmark command template and actual/manual result rows. |
 | `docs/reports/m2-format-acceptance.md` | Record dependency/sample evidence without treating skips as acceptance. |
@@ -1176,13 +1176,13 @@ git commit -m "feat: add waveform render benchmark smoke"
 ### Task 7: Format Evidence Script
 
 **Files:**
-- Create: `scripts/collect_m2_format_evidence.py`
+- Create: `scripts/common/collect_m2_format_evidence.py`
 - Create: `tests/sidecar/test_format_evidence_script.py`
 - Modify: `docs/reports/m2-format-acceptance.md`
 
 **Interfaces:**
 - Consumes: optional dependencies `h5py==3.16.0`, `mne==1.12.1`, and existing format tests.
-- Produces: CLI `python3 scripts/collect_m2_format_evidence.py --dry-run` and explicit evidence status values `accepted`, `dependency-skipped`, `sample-skipped`, `not-implemented`.
+- Produces: CLI `python3 scripts/common/collect_m2_format_evidence.py --dry-run` and explicit evidence status values `accepted`, `dependency-skipped`, `sample-skipped`, `not-implemented`.
 
 - [x] **Step 1: Write the failing evidence script test**
 
@@ -1199,7 +1199,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_collect_m2_format_evidence_dry_run_reports_skips_as_non_evidence():
     result = subprocess.run(
-        ["python3", "scripts/collect_m2_format_evidence.py", "--dry-run"],
+        ["python3", "scripts/common/collect_m2_format_evidence.py", "--dry-run"],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -1224,11 +1224,11 @@ Run:
 python3 -m pytest tests/sidecar/test_format_evidence_script.py -q
 ```
 
-Expected: FAIL because `scripts/collect_m2_format_evidence.py` does not exist.
+Expected: FAIL because `scripts/common/collect_m2_format_evidence.py` does not exist.
 
 - [x] **Step 3: Add the evidence script**
 
-Create `scripts/collect_m2_format_evidence.py`:
+Create `scripts/common/collect_m2_format_evidence.py`:
 
 ```python
 #!/usr/bin/env python3
@@ -1301,7 +1301,7 @@ Add this section to `docs/reports/m2-format-acceptance.md`:
 ## Evidence Collection Command
 
 ```bash
-python3 scripts/collect_m2_format_evidence.py --dry-run
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 ```
 
 The script reports dependency and sample skips as non-evidence. Only `accepted` rows with recorded tests or manual evidence can be reflected as completed checklist items.
@@ -1320,7 +1320,7 @@ Expected: evidence script test passes; HDF5/MNE tests pass only when dependencie
 Commit:
 
 ```bash
-git add scripts/collect_m2_format_evidence.py tests/sidecar/test_format_evidence_script.py docs/reports/m2-format-acceptance.md
+git add scripts/common/collect_m2_format_evidence.py tests/sidecar/test_format_evidence_script.py docs/reports/m2-format-acceptance.md
 git commit -m "docs: add m2 format evidence collection"
 ```
 
@@ -1387,8 +1387,8 @@ Run:
 ```bash
 python3 -m pytest tests/fixtures tests/sidecar tests/native tests/contracts tests/i18n -q
 cmake --build native/build
-./scripts/verify_m1_foundation.sh --fast
-python3 scripts/collect_m2_format_evidence.py --dry-run
+./scripts/wsl/verify_m1_foundation.sh --fast
+python3 scripts/common/collect_m2_format_evidence.py --dry-run
 git diff --check HEAD
 ```
 

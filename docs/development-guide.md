@@ -54,11 +54,11 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 版本同步命令：
 
 ```bash
-python3 scripts/version_sync.py next patch --type feat --summary "新增能力摘要" --scope native/src/...
-python3 scripts/version_sync.py next minor --type feat --summary "完成阶段能力摘要"
-python3 scripts/version_sync.py set 0.2.0-rc.1 --channel rc --type chore --summary "准备 0.2.0-rc.1"
-python3 scripts/version_sync.py set 0.2.0 --channel stable --type chore --summary "发布 0.2.0"
-python3 scripts/version_sync.py check
+python3 scripts/common/version_sync.py next patch --type feat --summary "新增能力摘要" --scope native/src/...
+python3 scripts/common/version_sync.py next minor --type feat --summary "完成阶段能力摘要"
+python3 scripts/common/version_sync.py set 0.2.0-rc.1 --channel rc --type chore --summary "准备 0.2.0-rc.1"
+python3 scripts/common/version_sync.py set 0.2.0 --channel stable --type chore --summary "发布 0.2.0"
+python3 scripts/common/version_sync.py check
 ```
 
 提交要求：功能改动、`version.json`、`version.md` 和受影响的镜像版本说明必须放在同一个提交中。Git commit 只写一行摘要，完整提交说明写入 `version.md`。旧历史提交以 `git log` 为准，不在 `version.md` 逐条回填。`version_sync.py check` 是提交前门禁。
@@ -193,7 +193,7 @@ python3 -m json.tool version.json
 版本变更必须运行：
 
 ```bash
-python3 scripts/version_sync.py check
+python3 scripts/common/version_sync.py check
 ```
 
 C++/Qt6 工程变更应运行：
@@ -210,7 +210,7 @@ cmake --build --preset wsl2-qt6-conda
 M1-A 基础验证可运行：
 
 ```bash
-scripts/verify_m1_foundation.sh
+scripts/wsl/verify_m1_foundation.sh
 ```
 
 Python 边车变更应运行：

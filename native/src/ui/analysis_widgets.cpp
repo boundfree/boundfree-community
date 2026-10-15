@@ -1,6 +1,7 @@
 #include "ui/analysis_widgets.h"
 
 #include "dsp/spectral.h"
+#include "ui/plot_style.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -12,11 +13,6 @@
 namespace bf {
 namespace {
 
-constexpr int kLeft = 54;
-constexpr int kRight = 16;
-constexpr int kTop = 28;
-constexpr int kBottom = 36;
-
 QColor bandColor(const dsp::Band& band) {
     return QColor(band.rgba[0], band.rgba[1], band.rgba[2], band.rgba[3]);
 }
@@ -25,40 +21,6 @@ QColor jet(double normalized) {
     const double x = std::clamp(normalized, 0.0, 1.0);
     const auto curve = [x](double offset) { return std::clamp(1.5 - std::abs(4.0 * x - offset), 0.0, 1.0); };
     return QColor::fromRgbF(curve(3.0), curve(2.0), curve(1.0));
-}
-
-QRect plotRect(const QWidget& widget) {
-    return widget.rect().adjusted(kLeft, kTop, -kRight, -kBottom);
-}
-
-struct ThemePalette {
-    QColor background;
-    QColor grid;
-    QColor label;
-    QColor empty;
-    QColor coherenceLine;
-    QColor spectrumLine;
-};
-
-ThemePalette themePalette(bool dark) {
-    if (dark) {
-        return {
-            QColor("#1E1B2E"),
-            QColor("#6B7280"),
-            QColor("#F5F3FF"),
-            QColor("#C4B5FD"),
-            QColor("#FBBF24"),
-            QColor("#A78BFA"),
-        };
-    }
-    return {
-        QColor("#FFFFFF"),
-        QColor("#C4B5FD"),
-        QColor("#1F1235"),
-        QColor("#6B5B95"),
-        QColor("#7C3AED"),
-        QColor("#6D28D9"),
-    };
 }
 
 }  // namespace
@@ -93,10 +55,10 @@ void SpectrumWidget::setDarkTheme(bool dark) {
 
 void SpectrumWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
     painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
     painter.setPen(t.label);
@@ -166,9 +128,9 @@ void SpectrogramWidget::setDarkTheme(bool dark) {
 
 void SpectrogramWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
     painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
     painter.setPen(t.label);
@@ -243,10 +205,10 @@ void BandTrendWidget::setDarkTheme(bool dark) {
 
 void BandTrendWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const ThemePalette t = themePalette(darkTheme_);
+    const plot::Palette t = plot::palette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    const QRect plot = plotRect(*this);
+    const QRect plot = plot::plotRect(*this);
     painter.setPen(QPen(t.grid, 1));
     painter.drawRect(plot);
     painter.setPen(t.label);

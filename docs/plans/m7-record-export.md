@@ -237,7 +237,7 @@ native/build/m3_dsp_test tests/golden/m3
 native/build/m4_spectral_test tests/golden/m4
 PYTHONPATH=sidecar python3 -m pytest tests/sidecar -q
 QT_QPA_PLATFORM=offscreen python3 -m pytest tests/native -q
-python3 scripts/check_i18n.py
+python3 scripts/common/check_i18n.py
 python3 -m json.tool contracts/error_codes.json
 ```
 

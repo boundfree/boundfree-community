@@ -25,12 +25,12 @@ last_updated: 2026-07-21
 ## 命令
 
 ```bash
-python3 scripts/generate_m3_golden.py
+python3 scripts/common/generate_m3_golden.py
 cmake -B native/build -S native
 cmake --build native/build --target m3_dsp_test bf_app
 native/build/m3_dsp_test tests/golden/m3
 QT_QPA_PLATFORM=offscreen native/build/bf_app --smoke-processing-offline
-python3 scripts/check_i18n.py
+python3 scripts/common/check_i18n.py
 PYTHONPATH=sidecar QT_QPA_PLATFORM=offscreen python3 -m pytest tests/native/test_bf_app.py -q
 ```
 

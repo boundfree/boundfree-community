@@ -90,7 +90,7 @@ Commands:
 - `native\build-windows\Release\bf_app.exe --smoke-waveform-benchmark --channels 128 --fs 1000 --seconds 4 --frames 120 --json`
 - `native\build-windows\Release\bf_app.exe --smoke-waveform-benchmark --channels 256 --fs 1000 --seconds 4 --frames 120 --json`
 
-Acceptance run used `scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run` with `development_reasons: []` and `gate: Passed`.
+Acceptance run used `scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run` with `development_reasons: []` and `gate: Passed`.
 
 ## M2-3 Status
 
@@ -98,18 +98,18 @@ M2-3 adds machine-readable benchmark output and browser interaction smokes. Thes
 
 ## M2-4 Runbook
 
-M2-4 uses `scripts/collect_m2_gpu_gate_evidence.py` to run or format the 64/128/256 channel benchmark set.
+M2-4 uses `scripts/common/collect_m2_gpu_gate_evidence.py` to run or format the 64/128/256 channel benchmark set.
 
 Development dry-run:
 
 ```bash
-python3 scripts/collect_m2_gpu_gate_evidence.py --dry-run
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --dry-run
 ```
 
 Real GPU/display run template:
 
 ```bash
-python3 scripts/collect_m2_gpu_gate_evidence.py --run --acceptance-run \
+python3 scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run \
   --environment-label "real-windows-gpu" \
   --os-display "Windows 11 desktop" \
   --gpu-model "record GPU model" \

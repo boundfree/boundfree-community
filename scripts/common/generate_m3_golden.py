@@ -175,7 +175,7 @@ def main() -> int:
             "realtime_rtol": 1e-5,
             "realtime_atol": 1e-7,
         },
-        "generator": "scripts/generate_m3_golden.py",
+        "generator": "scripts/common/generate_m3_golden.py",
         "product_version_note": "Product version stays 0.1.0-dev; do not bump for M3.",
         "max_abs_rt_full_vs_chunk": float(np.max(np.abs(realtime_full - realtime_chunked))),
     }

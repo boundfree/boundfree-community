@@ -45,6 +45,6 @@
     "realtime_rtol": 1e-05,
     "realtime_atol": 1e-07
   },
-  "generator": "scripts/generate_m3_golden.py",
+  "generator": "scripts/common/generate_m3_golden.py",
   "product_version_note": "Product version stays 0.1.0-dev; do not bump for M3."
 }

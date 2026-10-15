@@ -18,7 +18,7 @@ last_updated: 2026-07-08
 
 ## Global Constraints
 
-- Work in `boundfree-eeg-native`; use `../boundfree-eeg-upper-computer` only as a reference and golden-file source.
+- Work in `boundfree-community`; use `../boundfree-eeg-upper-computer` only as a reference and golden-file source.
 - v1 required parity formats: EDF/EDF+, BDF, HDF5, CSV, BrainVision, EEGLAB, MNE FIF, Intan RHS, BBK/DAT/LSD.
 - v1 target formats with real-sample gate: Intan RHD/RHS, Open Ephys, Plexon, Blackrock.
 - No format can be announced as supported without real samples and an automatic or manual验收记录.
@@ -758,7 +758,7 @@ BoundFree EEG 0.1.0-dev
 Run:
 
 ```bash
-./scripts/verify_m1_foundation.sh --fast
+./scripts/wsl/verify_m1_foundation.sh --fast
 ```
 
 Expected: `M1 foundation verification passed`.

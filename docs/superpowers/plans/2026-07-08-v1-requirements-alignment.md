@@ -10,7 +10,7 @@ last_updated: 2026-07-08
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Align `boundfree-eeg-native` with the root v1 requirements: v1 stable is a general EEG/electrophysiology file analysis product, while self-developed hardware acquisition moves to v1.1/v2.
+**Goal:** Align `boundfree-community` with the root v1 requirements: v1 stable is a general EEG/electrophysiology file analysis product, while self-developed hardware acquisition moves to v1.1/v2.
 
 **Architecture:** Keep the existing C++/Qt6 native main app plus Python codec sidecar architecture. The immediate implementation is a documentation and roadmap alignment pass that makes the native repository's active docs consistent with `../BoundFree_EEG_System_Requirements_Spec.md`; later code plans should be derived from the aligned roadmap and parity checklist.
 
@@ -21,7 +21,7 @@ last_updated: 2026-07-08
 - Communicate with the user in Simplified Chinese.
 - Do not modify `../boundfree-eeg-upper-computer` unless the user explicitly asks.
 - Do not revert unrelated user changes; current untracked `docs/style-preview.html` must be left untouched.
-- v1 stable formal implementation is `boundfree-eeg-native`.
+- v1 stable formal implementation is `boundfree-community`.
 - v1 stable product boundary is general EEG/electrophysiology file analysis for animal electrophysiology research.
 - v1 stable does not promise the self-developed `ADS1299-4 + ESP32-C3` hardware acquisition loop.
 - v1.1/v2 owns BLE acquisition, real device recording, device status monitoring, and 12-hour acquisition stability tests.
@@ -76,7 +76,7 @@ Edit `README.md` and `docs/README.md` to point readers to the aligned v1 boundar
 
 - [x] **Step 6: Run documentation verification**
 
-Run from `boundfree-eeg-native`:
+Run from `boundfree-community`:
 
 ```bash
 git diff --check HEAD
@@ -86,7 +86,7 @@ Expected: no whitespace errors.
 
 - [x] **Step 7: Review diff**
 
-Run from `boundfree-eeg-native`:
+Run from `boundfree-community`:
 
 ```bash
 git diff -- README.md docs/roadmap.md docs/feature-parity-checklist.md docs/architecture-design.md docs/contracts.md docs/README.md
