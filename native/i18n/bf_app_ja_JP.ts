@@ -521,5 +521,13 @@
     <message><source>app.record.browse</source><translation>参照…</translation></message>
     <message><source>app.record.cancel</source><translation>キャンセル</translation></message>
     <message><source>app.record.directory_invalid</source><translation>書き込み可能な既存のフォルダーを選択してください。</translation></message>
+    <message><source>app.analysis.pending</source><translation>計算中…</translation></message>
+    <message><source>app.analysis.ready</source><translation>分析完了</translation></message>
+    <message><source>app.analysis.failed</source><translation>分析失敗: {reason}</translation></message>
+    <message><source>app.analysis.context</source><translation>{channel} · {start}–{end} 秒</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>帯域パワー (µV²)</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>{band}: {low}–{high} Hz</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>パワースペクトル密度 (dB re 1 µV²/Hz)</translation></message>
+    <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
   </context>
 </TS>

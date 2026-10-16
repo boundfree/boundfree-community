@@ -11,6 +11,7 @@ public:
     explicit SpectrumWidget(QWidget* parent = nullptr);
     void setSpectrum(const dsp::Spectrum& spectrum, const QString& title, const QString& yLabel, bool coherence = false);
     void setBandsVisible(bool visible);
+    void setAxisLabels(const QString& xLabel, const QString& yLabel, const QString& emptyLabel);
     void setLabels(const QString& xLabel, const QString& emptyLabel);
     void setDarkTheme(bool dark);
 
@@ -51,6 +52,7 @@ class BandTrendWidget final : public QWidget {
 public:
     explicit BandTrendWidget(QWidget* parent = nullptr);
     void setTrend(const std::vector<double>& times, const std::vector<std::vector<double>>& powers);
+    void setAxisLabels(const QString& xLabel, const QString& yLabel, const QString& emptyLabel);
     void setLabels(const QString& title, const QString& xLabel, const QString& emptyLabel);
     void setDarkTheme(bool dark);
 
@@ -61,6 +63,7 @@ private:
     std::vector<double> times_;
     std::vector<std::vector<double>> powers_;
     QString title_ = "Band power trend";
+    QString yLabel_ = QString::fromUtf8("μV²");
     QString xLabel_ = "Time (s)";
     QString emptyLabel_ = "No analysis data";
     bool darkTheme_ = false;

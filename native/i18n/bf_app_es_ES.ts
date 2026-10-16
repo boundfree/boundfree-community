@@ -521,5 +521,13 @@
     <message><source>app.record.browse</source><translation>Examinar…</translation></message>
     <message><source>app.record.cancel</source><translation>Cancelar</translation></message>
     <message><source>app.record.directory_invalid</source><translation>Elija una carpeta existente con permiso de escritura.</translation></message>
+    <message><source>app.analysis.pending</source><translation>Calculando…</translation></message>
+    <message><source>app.analysis.ready</source><translation>Análisis listo</translation></message>
+    <message><source>app.analysis.failed</source><translation>Error del análisis: {reason}</translation></message>
+    <message><source>app.analysis.context</source><translation>{channel} · {start}–{end} s</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>Potencia de banda (µV²)</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>{band}: {low}–{high} Hz</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>DEP (dB re 1 µV²/Hz)</translation></message>
+    <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
   </context>
 </TS>

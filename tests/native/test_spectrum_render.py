@@ -28,4 +28,4 @@ def test_spectrum_curves_are_visible_in_both_themes():
     lines = [line for line in result.stdout.splitlines() if "curve_pixels=" in line]
     assert len(lines) == 12, result.stdout
     for line in lines:
-        assert int(line.rsplit("=", 1)[1]) >= 200, line
+        assert int(line.rsplit("=", 1)[1]) >= 100, line

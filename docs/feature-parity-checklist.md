@@ -83,6 +83,8 @@ v1.1/v2：
 
 ## 频谱分析 — M4
 
+阶段 5A 补充：四页标题/属性/图例外置，补数值刻度、图外状态、失败/空结果清理和语言刷新；48 项针对性回归通过，见 [阶段 5A 报告](reports/eeg-ui-stage5a-analysis.md)。
+
 - [x] PSD（Welch + Hann + dB 切换 + 频段色块）
 - [x] FFT 幅度谱模式
 - [x] STFT 时频图（jet 内联色阶 + 双线性平滑 + colorbar + 频段文字注释）

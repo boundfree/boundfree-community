@@ -520,5 +520,13 @@
     <message><source>app.record.browse</source><translation>[!! Broowsee… !!]</translation></message>
     <message><source>app.record.cancel</source><translation>[!! Caanceel !!]</translation></message>
     <message><source>app.record.directory_invalid</source><translation>[!! Choosee aan eexiistiing wriitaablee fooldeer. !!]</translation></message>
+    <message><source>app.analysis.pending</source><translation>[!! Caalc uulaatiing… !!]</translation></message>
+    <message><source>app.analysis.ready</source><translation>[!! Aanaalysiis reaady !!]</translation></message>
+    <message><source>app.analysis.failed</source><translation>[!! Aanaalysiis faaiileed: {reason} !!]</translation></message>
+    <message><source>app.analysis.context</source><translation>[!! {channel} · {start}–{end} s !!]</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>[!! Baand pooweer (µV²) !!]</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>[!! {band}: {low}–{high} Hz !!]</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>[!! PSD (dB re 1 µV²/Hz) !!]</translation></message>
+    <message><source>app.analysis.color_range</source><translation>[!! {min}–{max} dB re 1 µV²/Hz !!]</translation></message>
   </context>
 </TS>

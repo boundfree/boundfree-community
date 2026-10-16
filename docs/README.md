@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage5a-analysis.md`](reports/eeg-ui-stage5a-analysis.md) | 阶段 5A 图外属性、数值轴与分析状态回归 |
 | [`reports/eeg-ui-stage4b-record-form.md`](reports/eeg-ui-stage4b-record-form.md) | 阶段 4B 统一录制元数据表单与取消/校验回归 |
 | [`reports/eeg-ui-stage4a-channels.md`](reports/eeg-ui-stage4a-channels.md) | 阶段 4A 自动幅值、通道滚动与逐行带通 |
 | [`reports/eeg-ui-stage3-layout.md`](reports/eeg-ui-stage3-layout.md) | 阶段 3 固定区域、控件换行与布局回归 |

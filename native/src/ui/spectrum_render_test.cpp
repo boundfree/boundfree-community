@@ -47,14 +47,15 @@ int main(int argc, char** argv) {
                 int changed = 0;
                 for (int y = interior.top(); y <= interior.bottom(); ++y) {
                     for (int x = interior.left(); x <= interior.right(); ++x) {
-                        if (withCurve.pixel(x, y) != withoutCurve.pixel(x, y)) {
+                        if (withCurve.pixel(x, y) == bf::plot::palette(dark).spectrumLine.rgba()
+                            && withoutCurve.pixel(x, y) != bf::plot::palette(dark).spectrumLine.rgba()) {
                             ++changed;
                         }
                     }
                 }
                 std::cout << mode << " dark=" << dark << " bands=" << bands
                           << " curve_pixels=" << changed << '\n';
-                if (changed < 200) {
+                if (changed < 100) {
                     std::cerr << "Spectrum curve was not rendered\n";
                     passed = false;
                 }

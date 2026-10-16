@@ -43,6 +43,7 @@
 #include <QTimer>
 
 #include <functional>
+#include <array>
 
 namespace bf {
 
@@ -106,7 +107,11 @@ private:
     void applyBrowserStateToWaveform();
     void applyProcessingAndDisplay();
     void refreshAnalysisControls();
-    void requestCurrentAnalysis();
+    void requestCurrentAnalysis(bool background = false);
+    void invalidateAnalysis();
+    void refreshAnalysisPage(int page);
+    void renderAnalysisResult(int page);
+    void clearAnalysisPlot(int page);
     void handleAnalysisCompleted(int generation, const AnalysisResult& result);
     void handleAnalysisFailed(int generation, const QString& code, const QString& detail);
     void rebuildChannelControls();
@@ -231,6 +236,24 @@ private:
     SpectrumWidget* coherenceWidget_ = nullptr;
     AnalysisService* analysisService_ = nullptr;
     int analysisGeneration_ = 0;
+    int requestedAnalysisPage_ = -1;
+    enum class AnalysisDisplayState { Idle, Pending, Ready, Empty, Failed };
+    struct AnalysisPageState {
+        AnalysisDisplayState state = AnalysisDisplayState::Idle;
+        AnalysisResult result;
+        AnalysisKind kind = AnalysisKind::Psd;
+        QString channel;
+        QString errorCode;
+        double start = 0.0;
+        double end = 0.0;
+        double fmax = 100.0;
+        bool asDb = false;
+    };
+    std::array<AnalysisPageState, 4> analysisPages_;
+    std::array<QLabel*, 4> analysisTitleLabels_{};
+    std::array<QLabel*, 4> analysisStatusLabels_{};
+    std::array<QLabel*, 4> analysisLegendLabels_{};
+    std::array<QLabel*, 4> analysisSummaryLabels_{};
 
     bool refreshingBrowserControls_ = false;
     bool refreshingAnalysisControls_ = false;

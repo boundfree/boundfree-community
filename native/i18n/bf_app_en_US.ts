@@ -520,5 +520,13 @@
     <message><source>app.record.browse</source><translation>Browse…</translation></message>
     <message><source>app.record.cancel</source><translation>Cancel</translation></message>
     <message><source>app.record.directory_invalid</source><translation>Choose an existing writable folder.</translation></message>
+    <message><source>app.analysis.pending</source><translation>Calculating…</translation></message>
+    <message><source>app.analysis.ready</source><translation>Analysis ready</translation></message>
+    <message><source>app.analysis.failed</source><translation>Analysis failed: {reason}</translation></message>
+    <message><source>app.analysis.context</source><translation>{channel} · {start}–{end} s</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>Band power (µV²)</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>{band}: {low}–{high} Hz</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>PSD (dB re 1 µV²/Hz)</translation></message>
+    <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
   </context>
 </TS>

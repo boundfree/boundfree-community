@@ -55,6 +55,7 @@
 #include <QTimer>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <QEventLoop>
@@ -819,6 +820,107 @@ int main(int argc, char** argv) {
                       << " opened_en=" << openedEn.toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-analysis-presentation") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            window.resize(1280, 800);
+            auto* service = window.findChild<bf::AnalysisService*>();
+            auto* tabs = window.findChild<QTabWidget*>("eegAnalysisTabs");
+            const auto fail = [](const char* reason) { std::cerr << "smoke-ui-analysis-presentation-failed " << reason << '\n'; return 1; };
+            if (!service || !tabs) return fail("missing_service");
+            const auto wait = [&](const std::function<bool()>& done) {
+                QElapsedTimer elapsed; elapsed.start();
+                while (!done() && elapsed.elapsed() < 4000) {
+                    QEventLoop loop; QTimer::singleShot(5, &loop, &QEventLoop::quit); loop.exec();
+                }
+                return done();
+            };
+            auto label = [&](const char* role, int page) {
+                return window.findChild<QLabel*>(QString("eegAnalysis%1_%2").arg(role).arg(page));
+            };
+            auto state = [&](int page) { auto* value = label("Status", page); return value ? value->property("analysisState").toString() : QString(); };
+            auto generation = [&](int page) { return label("Status", page)->property("analysisGeneration").toInt(); };
+            auto plot = [&](int page) { return window.findChild<QWidget*>(QString("eegAnalysisPlot_%1").arg(page)); };
+            bf::FileOpenResult input;
+            input.session.ok = true; input.session.path = "presentation.csv"; input.session.format = "CSV";
+            input.session.fs = 200; input.session.duration = 10; input.session.nSamples = 2000; input.session.nChannels = 2;
+            input.session.chNames = {"alpha", "beta"};
+            input.waveform.fs = 200; input.waveform.t0 = 0; input.waveform.t1 = 10;
+            input.waveform.channelNames = input.session.chNames; input.waveform.data.resize(2);
+            for (int ch = 0; ch < 2; ++ch) for (int n = 0; n < 2000; ++n)
+                input.waveform.data[ch].push_back(30 * std::sin(2 * 3.141592653589793 * (8 + ch * 3) * n / 200.)
+                    + 10 * std::sin(2 * 3.141592653589793 * 20 * n / 200.));
+            window.showFileOpenResult(input); window.show();
+            const QString screenshotDir = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+            if (!screenshotDir.isEmpty()) QDir().mkpath(screenshotDir);
+            int oldGeneration = 0;
+            const std::array<bf::AnalysisKind, 4> kinds{bf::AnalysisKind::Psd, bf::AnalysisKind::Stft, bf::AnalysisKind::BandTrend, bf::AnalysisKind::Coherence};
+            const char* titleKeys[] = {"app.analysis.psd", "app.analysis.stft", "app.analysis.trend", "app.analysis.coherence"};
+            for (int page = 0; page < 4; ++page) {
+                tabs->setCurrentIndex(page);
+                if (!wait([&]() { return state(page) == "ready"; })) return fail("real_analysis_not_ready");
+                if (!plot(page) || !label("Title", page) || !label("Legend", page) || !label("Summary", page)) return fail("missing_external_labels");
+                for (const char* role : {"Title", "Status", "Legend", "Summary"}) {
+                    auto* text = label(role, page);
+                    if (text->parentWidget() == plot(page) || plot(page)->isAncestorOf(text)) return fail("attribute_inside_plot");
+                    const QRect textBounds(text->mapTo(&window, QPoint()), text->size());
+                    const QRect plotBounds(plot(page)->mapTo(&window, QPoint()), plot(page)->size());
+                    if (text->isVisible() && textBounds.intersects(plotBounds)) return fail("attribute_overlaps_plot");
+                }
+                if (label("Title", page)->text() != i18n.text(titleKeys[page])) return fail("wrong_title");
+                const int completed = generation(page);
+                if (oldGeneration) {
+                    service->failed(oldGeneration, "analysis.failed", "stale-internal-detail");
+                    if (state(page) != "ready") return fail("stale_failure_applied");
+                }
+                if (!i18n.loadLocale("zh_CN", &error)) return fail("locale");
+                if (label("Title", page)->text() != i18n.text(titleKeys[page]) || !service->isCurrent(completed)) return fail("retranslate_recomputed");
+                app.processEvents();
+                if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath(QString("analysis-page-%1-zh_CN.png").arg(page)));
+                if (!i18n.loadLocale("en_US", &error)) return fail("locale_restore");
+                const QImage ready = plot(page)->grab().toImage();
+                service->failed(completed, "analysis.failed", "not-user-visible");
+                if (state(page) != "failed" || !label("Summary", page)->text().isEmpty()
+                    || label("Status", page)->text().contains("not-user-visible") || ready == plot(page)->grab().toImage()) return fail("failed_did_not_clear");
+                // A normal same-file seek requests fresh data on this page.
+                window.showFileOpenResult(input);
+                if (state(page) != "pending") return fail("missing_pending");
+                const int pending = generation(page);
+                service->cancel(); // Deterministic empty response, without a racing real completion.
+                bf::AnalysisResult empty; empty.kind = kinds[page];
+                service->completed(pending, empty);
+                if (state(page) != "empty" || !label("Summary", page)->text().isEmpty()) return fail("empty_marked_ready");
+                window.showFileOpenResult(input);
+                if (!wait([&]() { return state(page) == "ready"; })) return fail("recovery");
+                oldGeneration = generation(page);
+            }
+            window.setBrowserWindowSecondsForBrowser(1);
+            tabs->setCurrentIndex(0);
+            const int heldGeneration = generation(0);
+            service->cancel(); // Hold a pending UI task while playback keeps moving.
+            QAction* play = nullptr;
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->text() == i18n.text("app.playback.play")) play = action;
+            if (!play || state(0) != "pending") return fail("background_setup");
+            play->trigger();
+            QEventLoop backgroundWait; QTimer::singleShot(750, &backgroundWait, &QEventLoop::quit); backgroundWait.exec();
+            if (generation(0) != heldGeneration || state(0) != "pending") return fail("background_restarts_pending");
+            auto* position = window.findChild<QDoubleSpinBox*>("eegPlaybackPosition");
+            if (!position || position->value() < .2) return fail("background_froze_playback");
+            play->trigger(); // Explicit pause may supersede the old pending analysis.
+            if (generation(0) == heldGeneration || !wait([&]() { return state(0) == "ready"; })) return fail("explicit_refresh_cannot_supersede");
+            oldGeneration = generation(0);
+            window.showFileOpenLoading("new-file.csv");
+            for (int page = 0; page < 4; ++page)
+                if (state(page) != "idle" || !label("Summary", page)->text().isEmpty()) return fail("file_load_keeps_old_result");
+            service->failed(oldGeneration, "analysis.failed", "obsolete");
+            if (state(3) != "idle") return fail("load_accepts_stale");
+            std::cout << "smoke-ui-analysis-presentation-ok pages=4 external=true states=true locale=true stale=true background=true\n";
+            return 0;
+        }
         if (arg == "--smoke-ui-record-form") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
@@ -1113,7 +1215,8 @@ int main(int argc, char** argv) {
                 if (suffix == "Video" && panel->isVisible()) {
                     window.resize(900, 560); settle();
                     window.resize(900, 560); settle();
-                    if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
+                    app.processEvents();
+                if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
                     if (window.size() != QSize(900, 560) || !regionError().isEmpty()
                         || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
                 }

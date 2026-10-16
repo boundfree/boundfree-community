@@ -521,5 +521,13 @@
     <message><source>app.record.browse</source><translation>찾아보기…</translation></message>
     <message><source>app.record.cancel</source><translation>취소</translation></message>
     <message><source>app.record.directory_invalid</source><translation>쓰기 가능한 기존 폴더를 선택하세요.</translation></message>
+    <message><source>app.analysis.pending</source><translation>계산 중…</translation></message>
+    <message><source>app.analysis.ready</source><translation>분석 완료</translation></message>
+    <message><source>app.analysis.failed</source><translation>분석 실패: {reason}</translation></message>
+    <message><source>app.analysis.context</source><translation>{channel} · {start}–{end} s</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>대역 전력 (µV²)</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>{band}: {low}–{high} Hz</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>전력 스펙트럼 밀도 (dB re 1 µV²/Hz)</translation></message>
+    <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
   </context>
 </TS>

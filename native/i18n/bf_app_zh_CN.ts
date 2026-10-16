@@ -521,5 +521,13 @@
     <message><source>app.record.browse</source><translation>浏览…</translation></message>
     <message><source>app.record.cancel</source><translation>取消</translation></message>
     <message><source>app.record.directory_invalid</source><translation>请选择已存在且可写的文件夹。</translation></message>
+    <message><source>app.analysis.pending</source><translation>正在计算…</translation></message>
+    <message><source>app.analysis.ready</source><translation>分析就绪</translation></message>
+    <message><source>app.analysis.failed</source><translation>分析失败：{reason}</translation></message>
+    <message><source>app.analysis.context</source><translation>{channel} · {start}–{end} 秒</translation></message>
+    <message><source>app.analysis.trend_unit</source><translation>频带功率 (µV²)</translation></message>
+    <message><source>app.analysis.band_legend</source><translation>{band}：{low}–{high} Hz</translation></message>
+    <message><source>app.analysis.db_unit</source><translation>功率谱密度 (dB re 1 µV²/Hz)</translation></message>
+    <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
   </context>
 </TS>
