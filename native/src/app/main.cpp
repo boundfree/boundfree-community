@@ -545,6 +545,84 @@ int main(int argc, char** argv) {
                       << " trend=" << trendPixels << "\n";
             return (spectrumPixels > 0 && spectrogramPixels > 0 && trendPixels > 0) ? 0 : 1;
         }
+        if (arg == "--smoke-file-session-reuse" && i + 1 < argc) {
+            QCoreApplication app(argc, argv);
+            const QString fixtureRoot = QString::fromLocal8Bit(argv[i + 1]);
+            auto controller = std::make_unique<bf::FileOpenController>(fixtureRoot, version);
+            int loaded = 0;
+            int failed = 0;
+            QString lastErrorCode;
+            bf::FileOpenResult last;
+            QObject::connect(controller.get(), &bf::FileOpenController::loaded, &app,
+                             [&](const bf::FileOpenResult& result) { ++loaded; last = result; });
+            QObject::connect(controller.get(), &bf::FileOpenController::failed, &app,
+                             [&](const bf::AppError& error) { ++failed; lastErrorCode = error.code; });
+            const auto waitFor = [](const std::function<bool()>& condition) {
+                QElapsedTimer elapsed;
+                elapsed.start();
+                while (!condition() && elapsed.elapsed() < 5000) {
+                    QEventLoop loop;
+                    QTimer::singleShot(5, &loop, &QEventLoop::quit);
+                    loop.exec();
+                }
+                return condition();
+            };
+            const auto fail = [](const char* reason) {
+                std::cerr << "smoke-file-session-reuse-failed " << reason << '\n';
+                return 1;
+            };
+            const auto openAndWait = [&](const QString& path, double t0) {
+                const int beforeLoaded = loaded;
+                const int beforeFailed = failed;
+                controller->openWindow(path, t0, 1.0);
+                return waitFor([&]() { return loaded != beforeLoaded || failed != beforeFailed; })
+                    && loaded == beforeLoaded + 1 && failed == beforeFailed
+                    && last.session.path == path && std::abs(last.waveform.t0 - t0) < 1e-9
+                    && last.waveform.data.size() == 1 && last.waveform.data[0].size() == 10
+                    && std::abs(last.waveform.data[0][0] - (t0 + 1.0)) < 1e-6;
+            };
+            if (!openAndWait("a.csv", 0) || !openAndWait("a.csv", 1)
+                || !openAndWait("a.csv", 2)) return fail("reuse");
+            const int beforeReopen = loaded;
+            controller->openInitialWindow("a.csv", 1);
+            if (!waitFor([&]() { return loaded != beforeReopen || failed != 0; })
+                || loaded != beforeReopen + 1 || failed != 0 || last.waveform.t0 != 0)
+                return fail("explicit_reopen");
+            if (!openAndWait("b.csv", 0)) return fail("switch");
+
+            const int beforeBurst = loaded;
+            controller->openWindow("b.csv", 10, 1);
+            if (!waitFor([&]() { return QFile::exists(fixtureRoot + "/burst-started"); })) return fail("burst_start");
+            controller->openWindow("b.csv", 11, 1);
+            controller->openWindow("b.csv", 12, 1);
+            controller->openWindow("b.csv", 13, 1);
+            QFile release(fixtureRoot + "/burst-release");
+            if (!release.open(QIODevice::WriteOnly)) return fail("burst_release");
+            release.close();
+            if (!waitFor([&]() { return loaded != beforeBurst || failed != 0; })
+                || loaded != beforeBurst + 1 || failed != 0 || last.waveform.t0 != 13)
+                return fail("latest_request");
+
+            controller->openWindow("bad.csv", 0, 1);
+            if (!waitFor([&]() { return failed != 0; }) || failed != 1
+                || lastErrorCode != "reader.file_not_found") return fail("open_error");
+            if (!openAndWait("a.csv", 0)) return fail("open_error_recovery");
+            controller->openWindow("a.csv", 30, 1);
+            if (!waitFor([&]() { return failed != 1; }) || failed != 2
+                || !lastErrorCode.startsWith("ipc.")) return fail("peer_crash");
+            if (!openAndWait("a.csv", 1)) return fail("peer_crash_recovery");
+
+            const int beforeDestroy = loaded;
+            controller->openWindow("a.csv", 20, 1);
+            if (!waitFor([&]() { return QFile::exists(fixtureRoot + "/destroy-started"); })) return fail("destroy_start");
+            controller->openWindow("a.csv", 21, 1);
+            controller.reset(); // Waits for active IPC, drops pending work and queued callbacks.
+            QCoreApplication::sendPostedEvents();
+            QCoreApplication::processEvents();
+            if (loaded != beforeDestroy || failed != 2) return fail("callback_after_destroy");
+            std::cout << "smoke-file-session-reuse-ok reuse=true switch=true latest=true recovery=true destroy=true\n";
+            return 0;
+        }
         if (arg == "--smoke-sidecar") {
             QCoreApplication app(argc, argv);
             bf::SidecarClient sidecar(repoRoot);

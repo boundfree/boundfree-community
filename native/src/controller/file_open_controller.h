@@ -8,7 +8,7 @@
 
 #include <QObject>
 #include <QString>
-#include <QVector>
+#include <QThread>
 #include <memory>
 
 namespace bf {
@@ -34,10 +34,14 @@ signals:
     void failed(const bf::AppError& error);
 
 private:
+    struct WorkerState;
+    void enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen);
+
     QString repoRoot_;
     VersionInfo version_;
     std::shared_ptr<RequestGeneration> requestGeneration_;
-    QVector<QThread*> threads_;
+    std::shared_ptr<WorkerState> workerState_;
+    QThread* worker_ = nullptr;
 };
 
 }  // namespace bf

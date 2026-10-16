@@ -3,108 +3,164 @@
 #include "render/waveform_slice.h"
 
 #include <QMetaObject>
-#include <QPointer>
-#include <QThread>
 
 #include <algorithm>
-#include <limits>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
 #include <utility>
 
 namespace bf {
+
+struct FileOpenController::WorkerState {
+    struct Request {
+        QString path;
+        double t0;
+        double t1;
+        int generation;
+        quint64 revision;
+    };
+
+    std::mutex mutex;
+    std::condition_variable ready;
+    std::optional<Request> pending;
+    bool stopping = false;
+    quint64 revision = 0;
+};
 
 FileOpenController::FileOpenController(QString repoRoot, VersionInfo version, QObject* parent)
     : QObject(parent),
       repoRoot_(std::move(repoRoot)),
       version_(std::move(version)),
-      requestGeneration_(std::make_shared<RequestGeneration>()) {}
-
-FileOpenController::~FileOpenController() {
-    requestGeneration_->invalidate();
-    const QVector<QThread*> threads = threads_;
-    for (QThread* thread : threads) {
-        if (thread != nullptr && thread->isRunning()) {
-            thread->wait();
-        }
-    }
-}
-
-void FileOpenController::openInitialWindow(const QString& path, double windowSeconds) {
-    openWindow(path, 0.0, windowSeconds);
-}
-
-void FileOpenController::openWindow(const QString& path, double t0, double windowSeconds) {
-    const QString repoRoot = repoRoot_;
-    const VersionInfo version = version_;
-    const std::shared_ptr<RequestGeneration> requestGeneration = requestGeneration_;
-    const int generation = requestGeneration->next();
-    const double requestedT0 = std::max(0.0, t0);
-    const double requestedWindowSeconds = std::min(std::max(windowSeconds, 0.0), 120.0);
-    const double requestedT1 = requestedT0 + requestedWindowSeconds;
-    const QPointer<FileOpenController> controller(this);
-
-    auto* thread = QThread::create([controller, requestGeneration, repoRoot, version, generation, path, requestedT0, requestedT1]() {
-        auto emitFailure = [controller, requestGeneration, generation](const AppError& error) {
-            if (controller.isNull()) {
-                return;
-            }
-            QMetaObject::invokeMethod(controller.data(), [controller, requestGeneration, generation, error]() {
-                if (!controller.isNull() && requestGeneration->isCurrent(generation)) {
-                    emit controller->failed(error);
-                }
+      requestGeneration_(std::make_shared<RequestGeneration>()),
+      workerState_(std::make_shared<WorkerState>()) {
+    const auto state = workerState_;
+    const auto generations = requestGeneration_;
+    // QProcess belongs to this worker for its entire lifetime. Only the
+    // request mailbox and generation counter are shared with the UI thread.
+    worker_ = QThread::create([this, state, generations, root = repoRoot_, version = version_]() {
+        SidecarClient sidecar(root);
+        SidecarOpenResult opened;
+        QString openedPath;
+        quint64 openedRevision = 0;
+        bool connected = false;
+        const auto resetSession = [&]() {
+            sidecar.stop();
+            opened = {};
+            openedPath.clear();
+            connected = false;
+        };
+        const auto fail = [&](int generation, AppError error) {
+            resetSession();
+            QMetaObject::invokeMethod(this, [this, generations, generation, error]() {
+                if (generations->isCurrent(generation)) emit failed(error);
             }, Qt::QueuedConnection);
         };
 
-        SidecarClient sidecar(repoRoot);
-        const SidecarHelloResult hello = sidecar.startAndHello(version);
-        if (!hello.ok) {
-            sidecar.stop();
-            emitFailure(hello.error);
-            return;
-        }
-
-        SidecarOpenResult opened = sidecar.openFile(path, 30000);
-        if (!opened.ok) {
-            sidecar.stop();
-            emitFailure(opened.error);
-            return;
-        }
-
-        const double sliceT0 = std::min(requestedT0, opened.duration);
-        const double sliceT1 = std::min(requestedT1, opened.duration);
-        if (sliceT1 <= sliceT0) {
-            sidecar.stop();
-            emitFailure(makeError("reader.slice_out_of_range", {
-                {"handle", opened.handle},
-                {"t0", sliceT0},
-                {"t1", sliceT1},
-                {"duration", opened.duration},
-            }));
-            return;
-        }
-
-        SidecarSliceResult slice = sidecar.getSlice(opened.handle, sliceT0, sliceT1, 30000);
-        sidecar.stop();
-        if (!slice.ok) {
-            emitFailure(slice.error);
-            return;
-        }
-
-        FileOpenResult result{opened, slice, waveformSliceFromSidecar(opened, slice)};
-        if (controller.isNull()) {
-            return;
-        }
-        QMetaObject::invokeMethod(controller.data(), [controller, requestGeneration, generation, result]() {
-            if (!controller.isNull() && requestGeneration->isCurrent(generation)) {
-                emit controller->loaded(result);
+        while (true) {
+            WorkerState::Request request;
+            {
+                std::unique_lock<std::mutex> lock(state->mutex);
+                state->ready.wait(lock, [&]() { return state->stopping || state->pending.has_value(); });
+                if (state->stopping) break;
+                request = std::move(*state->pending);
+                state->pending.reset();
             }
-        }, Qt::QueuedConnection);
+            if (!generations->isCurrent(request.generation)) continue;
+            if (!connected) {
+                const SidecarHelloResult hello = sidecar.startAndHello(version);
+                if (!hello.ok) {
+                    fail(request.generation, hello.error);
+                    continue;
+                }
+                connected = true;
+            }
+            if (!generations->isCurrent(request.generation)) continue;
+            if (opened.ok && (openedRevision != request.revision || openedPath != request.path)) {
+                const SidecarResponse closed = sidecar.request("close", {{"handle", opened.handle}});
+                if (!closed.ok) {
+                    fail(request.generation, closed.error);
+                    continue;
+                }
+                opened = {};
+                openedPath.clear();
+            }
+            if (!generations->isCurrent(request.generation)) continue;
+            if (!opened.ok) {
+                opened = sidecar.openFile(request.path, 30000);
+                if (!opened.ok) {
+                    fail(request.generation, opened.error);
+                    continue;
+                }
+                openedPath = request.path;
+                openedRevision = request.revision;
+            }
+            if (!generations->isCurrent(request.generation)) continue;
+
+            const double sliceT0 = std::min(request.t0, opened.duration);
+            const double sliceT1 = std::min(request.t1, opened.duration);
+            if (sliceT1 <= sliceT0) {
+                fail(request.generation, makeError("reader.slice_out_of_range", {
+                    {"handle", opened.handle}, {"t0", sliceT0},
+                    {"t1", sliceT1}, {"duration", opened.duration},
+                }));
+                continue;
+            }
+            SidecarSliceResult slice = sidecar.getSlice(opened.handle, sliceT0, sliceT1, 30000);
+            if (!slice.ok) {
+                fail(request.generation, slice.error);
+                continue;
+            }
+            if (!generations->isCurrent(request.generation)) continue;
+            FileOpenResult result{opened, slice, waveformSliceFromSidecar(opened, slice)};
+            QMetaObject::invokeMethod(this, [this, generations, generation = request.generation, result = std::move(result)]() {
+                if (generations->isCurrent(generation)) emit loaded(result);
+            }, Qt::QueuedConnection);
+        }
+        // Destruction joins this thread before QObject teardown; queued results
+        // are invalidated and removed by QObject, and no QProcess crosses threads.
+        if (connected && opened.ok) sidecar.request("close", {{"handle", opened.handle}});
+        sidecar.stop();
     });
-    threads_.append(thread);
-    connect(thread, &QThread::finished, this, [this, thread]() {
-        threads_.removeAll(thread);
-    });
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    thread->start();
+    worker_->start();
+}
+
+FileOpenController::~FileOpenController() {
+    requestGeneration_->invalidate();
+    {
+        std::lock_guard<std::mutex> lock(workerState_->mutex);
+        workerState_->stopping = true;
+        workerState_->pending.reset();
+    }
+    workerState_->ready.notify_one();
+    // An in-flight synchronous IPC operation finishes under its existing
+    // timeout. Never terminate QProcess from the UI thread.
+    worker_->wait();
+    delete worker_;
+}
+
+void FileOpenController::openInitialWindow(const QString& path, double windowSeconds) {
+    enqueueWindow(path, 0.0, windowSeconds, true);
+}
+
+void FileOpenController::openWindow(const QString& path, double t0, double windowSeconds) {
+    enqueueWindow(path, t0, windowSeconds, false);
+}
+
+void FileOpenController::enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen) {
+    const int generation = requestGeneration_->next();
+    const double requestedT0 = std::max(0.0, t0);
+    const double requestedWindowSeconds = std::min(std::max(windowSeconds, 0.0), 120.0);
+    {
+        std::lock_guard<std::mutex> lock(workerState_->mutex);
+        // An explicit reopen changes the revision even when a newer seek
+        // replaces its mailbox entry or supersedes an in-flight operation.
+        if (reopen) ++workerState_->revision;
+        workerState_->pending = WorkerState::Request{
+            path, requestedT0, requestedT0 + requestedWindowSeconds, generation, workerState_->revision,
+        };
+    }
+    workerState_->ready.notify_one();
 }
 
 }  // namespace bf
