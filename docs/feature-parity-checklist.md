@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-07-24
+last_updated: 2026-10-16
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -109,6 +109,8 @@ v1.1/v2：
 - [x] 位置时钟同步
 
 验收记录：[`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md)。
+
+2026-10-16 补充：读片会话复用、连续前向视窗及有界预取已通过自动化验证，见 [`阶段2A`](reports/eeg-ui-stage2a-session.md) 和 [`阶段2B`](reports/eeg-ui-stage2b-playback.md)。Windows桌面流畅度及旧版尾随显示语义未在此轮验收。
 
 ## 视频同步 — M6
 

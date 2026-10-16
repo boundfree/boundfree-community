@@ -7,6 +7,7 @@
 #include <QWidget>
 
 #include <optional>
+#include <utility>
 
 namespace bf {
 
@@ -16,6 +17,9 @@ public:
     explicit WaveformWidget(QWidget* parent = nullptr);
 
     void setSlice(const WaveformSlice& slice);
+    void setTimeRange(double t0, double t1);
+    void clearTimeRange();
+    std::pair<double, double> timeRange() const;
     void setViewState(const WaveformViewState& state);
     void setMarkers(const QVector<Marker>& markers);
     void setCursorTime(double time);
@@ -38,6 +42,7 @@ private:
     void ensureDisplayModel(int maxVisibleChannels) const;
 
     WaveformSlice slice_;
+    std::optional<std::pair<double, double>> timeRange_;
     WaveformViewState viewState_;
     mutable std::optional<WaveformDisplayModel> cachedModel_;
     QVector<Marker> markers_;

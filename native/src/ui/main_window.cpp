@@ -32,6 +32,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace bf {
@@ -352,11 +353,11 @@ void MainWindow::buildBrowserControls() {
 
     previousWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowBack), QString());
     connect(previousWindowAction_, &QAction::triggered, this, [this]() {
-        requestWindow(currentFile_.waveform.t0 - viewState_.windowSeconds);
+        requestWindow(waveformWidget_->timeRange().first - viewState_.windowSeconds);
     });
     nextWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
     connect(nextWindowAction_, &QAction::triggered, this, [this]() {
-        requestWindow(currentFile_.waveform.t0 + viewState_.windowSeconds);
+        requestWindow(waveformWidget_->timeRange().first + viewState_.windowSeconds);
     });
 
     positionLabel_ = new QLabel(this);
@@ -376,32 +377,28 @@ void MainWindow::buildBrowserControls() {
         syncVideoToPlayback();
     });
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
-        if (!refreshingBrowserControls_) {
+        if (!refreshingBrowserControls_ && !openingFile_) {
             playback_.seek(positionSpin_->value());
             playbackElapsed_.restart();
-            if (playback_.position() < signalDurationSeconds_) {
-                requestWindow(playback_.position());
-            }
+            requestWindow(playback_.position());
             syncVideoToPlayback();
             refreshPlaybackControls();
         }
     });
 
     connect(playbackPanel_, &EegPlaybackPanel::progressPreviewed, this, [this](double fraction) {
-        if (!hasCurrentFile_) return;
+        if (!hasCurrentFile_ || openingFile_) return;
         const QSignalBlocker blocker(positionSpin_);
         positionSpin_->setValue(playback_.duration() * fraction);
     });
     connect(playbackPanel_, &EegPlaybackPanel::progressMoved, this, [this](double fraction) {
-        if (!hasCurrentFile_) {
+        if (!hasCurrentFile_ || openingFile_) {
             return;
         }
         const double position = playback_.duration() * fraction;
         playback_.seek(position);
         playbackElapsed_.restart();
-        if (position < signalDurationSeconds_) {
-            requestWindow(position);
-        }
+        requestWindow(position);
         syncVideoToPlayback();
         refreshPlaybackControls();
     });
@@ -457,7 +454,7 @@ void MainWindow::buildBrowserControls() {
         viewState_.setWindowSeconds(value);
         applyBrowserStateToWaveform();
         if (hasCurrentFile_ && windowRequestHandler_) {
-            requestWindow(currentFile_.waveform.t0);
+            requestWindow(playback_.position());
         }
     });
     connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
@@ -650,7 +647,8 @@ void MainWindow::buildVideoDock() {
     addDockWidget(Qt::BottomDockWidgetArea, videoDock_);
     videoDock_->hide();
     connect(videoPanel_, &VideoPanel::offsetApplyRequested, this, [this]() {
-        videoPanel_->applyOffset(playback_.position(), playback_.isPlaying());
+        videoPanel_->applyOffset(playback_.position(), playback_.isPlaying() && !waitingForPlaybackData_
+            && !playbackPanel_->isProgressSliderDown());
         updatePlaybackDuration();
         statusBar()->showMessage(i18n_->text(
             "app.video.offset_applied",
@@ -811,9 +809,19 @@ void MainWindow::requestCurrentAnalysis() {
         return;
     }
     AnalysisRequest request;
-    request.data = matrixFromFloatChannels(currentFile_.waveform.data);
     request.fs = currentFile_.waveform.fs;
-    request.tStart = currentFile_.waveform.t0;
+    if (!(request.fs > 0.0) || windowRequestPending_ || openingFile_) return;
+    const auto range = waveformWidget_->timeRange();
+    const double start = range.first;
+    const double end = range.second;
+    const double firstSample = std::max(0.0, std::ceil((start - currentFile_.waveform.t0) * request.fs - 1e-6));
+    const double endSample = std::max(firstSample, std::ceil((end - currentFile_.waveform.t0) * request.fs - 1e-6));
+    for (const auto& channel : currentFile_.waveform.data) {
+        const auto first = static_cast<std::size_t>(std::min(firstSample, static_cast<double>(channel.size())));
+        const auto last = static_cast<std::size_t>(std::min(endSample, static_cast<double>(channel.size())));
+        request.data.emplace_back(channel.begin() + first, channel.begin() + last);
+    }
+    request.tStart = currentFile_.waveform.t0 + firstSample / request.fs;
     const int currentTab = analysisTabs_->currentIndex();
     if (currentTab == 0) {
         request.kind = psdModeCombo_->currentIndex() == 1 ? AnalysisKind::Fft : AnalysisKind::Psd;
@@ -840,6 +848,7 @@ void MainWindow::requestCurrentAnalysis() {
         return;
     }
     analysisGeneration_ = analysisService_->request(request);
+    analysisElapsed_.restart();
 }
 
 void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& result) {
@@ -903,16 +912,52 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
     }
 }
 
-void MainWindow::togglePlayback() {
+double MainWindow::viewportStart(double position) const {
+    return std::clamp(position, 0.0, std::max(0.0, signalDurationSeconds_ - viewState_.windowSeconds));
+}
+
+bool MainWindow::cacheCoversPosition(double position) const {
+    const double start = viewportStart(position);
+    const double end = std::min(signalDurationSeconds_, start + viewState_.windowSeconds);
+    const double tolerance = rawWaveform_.fs > 0.0 ? 1.0 / rawWaveform_.fs : 1e-6;
+    return !rawWaveform_.data.empty() && rawWaveform_.t0 <= start + tolerance && rawWaveform_.t1 + tolerance >= end;
+}
+
+void MainWindow::updatePlaybackViewport() {
     if (!hasCurrentFile_) return;
+    if (!playbackViewportActive_) {
+        waveformWidget_->clearTimeRange();
+        return;
+    }
+    const double start = viewportStart(playback_.position());
+    waveformWidget_->setTimeRange(start, std::min(signalDurationSeconds_, start + viewState_.windowSeconds));
+}
+
+void MainWindow::requestPlaybackPrefetch() {
+    if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_ || playbackPrefetchPending_ || windowRequestPending_) return;
+    const double lead = std::clamp(viewState_.windowSeconds * 0.5, 2.0, 8.0);
+    const double start = viewportStart(playback_.position());
+    const double length = std::min(viewState_.windowSeconds + lead, signalDurationSeconds_ - start);
+    if (length <= 0.0) return;
+    playbackPrefetchPending_ = true;
+    playbackPrefetchEnd_ = start + length;
+    windowRequestHandler_(currentFile_.session.path, start, length);
+}
+
+void MainWindow::togglePlayback() {
+    if (!hasCurrentFile_ || openingFile_) return;
     if (playback_.isPlaying()) {
         playback_.pause();
         playbackTimer_.stop();
+        requestCurrentAnalysis();
     } else {
-        if (playback_.position() < currentFile_.waveform.t0 || playback_.position() >= currentFile_.waveform.t1) {
-            requestWindow(playback_.position());
-        }
+        playbackViewportActive_ = true;
         playback_.play();
+        waitingForPlaybackData_ = windowRequestPending_ || !cacheCoversPosition(playback_.position());
+        updatePlaybackViewport();
+        // Fill the lead immediately, before the first frame leaves the
+        // initial static window. A pending seek already owns the next result.
+        if (rawWaveform_.t1 < signalDurationSeconds_ || waitingForPlaybackData_) requestPlaybackPrefetch();
         playbackElapsed_.restart();
         playbackTimer_.start();
     }
@@ -922,27 +967,33 @@ void MainWindow::togglePlayback() {
 }
 
 void MainWindow::advancePlayback() {
-    if (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown()) {
-        // Do not advance or prefetch behind the user's pending seek.
-        playbackElapsed_.restart();
+    const double elapsedSeconds = playbackElapsed_.restart() / 1000.0;
+    if (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown()) return;
+    if (waitingForPlaybackData_) {
+        syncVideoToPlayback();
+        return;
+    }
+    // Check the next view before advancing the clock. Slow IO cannot make
+    // the view run off the available data or create a catch-up jump later.
+    const double nextPosition = playback_.position() + elapsedSeconds * playback_.speed();
+    if (playback_.isPlaying() && nextPosition < playback_.duration() && !cacheCoversPosition(nextPosition)) {
+        waitingForPlaybackData_ = true;
+        requestPlaybackPrefetch();
+        syncVideoToPlayback();
         return;
     }
     const bool wasPlaying = playback_.isPlaying();
-    const double elapsedSeconds = playbackElapsed_.restart() / 1000.0;
     playback_.advance(elapsedSeconds);
-    const double prefillAt = currentFile_.waveform.t1 - std::min(1.0, viewState_.windowSeconds * 0.25);
-    const bool hasNextWindow = currentFile_.waveform.t1 + 1e-9 < signalDurationSeconds_;
-    if (playback_.isPlaying() && hasNextWindow && !playbackPrefetchPending_ && playback_.position() >= prefillAt) {
-        playbackPrefetchPending_ = true;
-        requestWindow(playback_.position());
-    }
+    updatePlaybackViewport();
     if (wasPlaying && !playback_.isPlaying() && playback_.position() == 0.0) {
-        playbackPrefetchPending_ = true;
         requestWindow(0.0);
+    } else if (playback_.isPlaying()) {
+        const double lead = std::clamp(viewState_.windowSeconds * 0.5, 2.0, 8.0);
+        const double end = std::min(signalDurationSeconds_, viewportStart(playback_.position()) + viewState_.windowSeconds);
+        if (rawWaveform_.t1 < signalDurationSeconds_ && rawWaveform_.t1 - end <= lead * 0.5) requestPlaybackPrefetch();
+        if (!analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestCurrentAnalysis();
     }
-    if (!playback_.isPlaying()) {
-        playbackTimer_.stop();
-    }
+    if (!playback_.isPlaying()) playbackTimer_.stop();
     syncVideoToPlayback();
     refreshPlaybackControls();
     refreshPersistentStatus();
@@ -971,7 +1022,7 @@ void MainWindow::refreshPlaybackControls() {
 void MainWindow::syncVideoToPlayback() {
     if (videoPanel_ != nullptr && videoPanel_->isLoaded()) {
         const bool scrubbing = playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown();
-        videoPanel_->syncTo(playback_.position(), playback_.isPlaying() && !scrubbing);
+        videoPanel_->syncTo(playback_.position(), playback_.isPlaying() && !scrubbing && !waitingForPlaybackData_);
     }
 }
 
@@ -1090,17 +1141,20 @@ void MainWindow::openPathForBrowser(const QString& path) {
 }
 
 void MainWindow::requestWindow(double t0) {
-    if (!hasCurrentFile_ || !windowRequestHandler_) {
-        return;
-    }
-    double requestedT0 = std::max(0.0, t0);
-    if (currentFile_.session.duration > 0.0) {
-        const double maxT0 = std::max(0.0, currentFile_.session.duration - viewState_.windowSeconds);
-        requestedT0 = std::min(requestedT0, maxT0);
-    }
+    if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_) return;
+    if (!playback_.isPlaying()) playbackViewportActive_ = false;
+    playback_.seek(t0);
+    playbackElapsed_.restart();
+    playbackPrefetchPending_ = false;
+    windowRequestPending_ = true;
+    waitingForPlaybackData_ = playback_.isPlaying();
+    analysisService_->cancel();
+    analysisGeneration_ = 0;
+    updatePlaybackViewport();
+    syncVideoToPlayback();
     statusKey_ = "app.status.file_opening";
     statusParams_ = {{"path", currentFile_.session.path}};
-    windowRequestHandler_(currentFile_.session.path, requestedT0, viewState_.windowSeconds);
+    windowRequestHandler_(currentFile_.session.path, viewportStart(playback_.position()), viewState_.windowSeconds);
 }
 
 void MainWindow::setLoading(bool loading) {
@@ -1294,6 +1348,15 @@ void MainWindow::setSidecarFailed(const AppError& error) {
 }
 
 void MainWindow::showFileOpenLoading(const QString& path) {
+    openingFile_ = true;
+    playback_.pause();
+    playbackTimer_.stop();
+    playbackPrefetchPending_ = false;
+    windowRequestPending_ = false;
+    waitingForPlaybackData_ = false;
+    analysisService_->cancel();
+    analysisGeneration_ = 0;
+    syncVideoToPlayback();
     setLoading(true);
     statusKey_ = "app.status.file_opening";
     statusParams_ = {{"path", path}};
@@ -1302,7 +1365,21 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     setLoading(false);
-    const bool sameSession = hasCurrentFile_ && currentFile_.session.path == result.session.path;
+    const bool sameSession = !openingFile_ && hasCurrentFile_ && currentFile_.session.path == result.session.path;
+    const bool prefetched = sameSession && playbackPrefetchPending_;
+    const double tolerance = result.waveform.fs > 0.0 ? 1.0 / result.waveform.fs : 1e-6;
+    if (prefetched && (result.waveform.data.empty()
+        || result.waveform.t0 > viewportStart(playback_.position()) + tolerance
+        || result.waveform.t1 + tolerance < playbackPrefetchEnd_)) {
+        // A successful but short response must not start an endless sequence
+        // of identical prefetches. Keep the last usable display and stop.
+        showFileOpenError(makeError("reader.slice_out_of_range", {
+            {"handle", result.session.handle}, {"t0", result.waveform.t0},
+            {"t1", result.waveform.t1}, {"duration", signalDurationSeconds_},
+        }));
+        return;
+    }
+    openingFile_ = false;
     currentFile_ = result;
     rawWaveform_ = result.waveform;
     hasCurrentFile_ = true;
@@ -1310,9 +1387,23 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         recordController_->stop();
     }
     playbackPrefetchPending_ = false;
+    windowRequestPending_ = false;
+    waitingForPlaybackData_ = false;
+    playbackElapsed_.restart();
+    if (prefetched) {
+        currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+        waveformWidget_->setSlice(currentFile_.waveform);
+        updatePlaybackViewport();
+        if (!playback_.isPlaying() || !analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestCurrentAnalysis();
+        playbackElapsed_.restart();
+        syncVideoToPlayback();
+        return;
+    }
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
     if (!sameSession) {
+        playbackViewportActive_ = false;
+        waveformWidget_->clearTimeRange();
         const QSignalBlocker blocker(playbackPanel_->progressSlider());
         playbackPanel_->progressSlider()->setSliderDown(false);
         playback_.pause();
@@ -1340,13 +1431,20 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     markerDock_->show();
     refreshPlaybackControls();
     refreshMarkerControls();
+    playbackElapsed_.restart();
     syncVideoToPlayback();
-    requestCurrentAnalysis();
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
     setLoading(false);
     playbackPrefetchPending_ = false;
+    windowRequestPending_ = false;
+    waitingForPlaybackData_ = false;
+    openingFile_ = false;
+    playback_.pause();
+    playbackTimer_.stop();
+    syncVideoToPlayback();
+    refreshPlaybackControls();
     statusKey_ = "app.status.file_failed";
     lastError_ = error;
     statusParams_ = {};
@@ -1402,13 +1500,14 @@ void MainWindow::applyBrowserStateToWaveform() {
     if (!hasCurrentFile_) {
         return;
     }
+    updatePlaybackViewport();
 
     const WaveformDisplayModel model = waveformDisplayModel(currentFile_.waveform, viewState_, 32);
     statusKey_ = "app.status.file_window";
     statusParams_ = {
         {"format", currentFile_.session.format},
-        {"t0", currentFile_.waveform.t0},
-        {"t1", currentFile_.waveform.t1},
+        {"t0", waveformWidget_->timeRange().first},
+        {"t1", waveformWidget_->timeRange().second},
         {"amplitude", viewState_.amplitudeUv},
         {"n_visible", static_cast<int>(model.data.size())},
     };

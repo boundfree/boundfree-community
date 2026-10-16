@@ -21,6 +21,21 @@ void WaveformWidget::setSlice(const WaveformSlice& slice) {
     update();
 }
 
+void WaveformWidget::setTimeRange(double t0, double t1) {
+    if (!std::isfinite(t0) || !std::isfinite(t1) || t1 <= t0) return;
+    timeRange_ = std::make_pair(t0, t1);
+    update();
+}
+
+void WaveformWidget::clearTimeRange() {
+    timeRange_.reset();
+    update();
+}
+
+std::pair<double, double> WaveformWidget::timeRange() const {
+    return timeRange_.value_or(std::make_pair(slice_.t0, slice_.t1));
+}
+
 void WaveformWidget::setViewState(const WaveformViewState& state) {
     viewState_ = state;
     invalidateDisplayModelCache();
@@ -89,13 +104,14 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
     const WaveformDisplayModel& model = cachedDisplayModel(32);
     const int nChannels = static_cast<int>(model.data.size());
     const double rowHeight = nChannels > 0 ? plotArea.height() / nChannels : 0.0;
-    const double span = model.t1 - model.t0;
+    const auto [visibleStart, visibleEnd] = timeRange();
+    const double span = visibleEnd - visibleStart;
     const double safeSpan = span > 0.0 && std::isfinite(span) ? span : 1.0;
     const double amplitude = std::max(1.0, model.amplitudeUv);
 
     // Shared time axis: the endpoints preserve the absolute EEG time of the
     // requested window, while interior ticks use a readable 1/2/5 step.
-    const QVector<double> xTicks = plot::ticks(model.t0, model.t1);
+    const QVector<double> xTicks = plot::ticks(visibleStart, visibleEnd);
     const int xDecimals = plot::tickDecimals(plot::niceTickStep(safeSpan));
 
     // Inner grid lines (time ticks, per-row zero lines and separators) use a
@@ -106,7 +122,7 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
     innerGrid.setAlpha(70);
     painter.setPen(QPen(innerGrid, 1));
     for (const double tick : xTicks) {
-        const double ratio = std::clamp((tick - model.t0) / safeSpan, 0.0, 1.0);
+        const double ratio = std::clamp((tick - visibleStart) / safeSpan, 0.0, 1.0);
         const double x = plotArea.left() + ratio * plotArea.width();
         painter.drawLine(QPointF(x, plotArea.top()), QPointF(x, plotArea.bottom()));
     }
@@ -182,10 +198,12 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
 
     // Signal rows: every row shares the toolbar's +/- range and keeps its own
     // zero line. Markers and the playback cursor are clipped to the plot area.
+    painter.save();
+    painter.setClipRect(plotArea);
     if (nChannels > 0) {
         for (int ch = 0; ch < nChannels; ++ch) {
             const std::vector<float>& samples = model.data[ch];
-            if (samples.size() < 2) {
+            if (samples.size() < 2 || !std::isfinite(model.fs) || model.fs <= 0.0) {
                 continue;
             }
 
@@ -194,40 +212,47 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
             const double drawWidth = std::max(1.0, plotArea.width());
             const double drawHeight = rowHeight * 0.45;
             const auto pointFor = [&](int sampleIndex) {
-                const double ratio = static_cast<double>(sampleIndex) / static_cast<double>(samples.size() - 1);
+                const double sampleTime = model.t0 + static_cast<double>(sampleIndex) / model.fs;
+                const double ratio = (sampleTime - visibleStart) / safeSpan;
                 const double x = plotArea.left() + ratio * drawWidth;
                 const double y = centerY - samples[static_cast<std::size_t>(sampleIndex)] / amplitude * drawHeight;
                 return QPointF(x, y);
             };
-            QPointF previous = pointFor(0);
-            for (int i = 1; i < static_cast<int>(samples.size()); ++i) {
+            // Include one sample outside each edge to retain crossing segments.
+            const int lastIndex = static_cast<int>(samples.size()) - 1;
+            const int first = static_cast<int>(std::clamp(std::floor((visibleStart - model.t0) * model.fs), 0.0, static_cast<double>(lastIndex)));
+            const int last = static_cast<int>(std::clamp(std::ceil((visibleEnd - model.t0) * model.fs), 0.0, static_cast<double>(lastIndex)));
+            QPointF previous = pointFor(first);
+            for (int i = first + 1; i <= last; ++i) {
                 const QPointF current = pointFor(i);
                 painter.drawLine(previous, current);
                 previous = current;
             }
         }
         for (const Marker& marker : markers_) {
-            if (marker.time < model.t0 || marker.time > model.t1) {
+            if (marker.time < visibleStart || marker.time > visibleEnd) {
                 continue;
             }
-            const int x = static_cast<int>(plotArea.left() + plotArea.width() * (marker.time - model.t0) / safeSpan);
+            const int x = static_cast<int>(plotArea.left() + plotArea.width() * (marker.time - visibleStart) / safeSpan);
             painter.setPen(QPen(marker.color, 1));
             painter.drawLine(x, plotArea.top(), x, plotArea.bottom());
             painter.drawText(x + 3, plotArea.top() + 15, marker.label);
         }
-        if (cursorTime_ >= model.t0 && cursorTime_ <= model.t1) {
-            const int x = static_cast<int>(plotArea.left() + plotArea.width() * (cursorTime_ - model.t0) / safeSpan);
+        if (cursorTime_ >= visibleStart && cursorTime_ <= visibleEnd) {
+            const int x = static_cast<int>(plotArea.left() + plotArea.width() * (cursorTime_ - visibleStart) / safeSpan);
             painter.setPen(QPen(theme.label, 1));
             painter.drawLine(x, plotArea.top(), x, plotArea.bottom());
         }
     }
+
+    painter.restore();
 
     // Bottom time axis is shared by all visible channels. Tick labels are
     // clamped inside the widget (the outermost one would otherwise be clipped
     // at the right edge) and the axis title never overlaps the label band.
     painter.setPen(theme.label);
     for (const double tick : xTicks) {
-        const double ratio = std::clamp((tick - model.t0) / safeSpan, 0.0, 1.0);
+        const double ratio = std::clamp((tick - visibleStart) / safeSpan, 0.0, 1.0);
         const double x = plotArea.left() + ratio * plotArea.width();
         painter.drawLine(QPointF(x, plotArea.bottom()), QPointF(x, plotArea.bottom() + 5.0));
         const QString text = plot::formatAxisNumber(numberLocale_, tick, xDecimals);
@@ -243,13 +268,14 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
 
 void WaveformWidget::mousePressEvent(QMouseEvent* event) {
     const QRectF plotArea = plot::plotArea(*this, plot::kWaveformMargins);
+    const auto [visibleStart, visibleEnd] = timeRange();
     if (markerModeEnabled_ && event->button() == Qt::LeftButton && plotArea.contains(event->position()) &&
-        !slice_.data.empty() && slice_.t1 > slice_.t0) {
+        !slice_.data.empty() && visibleEnd > visibleStart) {
         const double ratio = std::clamp((static_cast<double>(event->position().x()) - plotArea.left()) /
                                            std::max(1.0, plotArea.width()),
                                        0.0,
                                        1.0);
-        emit markerRequested(slice_.t0 + ratio * (slice_.t1 - slice_.t0));
+        emit markerRequested(visibleStart + ratio * (visibleEnd - visibleStart));
         event->accept();
         return;
     }

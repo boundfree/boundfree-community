@@ -93,6 +93,10 @@ private:
     void syncVideoToPlayback();
     void updatePlaybackDuration();
     void requestWindow(double t0);
+    double viewportStart(double position) const;
+    bool cacheCoversPosition(double position) const;
+    void updatePlaybackViewport();
+    void requestPlaybackPrefetch();
     void setLoading(bool loading);
     void refreshBrowserControls();
     void refreshProcessingControls();
@@ -237,6 +241,12 @@ private:
     QElapsedTimer playbackElapsed_;
     bool refreshingMarkerControls_ = false;
     bool playbackPrefetchPending_ = false;
+    double playbackPrefetchEnd_ = 0.0;
+    bool windowRequestPending_ = false;
+    bool waitingForPlaybackData_ = false;
+    bool openingFile_ = false;
+    bool playbackViewportActive_ = false;
+    QElapsedTimer analysisElapsed_;
     QJsonObject emptyStateParams_;
     AppError lastError_;
 };

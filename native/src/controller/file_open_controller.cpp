@@ -150,7 +150,8 @@ void FileOpenController::openWindow(const QString& path, double t0, double windo
 void FileOpenController::enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen) {
     const int generation = requestGeneration_->next();
     const double requestedT0 = std::max(0.0, t0);
-    const double requestedWindowSeconds = std::min(std::max(windowSeconds, 0.0), 120.0);
+    // Display windows remain <=120s; allow at most 8s of bounded lookahead.
+    const double requestedWindowSeconds = std::min(std::max(windowSeconds, 0.0), 128.0);
     {
         std::lock_guard<std::mutex> lock(workerState_->mutex);
         // An explicit reopen changes the revision even when a newer seek

@@ -369,3 +369,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../legal/
         PATTERN "*.md"
         PATTERN "licenses/*"
 )
+
+add_executable(waveform_viewport_test src/ui/waveform_viewport_test.cpp)
+target_link_libraries(waveform_viewport_test PRIVATE bf_core)

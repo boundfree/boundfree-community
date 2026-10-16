@@ -795,6 +795,7 @@ int main(int argc, char** argv) {
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
             result.waveform.t1 = 0.01;
+            result.session.duration = 0.01;
             result.waveform.channelNames = {"ch1", "ch2"};
             result.waveform.data = {{0.0f, 1.0f}, {1.0f, 0.0f}};
             window.showFileOpenResult(result);
@@ -811,6 +812,186 @@ int main(int argc, char** argv) {
                       << " loading_pseudo=" << loadingPseudo.toStdString()
                       << " opened_pseudo=" << openedPseudo.toStdString()
                       << " opened_en=" << openedEn.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-continuous-file" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            bf::FileOpenController controller(repoRoot, version);
+            auto* waveform = window.findChild<bf::WaveformWidget*>();
+            QAction* play = nullptr;
+            QComboBox* speed = nullptr;
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->toolTip() == i18n.text("app.playback.play")) play = action;
+            for (auto* combo : window.findChildren<QComboBox*>())
+                if (combo->count() == 5 && combo->itemData(0).toDouble() == .25
+                    && combo->itemData(4).toDouble() == 4) speed = combo;
+            if (!waveform || !play || !speed) {
+                std::cerr << "smoke-ui-continuous-file-failed controls\n";
+                return 1;
+            }
+            int requests = 0, results = 0, samples = 0, advancingSamples = 0;
+            bool cacheJump = false, clockJump = false, completed = false;
+            QString failure;
+            double previous = 0.0, finalPosition = 0.0;
+            qint64 previousMs = 0;
+            QElapsedTimer elapsed;
+            QTimer sampleTimer;
+            QEventLoop loop;
+            window.setWindowRequestHandler([&](const QString& path, double start, double length) {
+                ++requests;
+                controller.openWindow(path, start, length);
+            });
+            QObject::connect(&sampleTimer, &QTimer::timeout, &window, [&]() {
+                const double current = waveform->timeRange().first;
+                const qint64 now = elapsed.elapsed();
+                const double delta = current - previous;
+                if (delta < -1e-6 || delta > 4.0 * (now - previousMs) / 1000.0 + .15) clockJump = true;
+                if (delta > .001) ++advancingSamples;
+                ++samples;
+                previous = current;
+                previousMs = now;
+            });
+            QObject::connect(&controller, &bf::FileOpenController::loaded, &window,
+                             [&](const bf::FileOpenResult& result) {
+                const auto before = waveform->timeRange();
+                window.showFileOpenResult(result);
+                ++results;
+                if (results > 1) {
+                    if (before != waveform->timeRange()) cacheJump = true;
+                    return;
+                }
+                if (result.session.nChannels != 2 || std::abs(result.session.fs - 100.0) > 1e-6
+                    || std::abs(result.session.duration - 100.0) > 1e-6) {
+                    failure = "fixture_metadata";
+                    loop.quit();
+                    return;
+                }
+                speed->setCurrentIndex(4);
+                elapsed.start();
+                play->trigger();
+                sampleTimer.start(20);
+                // Import/initial open time is excluded from the playback interval.
+                QTimer::singleShot(2000, &window, [&]() {
+                    sampleTimer.stop();
+                    play->trigger();
+                    const auto paused = waveform->timeRange();
+                    finalPosition = paused.first;
+                    QTimer::singleShot(200, &window, [&, paused]() {
+                        if (waveform->timeRange() != paused
+                            || play->text() != i18n.text("app.playback.play")) failure = "pause_moves";
+                        completed = true;
+                        loop.quit();
+                    });
+                });
+            });
+            QObject::connect(&controller, &bf::FileOpenController::failed, &window,
+                             [&](const bf::AppError& e) { failure = e.code; loop.quit(); });
+            QTimer::singleShot(10000, &window, [&]() { failure = "timeout"; loop.quit(); });
+            window.resize(1200, 800);
+            window.show();
+            const QString path = QString::fromLocal8Bit(argv[i + 1]);
+            window.showFileOpenLoading(path);
+            controller.openInitialWindow(path, 10);
+            loop.exec();
+            if (!completed || !failure.isEmpty() || cacheJump || clockJump || results < 3
+                || requests < 2 || requests * 4 >= samples || advancingSamples < 10 || finalPosition < 3.0) {
+                std::cerr << "smoke-ui-continuous-file-failed reason=" << failure.toStdString()
+                          << " results=" << results << " requests=" << requests << " samples=" << samples
+                          << " advancing=" << advancingSamples << " position=" << finalPosition
+                          << " cache_jump=" << cacheJump << " clock_jump=" << clockJump << '\n';
+                return 1;
+            }
+            std::cout << "smoke-ui-continuous-file-ok results=" << results << " requests=" << requests
+                      << " samples=" << samples << " advancing=" << advancingSamples
+                      << " position=" << finalPosition << " pause=true cache=true\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-continuous-playback") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            auto data = [](const QString& path, double start, double length) {
+                bf::FileOpenResult r;
+                r.session.ok = true; r.session.path = path; r.session.format = "CSV";
+                r.session.fs = 100; r.session.duration = 100;
+                r.session.nSamples = 10000; r.session.nChannels = 2;
+                r.session.chNames = {"a", "b"};
+                r.waveform.fs = 100; r.waveform.t0 = start;
+                r.waveform.t1 = std::min(100.0, start + length);
+                r.waveform.channelNames = r.session.chNames;
+                const int count = static_cast<int>(std::round((r.waveform.t1 - start) * 100));
+                r.waveform.data.resize(2);
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int sample = 0; sample < count; ++sample)
+                        r.waveform.data[ch].push_back(100 * std::sin((start + sample / 100.0) * (ch + 1) * 6.28));
+                return r;
+            };
+            window.showFileOpenResult(data("continuous.csv", 0, 10));
+            auto* waveform = window.findChild<bf::WaveformWidget*>();
+            auto* position = window.findChild<QDoubleSpinBox*>("eegPlaybackPosition");
+            auto* slider = window.findChild<QSlider*>("eegPlaybackProgress");
+            QAction* play = nullptr;
+            QComboBox* speed = nullptr;
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->text() == i18n.text("app.playback.play")) play = action;
+            for (auto* combo : window.findChildren<QComboBox*>())
+                if (combo->count() == 5 && combo->itemData(0).toDouble() == .25 && combo->itemData(4).toDouble() == 4) speed = combo;
+            const auto fail = [](const char* reason) {
+                std::cerr << "smoke-ui-continuous-playback-failed " << reason << '\n'; return 1;
+            };
+            if (!waveform || !position || !slider || !play || !speed) return fail("controls");
+            const auto wait = [](int ms) {
+                QEventLoop loop; QTimer::singleShot(ms, &loop, &QEventLoop::quit); loop.exec();
+            };
+            int requests = 0, generation = 0, delay = 300;
+            bool cacheJump = false, shortResponse = false;
+            window.setWindowRequestHandler([&](const QString& path, double start, double length) {
+                ++requests;
+                const int id = ++generation;
+                QTimer::singleShot(delay, &window, [&, path, start, length, id]() {
+                    if (id != generation) return;
+                    const auto before = waveform->timeRange();
+                    window.showFileOpenResult(data(path, start, shortResponse ? 1.0 : length));
+                    if (length > 10 && !shortResponse && before != waveform->timeRange()) cacheJump = true;
+                });
+            });
+            play->trigger(); wait(120);
+            if (requests != 1 || position->value() > .02) return fail("slow_read_must_wait");
+            play->trigger(); wait(300);
+            if (position->value() > .02 || play->text() != i18n.text("app.playback.play")) return fail("buffer_result_autoplays");
+            delay = 10;
+            play->trigger(); wait(300);
+            const double first = waveform->timeRange().first;
+            if (first < .10 || first > 1 || std::abs(first - position->value()) > .002 || cacheJump) return fail("continuous_view_or_cache_jump");
+            waveform->cachedDisplayModel();
+            const int builds = waveform->displayModelBuildCount(), beforeRequests = requests;
+            wait(180); waveform->cachedDisplayModel();
+            if (waveform->timeRange().first <= first + .05 || waveform->displayModelBuildCount() != builds || requests != beforeRequests)
+                return fail("per_frame_rebuild_or_request");
+            play->trigger(); const auto paused = waveform->timeRange(); wait(100);
+            if (waveform->timeRange() != paused) return fail("pause_moves");
+            speed->setCurrentIndex(4); play->trigger(); wait(250);
+            const double delta = waveform->timeRange().first - paused.first;
+            if (delta < .5 || delta > 2.5) return fail("speed");
+            slider->setValue(9900); wait(80);
+            if (std::abs(waveform->timeRange().first - 90) > .001 || waveform->timeRange().second != 100) return fail("tail_window");
+            wait(400);
+            if (position->value() != 0 || play->text() != i18n.text("app.playback.play")) return fail("tail_reset");
+            const int beforeLoading = requests;
+            window.showFileOpenLoading("next.csv"); play->trigger(); slider->setValue(4000); wait(60);
+            if (requests != beforeLoading) return fail("loading_dispatches_old_file");
+            window.showFileOpenResult(data("next.csv", 0, 10));
+            if (position->value() != 0 || waveform->timeRange() != std::make_pair(0.0, 10.0)) return fail("file_reset");
+            shortResponse = true; play->trigger(); wait(100);
+            const int afterShort = requests; wait(150);
+            if (requests != afterShort || play->text() != i18n.text("app.playback.play")) return fail("short_response_retry_storm");
+            std::cout << "smoke-ui-continuous-playback-ok smooth=true cache=true pause=true speed=true tail=true loading=true short_response=true requests=" << requests << '\n';
             return 0;
         }
         if (arg == "--smoke-ui-seek-preview") {
@@ -830,10 +1011,10 @@ int main(int argc, char** argv) {
             result.session.chNames = {"ch1", "ch2"};
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
-            // A short initial slice makes prefetch due on the first timer tick.
-            result.waveform.t1 = 0.1;
+            // Covers the initial display and the 5-second lookahead.
+            result.waveform.t1 = 15.0;
             result.waveform.channelNames = result.session.chNames;
-            result.waveform.data = {std::vector<float>(10, 1.0f), std::vector<float>(10, 2.0f)};
+            result.waveform.data = {std::vector<float>(1500, 1.0f), std::vector<float>(1500, 2.0f)};
             window.showFileOpenResult(result);
             auto* slider = window.findChild<QSlider*>("eegPlaybackProgress");
             auto* position = window.findChild<QDoubleSpinBox*>("eegPlaybackPosition");
@@ -853,6 +1034,7 @@ int main(int argc, char** argv) {
                 requestedTime = t0;
             });
             play->trigger();
+            requests = 0; // Initial lookahead is separate from drag/seek work.
             slider->setSliderDown(true);
             slider->setSliderPosition(6000);
             if (requests != 0 || std::abs(position->value() - 60.0) > 1e-6) return fail("drag_preview");
@@ -900,6 +1082,7 @@ int main(int argc, char** argv) {
             result.session.fs = 100.0;
             result.session.nChannels = 2;
             result.session.nSamples = 1000;
+            result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
             result.waveform.t1 = 10.0;
@@ -1214,6 +1397,7 @@ int main(int argc, char** argv) {
             result.session.fs = 100.0;
             result.session.nChannels = 4;
             result.session.nSamples = 1000;
+            result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
             result.waveform.t1 = 10.0;
@@ -1257,6 +1441,7 @@ int main(int argc, char** argv) {
             result.session.fs = 100.0;
             result.session.nChannels = 2;
             result.session.nSamples = 1000;
+            result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
             result.waveform.t1 = 10.0;
@@ -1307,6 +1492,7 @@ int main(int argc, char** argv) {
             result.session.fs = 100.0;
             result.session.nChannels = 2;
             result.session.nSamples = 1000;
+            result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.02;
             result.waveform.t1 = 0.05;

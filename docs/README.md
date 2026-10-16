@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-07-22
+last_updated: 2026-10-16
 ---
 
 # 文档索引
@@ -29,6 +29,7 @@ last_updated: 2026-07-22
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage2b-playback.md`](reports/eeg-ui-stage2b-playback.md) | 阶段 2B 连续视窗、有界预取与真实CSV联合验证 |
 | [`reports/eeg-ui-stage2a-session.md`](reports/eeg-ui-stage2a-session.md) | 阶段 2A 读片会话复用、请求合并与错误恢复 |
 | [`reports/eeg-ui-stage1b-seek.md`](reports/eeg-ui-stage1b-seek.md) | 阶段 1B 拖动预览、单次定位与状态隔离回归 |
 | [`reports/eeg-ui-stage1a-spectrum.md`](reports/eeg-ui-stage1a-spectrum.md) | 阶段 1A 谱线缺失修复与曲线敏感回归 |
