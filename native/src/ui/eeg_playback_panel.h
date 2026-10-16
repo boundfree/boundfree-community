@@ -56,7 +56,7 @@ public:
     void retranslateUi(I18nService* i18n);
 
 signals:
-    // Lightweight drag feedback; does not request data or change playback.
+    // Drag target feedback; MainWindow schedules bounded waveform previews.
     void progressPreviewed(double fraction);
 
     // Emitted when the user changes the speed combo (not during setSpeed).

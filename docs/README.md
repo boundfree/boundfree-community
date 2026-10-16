@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage6c-scrub-preview.md`](reports/eeg-ui-stage6c-scrub-preview.md) | 阶段 6C 波形随拖预览、请求合并与真实读片回归 |
 | [`reports/eeg-ui-stage6b-parameters.md`](reports/eeg-ui-stage6b-parameters.md) | 阶段 6B 参数标签页、单通道编辑与常用数值预设 |
 | [`reports/eeg-ui-stage6a-empty-controls.md`](reports/eeg-ui-stage6a-empty-controls.md) | 阶段 6A 空白页完整侧栏隐藏与数值箭头交互 |
 | [`reports/eeg-ui-stage5b-theme.md`](reports/eeg-ui-stage5b-theme.md) | 阶段 5B 旧版亮暗配色与已创建图元切换 |

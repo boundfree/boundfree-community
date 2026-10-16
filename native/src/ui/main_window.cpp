@@ -511,7 +511,14 @@ void MainWindow::buildBrowserControls() {
     progressLayout->addWidget(positionLabel_);
     progressLayout->addWidget(positionSpin_);
     progressLayout->addWidget(playbackPanel_->progressSlider(), 1);
+    scrubPreviewTimer_.setSingleShot(true);
+    scrubPreviewTimer_.setInterval(80);
+    connect(&scrubPreviewTimer_, &QTimer::timeout, this, &MainWindow::requestScrubPreview);
     connect(playbackPanel_->progressSlider(), &QSlider::sliderPressed, this, [this]() {
+        scrubPreviewPosition_ = playback_.position();
+        scrubPreviewDisplayed_ = false;
+        scrubRequestPending_ = playbackPrefetchPending_ || windowRequestPending_;
+        invalidateAnalysis();
         syncVideoToPlayback();
     });
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
@@ -526,8 +533,7 @@ void MainWindow::buildBrowserControls() {
 
     connect(playbackPanel_, &EegPlaybackPanel::progressPreviewed, this, [this](double fraction) {
         if (!hasCurrentFile_ || openingFile_) return;
-        const QSignalBlocker blocker(positionSpin_);
-        positionSpin_->setValue(playback_.duration() * fraction);
+        previewScrubPosition(playback_.duration() * fraction);
     });
     connect(playbackPanel_, &EegPlaybackPanel::progressMoved, this, [this](double fraction) {
         if (!hasCurrentFile_ || openingFile_) {
@@ -1014,7 +1020,8 @@ void MainWindow::refreshAnalysisControls() {
 }
 
 void MainWindow::requestCurrentAnalysis(bool background) {
-    if (!hasCurrentFile_ || refreshingAnalysisControls_ || analysisService_ == nullptr) {
+    if (!hasCurrentFile_ || refreshingAnalysisControls_ || analysisService_ == nullptr
+        || (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown())) {
         return;
     }
     const int currentTab = analysisTabs_->currentIndex();
@@ -1288,7 +1295,8 @@ void MainWindow::updatePlaybackViewport() {
         waveformWidget_->clearTimeRange();
         return;
     }
-    const double start = viewportStart(playback_.position());
+    const bool scrubbing = playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown();
+    const double start = viewportStart(scrubbing ? scrubPreviewPosition_ : playback_.position());
     waveformWidget_->setTimeRange(start, std::min(signalDurationSeconds_, start + viewState_.windowSeconds));
 }
 
@@ -1365,7 +1373,8 @@ void MainWindow::refreshPlaybackControls() {
     playAction_->setIcon(style()->standardIcon(playback_.isPlaying() ? QStyle::SP_MediaPause : QStyle::SP_MediaPlay));
     playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
     playAction_->setToolTip(playAction_->text());
-    waveformWidget_->setCursorTime(playback_.position());
+    const bool scrubbing = playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown();
+    waveformWidget_->setCursorTime(scrubbing && scrubPreviewDisplayed_ ? scrubDisplayedPosition_ : playback_.position());
     if (positionSpin_ != nullptr && !playbackPanel_->isProgressSliderDown()) {
         const QSignalBlocker blocker(positionSpin_);
         positionSpin_->setValue(std::min(playback_.position(), positionSpin_->maximum()));
@@ -1498,8 +1507,55 @@ void MainWindow::openPathForBrowser(const QString& path) {
     openFileHandler_(path);
 }
 
+void MainWindow::cancelScrubPreview() {
+    scrubPreviewTimer_.stop();
+    scrubRequestPending_ = false;
+    if (playbackPanel_ != nullptr) {
+        const bool wasScrubbing = playbackPanel_->isProgressSliderDown();
+        const QSignalBlocker blocker(playbackPanel_->progressSlider());
+        playbackPanel_->progressSlider()->setSliderDown(false);
+        // Cancellation retains the last view that actually reached the screen.
+        // This avoids restoring a second full raw/processed cache just for undo.
+        if (wasScrubbing && scrubPreviewDisplayed_) {
+            playback_.seek(scrubDisplayedPosition_);
+            playbackViewportActive_ = true;
+            updatePlaybackViewport();
+        }
+    }
+    scrubPreviewDisplayed_ = false;
+    refreshPlaybackControls();
+}
+
+void MainWindow::previewScrubPosition(double position) {
+    scrubPreviewPosition_ = position;
+    const QSignalBlocker blocker(positionSpin_);
+    positionSpin_->setValue(position);
+    if (cacheCoversPosition(position)) {
+        scrubPreviewDisplayed_ = true;
+        scrubDisplayedPosition_ = position;
+        playbackViewportActive_ = true;
+        updatePlaybackViewport();
+        waveformWidget_->setCursorTime(position);
+        scrubPreviewTimer_.stop();
+    } else if (!scrubRequestPending_ && !scrubPreviewTimer_.isActive()) {
+        scrubPreviewTimer_.start();
+    }
+}
+
+void MainWindow::requestScrubPreview() {
+    if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_
+        || !playbackPanel_->isProgressSliderDown() || scrubRequestPending_
+        || cacheCoversPosition(scrubPreviewPosition_)) return;
+    scrubRequestPending_ = true;
+    playbackPrefetchPending_ = false;
+    windowRequestPending_ = false;
+    windowRequestHandler_(currentFile_.session.path, viewportStart(scrubPreviewPosition_), viewState_.windowSeconds);
+}
+
 void MainWindow::requestWindow(double t0) {
     if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_) return;
+    scrubPreviewTimer_.stop();
+    scrubRequestPending_ = false;
     if (!playback_.isPlaying()) playbackViewportActive_ = false;
     playback_.seek(t0);
     playbackElapsed_.restart();
@@ -1727,6 +1783,7 @@ void MainWindow::setSidecarFailed(const AppError& error) {
 }
 
 void MainWindow::showFileOpenLoading(const QString& path) {
+    cancelScrubPreview();
     openingFile_ = true;
     playback_.pause();
     playbackTimer_.stop();
@@ -1744,6 +1801,35 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     setLoading(false);
     const bool sameSession = !openingFile_ && hasCurrentFile_ && currentFile_.session.path == result.session.path;
+    if (!sameSession) cancelScrubPreview();
+    if (sameSession && playbackPanel_->isProgressSliderDown()) {
+        // The reader has one in-flight operation. A completed older target
+        // must never replace the view under the latest pointer position.
+        scrubRequestPending_ = false;
+        playbackPrefetchPending_ = false;
+        windowRequestPending_ = false;
+        const double start = viewportStart(scrubPreviewPosition_);
+        const double end = std::min(signalDurationSeconds_, start + viewState_.windowSeconds);
+        const double tolerance = result.waveform.fs > 0.0 ? 1.0 / result.waveform.fs : 1e-6;
+        const bool coversTarget = !result.waveform.data.empty()
+            && result.waveform.t0 <= start + tolerance && result.waveform.t1 + tolerance >= end;
+        if (coversTarget) {
+            rawWaveform_ = result.waveform;
+            currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+            waveformWidget_->setSlice(currentFile_.waveform);
+            previewScrubPosition(scrubPreviewPosition_);
+        } else if (!cacheCoversPosition(scrubPreviewPosition_)) {
+            if (std::abs(result.waveform.t0 - start) <= tolerance) {
+                showFileOpenError(makeError("reader.slice_out_of_range", {
+                    {"handle", result.session.handle}, {"t0", result.waveform.t0},
+                    {"t1", result.waveform.t1}, {"duration", signalDurationSeconds_},
+                }));
+            } else {
+                scrubPreviewTimer_.start();
+            }
+        }
+        return;
+    }
     const bool prefetched = sameSession && playbackPrefetchPending_;
     const double tolerance = result.waveform.fs > 0.0 ? 1.0 / result.waveform.fs : 1e-6;
     if (prefetched && (result.waveform.data.empty()
@@ -1831,6 +1917,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
+    cancelScrubPreview();
     setLoading(false);
     playbackPrefetchPending_ = false;
     windowRequestPending_ = false;

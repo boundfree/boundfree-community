@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_seek_preview_does_not_dispatch_or_get_overwritten():
+def test_seek_preview_tracks_waveform_and_commits_once():
     candidates = [
         ROOT / "native/build/bf_app",
         ROOT / "native/build/Release/bf_app.exe",

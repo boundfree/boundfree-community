@@ -146,7 +146,9 @@ v1.1/v2：
 ## 系统级 — M1/M2/M8
 
 - [x] 亮/暗双主题（按旧版中性浅色/深蓝灰与紫色强调），切换同步 EEG 图元和图外属性；双主题四语言布局见阶段 5B 报告
-- [x] 可折叠面板（通道/处理/标注）：右侧滚动区中的 `CollapsiblePanel` 默认展开、随 locale 重译标题；分析直接显示标签页
+- [x] 参数分区（通道/处理/标注）：右下固定标签页，通道和事件列表独立滚动、处理仅显示选中通道编辑器，视图菜单按标签隐藏偏好维护；见 [阶段 6B](reports/eeg-ui-stage6b-parameters.md)
+- [x] 空白页隐藏完整数据侧栏；数值箭头、时间窗/幅值预设及直接输入回归通过，见 [阶段 6A](reports/eeg-ui-stage6a-empty-controls.md)
+- [x] 拖动波形预览：缓存立即显示、缓存外限频合并读取，松手最终定位；真实 CSV/边车集成通过，性能门禁另验，见 [阶段 6C](reports/eeg-ui-stage6c-scrub-preview.md)
 - [x] 固定区域布局：顶部信号设置、左波形/视频、右分析/参数、底部播放录制；禁用面板浮动与拖移，常用操作自动换行（离屏四语言/两尺寸已验，Windows DPI 待验，见 [阶段 3 报告](reports/eeg-ui-stage3-layout.md)）
 - [x] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
 - [x] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）：`statusFileLabel_` + `statusModeLabel_`（`currentModeKey()` 覆盖 idle/playback/recording），`--smoke-m8-system-ui` 断言

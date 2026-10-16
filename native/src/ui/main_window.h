@@ -97,6 +97,9 @@ private:
     void syncVideoToPlayback();
     void updatePlaybackDuration();
     void requestWindow(double t0);
+    void cancelScrubPreview();
+    void previewScrubPosition(double position);
+    void requestScrubPreview();
     double viewportStart(double position) const;
     bool cacheCoversPosition(double position) const;
     void updatePlaybackViewport();
@@ -281,6 +284,11 @@ private:
     bool waitingForPlaybackData_ = false;
     bool openingFile_ = false;
     bool playbackViewportActive_ = false;
+    QTimer scrubPreviewTimer_;
+    double scrubPreviewPosition_ = 0.0;
+    double scrubDisplayedPosition_ = 0.0;
+    bool scrubPreviewDisplayed_ = false;
+    bool scrubRequestPending_ = false;
     QElapsedTimer analysisElapsed_;
     QJsonObject emptyStateParams_;
     AppError lastError_;

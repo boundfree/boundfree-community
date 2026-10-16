@@ -19,6 +19,7 @@
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
 #include "ui/empty_controls_smoke.h"
+#include "ui/scrub_file_smoke.h"
 #include "ui/analysis_widgets.h"
 #include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
@@ -1289,6 +1290,10 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-fixed-layout-ok locales=4 panels=true splitters=true controls=true\n";
             return 0;
         }
+        if (arg == "--smoke-ui-scrub-file" && i + 1 < argc) {
+            QApplication app(argc, argv);
+            return bf::runScrubFileSmoke(version, repoRoot, QString::fromLocal8Bit(argv[i + 1]));
+        }
         if (arg == "--smoke-ui-continuous-file" && i + 1 < argc) {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
@@ -1469,7 +1474,7 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-continuous-playback-ok smooth=true cache=true pause=true speed=true tail=true loading=true short_response=true requests=" << requests << '\n';
             return 0;
         }
-        if (arg == "--smoke-ui-seek-preview") {
+        if (arg == "--smoke-ui-seek-preview" || arg == "--smoke-ui-scrub-preview") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
             QString error;
@@ -1508,38 +1513,85 @@ int main(int argc, char** argv) {
                 ++requests;
                 requestedTime = t0;
             });
+            auto wait = [](int milliseconds) {
+                QEventLoop loop;
+                QTimer::singleShot(milliseconds, &loop, &QEventLoop::quit);
+                loop.exec();
+            };
+            auto slice = [&](double start) {
+                auto copy = result;
+                copy.waveform.t0 = start;
+                copy.waveform.t1 = start + 10.0;
+                copy.waveform.data = {std::vector<float>(1000, static_cast<float>(start)), std::vector<float>(1000, 2.0f)};
+                return copy;
+            };
+            auto* waveform = window.findChild<bf::WaveformWidget*>();
+            if (!waveform) return fail("waveform");
             play->trigger();
-            requests = 0; // Initial lookahead is separate from drag/seek work.
+            window.showFileOpenResult(result); // Finish initial lookahead.
+            requests = 0;
             slider->setSliderDown(true);
+            slider->setSliderPosition(200);
+            if (requests != 0 || waveform->timeRange() != std::make_pair(2.0, 12.0)) return fail("cache_preview");
             slider->setSliderPosition(6000);
-            if (requests != 0 || std::abs(position->value() - 60.0) > 1e-6) return fail("drag_preview");
-            window.showFileOpenResult(result);
-            if (requests != 0 || slider->sliderPosition() != 6000 || std::abs(position->value() - 60.0) > 1e-6)
-                return fail("refresh_overwrites_preview");
-            QEventLoop wait;
-            QTimer::singleShot(150, &wait, &QEventLoop::quit);
-            wait.exec();
-            if (requests != 0 || slider->sliderPosition() != 6000 || std::abs(position->value() - 60.0) > 1e-6)
+            slider->setSliderPosition(6100);
+            slider->setSliderPosition(6200);
+            if (requests != 0 || std::abs(position->value() - 62.0) > 1e-6) return fail("drag_preview");
+            wait(120);
+            if (requests != 1 || std::abs(requestedTime - 62.0) > 1e-6) return fail("throttled_latest");
+            slider->setSliderPosition(8000);
+            wait(120);
+            if (requests != 1 || slider->sliderPosition() != 8000 || std::abs(position->value() - 80.0) > 1e-6)
                 return fail("timer_overwrites_or_prefetches");
+            window.showFileOpenResult(slice(62.0));
+            if (waveform->timeRange() != std::make_pair(2.0, 12.0)) return fail("stale_preview_overwrites");
+            wait(120);
+            if (requests != 2 || std::abs(requestedTime - 80.0) > 1e-6) return fail("coalesced_latest");
+            window.showFileOpenResult(slice(80.0));
+            if (waveform->timeRange() != std::make_pair(80.0, 90.0) || slider->sliderPosition() != 8000
+                || std::abs(position->value() - 80.0) > 1e-6) return fail("loaded_preview");
+            if (window.findChild<QLabel*>("eegAnalysisStatus_0")->property("analysisGeneration").toInt() != 0)
+                return fail("analysis_during_drag");
             slider->setSliderDown(false);
-            if (requests != 1 || std::abs(requestedTime - 60.0) > 1e-6) return fail("release_not_single_seek");
+            if (requests != 3 || std::abs(requestedTime - 80.0) > 1e-6) return fail("release_not_single_seek");
+            window.showFileOpenResult(slice(80.0));
+            if (waveform->timeRange() != std::make_pair(80.0, 90.0) || std::abs(position->value() - 80.0) > 1e-6)
+                return fail("final_commit_view");
             play->trigger(); // Stop before checking discrete input paths.
             QKeyEvent right(QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier);
             QApplication::sendEvent(slider, &right);
-            if (requests != 2 || std::abs(requestedTime - 60.01) > 1e-6) return fail("keyboard_seek");
+            if (requests != 4 || std::abs(requestedTime - 80.01) > 1e-6) return fail("keyboard_seek");
             slider->triggerAction(QAbstractSlider::SliderPageStepAdd);
             const double expected = 100.0 * slider->sliderPosition() / slider->maximum();
-            if (requests != 3 || std::abs(requestedTime - expected) > 1e-6) return fail("track_step_seek");
-            window.showFileOpenResult(result);
+            if (requests != 5 || std::abs(requestedTime - expected) > 1e-6) return fail("track_step_seek");
+            window.showFileOpenResult(slice(expected));
             window.retranslateUi();
-            if (requests != 3) return fail("programmatic_refresh_seeks");
+            if (requests != 5) return fail("programmatic_refresh_seeks");
             slider->setSliderDown(true);
-            slider->setSliderPosition(8000);
+            slider->setSliderPosition(4000);
             result.session.path = "seek-preview-next.csv";
             window.showFileOpenResult(result);
-            if (requests != 3 || slider->isSliderDown() || std::abs(position->value()) > 1e-6)
+            wait(120);
+            if (requests != 5 || slider->isSliderDown() || std::abs(position->value()) > 1e-6)
                 return fail("new_file_keeps_stale_preview");
-            std::cout << "smoke-ui-seek-preview-ok preview=true timer=true release_once=true keyboard=true track=true refresh=true file_switch=true\n";
+            slider->setSliderDown(true);
+            slider->setSliderPosition(200);
+            slider->setSliderPosition(5000);
+            wait(120);
+            if (requests != 6) return fail("error_setup");
+            window.showFileOpenError(bf::makeError("reader.slice_out_of_range"));
+            if (slider->isSliderDown() || slider->value() != 200 || std::abs(position->value() - 2.0) > 1e-6
+                || waveform->timeRange() != std::make_pair(2.0, 12.0)) return fail("error_view_inconsistent");
+            slider->setSliderDown(true);
+            slider->setSliderPosition(400);
+            slider->setSliderPosition(5000);
+            window.showFileOpenLoading("third.csv");
+            window.showFileOpenError(bf::makeError("reader.slice_out_of_range"));
+            wait(120);
+            if (requests != 6 || slider->isSliderDown() || slider->value() != 400
+                || std::abs(position->value() - 4.0) > 1e-6
+                || waveform->timeRange() != std::make_pair(4.0, 14.0)) return fail("failed_open_view_inconsistent");
+            std::cout << "smoke-ui-seek-preview-ok preview=true timer=true release_once=true keyboard=true track=true refresh=true file_switch=true cache=true coalesced=true stale=true loading=true error=true failed_open=true analysis=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-browser-controls") {
