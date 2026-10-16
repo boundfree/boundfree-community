@@ -70,6 +70,25 @@ inline Palette palette(bool dark) {
     };
 }
 
+// EEG uses the archived PySide6 theme. Keep the generic palette above for
+// the separate Spike executable and its existing rendering contract.
+inline Palette eegPalette(bool dark) {
+    if (dark) return {QColor("#181828"), QColor("#555577"), QColor("#DDE0FF"),
+                      QColor("#AAAAC0"), QColor("#FF5252"), QColor("#00CFFF")};
+    return {QColor("#FFFFFF"), QColor("#BBBBCC"), QColor("#333333"),
+            QColor("#555555"), QColor("#888888"), QColor("#1565C0")};
+}
+
+inline QColor eegChannelColor(int channel, bool dark) {
+    static const char* light[] = {"#1565C0", "#2E7D32", "#E65100", "#C62828",
+                                  "#6A1B9A", "#00695C", "#4E342E", "#AD1457"};
+    static const char* night[] = {"#00CFFF", "#00E676", "#FFD740", "#FF5252",
+                                  "#E040FB", "#00E5FF", "#CCFF90", "#FF6E40"};
+    const int index = channel < 0 ? 0 : channel % 8;
+    const char* color = dark ? night[index] : light[index];
+    return QColor(QString::fromLatin1(color));
+}
+
 // 浮点绘图区：供按行细分（波形）使用。
 inline QRectF plotArea(const QWidget& widget, Margins margins) {
     return QRectF(margins.left,

@@ -1,4 +1,5 @@
 #include "ui/waveform_widget.h"
+#include "ui/plot_style.h"
 #include <QApplication>
 #include <QImage>
 #include <QWheelEvent>
@@ -61,6 +62,25 @@ int main(int argc, char** argv) {
     QWheelEvent wheel(QPointF(300,200), QPointF(300,200), QPoint(), QPoint(0,120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
     QApplication::sendEvent(&widget, &wheel);
     if (!check(scroll->value() < scroll->maximum(), "wheel_scroll")) return 1;
+    const auto colorPixels = [](const QImage& image, const QColor& color) {
+        int count = 0;
+        for (int y = 0; y < image.height(); ++y) for (int x = 0; x < image.width(); ++x)
+            count += image.pixel(x, y) == color.rgba();
+        return count;
+    };
+    if (!check(colorPixels(first, bf::plot::eegChannelColor(0, false)) > 50
+        && colorPixels(first, bf::plot::eegChannelColor(1, false)) > 50, "light_channel_colors")) return 1;
+    scroll->setValue(0);
+    widget.setDarkTheme(true);
+    QImage dark(widget.size(), QImage::Format_ARGB32); widget.render(&dark);
+    if (!check(colorPixels(dark, bf::plot::eegChannelColor(0, true)) > 50
+        && colorPixels(dark, bf::plot::eegChannelColor(1, true)) > 50, "existing_widget_dark_colors")) return 1;
+    bf::WaveformViewState hiddenFirst;
+    hiddenFirst.setChannelVisible(0, false); widget.setViewState(hiddenFirst);
+    QImage hidden(widget.size(), QImage::Format_ARGB32); widget.render(&hidden);
+    if (!check(colorPixels(hidden, bf::plot::eegChannelColor(1, true)) > 50,
+        "channel_color_survives_hidden_predecessor")) return 1;
+    widget.setDarkTheme(false);
     bf::WaveformViewState state;
     state.setAmplitudeUv(200);
     widget.setViewState(state);

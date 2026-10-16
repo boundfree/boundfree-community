@@ -192,7 +192,7 @@ void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
 
 void WaveformWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const plot::Palette theme = plot::palette(darkTheme_);
+    const plot::Palette theme = plot::eegPalette(darkTheme_);
     const QRectF plotArea = waveformPlotArea();
     const QFontMetrics metrics(font());
     const int textHeight = metrics.height();
@@ -284,7 +284,14 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
                 continue;
             }
 
-            painter.setPen(QPen(theme.spectrumLine, 1));
+            // Preserve source/output index colors when hiding or scrolling rows.
+            int colorChannel = std::max(0, viewState_.firstVisibleChannel);
+            int remaining = ch;
+            for (; colorChannel < static_cast<int>(slice_.data.size()); ++colorChannel) {
+                if (!viewState_.isChannelVisible(colorChannel)) continue;
+                if (remaining-- == 0) break;
+            }
+            painter.setPen(QPen(plot::eegChannelColor(colorChannel, darkTheme_), 1));
             const double centerY = plotArea.top() + rowHeight * (ch + 0.5) - scrollOffset;
             const double drawWidth = std::max(1.0, plotArea.width());
             const double drawHeight = rowHeight * 0.45;

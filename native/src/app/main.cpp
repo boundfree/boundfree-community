@@ -227,15 +227,15 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            // Default is light lavender; re-apply light then dark to verify both.
+            // Re-apply the archived light then dark theme and verify both.
             light->trigger();
             app.processEvents();
-            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#F7F3FF")
-                && window.palette().color(QPalette::WindowText) == QColor("#1F1235");
+            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#F0F0F0")
+                && window.palette().color(QPalette::WindowText) == QColor("#222222");
             dark->trigger();
             app.processEvents();
-            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#1E1B2E")
-                && window.palette().color(QPalette::Highlight) == QColor("#A78BFA");
+            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#181828")
+                && window.palette().color(QPalette::Highlight) == QColor("#9B4DA8");
             const bool beforeToggle = channels->isChecked();
             channels->trigger();
             app.processEvents();
@@ -881,6 +881,18 @@ int main(int argc, char** argv) {
                 app.processEvents();
                 if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath(QString("analysis-page-%1-zh_CN.png").arg(page)));
                 if (!i18n.loadLocale("en_US", &error)) return fail("locale_restore");
+                const QImage lightPlot = plot(page)->grab().toImage();
+                QAction* darkTheme = nullptr; QAction* lightTheme = nullptr;
+                for (auto* action : window.findChildren<QAction*>()) {
+                    if (action->text() == i18n.text("app.theme.dark")) darkTheme = action;
+                    if (action->text() == i18n.text("app.theme.light")) lightTheme = action;
+                }
+                if (!darkTheme || !lightTheme) return fail("theme_actions");
+                darkTheme->trigger(); app.processEvents();
+                if (state(page) != "ready" || !service->isCurrent(completed)
+                    || plot(page)->grab().toImage() == lightPlot) return fail("theme_recomputes_or_keeps_old_colors");
+                if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath(QString("analysis-page-%1-dark.png").arg(page)));
+                lightTheme->trigger(); app.processEvents();
                 const QImage ready = plot(page)->grab().toImage();
                 service->failed(completed, "analysis.failed", "not-user-visible");
                 if (state(page) != "failed" || !label("Summary", page)->text().isEmpty()
@@ -1083,6 +1095,10 @@ int main(int argc, char** argv) {
             }
             window.showFileOpenResult(result);
             window.show();
+            if (qEnvironmentVariableIntValue("BF_LAYOUT_DARK") == 1) {
+                for (auto* action : window.findChildren<QAction*>())
+                    if (action->text() == i18n.text("app.theme.dark")) { action->trigger(); break; }
+            }
             const auto settle = []() { QEventLoop loop; QTimer::singleShot(30, &loop, &QEventLoop::quit); loop.exec(); };
             const auto fail = [&](const QString& detail) {
                 std::cerr << "smoke-ui-fixed-layout-failed " << detail.toStdString() << '\n';

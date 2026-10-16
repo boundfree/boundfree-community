@@ -170,7 +170,7 @@ void SpectrumWidget::setDarkTheme(bool dark) {
 
 void SpectrumWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const plot::Palette t = plot::palette(darkTheme_);
+    const plot::Palette t = plot::eegPalette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const QRect area = plot::plotRect(*this, {76, 12, 16, 42});
@@ -258,7 +258,7 @@ void SpectrogramWidget::setDarkTheme(bool dark) {
 
 void SpectrogramWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const plot::Palette t = plot::palette(darkTheme_);
+    const plot::Palette t = plot::eegPalette(darkTheme_);
     painter.fillRect(rect(), t.background);
     // The color scale has its own exterior column, like the old view.
     const QRect area = plot::plotRect(*this, {76, 12, 70, 42});
@@ -356,7 +356,7 @@ void BandTrendWidget::setDarkTheme(bool dark) {
 
 void BandTrendWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
-    const plot::Palette t = plot::palette(darkTheme_);
+    const plot::Palette t = plot::eegPalette(darkTheme_);
     painter.fillRect(rect(), t.background);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const QRect area = plot::plotRect(*this, {76, 12, 16, 42});

@@ -7,7 +7,8 @@ import subprocess
 import pytest
 
 
-def test_fixed_workspace_resize_panels_and_languages():
+@pytest.mark.parametrize("dark", [False, True])
+def test_fixed_workspace_resize_panels_and_languages(dark):
     root = Path(__file__).resolve().parents[2]
     candidates = [root / "native" / build / config / name
                   for build in ("build-windows", "build")
@@ -18,6 +19,9 @@ def test_fixed_workspace_resize_panels_and_languages():
         pytest.skip("请先构建 bf_app")
     env = os.environ.copy()
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    env["BF_LAYOUT_DARK"] = "1" if dark else "0"
+    if dark and env.get("BF_LAYOUT_SCREENSHOT_DIR"):
+        env["BF_LAYOUT_SCREENSHOT_DIR"] = str(Path(env["BF_LAYOUT_SCREENSHOT_DIR"]) / "dark")
     result = subprocess.run([str(app), "--smoke-ui-fixed-layout"], cwd=root, env=env,
                             capture_output=True, text=True, encoding="utf-8",
                             errors="replace", timeout=30)

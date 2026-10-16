@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
                 int changed = 0;
                 for (int y = interior.top(); y <= interior.bottom(); ++y) {
                     for (int x = interior.left(); x <= interior.right(); ++x) {
-                        if (withCurve.pixel(x, y) == bf::plot::palette(dark).spectrumLine.rgba()
-                            && withoutCurve.pixel(x, y) != bf::plot::palette(dark).spectrumLine.rgba()) {
+                        if (withCurve.pixel(x, y) == bf::plot::eegPalette(dark).spectrumLine.rgba()
+                            && withoutCurve.pixel(x, y) != bf::plot::eegPalette(dark).spectrumLine.rgba()) {
                             ++changed;
                         }
                     }

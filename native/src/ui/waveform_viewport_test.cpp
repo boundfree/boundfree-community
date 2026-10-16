@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
         return image;
     };
     auto peakX = [&](const QImage& image) {
-        const QRgb color = bf::plot::palette(false).spectrumLine.rgba();
+        const QRgb color = bf::plot::eegPalette(false).spectrumLine.rgba();
         int sum = 0, count = 0;
         for (int y = static_cast<int>(area.top()) + 1; y < area.center().y() - 25; ++y)
             for (int x = static_cast<int>(area.left()) + 1; x < area.right(); ++x)
