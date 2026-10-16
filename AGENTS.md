@@ -31,12 +31,12 @@
 
 ## Development Stage
 
-- 当前版本为 `0.1.76-dev`。
+- 当前版本为 `0.1.77-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
 - M8 打包实现与 WSL2 Linux 可验证部分已完成；Windows x64 安装包、组织证书签名及干净 Windows 10/11 发布门禁尚未执行（见 `docs/reports/m8-packaging-release-acceptance.md`）。
 - 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
-- 产品版本当前为 `0.1.76-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
+- 产品版本当前为 `0.1.77-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
 
 ## Branch And Version Rules
 

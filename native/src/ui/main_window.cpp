@@ -151,8 +151,18 @@ void MainWindow::buildFixedWorkspace() {
     fixedPanel(videoDock_, "eegVideoPanel");
     signalSplitter_->addWidget(centralStack_);
     signalSplitter_->addWidget(videoDock_);
-    signalSplitter_->setStretchFactor(0, 3);
-    signalSplitter_->setStretchFactor(1, 1);
+    // Keep the video compact as the window grows; give extra height to EEG.
+    signalSplitter_->setStretchFactor(0, 1);
+    signalSplitter_->setStretchFactor(1, 0);
+    connect(videoDock_, &QDockWidget::visibilityChanged, this, [this, initialized = false](bool visible) mutable {
+        if (!visible || initialized) return;
+        initialized = true;
+        QTimer::singleShot(0, this, [this]() {
+            const int videoHeight = std::max(150, videoDock_->minimumSizeHint().height());
+            signalSplitter_->setSizes({std::max(180, signalSplitter_->height() - videoHeight
+                - signalSplitter_->handleWidth()), videoHeight});
+        });
+    });
     analysisSplit->addWidget(analysisDock_);
     parameterTabs_ = new QTabWidget(analysisSplit);
     parameterTabs_->setObjectName("eegParameterTabs");
