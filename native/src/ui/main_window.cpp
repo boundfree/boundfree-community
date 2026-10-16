@@ -1,5 +1,7 @@
 #include "ui/main_window.h"
 #include "ui/preset_spin_box.h"
+#include "ui/analysis_properties.h"
+#include "ui/analysis_band_table.h"
 #include "ui/record_metadata_dialog.h"
 #include "ui/collapsible_panel.h"
 
@@ -79,10 +81,10 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     buildMarkerDock();
     buildVideoDock();
     buildRecordControls();
-    for (auto* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
-        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    for (auto* combo : {psdChannelCombo_, psdModeCombo_, stftChannelCombo_, stftResolutionCombo_,
+                        trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         combo->setMinimumContentsLength(6);
-        combo->setMinimumWidth(70);
     }
     buildFixedWorkspace();
     // Build all top-level menus consecutively after toolbar/dock layout is
@@ -492,7 +494,9 @@ QString MainWindow::currentModeKey() const {
 void MainWindow::buildBrowserControls() {
     browserToolbar_ = new ControlBar(this);
     browserToolbar_->setObjectName("eegSignalToolbar");
+    browserToolbar_->setWrappedMinimum(true);
     playbackToolbar_ = new ControlBar(this);
+    playbackToolbar_->setWrappedMinimum(true);
     filterToolbar_ = new ControlBar(this);
     filterToolbar_->setObjectName("eegFilterControls");
     progressRow_ = new QWidget(this);
@@ -858,22 +862,13 @@ void MainWindow::buildAnalysisDock() {
         analysisStatusLabels_[index] = status;
     };
     const auto addFooter = [this](QWidget* page, QVBoxLayout* layout, int index, QLabel* summary = nullptr) {
-        // Properties have a bounded area outside the graph. Long translations,
-        // detailed errors and narrow windows can scroll without shrinking the
-        // graph or pushing the common analysis controls out of the workspace.
-        auto* scroll = new QScrollArea(page);
-        scroll->setObjectName(QString("eegAnalysisProperties_%1").arg(index));
-        scroll->setWidgetResizable(true);
-        scroll->setFrameShape(QFrame::NoFrame);
-        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setMinimumHeight(48);
-        scroll->setMaximumHeight(128);
-        scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-        auto* content = new QWidget(scroll);
+        // Reserve the full wrapped text height outside the graph. Analysis
+        // metadata is part of the visible result, not a nested scroll region.
+        auto* content = new AnalysisProperties(page);
+        content->setObjectName(QString("eegAnalysisProperties_%1").arg(index));
         auto* properties = new QVBoxLayout(content);
         properties->setContentsMargins(2, 0, 2, 0);
         properties->setSpacing(2);
-        properties->setSizeConstraint(QLayout::SetMinAndMaxSize);
         properties->addWidget(analysisStatusLabels_[index]);
         auto* legend = new QLabel(content);
         legend->setObjectName(QString("eegAnalysisLegend_%1").arg(index));
@@ -881,16 +876,15 @@ void MainWindow::buildAnalysisDock() {
         legend->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
         properties->addWidget(legend);
         analysisLegendLabels_[index] = legend;
-        if (summary == nullptr) summary = new QLabel(content);
+        if (summary == nullptr) summary = new AnalysisSummaryLabel(content);
         summary->setObjectName(QString("eegAnalysisSummary_%1").arg(index));
-        summary->setTextFormat(Qt::PlainText);
+        summary->setTextFormat(Qt::RichText);
+        summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
         summary->setWordWrap(true);
         summary->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
         properties->addWidget(summary);
         analysisSummaryLabels_[index] = summary;
-        properties->addStretch();
-        scroll->setWidget(content);
-        layout->addWidget(scroll);
+        layout->addWidget(content);
     };
     auto* psdPage = new QWidget(analysisTabs_);
     auto* psdLayout = new QVBoxLayout(psdPage);
@@ -915,7 +909,7 @@ void MainWindow::buildAnalysisDock() {
     spectrumWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     psdLayout->addLayout(psdControls);
     psdLayout->addWidget(spectrumWidget_, 1);
-    psdBandSummaryLabel_ = new QLabel(psdPage);
+    psdBandSummaryLabel_ = new AnalysisSummaryLabel(psdPage);
     psdBandSummaryLabel_->setWordWrap(true);
     psdBandSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     addFooter(psdPage, psdLayout, 0, psdBandSummaryLabel_);
@@ -983,7 +977,7 @@ void MainWindow::buildAnalysisDock() {
     coherenceWidget_->setObjectName("eegAnalysisPlot_3");
     coherenceWidget_->setMinimumSize(220, 160);
     coherenceWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    coherenceSummaryLabel_ = new QLabel(coherencePage);
+    coherenceSummaryLabel_ = new AnalysisSummaryLabel(coherencePage);
     coherenceSummaryLabel_->setWordWrap(true);
     coherenceSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     coherenceLayout->addLayout(coherenceControls);
@@ -1167,7 +1161,9 @@ void MainWindow::refreshAnalysisPage(int index) {
         }
     }
     analysisLegendLabels_[index]->setText(bands.join(QStringLiteral(" &nbsp; ")));
-    analysisLegendLabels_[index]->setVisible(!bands.isEmpty());
+    const bool hasBandTable = page.state == AnalysisDisplayState::Ready
+        && (page.kind == AnalysisKind::Psd || page.kind == AnalysisKind::Coherence);
+    analysisLegendLabels_[index]->setVisible(!bands.isEmpty() && !hasBandTable);
     QString yLabel;
     if (index == 0) yLabel = i18n_->text(page.kind == AnalysisKind::Fft ? "app.analysis.amplitude" : (page.asDb ? "app.analysis.db_unit" : "app.analysis.psd_unit"));
     else if (index == 1) yLabel = i18n_->text("app.analysis.frequency");
@@ -1240,12 +1236,11 @@ void MainWindow::renderAnalysisResult(int index) {
             spectrum,
             fft ? i18n_->text("app.analysis.fft") : i18n_->text("app.analysis.psd"),
             fft ? i18n_->text("app.analysis.amplitude") : (asDb ? i18n_->text("app.analysis.db_unit") : i18n_->text("app.analysis.psd_unit")));
-        if (!fft && !asDb) {
-            QStringList powers;
-            for (const dsp::Band& band : dsp::eegBands()) {
-                powers.push_back(QString("%1=%2").arg(band.key).arg(i18n_->formatNumber(dsp::bandPower(result.spectrum, band.low, band.high), 2)));
-            }
-            psdBandSummaryLabel_->setText(i18n_->text("app.analysis.trend_unit") + QStringLiteral(": ") + powers.join(" | "));
+        if (!fft) {
+            std::vector<double> powers;
+            for (const dsp::Band& band : dsp::eegBands())
+                powers.push_back(dsp::bandPower(result.spectrum, band.low, band.high));
+            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, i18n_->text("app.analysis.trend_unit"), powers));
         } else {
             psdBandSummaryLabel_->clear();
         }
@@ -1270,7 +1265,7 @@ void MainWindow::renderAnalysisResult(int index) {
 
     case AnalysisKind::Coherence: {
         coherenceWidget_->setSpectrum(result.spectrum, i18n_->text("app.analysis.coherence"), i18n_->text("app.analysis.coherence"), true);
-        QStringList values;
+        std::vector<double> values;
         for (const dsp::Band& band : dsp::eegBands()) {
             double sum = 0.0;
             int count = 0;
@@ -1280,9 +1275,9 @@ void MainWindow::renderAnalysisResult(int index) {
                     ++count;
                 }
             }
-            values.push_back(QString("%1=%2").arg(band.key).arg(i18n_->formatNumber(count > 0 ? sum / count : 0.0, 2)));
+            values.push_back(count > 0 ? sum / count : 0.0);
         }
-        coherenceSummaryLabel_->setText(values.join(" | "));
+        coherenceSummaryLabel_->setText(analysisBandTable(i18n_, i18n_->text("app.analysis.coherence"), values));
         break;
     }
     }

@@ -20,6 +20,8 @@
 #include "ui/main_window.h"
 #include "ui/empty_controls_smoke.h"
 #include "ui/scrub_file_smoke.h"
+#include "ui/analysis_text_smoke.h"
+#include "ui/reference_labels_smoke.h"
 #include "ui/analysis_widgets.h"
 #include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
@@ -832,6 +834,8 @@ int main(int argc, char** argv) {
                       << " opened_en=" << openedEn.toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-analysis-text") return smokeAnalysisText(argc, argv, version, repoRoot);
+        if (arg == "--smoke-ui-reference-labels") return smokeReferenceLabels(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-analysis-presentation") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
@@ -874,6 +878,8 @@ int main(int argc, char** argv) {
             for (int page = 0; page < 4; ++page) {
                 tabs->setCurrentIndex(page);
                 if (!wait([&]() { return state(page) == "ready"; })) return fail("real_analysis_not_ready");
+                // Text changes schedule height-for-width layout updates.
+                QEventLoop textLayout; QTimer::singleShot(40, &textLayout, &QEventLoop::quit); textLayout.exec();
                 if (!plot(page) || !label("Title", page) || !label("Legend", page) || !label("Summary", page)) return fail("missing_external_labels");
                 for (const char* role : {"Title", "Status", "Legend", "Summary"}) {
                     auto* text = label(role, page);
@@ -1198,7 +1204,10 @@ int main(int argc, char** argv) {
                             .arg(locale).arg(size.width()).arg(size.height()));
                         if (!window.grab().save(path)) return fail("screenshot_save");
                     }
-                    if (window.size() != size) return fail(QString("minimum_size:%1:%2x%3")
+                    // Full analysis attributes may require a taller minimum
+                    // window than the old scrolling footer at narrow widths.
+                    if (window.width() != size.width() || window.height() < size.height()
+                        || window.height() > std::max(size.height(), window.minimumHeight())) return fail(QString("minimum_size:%1:%2x%3")
                         .arg(locale).arg(window.width()).arg(window.height()));
                     const QString problem = regionError();
                     if (!problem.isEmpty()) return fail(locale + ":" + QString::number(size.width()) + ":" + problem);
@@ -1266,7 +1275,8 @@ int main(int argc, char** argv) {
                     window.resize(900, 560); settle();
                     app.processEvents();
                 if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
-                    if (window.size() != QSize(900, 560) || !regionError().isEmpty()
+                    if (window.width() != 900 || window.height() < 560
+                        || window.height() > std::max(560, window.minimumHeight()) || !regionError().isEmpty()
                         || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
                 }
                 action->trigger(); settle();

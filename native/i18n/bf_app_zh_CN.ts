@@ -529,5 +529,6 @@
     <message><source>app.analysis.band_legend</source><translation>{band}：{low}–{high} Hz</translation></message>
     <message><source>app.analysis.db_unit</source><translation>功率谱密度 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
+    <message><source>app.analysis.band</source><translation>频段</translation></message>
   </context>
 </TS>

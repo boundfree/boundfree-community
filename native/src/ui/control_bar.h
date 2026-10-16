@@ -5,6 +5,8 @@
 #include <QHBoxLayout>
 #include <QToolButton>
 #include <QWidget>
+#include <QResizeEvent>
+#include <QShowEvent>
 #include <algorithm>
 
 namespace bf {
@@ -59,7 +61,14 @@ public:
     }
     // Minimum dimensions describe one usable row, independently of a stale
     // narrow width. The parent evaluates heightForWidth for its actual width.
-    QSize minimumSizeHint() const override { return flow_->minimumSize(); }
+    QSize minimumSizeHint() const override {
+        QSize result = flow_->minimumSize();
+        if (wrappedMinimum_ && isVisible()) result.setHeight(std::max(result.height(), flow_->heightForWidth(width())));
+        return result;
+    }
+    // Top-level bars must contribute all their wrapped rows to the window
+    // minimum, otherwise a tall analysis result can overlap the playback bar.
+    void setWrappedMinimum(bool enabled) { wrappedMinimum_ = enabled; updateGeometry(); }
     void addWidget(QWidget* widget) { flow_->addWidget(widget); }
     void addPair(QWidget* label, QWidget* control) {
         auto* group = new QWidget(this);
@@ -83,7 +92,22 @@ public:
         addWidget(button);
         return action;
     }
+protected:
+    bool event(QEvent* event) override {
+        const bool handled = QWidget::event(event);
+        if (event->type() == QEvent::LayoutRequest) refreshWrappedMinimum();
+        return handled;
+    }
+    void resizeEvent(QResizeEvent* event) override { QWidget::resizeEvent(event); refreshWrappedMinimum(); }
+    void showEvent(QShowEvent* event) override { QWidget::showEvent(event); refreshWrappedMinimum(); }
 private:
+    void refreshWrappedMinimum() {
+        if (!wrappedMinimum_ || !isVisible()) return;
+        const int required = flow_->heightForWidth(width());
+        if (reportedHeight_ != required) { reportedHeight_ = required; updateGeometry(); }
+    }
+    bool wrappedMinimum_ = false;
+    int reportedHeight_ = -1;
     ControlFlowLayout* flow_;
 };
 } // namespace bf

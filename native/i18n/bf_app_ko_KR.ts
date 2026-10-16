@@ -529,5 +529,6 @@
     <message><source>app.analysis.band_legend</source><translation>{band}: {low}–{high} Hz</translation></message>
     <message><source>app.analysis.db_unit</source><translation>전력 스펙트럼 밀도 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
+    <message><source>app.analysis.band</source><translation>대역</translation></message>
   </context>
 </TS>

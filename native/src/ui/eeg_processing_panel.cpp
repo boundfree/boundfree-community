@@ -1,6 +1,7 @@
 #include "ui/eeg_processing_panel.h"
 
 #include "ui/control_bar.h"
+#include <QAbstractItemView>
 
 namespace bf {
 
@@ -8,6 +9,12 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
     : QObject(parent) {
     referenceLabel_ = new QLabel;
     referenceCombo_ = new QComboBox;
+    referenceCombo_->setObjectName("eegReferenceMode");
+    // Items receive their translated text after the toolbar is assembled.
+    // Recompute on every item/locale change rather than caching the empty
+    // first-show width, which can leave only an ellipsis in the signal bar.
+    referenceCombo_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    referenceCombo_->view()->setTextElideMode(Qt::ElideNone);
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Raw));
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Car));
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Bipolar));
@@ -149,6 +156,19 @@ void EegProcessingPanel::retranslateUi(I18nService* i18n) {
     referenceCombo_->setItemText(0, i18n->text("app.processing.ref.raw"));
     referenceCombo_->setItemText(1, i18n->text("app.processing.ref.car"));
     referenceCombo_->setItemText(2, i18n->text("app.processing.ref.bipolar"));
+    referenceCombo_->setMinimumWidth(referenceCombo_->sizeHint().width());
+    referenceCombo_->view()->setMinimumWidth(referenceCombo_->minimumWidth());
+    referenceCombo_->updateGeometry();
+    // The label/input pair is one flow-layout item. Propagate its new content
+    // hint so a longer translation moves the whole pair onto the next row.
+    if (auto* group = referenceCombo_->parentWidget()) {
+        if (group->layout()) group->layout()->invalidate();
+        group->updateGeometry();
+        if (auto* toolbar = group->parentWidget()) {
+            if (toolbar->layout()) toolbar->layout()->invalidate();
+            toolbar->updateGeometry();
+        }
+    }
     notchEnableCheck_->setText(i18n->text("app.processing.notch"));
     notchHarmonicsCheck_->setText(i18n->text("app.processing.harmonics"));
     bandpassEnableCheck_->setText(i18n->text("app.processing.bandpass"));

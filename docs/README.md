@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-readable-details.md`](reports/eeg-ui-readable-details.md) | 多语言下拉完整显示、正常字号频段表格与无滚动详情 |
 | [`reports/eeg-ui-video-height.md`](reports/eeg-ui-video-height.md) | 视频首次展开高度与窗口增高时空间分配 |
 | [`reports/eeg-ui-stage6c-scrub-preview.md`](reports/eeg-ui-stage6c-scrub-preview.md) | 阶段 6C 波形随拖预览、请求合并与真实读片回归 |
 | [`reports/eeg-ui-stage6b-parameters.md`](reports/eeg-ui-stage6b-parameters.md) | 阶段 6B 参数标签页、单通道编辑与常用数值预设 |

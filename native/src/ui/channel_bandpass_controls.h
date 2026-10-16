@@ -26,7 +26,7 @@ public:
         layout_->addWidget(title_);
         selector_ = new QComboBox(this);
         selector_->setObjectName("eegBandpassChannel");
-        selector_->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        selector_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         selector_->setMinimumContentsLength(12);
         layout_->addWidget(selector_);
         connect(selector_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int channel) {
@@ -107,6 +107,8 @@ public:
             row.mode->setItemText(0, i18n_->text("app.processing.inherit"));
             row.mode->setItemText(1, i18n_->text("app.processing.disabled"));
             row.mode->setItemText(2, i18n_->text("app.processing.enabled"));
+            row.mode->setMinimumWidth(row.mode->sizeHint().width());
+            row.mode->updateGeometry();
             row.lowLabel->setText(i18n_->text("app.processing.low"));
             row.highLabel->setText(i18n_->text("app.processing.high"));
             row.low->setAccessibleName(i18n_->text("app.processing.low"));
@@ -139,6 +141,7 @@ private:
         box->setSpacing(0);
         auto* header = new ControlBar(widget);
         auto* mode = new QComboBox(header);
+        mode->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         mode->setObjectName(QString("eegBandpassMode_%1").arg(channel));
         mode->addItems({QString(), QString(), QString()});
         header->addWidget(mode);
