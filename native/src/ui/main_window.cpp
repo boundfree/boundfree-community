@@ -136,6 +136,7 @@ void MainWindow::buildFixedWorkspace() {
     signalSplitter_->setChildrenCollapsible(false);
     auto* analysisSplit = new QSplitter(Qt::Vertical, workspace);
     analysisSplit->setObjectName("eegAnalysisSplitter");
+    analysisSplit->hide(); // The complete data sidebar becomes visible after the first successful open.
     analysisSplit->setChildrenCollapsible(false);
     const auto fixedPanel = [](QDockWidget* panel, const char* name) {
         panel->setObjectName(name);
@@ -263,7 +264,7 @@ void MainWindow::buildViewMenu() {
     auto wireToggle = [this](QAction* action, QDockWidget* dock) {
         action->setCheckable(true);
         action->setChecked(!dock->isHidden());
-        action->setEnabled(true);
+        action->setEnabled(hasCurrentFile_);
         connect(action, &QAction::triggered, dock, &QDockWidget::setVisible);
         connect(dock, &QDockWidget::visibilityChanged, action, &QAction::setChecked);
     };
@@ -397,6 +398,20 @@ void MainWindow::applyTheme(bool dark) {
             "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { background: #22223A; color: #DDE0FF; border: 1px solid #555577; selection-background-color: #9B4DA8; selection-color: #FFFFFF; }"
         );
     }
+    // Style every spin subcontrol explicitly: a custom border otherwise leaves
+    // the native arrow rendering dependent on the platform style. XPM icons use
+    // Qt's built-in decoder, with no SVG plugin dependency in packaged builds.
+    const QString arrowTone = dark ? QStringLiteral("light") : QStringLiteral("dark");
+    const QString borderTone = dark ? QStringLiteral("#555577") : QStringLiteral("#AAAAAA");
+    const QString hoverTone = dark ? QStringLiteral("#33334A") : QStringLiteral("#E0E0E0");
+    setStyleSheet(styleSheet() + QString(
+        "QSpinBox, QDoubleSpinBox { min-height: 24px; padding: 2px 26px 2px 6px; }"
+        "QSpinBox::up-button, QDoubleSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; border-bottom: 1px solid %1; }"
+        "QSpinBox::down-button, QDoubleSpinBox::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 22px; border-left: 1px solid %1; }"
+        "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: %2; }"
+        "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { image: url(:/controls/up-%3.xpm); width: 9px; height: 5px; }"
+        "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
+    ).arg(borderTone, hoverTone, arrowTone));
     // Stylesheets can rematerialize some palette roles on Fusion/Windows; re-apply
     // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);
@@ -1712,6 +1727,8 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     currentFile_ = result;
     rawWaveform_ = result.waveform;
     hasCurrentFile_ = true;
+    for (QAction* action : {toggleChannelsAction_, toggleMarkersAction_, toggleAnalysisAction_, toggleVideoAction_})
+        action->setEnabled(true);
     if (!sameSession && recordController_ != nullptr && recordController_->isActive()) {
         recordController_->stop();
     }
@@ -1762,7 +1779,10 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     refreshProcessingControls();
     applyProcessingAndDisplay();
     refreshAnalysisControls();
-    if (!sameSession) analysisDock_->show();
+    if (!sameSession) {
+        analysisDock_->show();
+        findChild<QSplitter*>("eegAnalysisSplitter")->show();
+    }
     refreshPersistentStatus();
     if (!sameSession) markerDock_->show();
     refreshPlaybackControls();

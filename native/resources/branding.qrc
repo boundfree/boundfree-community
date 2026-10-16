@@ -4,4 +4,10 @@
         <file alias="logo_no_text.png">../assets/branding/BoundFree_LOGO_NoText.png</file>
         <file alias="app_icon.png">../assets/branding/BoundFree_app_icon.png</file>
     </qresource>
+    <qresource prefix="/controls">
+        <file alias="up-light.xpm">controls/up-light.xpm</file>
+        <file alias="up-dark.xpm">controls/up-dark.xpm</file>
+        <file alias="down-light.xpm">controls/down-light.xpm</file>
+        <file alias="down-dark.xpm">controls/down-dark.xpm</file>
+    </qresource>
 </RCC>

@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage6a-empty-controls.md`](reports/eeg-ui-stage6a-empty-controls.md) | 阶段 6A 空白页完整侧栏隐藏与数值箭头交互 |
 | [`reports/eeg-ui-stage5b-theme.md`](reports/eeg-ui-stage5b-theme.md) | 阶段 5B 旧版亮暗配色与已创建图元切换 |
 | [`reports/eeg-ui-stage5a-analysis.md`](reports/eeg-ui-stage5a-analysis.md) | 阶段 5A 图外属性、数值轴与分析状态回归 |
 | [`reports/eeg-ui-stage4b-record-form.md`](reports/eeg-ui-stage4b-record-form.md) | 阶段 4B 统一录制元数据表单与取消/校验回归 |

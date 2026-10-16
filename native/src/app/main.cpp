@@ -18,6 +18,7 @@
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
+#include "ui/empty_controls_smoke.h"
 #include "ui/analysis_widgets.h"
 #include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
@@ -1075,6 +1076,7 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-channel-parameters-ok amplitude=true filters=true identity=true bipolar=true\n";
             return 0;
         }
+        if (arg == "--smoke-ui-empty-controls") return smokeEmptyControls(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-fixed-layout") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);

@@ -1,0 +1,11 @@
+/* XPM */
+static const char * arrow[] = {
+"9 5 2 1",
+"  c None",
+"X c #333333",
+"    X    ",
+"   XXX   ",
+"  XXXXX  ",
+" XXXXXXX ",
+"XXXXXXXXX"
+};
