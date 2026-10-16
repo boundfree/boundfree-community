@@ -186,8 +186,8 @@ def test_bf_app_smoke_ui_file_open_status_survives_retranslate():
 
     assert "loading_en=Opening demo.csv" in result.stdout
     assert "loading_pseudo=[!! Opeeniing demo.csv !!]" in result.stdout
-    assert "opened_pseudo=[!! CSV | 0-0.01 s | +/-200 uV | 2 viisiiblee chaanneels !!]" in result.stdout
-    assert "opened_en=CSV | 0-0.01 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "opened_pseudo=[!! CSV | 0-0.01 s | Aauto aamplitude | 2 viisiiblee chaanneels !!]" in result.stdout
+    assert "opened_en=CSV | 0-0.01 s | Auto amplitude | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_waveform_render_offscreen():
@@ -374,7 +374,7 @@ def test_bf_app_smoke_ui_browser_controls_show_window_and_scale():
     )
 
     assert "smoke-ui-browser-controls-ok" in result.stdout
-    assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "status=CSV | 0-10 s | Auto amplitude | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_ui_channel_browser_updates_visible_channels():
@@ -385,7 +385,7 @@ def test_bf_app_smoke_ui_channel_browser_updates_visible_channels():
 
     assert "smoke-ui-channel-browser-ok" in result.stdout
     assert "summary=first=2 visible=2,3 checks=ch1:on,ch2:off,ch3:on,ch4:on" in result.stdout
-    assert "status=CSV | 0-10 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "status=CSV | 0-10 s | Auto amplitude | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_ui_window_request_reports_requested_interval():
@@ -408,7 +408,7 @@ def test_bf_app_smoke_ui_window_latest_displays_requested_slice():
     )
 
     assert "smoke-ui-window-latest-ok t0=0.02 t1=0.1" in result.stdout
-    assert "status=CSV | 0.02-0.1 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "status=CSV | 0.02-0.1 s | Auto amplitude | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
@@ -531,4 +531,4 @@ def test_bf_app_smoke_retranslate_updates_ui_text():
     assert result.returncode == 0
     assert "loading_en=Opening demo.csv" in result.stdout
     assert "loading_pseudo=[!! Opeeniing demo.csv !!]" in result.stdout
-    assert "opened_en=CSV | 0-0.01 s | +/-200 uV | 2 visible channels" in result.stdout
+    assert "opened_en=CSV | 0-0.01 s | Auto amplitude | 2 visible channels" in result.stdout

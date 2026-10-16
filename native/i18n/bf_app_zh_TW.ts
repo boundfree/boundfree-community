@@ -509,5 +509,14 @@
     <message><source>app.activation.error_signing_failed</source><translation>伺服器簽發啟用碼失敗，請聯絡管理員</translation></message>
     <message><source>app.activation.error_invalid_machine_id</source><translation>本機機器碼格式無效，請聯絡管理員。</translation></message>
     <message><source>app.activation.error_rate_limited</source><translation>啟用請求過於頻繁，請在 {retry_after} 秒後重試。</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>自動振幅</translation></message>
+    <message><source>app.processing.per_channel</source><translation>逐通道帶通</translation></message>
+    <message><source>app.processing.inherit</source><translation>繼承全域</translation></message>
+    <message><source>app.processing.disabled</source><translation>關閉</translation></message>
+    <message><source>app.processing.enabled</source><translation>啟用</translation></message>
+    <message><source>app.processing.low</source><translation>低頻</translation></message>
+    <message><source>app.processing.high</source><translation>高頻</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>須滿足 0 &lt; 低頻 &lt; 高頻 &lt; {nyquist} Hz</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} 秒 | 自動振幅 | {n_visible} 個可見通道</translation></message>
   </context>
 </TS>

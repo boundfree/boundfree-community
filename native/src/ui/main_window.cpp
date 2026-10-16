@@ -166,6 +166,13 @@ void MainWindow::buildFixedWorkspace() {
     filterPanel_ = new CollapsiblePanel(i18n_->text("app.processing.panel"), parameters);
     filterPanel_->setObjectName("eegFilterPanel");
     filterPanel_->addWidget(filterToolbar_);
+    channelBandpassControls_ = new ChannelBandpassControls(i18n_, filterPanel_);
+    channelBandpassControls_->changed = [this](int channel, std::optional<ChannelBandpassUi> setting) {
+        if (setting) processingState_.setChannelBandpass(channel, *setting);
+        else processingState_.clearChannelBandpass(channel);
+        applyProcessingAndDisplay();
+    };
+    filterPanel_->addWidget(channelBandpassControls_);
     parameterLayout->addWidget(filterPanel_);
     markerTable_->setMinimumHeight(70);
     markerTable_->setMaximumHeight(170);
@@ -502,8 +509,18 @@ void MainWindow::buildBrowserControls() {
     timeWindowSpin_->setValue(viewState_.windowSeconds);
     timeWindowSpin_->setSuffix(" s");
 
+    autoAmplitudeCheck_ = new QCheckBox(this);
+    autoAmplitudeCheck_->setObjectName("eegAutoAmplitude");
+    autoAmplitudeCheck_->setChecked(true);
+    connect(autoAmplitudeCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
+        waveformWidget_->setAutoScaleEnabled(enabled);
+        amplitudeSpin_->setEnabled(!enabled);
+        applyBrowserStateToWaveform();
+    });
     amplitudeLabel_ = new QLabel(this);
     amplitudeSpin_ = new QDoubleSpinBox(this);
+    amplitudeSpin_->setObjectName("eegManualAmplitude");
+    amplitudeSpin_->setEnabled(false);
     amplitudeSpin_->setRange(50.0, 5000.0);
     amplitudeSpin_->setDecimals(0);
     amplitudeSpin_->setValue(viewState_.amplitudeUv);
@@ -517,6 +534,7 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_->addSeparator();
     browserToolbar_->addPair(timeWindowLabel_, timeWindowSpin_);
     browserToolbar_->addSeparator();
+    browserToolbar_->addWidget(autoAmplitudeCheck_);
     browserToolbar_->addPair(amplitudeLabel_, amplitudeSpin_);
     browserToolbar_->addSeparator();
     browserToolbar_->addPair(firstChannelLabel_, firstChannelSpin_);
@@ -1295,6 +1313,22 @@ void MainWindow::rebuildChannelControls() {
         return;
     }
 
+    QStringList names;
+    for (int channel = 0; channel < channelCount(); ++channel) {
+        names.push_back(channel < currentFile_.waveform.channelNames.size()
+            ? currentFile_.waveform.channelNames[channel] : QString("Ch%1").arg(channel + 1));
+    }
+    if (channelBandpassControls_ != nullptr) {
+        channelBandpassControls_->refresh(names, hasCurrentFile_ ? currentFile_.waveform.fs : 0.0, processingState_);
+    }
+    if (names == channelControlNames_ && channelChecks_.size() == names.size()) {
+        for (int channel = 0; channel < channelChecks_.size(); ++channel) {
+            const QSignalBlocker blocker(channelChecks_[channel]);
+            channelChecks_[channel]->setChecked(viewState_.isChannelVisible(channel));
+        }
+        return;
+    }
+    channelControlNames_ = names;
     while (QLayoutItem* item = channelListLayout_->takeAt(0)) {
         if (QWidget* widget = item->widget()) {
             widget->deleteLater();
@@ -1309,9 +1343,7 @@ void MainWindow::rebuildChannelControls() {
 
     const int nChannels = channelCount();
     for (int channel = 0; channel < nChannels; ++channel) {
-        const QString label = channel < currentFile_.waveform.channelNames.size()
-            ? currentFile_.waveform.channelNames[channel]
-            : QString("Ch%1").arg(channel + 1);
+        const QString label = names[channel];
         auto* check = new QCheckBox(label, channelListWidget_);
         check->setChecked(viewState_.isChannelVisible(channel));
         connect(check, &QCheckBox::toggled, this, [this, channel](bool checked) {
@@ -1360,6 +1392,7 @@ void MainWindow::retranslateUi() {
     nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
     positionLabel_->setText(i18n_->text("app.browser.position"));
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
+    autoAmplitudeCheck_->setText(i18n_->text("app.browser.auto_amplitude"));
     amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
     waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"), i18n_->text("app.analysis.amplitude"));
@@ -1368,6 +1401,7 @@ void MainWindow::retranslateUi() {
     channelPanel_->setTitle(i18n_->text("app.browser.channels"));
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
+        if (channelBandpassControls_ != nullptr) channelBandpassControls_->retranslate();
         if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
     }
     analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
@@ -1478,6 +1512,12 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     hasCurrentFile_ = true;
     if (!sameSession && recordController_ != nullptr && recordController_->isActive()) {
         recordController_->stop();
+    }
+    if (!sameSession) {
+        // Overrides belong to this file's output-channel identities, not a
+        // coincidentally matching index in the next file (or sample rate).
+        processingState_.clearAllChannelBandpass();
+        if (channelBandpassControls_ != nullptr) channelBandpassControls_->refresh({}, 0.0, processingState_);
     }
     playbackPrefetchPending_ = false;
     windowRequestPending_ = false;
@@ -1596,8 +1636,8 @@ void MainWindow::applyBrowserStateToWaveform() {
     }
     updatePlaybackViewport();
 
-    const WaveformDisplayModel model = waveformDisplayModel(currentFile_.waveform, viewState_, 32);
-    statusKey_ = "app.status.file_window";
+    const WaveformDisplayModel model = waveformDisplayModel(currentFile_.waveform, viewState_, 0);
+    statusKey_ = waveformWidget_->autoScaleEnabled() ? "app.status.file_window_auto" : "app.status.file_window";
     statusParams_ = {
         {"format", currentFile_.session.format},
         {"t0", waveformWidget_->timeRange().first},
@@ -1646,6 +1686,7 @@ void MainWindow::applyBandpassToSelectedChannels() {
 
 void MainWindow::clearPerChannelBandpassOverrides() {
     processingState_.clearAllChannelBandpass();
+    if (channelBandpassControls_) channelBandpassControls_->clearDrafts();
     refreshProcessingControls();
     applyProcessingAndDisplay();
 }

@@ -372,3 +372,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../legal/
 
 add_executable(waveform_viewport_test src/ui/waveform_viewport_test.cpp)
 target_link_libraries(waveform_viewport_test PRIVATE bf_core)
+
+add_executable(waveform_channels_test src/ui/waveform_channels_test.cpp)
+target_link_libraries(waveform_channels_test PRIVATE bf_core)

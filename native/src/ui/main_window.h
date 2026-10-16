@@ -17,6 +17,7 @@
 #include "ui/analysis_widgets.h"
 #include "ui/video_panel.h"
 #include "ui/collapsible_panel.h"
+#include "ui/channel_bandpass_controls.h"
 
 #include <QActionGroup>
 #include <QCheckBox>
@@ -169,6 +170,7 @@ private:
     QDoubleSpinBox* positionSpin_ = nullptr;
     QLabel* timeWindowLabel_ = nullptr;
     QDoubleSpinBox* timeWindowSpin_ = nullptr;
+    QCheckBox* autoAmplitudeCheck_ = nullptr;
     QLabel* amplitudeLabel_ = nullptr;
     QDoubleSpinBox* amplitudeSpin_ = nullptr;
     QLabel* firstChannelLabel_ = nullptr;
@@ -181,6 +183,8 @@ private:
     QWidget* channelListWidget_ = nullptr;
     QVBoxLayout* channelListLayout_ = nullptr;
     QVector<QCheckBox*> channelChecks_;
+    QStringList channelControlNames_;
+    ChannelBandpassControls* channelBandpassControls_ = nullptr;
     QDockWidget* markerDock_ = nullptr;
     QTableWidget* markerTable_ = nullptr;
     CollapsiblePanel* markerPanel_ = nullptr;

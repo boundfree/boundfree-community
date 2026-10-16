@@ -508,5 +508,14 @@
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
     <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>
     <message><source>app.spike.export.failed</source><translation>[!! Spiikee eexpoort faileed: {reason} !!]</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>[!! Aauto aamplitude !!]</translation></message>
+    <message><source>app.processing.per_channel</source><translation>[!! Peer-chaannel baandpaass !!]</translation></message>
+    <message><source>app.processing.inherit</source><translation>[!! Iinheeriit gloobaal !!]</translation></message>
+    <message><source>app.processing.disabled</source><translation>[!! Diisaableed !!]</translation></message>
+    <message><source>app.processing.enabled</source><translation>[!! Eenaableed !!]</translation></message>
+    <message><source>app.processing.low</source><translation>[!! Loow !!]</translation></message>
+    <message><source>app.processing.high</source><translation>[!! Hiigh !!]</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>[!! Reeq uiiree 0 &lt; loow &lt; hiigh &lt; {nyquist} Hz !!]</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>[!! {format} | {t0}-{t1} s | Aauto aamplitude | {n_visible} viisiiblee chaanneels !!]</translation></message>
   </context>
 </TS>

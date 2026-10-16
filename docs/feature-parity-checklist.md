@@ -61,10 +61,10 @@ v1.1/v2：
 
 ## 波形显示 — M2
 
-- [x] 多通道波形（垂直滚动）
+- [x] 多通道波形（内置纵向滚动和滚轮、最小110px行高，40通道回归）
 - [x] 通道显隐
 - [x] 时间窗 1–120s（默认 10s）
-- [x] 幅值缩放（默认 ±200μV）
+- [x] 幅值缩放（默认逐通道自动范围，可切换统一手动幅值；见阶段 4A 报告）
 - [x] 静态浏览和回放刷新（帧率达 M0 基线）
 - [x] 回放/静态双模式：M5 已交付播放/暂停/seek/倍速/prefill（见 `reports/m5-playback-annotations-acceptance.md`）
 - [x] 时间轴/顶点缓冲复用（相同窗口不重建显示模型）
@@ -78,7 +78,7 @@ v1.1/v2：
 - [x] 陷波谐波（基频×1..N，<nyquist）
 - [x] 实时滤波带状态 biquad（跨块）
 - [x] 离线零相位滤波
-- [x] 带通处理链（实时+离线，Butterworth 4 阶）；UI 提供全局带通开关，并支持每通道带通覆盖（`ProcessingViewState::perChannelBandpass`，缺省回落全局，`processing_view_state_test` 覆盖回落逻辑）
+- [x] 带通处理链（实时+离线，Butterworth 4 阶）；UI 提供全局带通开关，并支持每通道带通覆盖（`ProcessingViewState::perChannelBandpass`，缺省回落全局，`processing_view_state_test` 覆盖回落逻辑）；逐行编辑提供继承/关闭/启用与截止频率校验，非法草稿不进入处理状态
 - [x] 【黄金比对】所有 DSP 路径数值一致
 
 ## 频谱分析 — M4

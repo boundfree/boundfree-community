@@ -509,5 +509,14 @@
     <message><source>app.activation.error_signing_failed</source><translation>服务器签发激活码失败，请联系管理员</translation></message>
     <message><source>app.activation.error_invalid_machine_id</source><translation>本机机器码格式无效，请联系管理员。</translation></message>
     <message><source>app.activation.error_rate_limited</source><translation>激活请求过于频繁，请在 {retry_after} 秒后重试。</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>自动幅值</translation></message>
+    <message><source>app.processing.per_channel</source><translation>逐通道带通</translation></message>
+    <message><source>app.processing.inherit</source><translation>继承全局</translation></message>
+    <message><source>app.processing.disabled</source><translation>关闭</translation></message>
+    <message><source>app.processing.enabled</source><translation>启用</translation></message>
+    <message><source>app.processing.low</source><translation>低频</translation></message>
+    <message><source>app.processing.high</source><translation>高频</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>须满足 0 &lt; 低频 &lt; 高频 &lt; {nyquist} Hz</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} 秒 | 自动幅值 | {n_visible} 个可见通道</translation></message>
   </context>
 </TS>

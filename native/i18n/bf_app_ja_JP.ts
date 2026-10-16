@@ -509,5 +509,14 @@
     <message><source>app.activation.error_signing_failed</source><translation>サーバーがライセンスに署名できませんでした。管理者にお問い合わせください。</translation></message>
     <message><source>app.activation.error_invalid_machine_id</source><translation>マシン ID の形式が無効です。管理者にお問い合わせください。</translation></message>
     <message><source>app.activation.error_rate_limited</source><translation>アクティベーション要求が多すぎます。{retry_after} 秒後にもう一度お試しください。</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>振幅自動</translation></message>
+    <message><source>app.processing.per_channel</source><translation>チャンネル別バンドパス</translation></message>
+    <message><source>app.processing.inherit</source><translation>全体設定を継承</translation></message>
+    <message><source>app.processing.disabled</source><translation>無効</translation></message>
+    <message><source>app.processing.enabled</source><translation>有効</translation></message>
+    <message><source>app.processing.low</source><translation>下限</translation></message>
+    <message><source>app.processing.high</source><translation>上限</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>0 &lt; 下限 &lt; 上限 &lt; {nyquist} Hz が必要です</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} 秒 | 振幅自動 | {n_visible} チャンネル表示</translation></message>
   </context>
 </TS>

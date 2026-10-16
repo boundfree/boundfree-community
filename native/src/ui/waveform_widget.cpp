@@ -5,6 +5,9 @@
 #include <QFontMetrics>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QResizeEvent>
+#include <QWheelEvent>
+#include <limits>
 
 #include <algorithm>
 #include <cmath>
@@ -13,11 +16,103 @@ namespace bf {
 
 WaveformWidget::WaveformWidget(QWidget* parent) : QWidget(parent) {
     setMinimumSize(640, 320);
+    channelScroll_ = new QScrollBar(Qt::Vertical, this);
+    channelScroll_->setObjectName("eegWaveformChannelScroll");
+    channelScroll_->setSingleStep(110);
+    channelScroll_->setRange(0, 0);
+    channelScroll_->hide();
+    connect(channelScroll_, &QScrollBar::valueChanged, this, [this]() { update(); });
+}
+
+QRectF WaveformWidget::waveformPlotArea() const {
+    QRectF area = plot::plotArea(*this, plot::kWaveformMargins);
+    if (channelScroll_->maximum() > 0) area.setRight(area.right() - channelScroll_->sizeHint().width());
+    return area;
+}
+
+void WaveformWidget::setAutoScaleEnabled(bool enabled) {
+    if (autoScale_ == enabled) return;
+    autoScale_ = enabled;
+    amplitudeRangesDirty_ = true;
+    update();
+}
+
+void WaveformWidget::updateChannelScroll() {
+    int count = 0;
+    for (int ch = std::max(0, viewState_.firstVisibleChannel); ch < static_cast<int>(slice_.data.size()); ++ch)
+        if (viewState_.isChannelVisible(ch)) ++count;
+    const QRectF area = plot::plotArea(*this, plot::kWaveformMargins);
+    const int available = std::max(1, static_cast<int>(area.height()));
+    channelScroll_->setRange(0, std::max(0, count * 110 - available));
+    channelScroll_->setPageStep(available);
+    channelScroll_->setVisible(channelScroll_->maximum() > 0);
+    const int scrollWidth = channelScroll_->sizeHint().width();
+    channelScroll_->setGeometry(width() - scrollWidth, static_cast<int>(area.top()), scrollWidth, available);
+}
+
+void WaveformWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    updateChannelScroll();
+}
+
+void WaveformWidget::wheelEvent(QWheelEvent* event) {
+    if (channelScroll_->maximum() <= 0) { QWidget::wheelEvent(event); return; }
+    const int delta = !event->pixelDelta().isNull() ? event->pixelDelta().y() : event->angleDelta().y() * 110 / 120;
+    channelScroll_->setValue(channelScroll_->value() - delta);
+    event->accept();
+}
+
+void WaveformWidget::ensureAmplitudeRanges(int requestedChannel) const {
+    if (!autoScale_) return;
+    const auto& model = cachedDisplayModel(0);
+    const auto [start, end] = timeRange();
+    const int count = static_cast<int>(model.data.size());
+    const bool reset = amplitudeRangesDirty_ || amplitudeRanges_.size() != count;
+    if (reset || !autoScaleClock_.isValid() || autoScaleClock_.elapsed() >= 2000) {
+        amplitudeRanges_.resize(count);
+        amplitudeRangeValid_.fill(false, count);
+        amplitudeRangesDirty_ = false;
+        autoScaleClock_.restart();
+    }
+    const double rowHeight = count ? std::max(110.0, waveformPlotArea().height() / count) : 110.0;
+    const int first = requestedChannel >= 0 ? requestedChannel : static_cast<int>(channelScroll_->value() / rowHeight);
+    const int last = requestedChannel >= 0 ? requestedChannel + 1 : static_cast<int>(std::ceil((channelScroll_->value() + waveformPlotArea().height()) / rowHeight));
+    bool computed = false;
+    for (int ch = std::max(0, first); ch < std::min(last, count); ++ch) {
+        if (amplitudeRangeValid_[ch]) continue;
+        amplitudeRangeValid_[ch] = true;
+        computed = true;
+        const auto& values = model.data[ch];
+        double low = std::numeric_limits<double>::infinity(), high = -low;
+        if (model.fs > 0 && std::isfinite(model.fs)) {
+            const auto first = static_cast<std::size_t>(std::clamp(std::ceil((start - model.t0) * model.fs), 0.0, static_cast<double>(values.size())));
+            const auto last = static_cast<std::size_t>(std::clamp(std::ceil((end - model.t0) * model.fs), 0.0, static_cast<double>(values.size())));
+            for (auto i = first; i < last; ++i) if (std::isfinite(values[i])) {
+                low = std::min(low, static_cast<double>(values[i]));
+                high = std::max(high, static_cast<double>(values[i]));
+            }
+        }
+        const double mid = std::isfinite(low) ? (low + high) * .5 : 0.0;
+        const double half = std::isfinite(low) ? std::max((high - low) * .575, 5.0) : 5.0;
+        const std::pair<double, double> next{mid - half, mid + half};
+        auto& old = amplitudeRanges_[ch];
+        const double span = std::max(1.0, old.second - old.first);
+        if (reset || std::abs(next.first - old.first) / span > .05 || std::abs(next.second - old.second) / span > .05) old = next;
+    }
+    if (computed) ++autoScaleBuildCount_;
+}
+
+std::pair<double, double> WaveformWidget::channelAmplitudeRange(int displayChannel) const {
+    if (!autoScale_) return {-std::max(1.0, viewState_.amplitudeUv), std::max(1.0, viewState_.amplitudeUv)};
+    ensureAmplitudeRanges(displayChannel);
+    return displayChannel >= 0 && displayChannel < amplitudeRanges_.size() ? amplitudeRanges_[displayChannel] : std::make_pair(-5.0, 5.0);
 }
 
 void WaveformWidget::setSlice(const WaveformSlice& slice) {
     slice_ = slice;
     invalidateDisplayModelCache();
+    amplitudeRangesDirty_ = true;
+    updateChannelScroll();
     update();
 }
 
@@ -29,6 +124,7 @@ void WaveformWidget::setTimeRange(double t0, double t1) {
 
 void WaveformWidget::clearTimeRange() {
     timeRange_.reset();
+    amplitudeRangesDirty_ = true;
     update();
 }
 
@@ -39,6 +135,8 @@ std::pair<double, double> WaveformWidget::timeRange() const {
 void WaveformWidget::setViewState(const WaveformViewState& state) {
     viewState_ = state;
     invalidateDisplayModelCache();
+    amplitudeRangesDirty_ = true;
+    updateChannelScroll();
     update();
 }
 
@@ -83,6 +181,7 @@ void WaveformWidget::invalidateDisplayModelCache() {
 }
 
 void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
+    if (maxVisibleChannels >= static_cast<int>(slice_.data.size())) maxVisibleChannels = 0;
     if (cachedModel_.has_value() && cachedMaxVisibleChannels_ == maxVisibleChannels) {
         return;
     }
@@ -94,20 +193,23 @@ void WaveformWidget::ensureDisplayModel(int maxVisibleChannels) const {
 void WaveformWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
     const plot::Palette theme = plot::palette(darkTheme_);
-    const QRectF plotArea = plot::plotArea(*this, plot::kWaveformMargins);
+    const QRectF plotArea = waveformPlotArea();
     const QFontMetrics metrics(font());
     const int textHeight = metrics.height();
 
     painter.fillRect(rect(), theme.background);
     painter.setRenderHint(QPainter::Antialiasing, false);
 
-    const WaveformDisplayModel& model = cachedDisplayModel(32);
+    const WaveformDisplayModel& model = cachedDisplayModel(0);
     const int nChannels = static_cast<int>(model.data.size());
-    const double rowHeight = nChannels > 0 ? plotArea.height() / nChannels : 0.0;
+    const double rowHeight = nChannels > 0 ? std::max(110.0, plotArea.height() / nChannels) : 0.0;
+    const double scrollOffset = channelScroll_->value();
+    const int firstRow = rowHeight > 0 ? static_cast<int>(scrollOffset / rowHeight) : 0;
+    const int lastRow = rowHeight > 0 ? std::min(nChannels, static_cast<int>(std::ceil((scrollOffset + plotArea.height()) / rowHeight))) : 0;
+    ensureAmplitudeRanges();
     const auto [visibleStart, visibleEnd] = timeRange();
     const double span = visibleEnd - visibleStart;
     const double safeSpan = span > 0.0 && std::isfinite(span) ? span : 1.0;
-    const double amplitude = std::max(1.0, model.amplitudeUv);
 
     // Shared time axis: the endpoints preserve the absolute EEG time of the
     // requested window, while interior ticks use a readable 1/2/5 step.
@@ -127,65 +229,40 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
         painter.drawLine(QPointF(x, plotArea.top()), QPointF(x, plotArea.bottom()));
     }
 
-    // Row separators and per-row zero lines. The zero line is drawn but not
-    // labelled: the amplitude range is shared by every row, so a "0" per row
-    // would overlap itself as soon as rows get denser than the text height.
+    painter.save();
+    painter.setClipRect(plotArea);
+    // Each row has a center line; in automatic mode it follows the data offset.
     painter.setPen(QPen(innerGrid, 1));
-    for (int ch = 0; ch < nChannels; ++ch) {
-        const double rowTop = plotArea.top() + rowHeight * ch;
+    for (int ch = firstRow; ch < lastRow; ++ch) {
+        const double rowTop = plotArea.top() + rowHeight * ch - scrollOffset;
         const double rowMid = rowTop + rowHeight * 0.5;
         painter.drawLine(QPointF(plotArea.left(), rowMid), QPointF(plotArea.right(), rowMid));
         painter.drawLine(QPointF(plotArea.left(), rowTop + rowHeight), QPointF(plotArea.right(), rowTop + rowHeight));
     }
 
+    painter.restore();
     painter.setPen(QPen(theme.grid, 1));
     painter.drawRect(plotArea);
 
-    // Left gutter: channel names plus the shared +/- amplitude scale. The two
-    // amplitude numbers are clamped inside the plot area so they can never run
-    // into the bottom time axis band, and names are thinned by text height once
-    // rows get dense instead of piling up on each other. The name column is
-    // bounded by the measured width of the amplitude numbers.
+    // Independent channel names and range limits stay outside the waveform.
     painter.setPen(theme.label);
     const double numberRight = plotArea.left() - 8.0;
-    const QString plusText = plot::formatAxisNumber(numberLocale_, amplitude, 0);
-    const QString minusText = plot::formatAxisNumber(numberLocale_, -amplitude, 0);
-    const double numberColumn = std::max(static_cast<double>(metrics.horizontalAdvance(plusText)),
-                                         static_cast<double>(metrics.horizontalAdvance(minusText)));
     const double nameLeft = 28.0;
-    const double nameWidth = std::max(24.0, numberRight - numberColumn - 8.0 - nameLeft);
-
-    if (nChannels > 0) {
-        const auto drawAmplitudeNumber = [&](double boundaryY, const QString& text) {
-            const double centerY = std::clamp(boundaryY,
-                                              plotArea.top() + textHeight * 0.5,
-                                              plotArea.bottom() - textHeight * 0.5);
-            painter.drawLine(QPointF(numberRight, centerY), QPointF(plotArea.left(), centerY));
-            painter.drawText(QRectF(nameLeft, centerY - textHeight * 0.5, numberRight - nameLeft, textHeight),
-                             Qt::AlignRight | Qt::AlignVCenter,
-                             text);
-        };
-        drawAmplitudeNumber(plotArea.top(), plusText);
-        drawAmplitudeNumber(plotArea.bottom(), minusText);
-
-        const bool namesFit = rowHeight >= textHeight;
-        const double nameGap = textHeight + 1.0;
-        QVector<double> keptNames;
-        for (int ch = 0; ch < nChannels; ++ch) {
-            const double centerY = plotArea.top() + rowHeight * (ch + 0.5);
-            if (!namesFit && !plot::labelFits(keptNames, centerY, nameGap)) {
-                continue;
-            }
-            keptNames.append(centerY);
-            const QString name = ch < model.channelNames.size() ? model.channelNames[ch] : QString();
-            if (name.isEmpty()) {
-                continue;
-            }
-            painter.drawText(QRectF(nameLeft, centerY - textHeight * 0.5, nameWidth, textHeight),
-                             Qt::AlignLeft | Qt::AlignVCenter,
-                             metrics.elidedText(name, Qt::ElideRight, static_cast<int>(nameWidth)));
+    const double nameWidth = std::max(24.0, numberRight - nameLeft - 60.0);
+    painter.save();
+    painter.setClipRect(QRectF(0, plotArea.top(), plotArea.left(), plotArea.height()));
+    for (int ch = firstRow; ch < lastRow; ++ch) {
+        const double rowTop = plotArea.top() + rowHeight * ch - scrollOffset;
+        const auto range = channelAmplitudeRange(ch);
+        const QString name = ch < model.channelNames.size() ? model.channelNames[ch] : QString();
+        painter.drawText(QRectF(nameLeft, rowTop + rowHeight / 2 - textHeight / 2, nameWidth, textHeight),
+                         Qt::AlignLeft | Qt::AlignVCenter, metrics.elidedText(name, Qt::ElideRight, static_cast<int>(nameWidth)));
+        for (const auto& tick : {std::make_pair(range.second, rowTop + 4.0), std::make_pair(range.first, rowTop + rowHeight - textHeight - 4.0)}) {
+            painter.drawText(QRectF(nameLeft, tick.second, numberRight - nameLeft, textHeight), Qt::AlignRight | Qt::AlignVCenter,
+                             plot::formatAxisNumber(numberLocale_, tick.first, 1));
         }
     }
+    painter.restore();
 
     // Vertical axis title. Channel names remain in the left gutter so they do
     // not cover the signal itself.
@@ -196,38 +273,44 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
                      Qt::AlignCenter, amplitudeAxisLabel_);
     painter.restore();
 
-    // Signal rows: every row shares the toolbar's +/- range and keeps its own
-    // zero line. Markers and the playback cursor are clipped to the plot area.
+    // Signal rows use independent ranges in automatic mode and the shared
+    // manual range otherwise. Each trace is clipped to its own row.
     painter.save();
     painter.setClipRect(plotArea);
     if (nChannels > 0) {
-        for (int ch = 0; ch < nChannels; ++ch) {
+        for (int ch = firstRow; ch < lastRow; ++ch) {
             const std::vector<float>& samples = model.data[ch];
             if (samples.size() < 2 || !std::isfinite(model.fs) || model.fs <= 0.0) {
                 continue;
             }
 
             painter.setPen(QPen(theme.spectrumLine, 1));
-            const double centerY = plotArea.top() + rowHeight * (ch + 0.5);
+            const double centerY = plotArea.top() + rowHeight * (ch + 0.5) - scrollOffset;
             const double drawWidth = std::max(1.0, plotArea.width());
             const double drawHeight = rowHeight * 0.45;
+            const auto range = channelAmplitudeRange(ch);
+            const double centerValue = (range.first + range.second) * .5;
+            const double halfRange = std::max(1.0, (range.second - range.first) * .5);
             const auto pointFor = [&](int sampleIndex) {
                 const double sampleTime = model.t0 + static_cast<double>(sampleIndex) / model.fs;
                 const double ratio = (sampleTime - visibleStart) / safeSpan;
                 const double x = plotArea.left() + ratio * drawWidth;
-                const double y = centerY - samples[static_cast<std::size_t>(sampleIndex)] / amplitude * drawHeight;
+                const double y = centerY - (samples[static_cast<std::size_t>(sampleIndex)] - centerValue) / halfRange * drawHeight;
                 return QPointF(x, y);
             };
             // Include one sample outside each edge to retain crossing segments.
             const int lastIndex = static_cast<int>(samples.size()) - 1;
             const int first = static_cast<int>(std::clamp(std::floor((visibleStart - model.t0) * model.fs), 0.0, static_cast<double>(lastIndex)));
             const int last = static_cast<int>(std::clamp(std::ceil((visibleEnd - model.t0) * model.fs), 0.0, static_cast<double>(lastIndex)));
+            painter.save();
+            painter.setClipRect(QRectF(plotArea.left(), centerY - rowHeight * .5, plotArea.width(), rowHeight), Qt::IntersectClip);
             QPointF previous = pointFor(first);
             for (int i = first + 1; i <= last; ++i) {
                 const QPointF current = pointFor(i);
-                painter.drawLine(previous, current);
+                if (std::isfinite(previous.y()) && std::isfinite(current.y())) painter.drawLine(previous, current);
                 previous = current;
             }
+            painter.restore();
         }
         for (const Marker& marker : markers_) {
             if (marker.time < visibleStart || marker.time > visibleEnd) {
@@ -267,7 +350,7 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
 }
 
 void WaveformWidget::mousePressEvent(QMouseEvent* event) {
-    const QRectF plotArea = plot::plotArea(*this, plot::kWaveformMargins);
+    const QRectF plotArea = waveformPlotArea();
     const auto [visibleStart, visibleEnd] = timeRange();
     if (markerModeEnabled_ && event->button() == Qt::LeftButton && plotArea.contains(event->position()) &&
         !slice_.data.empty() && visibleEnd > visibleStart) {

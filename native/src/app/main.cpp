@@ -818,6 +818,108 @@ int main(int argc, char** argv) {
                       << " opened_en=" << openedEn.toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-channel-parameters") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            bf::FileOpenResult result;
+            result.session.ok = true; result.session.path = "channels.csv"; result.session.format = "CSV";
+            result.session.fs = 200; result.session.duration = 4;
+            result.session.nChannels = 3; result.session.nSamples = 800;
+            result.session.chNames = {"a", "b", "c"};
+            result.waveform.fs = 200; result.waveform.t0 = 0; result.waveform.t1 = 4;
+            result.waveform.channelNames = result.session.chNames;
+            result.waveform.data.resize(3);
+            for (int ch = 0; ch < 3; ++ch)
+                for (int n = 0; n < 800; ++n)
+                    result.waveform.data[ch].push_back((ch + 1) * 20 * std::sin(2 * 3.141592653589793 * 10 * n / 200.)
+                        + 30 * std::sin(2 * 3.141592653589793 * 60 * n / 200.));
+            window.showFileOpenResult(result);
+            auto* waveform = window.findChild<bf::WaveformWidget*>();
+            auto* automatic = window.findChild<QCheckBox*>("eegAutoAmplitude");
+            auto* amplitude = window.findChild<QDoubleSpinBox*>("eegManualAmplitude");
+            const auto fail = [](const char* reason) { std::cerr << "smoke-ui-channel-parameters-failed " << reason << '\n'; return 1; };
+            if (!waveform || !automatic || !amplitude || !automatic->isChecked() || amplitude->isEnabled()) return fail("auto_default");
+            automatic->setChecked(false);
+            amplitude->setValue(500);
+            if (!amplitude->isEnabled() || waveform->autoScaleEnabled()
+                || waveform->channelAmplitudeRange(0) != std::make_pair(-500., 500.)) return fail("manual_amplitude");
+            automatic->setChecked(true);
+            if (!waveform->autoScaleEnabled() || amplitude->isEnabled()) return fail("auto_restore");
+            auto mode = [&](int ch) { return window.findChild<QComboBox*>(QString("eegBandpassMode_%1").arg(ch)); };
+            auto low = [&](int ch) { return window.findChild<QDoubleSpinBox*>(QString("eegBandpassLow_%1").arg(ch)); };
+            auto high = [&](int ch) { return window.findChild<QDoubleSpinBox*>(QString("eegBandpassHigh_%1").arg(ch)); };
+            if (!mode(0) || !low(0) || !high(0)) return fail("row_controls");
+            auto* originalMode = mode(0);
+            mode(0)->setCurrentIndex(2);
+            low(0)->setValue(5); high(0)->setValue(20);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            const auto state = window.processingViewState();
+            if (mode(0) != originalMode || state.perChannelBandpass.size() != 1
+                || state.perChannelBandpass.at(0).low != 5 || state.perChannelBandpass.at(0).high != 20) return fail("override_identity");
+            const auto model = waveform->cachedDisplayModel();
+            const auto component = [](const std::vector<float>& samples, double frequency) {
+                double sum = 0;
+                for (int n = 100; n < 700; ++n) sum += samples[n] * std::sin(2 * 3.141592653589793 * frequency * n / 200.);
+                return std::abs(sum / 300);
+            };
+            if (component(model.data[0], 60) > 3 || component(model.data[0], 10) < 12
+                || component(model.data[1], 60) < 25) return fail("channel_isolation");
+            high(0)->setValue(2);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            if (window.processingViewState().perChannelBandpass.at(0).high != 20) return fail("invalid_range_committed");
+            high(0)->setValue(20);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            mode(0)->setCurrentIndex(0);
+            if (!window.processingViewState().perChannelBandpass.empty()) return fail("inherit_keeps_override");
+            auto global = window.processingViewState();
+            global.globalBandpassEnabled = true; global.bandpassLow = 5; global.bandpassHigh = 20;
+            window.setProcessingViewStateForBrowser(global);
+            mode(1)->setCurrentIndex(1);
+            const auto disabled = waveform->cachedDisplayModel();
+            if (component(disabled.data[0], 60) > 3 || component(disabled.data[1], 60) < 25) return fail("disabled_does_not_bypass_global");
+            auto bipolar = window.processingViewState();
+            bipolar.referenceMode = bf::dsp::ReferenceMode::Bipolar;
+            bipolar.setChannelBandpass(0, {true, 5, 20});
+            window.setProcessingViewStateForBrowser(bipolar);
+            if (waveform->cachedDisplayModel().data.size() != 2 || !mode(0) || mode(0)->currentIndex() != 2) return fail("bipolar_rows");
+            const auto expected = bf::applyProcessingToSlice(result.waveform, bipolar);
+            if (waveform->cachedDisplayModel().data != expected.data) return fail("bipolar_mapping");
+            window.setChannelVisibleForBrowser(0, false);
+            if (waveform->cachedDisplayModel().data.size() != 1) return fail("channel_visibility");
+            auto other = result;
+            other.session.path = "other.csv";
+            window.showFileOpenResult(other);
+            if (!window.processingViewState().perChannelBandpass.empty()) return fail("new_file_keeps_overrides");
+            // A low-rate file can inherit a high cutoff above Nyquist. The
+            // user must still be able to edit a valid draft or disable it.
+            auto inherited = window.processingViewState();
+            inherited.globalBandpassEnabled = false;
+            inherited.bandpassHigh = 40;
+            window.setProcessingViewStateForBrowser(inherited);
+            auto lowRate = result;
+            lowRate.session.path = "low-rate.csv";
+            lowRate.session.fs = 50; lowRate.waveform.fs = 50;
+            window.showFileOpenResult(lowRate);
+            mode(0)->setCurrentIndex(2);
+            high(0)->setValue(30);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            if (window.processingViewState().perChannelBandpass.count(0) &&
+                window.processingViewState().perChannelBandpass.at(0).high >= 25) return fail("nyquist_draft_committed");
+            if (!low(0)->isEnabled() || !high(0)->isEnabled()) return fail("invalid_draft_locked");
+            high(0)->setValue(15);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            if (!window.processingViewState().perChannelBandpass.count(0)
+                || window.processingViewState().perChannelBandpass.at(0).high != 15) return fail("draft_correction");
+            high(0)->setValue(30);
+            QMetaObject::invokeMethod(high(0), "editingFinished", Qt::DirectConnection);
+            mode(0)->setCurrentIndex(1);
+            if (window.processingViewState().perChannelBandpass.at(0).enabled) return fail("invalid_draft_cannot_disable");
+            std::cout << "smoke-ui-channel-parameters-ok amplitude=true filters=true identity=true bipolar=true\n";
+            return 0;
+        }
         if (arg == "--smoke-ui-fixed-layout") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);
@@ -1514,6 +1616,7 @@ int main(int argc, char** argv) {
                     ? "development-signal-only"
                     : "display-candidate";
             bf::WaveformWidget widget;
+            widget.setAutoScaleEnabled(false);
             bf::WaveformSlice slice;
             slice.fs = fs;
             slice.t0 = 0.0;
@@ -1692,6 +1795,7 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-waveform-render") {
             QApplication app(argc, argv);
             bf::WaveformWidget widget;
+            widget.setAutoScaleEnabled(false);
             bf::WaveformSlice slice;
             slice.fs = 100.0;
             slice.t0 = 0.0;

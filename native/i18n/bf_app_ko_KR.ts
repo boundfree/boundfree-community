@@ -509,5 +509,14 @@
     <message><source>app.spike.export.no_result</source><translation>내보낼 Spike 결과가 없습니다</translation></message>
     <message><source>app.spike.export.completed</source><translation>{rows}개의 Spike 이벤트를 {path}로 내보냈습니다</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 내보내기 실패: {reason}</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>자동 진폭</translation></message>
+    <message><source>app.processing.per_channel</source><translation>채널별 대역 통과</translation></message>
+    <message><source>app.processing.inherit</source><translation>전역 설정 상속</translation></message>
+    <message><source>app.processing.disabled</source><translation>사용 안 함</translation></message>
+    <message><source>app.processing.enabled</source><translation>사용</translation></message>
+    <message><source>app.processing.low</source><translation>하한</translation></message>
+    <message><source>app.processing.high</source><translation>상한</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>0 &lt; 하한 &lt; 상한 &lt; {nyquist} Hz여야 합니다</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | 자동 진폭 | {n_visible}개 채널 표시</translation></message>
   </context>
 </TS>

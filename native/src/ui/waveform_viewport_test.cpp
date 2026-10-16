@@ -10,6 +10,7 @@
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
     bf::WaveformWidget widget;
+    widget.setAutoScaleEnabled(false);
     widget.resize(800, 400);
     bf::WaveformSlice slice;
     slice.fs = 100;

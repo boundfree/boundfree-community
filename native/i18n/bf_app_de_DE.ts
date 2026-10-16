@@ -509,5 +509,14 @@
     <message><source>app.spike.export.no_result</source><translation>Kein Spike-Ergebnis zum Exportieren</translation></message>
     <message><source>app.spike.export.completed</source><translation>{rows} Spike-Ereignisse nach {path} exportiert</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike-Export fehlgeschlagen: {reason}</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>Auto-Amplitude</translation></message>
+    <message><source>app.processing.per_channel</source><translation>Bandpass je Kanal</translation></message>
+    <message><source>app.processing.inherit</source><translation>Global übernehmen</translation></message>
+    <message><source>app.processing.disabled</source><translation>Deaktiviert</translation></message>
+    <message><source>app.processing.enabled</source><translation>Aktiviert</translation></message>
+    <message><source>app.processing.low</source><translation>Untergrenze</translation></message>
+    <message><source>app.processing.high</source><translation>Obergrenze</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>Erforderlich: 0 &lt; unten &lt; oben &lt; {nyquist} Hz</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | Auto-Amplitude | {n_visible} sichtbare Kanäle</translation></message>
   </context>
 </TS>

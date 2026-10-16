@@ -5,6 +5,8 @@
 
 #include <QLocale>
 #include <QWidget>
+#include <QScrollBar>
+#include <QElapsedTimer>
 
 #include <optional>
 #include <utility>
@@ -16,6 +18,10 @@ class WaveformWidget : public QWidget {
 public:
     explicit WaveformWidget(QWidget* parent = nullptr);
 
+    void setAutoScaleEnabled(bool enabled);
+    bool autoScaleEnabled() const { return autoScale_; }
+    std::pair<double, double> channelAmplitudeRange(int displayChannel) const;
+    int autoScaleBuildCount() const { return autoScaleBuildCount_; }
     void setSlice(const WaveformSlice& slice);
     void setTimeRange(double t0, double t1);
     void clearTimeRange();
@@ -27,7 +33,7 @@ public:
     void setDarkTheme(bool dark);
     void setAxisLabels(const QString& timeLabel, const QString& amplitudeLabel);
     void setNumberLocale(const QLocale& locale);
-    const WaveformDisplayModel& cachedDisplayModel(int maxVisibleChannels = 32) const;
+    const WaveformDisplayModel& cachedDisplayModel(int maxVisibleChannels = 0) const;
     int displayModelBuildCount() const { return displayModelBuildCount_; }
 
 signals:
@@ -36,11 +42,23 @@ signals:
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
 
 private:
+    void updateChannelScroll();
+    void ensureAmplitudeRanges(int requestedChannel = -1) const;
+    QRectF waveformPlotArea() const;
     void invalidateDisplayModelCache();
     void ensureDisplayModel(int maxVisibleChannels) const;
 
+    QScrollBar* channelScroll_ = nullptr;
+    bool autoScale_ = true;
+    mutable QElapsedTimer autoScaleClock_;
+    mutable bool amplitudeRangesDirty_ = true;
+    mutable QVector<std::pair<double, double>> amplitudeRanges_;
+    mutable QVector<bool> amplitudeRangeValid_;
+    mutable int autoScaleBuildCount_ = 0;
     WaveformSlice slice_;
     std::optional<std::pair<double, double>> timeRange_;
     WaveformViewState viewState_;

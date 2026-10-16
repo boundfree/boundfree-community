@@ -508,5 +508,14 @@
     <message><source>app.activation.error_signing_failed</source><translation>The server could not sign the license. Contact the administrator.</translation></message>
     <message><source>app.activation.error_invalid_machine_id</source><translation>The machine ID is invalid. Contact the administrator.</translation></message>
     <message><source>app.activation.error_rate_limited</source><translation>Too many activation requests. Please try again in {retry_after} seconds.</translation></message>
+    <message><source>app.browser.auto_amplitude</source><translation>Auto amplitude</translation></message>
+    <message><source>app.processing.per_channel</source><translation>Per-channel bandpass</translation></message>
+    <message><source>app.processing.inherit</source><translation>Inherit global</translation></message>
+    <message><source>app.processing.disabled</source><translation>Disabled</translation></message>
+    <message><source>app.processing.enabled</source><translation>Enabled</translation></message>
+    <message><source>app.processing.low</source><translation>Low</translation></message>
+    <message><source>app.processing.high</source><translation>High</translation></message>
+    <message><source>app.processing.invalid_range</source><translation>Require 0 &lt; low &lt; high &lt; {nyquist} Hz</translation></message>
+    <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | Auto amplitude | {n_visible} visible channels</translation></message>
   </context>
 </TS>
