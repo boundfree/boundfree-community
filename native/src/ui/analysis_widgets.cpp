@@ -102,6 +102,7 @@ void SpectrumWidget::paintEvent(QPaintEvent*) {
         }
     }
     painter.setPen(QPen(t.spectrumLine, 1.5));
+    painter.drawPath(path);
 }
 
 SpectrogramWidget::SpectrogramWidget(QWidget* parent) : QWidget(parent) {

@@ -17,6 +17,7 @@ last_updated: 2026-07-22
 | 文档 | 类型 | 用途 |
 | --- | --- | --- |
 | [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、当前阶段、M0-M8 路线和阶段门禁 |
+| [`plans/eeg-ui-recovery.md`](plans/eeg-ui-recovery.md) | 当前计划 | 旧版 UI 对齐、分析曲线与进度交互的分阶段修复 |
 | [`plans/m8-packaging-release.md`](plans/m8-packaging-release.md) | 当前计划 | M8 冻结边车、安装布局、系统收口与 Windows 发布门禁 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
@@ -28,6 +29,7 @@ last_updated: 2026-07-22
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage1a-spectrum.md`](reports/eeg-ui-stage1a-spectrum.md) | 阶段 1A 谱线缺失修复与曲线敏感回归 |
 | [`reports/m2-format-acceptance.md`](reports/m2-format-acceptance.md) | 已验收与未实现文件格式的证据 |
 | [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md) | 真实 GPU/显示门禁记录 |
 | [`reports/m3-dsp-acceptance.md`](reports/m3-dsp-acceptance.md) | M3 DSP 黄金比对与静态浏览接入记录 |

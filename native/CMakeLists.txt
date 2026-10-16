@@ -278,6 +278,10 @@ add_executable(m4_spectral_test src/dsp/m4_spectral_test.cpp)
 target_include_directories(m4_spectral_test PRIVATE src)
 target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
 
+add_executable(spectrum_render_test src/ui/spectrum_render_test.cpp src/ui/analysis_widgets.cpp)
+target_include_directories(spectrum_render_test PRIVATE src)
+target_link_libraries(spectrum_render_test PRIVATE bf_dsp Qt6::Widgets)
+
 add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
 target_include_directories(spike_dsp_test PRIVATE src third_party)
 
