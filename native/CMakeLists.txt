@@ -156,6 +156,8 @@ add_executable(bf_app
     src/ui/eeg_playback_panel.h
     src/ui/main_window.cpp
     src/ui/main_window.h
+    src/ui/record_metadata_dialog.cpp
+    src/ui/record_metadata_dialog.h
     src/ui/activation_dialog.cpp
     src/ui/activation_dialog.h
     src/ui/analysis_widgets.cpp
@@ -375,3 +377,8 @@ target_link_libraries(waveform_viewport_test PRIVATE bf_core)
 
 add_executable(waveform_channels_test src/ui/waveform_channels_test.cpp)
 target_link_libraries(waveform_channels_test PRIVATE bf_core)
+
+add_executable(record_metadata_dialog_test src/ui/record_metadata_dialog_test.cpp src/ui/record_metadata_dialog.cpp)
+target_link_libraries(record_metadata_dialog_test PRIVATE bf_core Qt6::Widgets)
+target_compile_definitions(record_metadata_dialog_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
+add_dependencies(record_metadata_dialog_test bf_i18n_qm)

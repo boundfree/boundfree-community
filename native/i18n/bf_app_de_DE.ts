@@ -518,5 +518,8 @@
     <message><source>app.processing.high</source><translation>Obergrenze</translation></message>
     <message><source>app.processing.invalid_range</source><translation>Erforderlich: 0 &lt; unten &lt; oben &lt; {nyquist} Hz</translation></message>
     <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | Auto-Amplitude | {n_visible} sichtbare Kanäle</translation></message>
+    <message><source>app.record.browse</source><translation>Durchsuchen…</translation></message>
+    <message><source>app.record.cancel</source><translation>Abbrechen</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>Wählen Sie einen vorhandenen beschreibbaren Ordner.</translation></message>
   </context>
 </TS>

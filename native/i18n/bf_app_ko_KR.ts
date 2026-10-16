@@ -518,5 +518,8 @@
     <message><source>app.processing.high</source><translation>상한</translation></message>
     <message><source>app.processing.invalid_range</source><translation>0 &lt; 하한 &lt; 상한 &lt; {nyquist} Hz여야 합니다</translation></message>
     <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | 자동 진폭 | {n_visible}개 채널 표시</translation></message>
+    <message><source>app.record.browse</source><translation>찾아보기…</translation></message>
+    <message><source>app.record.cancel</source><translation>취소</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>쓰기 가능한 기존 폴더를 선택하세요.</translation></message>
   </context>
 </TS>

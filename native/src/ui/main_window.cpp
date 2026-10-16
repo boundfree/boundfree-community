@@ -1,4 +1,5 @@
 #include "ui/main_window.h"
+#include "ui/record_metadata_dialog.h"
 #include "ui/collapsible_panel.h"
 
 #include "controller/processing_view_state.h"
@@ -655,16 +656,10 @@ void MainWindow::toggleRecording() {
         statusBar()->showMessage(i18n_->text("app.record.no_file"), 3000);
         return;
     }
-    bool accepted = false;
-    const QString animalId = QInputDialog::getText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.animal_id"), QLineEdit::Normal, {}, &accepted);
-    if (!accepted) return;
-    const QString expType = QInputDialog::getText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.exp_type"), QLineEdit::Normal, {}, &accepted);
-    if (!accepted) return;
-    const QString notes = QInputDialog::getMultiLineText(this, i18n_->text("app.record.metadata"), i18n_->text("app.record.notes"), {}, &accepted);
-    if (!accepted) return;
-    const QString outputDir = QFileDialog::getExistingDirectory(this, i18n_->text("app.record.output_dir"));
-    if (outputDir.isEmpty()) return;
-    const QJsonObject metadata{{"animal_id", animalId}, {"exp_type", expType}, {"notes", notes}};
+    RecordMetadataDialog dialog(i18n_, recordOutputDir_, this);
+    if (dialog.exec() != QDialog::Accepted) return;
+    const QJsonObject metadata = dialog.metadata();
+    const QString outputDir = dialog.outputDirectory();
     recordOutputDir_ = outputDir;
     recordSourceStart_ = std::min(playback_.position(), std::max(0.0, currentFile_.session.duration - 1.0 / currentFile_.session.fs));
     if (!recordController_->startFromFile(currentFile_.session.path, currentFile_.session.fs, currentFile_.session.chNames, currentFile_.session.duration, recordSourceStart_, outputDir, metadata)) {

@@ -517,5 +517,8 @@
     <message><source>app.processing.high</source><translation>[!! Hiigh !!]</translation></message>
     <message><source>app.processing.invalid_range</source><translation>[!! Reeq uiiree 0 &lt; loow &lt; hiigh &lt; {nyquist} Hz !!]</translation></message>
     <message><source>app.status.file_window_auto</source><translation>[!! {format} | {t0}-{t1} s | Aauto aamplitude | {n_visible} viisiiblee chaanneels !!]</translation></message>
+    <message><source>app.record.browse</source><translation>[!! Broowsee… !!]</translation></message>
+    <message><source>app.record.cancel</source><translation>[!! Caanceel !!]</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>[!! Choosee aan eexiistiing wriitaablee fooldeer. !!]</translation></message>
   </context>
 </TS>

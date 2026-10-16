@@ -518,5 +518,8 @@
     <message><source>app.processing.high</source><translation>高頻</translation></message>
     <message><source>app.processing.invalid_range</source><translation>須滿足 0 &lt; 低頻 &lt; 高頻 &lt; {nyquist} Hz</translation></message>
     <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} 秒 | 自動振幅 | {n_visible} 個可見通道</translation></message>
+    <message><source>app.record.browse</source><translation>瀏覽…</translation></message>
+    <message><source>app.record.cancel</source><translation>取消</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>請選擇已存在且可寫入的資料夾。</translation></message>
   </context>
 </TS>

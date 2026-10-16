@@ -518,5 +518,8 @@
     <message><source>app.processing.high</source><translation>上限</translation></message>
     <message><source>app.processing.invalid_range</source><translation>0 &lt; 下限 &lt; 上限 &lt; {nyquist} Hz が必要です</translation></message>
     <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} 秒 | 振幅自動 | {n_visible} チャンネル表示</translation></message>
+    <message><source>app.record.browse</source><translation>参照…</translation></message>
+    <message><source>app.record.cancel</source><translation>キャンセル</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>書き込み可能な既存のフォルダーを選択してください。</translation></message>
   </context>
 </TS>

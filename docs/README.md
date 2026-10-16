@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage4b-record-form.md`](reports/eeg-ui-stage4b-record-form.md) | 阶段 4B 统一录制元数据表单与取消/校验回归 |
 | [`reports/eeg-ui-stage4a-channels.md`](reports/eeg-ui-stage4a-channels.md) | 阶段 4A 自动幅值、通道滚动与逐行带通 |
 | [`reports/eeg-ui-stage3-layout.md`](reports/eeg-ui-stage3-layout.md) | 阶段 3 固定区域、控件换行与布局回归 |
 | [`reports/eeg-ui-stage2b-playback.md`](reports/eeg-ui-stage2b-playback.md) | 阶段 2B 连续视窗、有界预取与真实CSV联合验证 |

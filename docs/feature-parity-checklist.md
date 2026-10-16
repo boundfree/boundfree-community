@@ -128,7 +128,7 @@ v1.1/v2：
 - [x] 录制与 Session 骨架可通过文件回放源验证
 - [x] 双格式同时录制（EDF + HDF5）
 - [x] 后台写 + Native/边车有界队列背压 + 独立丢弃计数
-- [x] 录制元数据输入（animal_id/exp_type/notes/dir）
+- [x] 录制元数据输入（animal_id/exp_type/notes/dir），统一表单、输出目录校验、取消不启动（阶段 4B）
 - [x] REC 状态 / 耗时计时 / 磁盘监控（<500 MiB 警告）
 - [x] 录制中事件追加 HDF5 events（单一写线程与写句柄）
 - [x] HDF5 maxshape 可扩展 / float32 / 按约一秒 chunk

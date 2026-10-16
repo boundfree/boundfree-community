@@ -28,6 +28,7 @@
 #include <QStyleFactory>
 #include <QAction>
 #include <QDir>
+#include <QDialog>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QDockWidget>
@@ -816,6 +817,46 @@ int main(int argc, char** argv) {
                       << " loading_pseudo=" << loadingPseudo.toStdString()
                       << " opened_pseudo=" << openedPseudo.toStdString()
                       << " opened_en=" << openedEn.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-record-form") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("zh_CN", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            bf::FileOpenResult result;
+            result.session.ok = true; result.session.path = "record-form.csv"; result.session.format = "CSV";
+            result.session.fs = 100; result.session.duration = 10;
+            result.session.nChannels = 1; result.session.chNames = {"a"};
+            result.waveform.fs = 100; result.waveform.t0 = 0; result.waveform.t1 = 10;
+            result.waveform.channelNames = result.session.chNames;
+            result.waveform.data = {std::vector<float>(1000, 1)};
+            window.showFileOpenResult(result);
+            window.show();
+            QAction* record = nullptr;
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->text() == i18n.text("app.record.start")) record = action;
+            if (!record) return 1;
+            bool found = false;
+            QTimer::singleShot(0, &window, [&]() {
+                auto* dialog = window.findChild<QDialog*>("recordMetadataDialog");
+                found = dialog && dialog->findChild<QWidget*>("recordAnimalId")
+                    && dialog->findChild<QWidget*>("recordExperimentType")
+                    && dialog->findChild<QWidget*>("recordNotes")
+                    && dialog->findChild<QWidget*>("recordOutputDirectory");
+                if (!dialog) { app.exit(1); return; }
+                const QString directory = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+                if (!directory.isEmpty() && QDir().mkpath(directory))
+                    dialog->grab().save(QDir(directory).filePath("record-form-zh_CN.png"));
+                dialog->reject();
+            });
+            record->trigger();
+            if (!found || !window.recordStatusSummary().startsWith("active=0 samples=0")
+                || record->text() != i18n.text("app.record.start")) {
+                std::cerr << "smoke-ui-record-form-failed cancel\n"; return 1;
+            }
+            std::cout << "smoke-ui-record-form-ok fields=true cancel=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-channel-parameters") {

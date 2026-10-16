@@ -517,5 +517,8 @@
     <message><source>app.processing.high</source><translation>High</translation></message>
     <message><source>app.processing.invalid_range</source><translation>Require 0 &lt; low &lt; high &lt; {nyquist} Hz</translation></message>
     <message><source>app.status.file_window_auto</source><translation>{format} | {t0}-{t1} s | Auto amplitude | {n_visible} visible channels</translation></message>
+    <message><source>app.record.browse</source><translation>Browse…</translation></message>
+    <message><source>app.record.cancel</source><translation>Cancel</translation></message>
+    <message><source>app.record.directory_invalid</source><translation>Choose an existing writable folder.</translation></message>
   </context>
 </TS>
