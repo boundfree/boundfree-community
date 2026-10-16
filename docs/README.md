@@ -29,6 +29,7 @@ last_updated: 2026-07-22
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-stage1b-seek.md`](reports/eeg-ui-stage1b-seek.md) | 阶段 1B 拖动预览、单次定位与状态隔离回归 |
 | [`reports/eeg-ui-stage1a-spectrum.md`](reports/eeg-ui-stage1a-spectrum.md) | 阶段 1A 谱线缺失修复与曲线敏感回归 |
 | [`reports/m2-format-acceptance.md`](reports/m2-format-acceptance.md) | 已验收与未实现文件格式的证据 |
 | [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md) | 真实 GPU/显示门禁记录 |

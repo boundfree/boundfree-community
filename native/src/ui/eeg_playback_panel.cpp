@@ -19,8 +19,19 @@ void EegPlaybackPanel::buildWidgets() {
     speedCombo_->setMaximumWidth(80);
 
     playbackProgress_ = new QSlider(Qt::Horizontal);
+    playbackProgress_->setObjectName("eegPlaybackProgress");
     playbackProgress_->setRange(0, 10000);
     playbackProgress_->setMinimumWidth(160);
+    connect(playbackProgress_, &QSlider::sliderMoved, this, [this](int position) {
+        emit progressPreviewed(static_cast<double>(position) / playbackProgress_->maximum());
+    });
+    connect(playbackProgress_, &QSlider::valueChanged, this, [this](int value) {
+        // Drag values only preview; keyboard and track steps commit directly.
+        // Programmatic playback updates are blocked by setProgressFraction.
+        if (!playbackProgress_->isSliderDown()) {
+            emit progressMoved(static_cast<double>(value) / playbackProgress_->maximum());
+        }
+    });
 }
 
 void EegPlaybackPanel::buildInto(QToolBar* toolbar) {
@@ -37,7 +48,7 @@ void EegPlaybackPanel::buildInto(QToolBar* toolbar) {
 
     connect(playbackProgress_, &QSlider::sliderReleased, this, [this]() {
         const double fraction = playbackProgress_->maximum() > 0
-            ? static_cast<double>(playbackProgress_->value()) / playbackProgress_->maximum()
+            ? static_cast<double>(playbackProgress_->sliderPosition()) / playbackProgress_->maximum()
             : 0.0;
         emit progressMoved(fraction);
     });

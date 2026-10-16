@@ -56,10 +56,13 @@ public:
     void retranslateUi(I18nService* i18n);
 
 signals:
+    // Lightweight drag feedback; does not request data or change playback.
+    void progressPreviewed(double fraction);
+
     // Emitted when the user changes the speed combo (not during setSpeed).
     void speedChanged(double speed);
 
-    // Emitted when the user releases the progress slider. fraction is the
+    // Emitted on release or a keyboard/track step. fraction is the
     // sought position in [0..1] of the playback duration.
     void progressMoved(double fraction);
 

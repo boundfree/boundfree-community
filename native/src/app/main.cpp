@@ -33,6 +33,8 @@
 #include <QDockWidget>
 #include <QCoreApplication>
 #include <QElapsedTimer>
+#include <QDoubleSpinBox>
+#include <QKeyEvent>
 #include <QFile>
 #include <QFontMetrics>
 #include <QImage>
@@ -731,6 +733,78 @@ int main(int argc, char** argv) {
                       << " loading_pseudo=" << loadingPseudo.toStdString()
                       << " opened_pseudo=" << openedPseudo.toStdString()
                       << " opened_en=" << openedEn.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-seek-preview") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            bf::FileOpenResult result;
+            result.session.ok = true;
+            result.session.path = "seek-preview.csv";
+            result.session.format = "CSV";
+            result.session.fs = 100.0;
+            result.session.nChannels = 2;
+            result.session.nSamples = 10000;
+            result.session.duration = 100.0;
+            result.session.chNames = {"ch1", "ch2"};
+            result.waveform.fs = 100.0;
+            result.waveform.t0 = 0.0;
+            // A short initial slice makes prefetch due on the first timer tick.
+            result.waveform.t1 = 0.1;
+            result.waveform.channelNames = result.session.chNames;
+            result.waveform.data = {std::vector<float>(10, 1.0f), std::vector<float>(10, 2.0f)};
+            window.showFileOpenResult(result);
+            auto* slider = window.findChild<QSlider*>("eegPlaybackProgress");
+            auto* position = window.findChild<QDoubleSpinBox*>("eegPlaybackPosition");
+            QAction* play = nullptr;
+            for (auto* action : window.findChildren<QAction*>()) {
+                if (action->text() == i18n.text("app.playback.play")) play = action;
+            }
+            auto fail = [](const char* reason) {
+                std::cerr << "smoke-ui-seek-preview-failed " << reason << "\n";
+                return 1;
+            };
+            if (!slider || !position || !play) return fail("controls");
+            int requests = 0;
+            double requestedTime = -1.0;
+            window.setWindowRequestHandler([&](const QString&, double t0, double) {
+                ++requests;
+                requestedTime = t0;
+            });
+            play->trigger();
+            slider->setSliderDown(true);
+            slider->setSliderPosition(6000);
+            if (requests != 0 || std::abs(position->value() - 60.0) > 1e-6) return fail("drag_preview");
+            window.showFileOpenResult(result);
+            if (requests != 0 || slider->sliderPosition() != 6000 || std::abs(position->value() - 60.0) > 1e-6)
+                return fail("refresh_overwrites_preview");
+            QEventLoop wait;
+            QTimer::singleShot(150, &wait, &QEventLoop::quit);
+            wait.exec();
+            if (requests != 0 || slider->sliderPosition() != 6000 || std::abs(position->value() - 60.0) > 1e-6)
+                return fail("timer_overwrites_or_prefetches");
+            slider->setSliderDown(false);
+            if (requests != 1 || std::abs(requestedTime - 60.0) > 1e-6) return fail("release_not_single_seek");
+            play->trigger(); // Stop before checking discrete input paths.
+            QKeyEvent right(QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier);
+            QApplication::sendEvent(slider, &right);
+            if (requests != 2 || std::abs(requestedTime - 60.01) > 1e-6) return fail("keyboard_seek");
+            slider->triggerAction(QAbstractSlider::SliderPageStepAdd);
+            const double expected = 100.0 * slider->sliderPosition() / slider->maximum();
+            if (requests != 3 || std::abs(requestedTime - expected) > 1e-6) return fail("track_step_seek");
+            window.showFileOpenResult(result);
+            window.retranslateUi();
+            if (requests != 3) return fail("programmatic_refresh_seeks");
+            slider->setSliderDown(true);
+            slider->setSliderPosition(8000);
+            result.session.path = "seek-preview-next.csv";
+            window.showFileOpenResult(result);
+            if (requests != 3 || slider->isSliderDown() || std::abs(position->value()) > 1e-6)
+                return fail("new_file_keeps_stale_preview");
+            std::cout << "smoke-ui-seek-preview-ok preview=true timer=true release_once=true keyboard=true track=true refresh=true file_switch=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-browser-controls") {

@@ -361,6 +361,7 @@ void MainWindow::buildBrowserControls() {
 
     positionLabel_ = new QLabel(this);
     positionSpin_ = new QDoubleSpinBox(this);
+    positionSpin_->setObjectName("eegPlaybackPosition");
     positionSpin_->setRange(0.0, 0.0);
     positionSpin_->setDecimals(3);
     positionSpin_->setSingleStep(1.0);
@@ -371,9 +372,13 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_->addWidget(positionLabel_);
     browserToolbar_->addWidget(positionSpin_);
     browserToolbar_->addWidget(playbackPanel_->progressSlider());
+    connect(playbackPanel_->progressSlider(), &QSlider::sliderPressed, this, [this]() {
+        syncVideoToPlayback();
+    });
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
         if (!refreshingBrowserControls_) {
             playback_.seek(positionSpin_->value());
+            playbackElapsed_.restart();
             if (playback_.position() < signalDurationSeconds_) {
                 requestWindow(playback_.position());
             }
@@ -382,12 +387,18 @@ void MainWindow::buildBrowserControls() {
         }
     });
 
+    connect(playbackPanel_, &EegPlaybackPanel::progressPreviewed, this, [this](double fraction) {
+        if (!hasCurrentFile_) return;
+        const QSignalBlocker blocker(positionSpin_);
+        positionSpin_->setValue(playback_.duration() * fraction);
+    });
     connect(playbackPanel_, &EegPlaybackPanel::progressMoved, this, [this](double fraction) {
         if (!hasCurrentFile_) {
             return;
         }
         const double position = playback_.duration() * fraction;
         playback_.seek(position);
+        playbackElapsed_.restart();
         if (position < signalDurationSeconds_) {
             requestWindow(position);
         }
@@ -911,6 +922,11 @@ void MainWindow::togglePlayback() {
 }
 
 void MainWindow::advancePlayback() {
+    if (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown()) {
+        // Do not advance or prefetch behind the user's pending seek.
+        playbackElapsed_.restart();
+        return;
+    }
     const bool wasPlaying = playback_.isPlaying();
     const double elapsedSeconds = playbackElapsed_.restart() / 1000.0;
     playback_.advance(elapsedSeconds);
@@ -940,7 +956,7 @@ void MainWindow::refreshPlaybackControls() {
     playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
     playAction_->setToolTip(playAction_->text());
     waveformWidget_->setCursorTime(playback_.position());
-    if (positionSpin_ != nullptr) {
+    if (positionSpin_ != nullptr && !playbackPanel_->isProgressSliderDown()) {
         const QSignalBlocker blocker(positionSpin_);
         positionSpin_->setValue(std::min(playback_.position(), positionSpin_->maximum()));
     }
@@ -954,7 +970,8 @@ void MainWindow::refreshPlaybackControls() {
 
 void MainWindow::syncVideoToPlayback() {
     if (videoPanel_ != nullptr && videoPanel_->isLoaded()) {
-        videoPanel_->syncTo(playback_.position(), playback_.isPlaying());
+        const bool scrubbing = playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown();
+        videoPanel_->syncTo(playback_.position(), playback_.isPlaying() && !scrubbing);
     }
 }
 
@@ -1114,7 +1131,9 @@ void MainWindow::refreshBrowserControls() {
     if (positionSpin_ != nullptr) {
         QSignalBlocker blocker(positionSpin_);
         positionSpin_->setRange(0.0, playback_.duration());
-        positionSpin_->setValue(playback_.position());
+        if (!playbackPanel_->isProgressSliderDown()) {
+            positionSpin_->setValue(playback_.position());
+        }
     }
     refreshingBrowserControls_ = false;
     rebuildChannelControls();
@@ -1294,11 +1313,16 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
     if (!sameSession) {
+        const QSignalBlocker blocker(playbackPanel_->progressSlider());
+        playbackPanel_->progressSlider()->setSliderDown(false);
         playback_.pause();
         playbackTimer_.stop();
         signalDurationSeconds_ = result.session.duration;
         updatePlaybackDuration();
         playback_.seek(result.waveform.t0);
+        const QSignalBlocker positionBlocker(positionSpin_);
+        positionSpin_->setRange(0.0, playback_.duration());
+        positionSpin_->setValue(playback_.position());
         QVector<QPair<double, QString>> events;
         events.reserve(result.session.events.size());
         for (const SidecarEvent& event : result.session.events) {
