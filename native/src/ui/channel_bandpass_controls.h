@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <functional>
 #include <optional>
 
@@ -23,6 +24,15 @@ public:
         layout_->setSpacing(4);
         title_ = new QLabel(this);
         layout_->addWidget(title_);
+        selector_ = new QComboBox(this);
+        selector_->setObjectName("eegBandpassChannel");
+        selector_->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        selector_->setMinimumContentsLength(12);
+        layout_->addWidget(selector_);
+        connect(selector_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int channel) {
+            for (int index = 0; index < rows_.size(); ++index)
+                rows_[index].widget->setVisible(index == channel);
+        });
         retranslate();
     }
     std::function<void(int, std::optional<ChannelBandpassUi>)> changed;
@@ -52,8 +62,20 @@ public:
                 row.widget->deleteLater();
             }
             rows_.clear();
+            const QString selectedName = names_.value(selector_->currentIndex());
+            const int selectedIndex = selector_->currentIndex();
             names_ = names;
-            for (int channel = 0; channel < names.size(); ++channel) addRow(channel, names[channel]);
+            const QSignalBlocker blocker(selector_);
+            selector_->clear();
+            selector_->addItems(names);
+            int restored = names.indexOf(selectedName);
+            if (restored < 0) restored = names.isEmpty() ? -1 : std::clamp(selectedIndex, 0, int(names.size()) - 1);
+            selector_->setCurrentIndex(restored);
+            for (int channel = 0; channel < names.size(); ++channel) {
+                addRow(channel, names[channel]);
+                rows_[channel].widget->setVisible(channel == restored);
+            }
+            selector_->setEnabled(!names.isEmpty());
         }
         for (int channel = 0; channel < rows_.size(); ++channel) {
             const auto before = effectiveSetting(previous, channel);
@@ -70,6 +92,16 @@ public:
     }
     void retranslate() {
         title_->setText(i18n_->text("app.processing.per_channel"));
+        selector_->setAccessibleName(i18n_->text("app.browser.channels"));
+        const QSignalBlocker selectorBlocker(selector_);
+        for (int channel = 0; channel < names_.size(); ++channel) {
+            const auto setting = state_.perChannelBandpass.find(channel);
+            const QString mode = setting == state_.perChannelBandpass.end()
+                ? i18n_->text("app.processing.inherit")
+                : setting->second.enabled ? i18n_->text("app.processing.enabled")
+                    : i18n_->text("app.processing.disabled");
+            selector_->setItemText(channel, names_[channel] + " — " + mode);
+        }
         for (Row& row : rows_) {
             const QSignalBlocker blocker(row.mode);
             row.mode->setItemText(0, i18n_->text("app.processing.inherit"));
@@ -99,17 +131,13 @@ private:
             ? ChannelBandpassUi{state.globalBandpassEnabled, state.bandpassLow, state.bandpassHigh} : it->second;
     }
     ChannelBandpassUi effectiveSetting(int channel) const { return effectiveSetting(state_, channel); }
-    void addRow(int channel, const QString& name) {
+    void addRow(int channel, const QString&) {
         auto* widget = new QWidget(this);
         widget->setObjectName(QString("eegBandpassRow_%1").arg(channel));
         auto* box = new QVBoxLayout(widget);
         box->setContentsMargins(0, 0, 0, 0);
         box->setSpacing(0);
         auto* header = new ControlBar(widget);
-        auto* label = new QLabel(name, header);
-        label->setWordWrap(true);
-        label->setMaximumWidth(120);
-        header->addWidget(label);
         auto* mode = new QComboBox(header);
         mode->setObjectName(QString("eegBandpassMode_%1").arg(channel));
         mode->addItems({QString(), QString(), QString()});
@@ -126,7 +154,7 @@ private:
             spin->setRange(0.0, 1000000.0);
             spin->setDecimals(2);
             spin->setSuffix(" Hz");
-            spin->setFixedWidth(90);
+            spin->setMinimumWidth(120);
             spin->setKeyboardTracking(false);
         }
         values->addPair(lowLabel, low);
@@ -188,11 +216,13 @@ private:
             state_.setChannelBandpass(channel, setting);
         }
         refreshRow(channel, true);
+        retranslate();
         if (changed) changed(channel, mode == 0 ? std::nullopt : std::optional<ChannelBandpassUi>(setting));
     }
     I18nService* i18n_;
     QVBoxLayout* layout_;
     QLabel* title_;
+    QComboBox* selector_;
     QStringList names_;
     QVector<Row> rows_;
     ProcessingViewState state_;

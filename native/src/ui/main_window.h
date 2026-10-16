@@ -167,6 +167,7 @@ private:
     QWidget* playbackBar_ = nullptr;
     QWidget* progressRow_ = nullptr;
     CollapsiblePanel* filterPanel_ = nullptr;
+    QTabWidget* parameterTabs_ = nullptr;
     QSplitter* signalSplitter_ = nullptr;
     ControlBar* browserToolbar_ = nullptr;
     QAction* previousWindowAction_ = nullptr;

@@ -67,6 +67,11 @@ void CollapsiblePanel::setExpanded(bool expanded) {
     }
 }
 
+void CollapsiblePanel::setHeaderVisible(bool visible) {
+    headerButton_->setVisible(visible);
+    if (!visible) setExpanded(true);
+}
+
 bool CollapsiblePanel::isExpanded() const {
     return expanded_;
 }

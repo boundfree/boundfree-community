@@ -33,6 +33,10 @@ public:
     void setExpanded(bool expanded);
     bool isExpanded() const;
 
+    // A tab already supplies the section title. Hide the duplicate header and
+    // keep the section expanded when embedding its content into a tab page.
+    void setHeaderVisible(bool visible);
+
     // Title accessors so callers can retranslate the header text.
     void setTitle(const QString& title);
     QString title() const;

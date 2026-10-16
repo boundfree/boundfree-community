@@ -13,5 +13,7 @@ def test_empty_workspace_and_spin_buttons(scale, style):
         pytest.skip("Build bf_app first")
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen", "QT_SCALE_FACTOR": scale, "BF_UI_STYLE": style}
     result = subprocess.run([str(app), "--smoke-ui-empty-controls"], cwd=root, env=env, capture_output=True, text=True, timeout=30)
+    if result.returncode == 77:
+        pytest.skip(f"Qt style {style} unavailable")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "arrows=true clicks=true" in result.stdout

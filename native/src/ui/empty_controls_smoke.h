@@ -2,6 +2,7 @@
 #include "ui/main_window.h"
 #include <QApplication>
 #include <QMouseEvent>
+#include <QKeyEvent>
 #include <QStyleOptionSpinBox>
 #include <QStyleFactory>
 #include <QDir>
@@ -10,7 +11,9 @@
 inline int smokeEmptyControls(int argc, char** argv, const bf::VersionInfo& version, const QString& repoRoot) {
     QApplication app(argc, argv);
     const QString requestedStyle = qEnvironmentVariable("BF_UI_STYLE");
-    if (!requestedStyle.isEmpty()) app.setStyle(requestedStyle);
+    if (!requestedStyle.isEmpty() && !app.setStyle(requestedStyle)) {
+        std::cerr << "requested Qt style unavailable\n"; return 77;
+    }
     bf::I18nService i18n(repoRoot);
     QString error;
     if (!i18n.loadLocale("zh_CN", &error)) return 1;
@@ -41,6 +44,29 @@ inline int smokeEmptyControls(int argc, char** argv, const bf::VersionInfo& vers
     result.waveform.data = {std::vector<float>(1000)};
     window.showFileOpenResult(result); settle();
     if (!sidebar->isVisible()) return fail("loaded_sidebar");
+    for (const QString& name : {QString("Channels"), QString("Markers"), QString("Analysis"), QString("Video")})
+        if (!window.findChild<QAction*>("eegToggle" + name)->isEnabled()) return fail("loaded_view_action");
+    auto* waveform = window.findChild<bf::WaveformWidget*>();
+    window.showFileOpenLoading("missing-next.csv");
+    window.showFileOpenError(bf::makeError("reader.slice_out_of_range", {}));
+    settle();
+    if (!sidebar->isVisible() || !waveform->isVisible()
+        || waveform->cachedDisplayModel().channelNames != result.session.chNames) return fail("failed_reopen_loses_session");
+    auto* windowSize = window.findChild<QDoubleSpinBox*>("eegWindowSeconds");
+    auto* presetButton = window.findChild<QToolButton*>("eegWindowSecondsPresetButton");
+    auto* presetMenu = window.findChild<QMenu*>("eegWindowSecondsPresetMenu");
+    if (!windowSize || !presetButton || !presetMenu || !presetButton->isVisible()
+        || windowSize->buttonSymbols() != QAbstractSpinBox::NoButtons) return fail("window_presets");
+    QMetaObject::invokeMethod(presetMenu, "aboutToShow", Qt::DirectConnection);
+    if (presetMenu->actions().size() != 8) return fail("preset_choices");
+    presetMenu->actions()[1]->trigger();
+    if (windowSize->value() != 2) return fail("preset_selection");
+    windowSize->setFocus(); windowSize->selectAll();
+    QKeyEvent typed(QEvent::KeyPress, 0, Qt::NoModifier, "7");
+    QKeyEvent enter(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
+    QApplication::sendEvent(windowSize, &typed); QApplication::sendEvent(windowSize, &enter);
+    if (windowSize->value() != 7) return fail("preset_direct_input");
+    windowSize->setValue(10);
     auto* spin = window.findChild<QDoubleSpinBox*>("eegPlaybackPosition");
     for (const bool dark : {false, true}) {
         for (auto* action : window.findChildren<QAction*>())

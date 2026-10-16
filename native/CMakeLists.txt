@@ -386,3 +386,8 @@ add_dependencies(record_metadata_dialog_test bf_i18n_qm)
 add_executable(analysis_widgets_render_test src/ui/analysis_widgets_render_test.cpp src/ui/analysis_widgets.cpp)
 target_include_directories(analysis_widgets_render_test PRIVATE src)
 target_link_libraries(analysis_widgets_render_test PRIVATE bf_dsp Qt6::Widgets)
+
+add_executable(channel_bandpass_controls_test src/ui/channel_bandpass_controls_test.cpp)
+target_link_libraries(channel_bandpass_controls_test PRIVATE bf_core Qt6::Widgets)
+target_compile_definitions(channel_bandpass_controls_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
+add_dependencies(channel_bandpass_controls_test bf_i18n_qm)

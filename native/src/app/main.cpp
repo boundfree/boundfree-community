@@ -237,17 +237,27 @@ int main(int argc, char** argv) {
             app.processEvents();
             const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#181828")
                 && window.palette().color(QPalette::Highlight) == QColor("#9B4DA8");
-            const bool beforeToggle = channels->isChecked();
-            channels->trigger();
-            app.processEvents();
-            const bool dockToggled = channels->isChecked() != beforeToggle;
+            const bool emptyViewDisabled = !channels->isEnabled();
 
             bool hasIdleStatus = false;
             const QList<QLabel*> statusLabels = window.statusBar()->findChildren<QLabel*>(QString(), Qt::FindDirectChildrenOnly);
             for (QLabel* label : statusLabels) {
                 hasIdleStatus = hasIdleStatus || label->text() == i18n.text("app.status.mode.idle");
             }
-            if (!lightApplied || !darkApplied || !dockToggled || statusLabels.size() < 2 || !hasIdleStatus) {
+            bf::FileOpenResult data;
+            data.session.ok = true; data.session.path = "system-ui.csv";
+            data.session.fs = 100; data.session.duration = 10;
+            data.session.nChannels = 1; data.session.chNames = {"ch1"};
+            data.waveform.fs = 100; data.waveform.t0 = 0; data.waveform.t1 = 10;
+            data.waveform.channelNames = data.session.chNames;
+            data.waveform.data = {std::vector<float>(1000)};
+            window.showFileOpenResult(data);
+            const bool beforeToggle = channels->isChecked();
+            channels->trigger(); app.processEvents();
+            auto* tabs = window.findChild<QTabWidget*>("eegParameterTabs");
+            const bool dockToggled = channels->isEnabled() && channels->isChecked() != beforeToggle
+                && tabs && !tabs->isTabVisible(0);
+            if (!lightApplied || !darkApplied || !emptyViewDisabled || !dockToggled || statusLabels.size() < 2 || !hasIdleStatus) {
                 std::cerr << "smoke-m8-system-ui-failed behavior\n";
                 return 1;
             }
@@ -1132,12 +1142,13 @@ int main(int argc, char** argv) {
             auto* analysis = window.findChild<QSplitter*>("eegAnalysisSplitter");
             auto* top = window.findChild<QWidget*>("eegSignalToolbar");
             auto* bottom = window.findChild<QWidget*>("eegPlaybackBar");
-            auto* parameters = window.findChild<QScrollArea*>("eegParameterScroll");
+            auto* parameters = window.findChild<QTabWidget*>("eegParameterTabs");
+            auto* processingScroll = window.findChild<QScrollArea*>("eegProcessingScroll");
             auto* waveform = window.findChild<bf::WaveformWidget*>();
             auto* analysisPanel = window.findChild<QWidget*>("eegAnalysisPanel");
             auto* progress = window.findChild<QSlider*>("eegPlaybackProgress");
             if (!workspace || !signal || !analysis || !top || !bottom || !parameters || !waveform
-                || !analysisPanel || !progress) return fail("missing_regions");
+                || !analysisPanel || !progress || !processingScroll || parameters->count() != 3) return fail("missing_regions");
             const auto bounds = [&](QWidget* widget) { return QRect(widget->mapTo(&window, QPoint()), widget->size()); };
             const auto accessible = [&](QWidget* widget) {
                 if (!widget->isVisible() || widget->width() < 8 || widget->height() < 8
@@ -1212,21 +1223,40 @@ int main(int argc, char** argv) {
             analysisTabs->setCurrentIndex(0);
             auto* filters = window.findChild<QWidget*>("eegFilterPanel");
             if (!filters) return fail("filter_panel");
+            parameters->setCurrentIndex(1); settle();
+            for (int tab = 0; tab < parameters->count(); ++tab) {
+                parameters->setCurrentIndex(tab); settle();
+                if (!accessible(parameters->currentWidget())) return fail("parameter_tab_unreachable");
+                if (!window.findChild<QAction*>("eegToggleChannels")->isChecked()
+                    || !window.findChild<QAction*>("eegToggleMarkers")->isChecked())
+                    return fail("tab_switch_changes_visibility_preference");
+                for (int other = 0; other < parameters->count(); ++other)
+                    if (other != tab && parameters->widget(other)->isVisible()) return fail("parameter_tab_overlap");
+            }
+            if (parameters->tabText(0) != i18n.text("app.browser.channels")
+                || parameters->tabText(1) != i18n.text("app.processing.panel")
+                || parameters->tabText(2) != i18n.text("app.marker.panel")) return fail("parameter_tab_translation");
+            parameters->setCurrentIndex(1); settle();
+            if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-processing.png"));
             const auto advancedButtons = filters->findChildren<QPushButton*>();
             if (advancedButtons.isEmpty()) return fail("advanced_filter_buttons");
             for (auto* button : advancedButtons) {
-                parameters->ensureWidgetVisible(button, 0, 4); settle();
+                processingScroll->ensureWidgetVisible(button, 0, 4); settle();
                 if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->text());
             }
+            const auto panelVisible = [&](const QString& suffix, QWidget* panel) {
+                return suffix == "Channels" ? parameters->isTabVisible(0)
+                    : suffix == "Markers" ? parameters->isTabVisible(2) : panel->isVisible();
+            };
             for (const QString& suffix : {QString("Channels"), QString("Markers"), QString("Analysis"), QString("Video")}) {
                 const QString panelName = suffix == "Channels" ? "eegChannelPanel"
                     : suffix == "Markers" ? "eegMarkerPanel" : "eeg" + suffix + "Panel";
                 auto* panel = window.findChild<QWidget*>(panelName);
                 auto* action = window.findChild<QAction*>("eegToggle" + suffix);
                 if (!panel || !action) return fail("missing_toggle:" + suffix);
-                const bool initial = panel->isVisible();
+                const bool initial = panelVisible(suffix, panel);
                 action->trigger(); settle();
-                if (panel->isVisible() == initial || action->isChecked() != panel->isVisible())
+                if (panelVisible(suffix, panel) == initial || action->isChecked() != panelVisible(suffix, panel))
                     return fail("toggle_visibility:" + suffix);
                 if (suffix == "Video" && panel->isVisible()
                     && bounds(panel).top() <= bounds(waveform).bottom()) return fail("video_not_below_waveform");
@@ -1239,7 +1269,7 @@ int main(int argc, char** argv) {
                         || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
                 }
                 action->trigger(); settle();
-                if (panel->isVisible() != initial || action->isChecked() != initial) return fail("toggle_restore:" + suffix);
+                if (panelVisible(suffix, panel) != initial || action->isChecked() != initial) return fail("toggle_restore:" + suffix);
             }
             const QStringList hiddenSuffixes{"Channels", "Markers", "Analysis"};
             for (const QString& suffix : hiddenSuffixes) window.findChild<QAction*>("eegToggle" + suffix)->trigger();
@@ -1251,7 +1281,7 @@ int main(int argc, char** argv) {
                     : suffix == "Markers" ? "eegMarkerPanel" : "eegAnalysisPanel";
                 auto* panel = window.findChild<QWidget*>(name);
                 auto* action = window.findChild<QAction*>("eegToggle" + suffix);
-                if (panel->isVisible() || action->isChecked()) return fail("seek_restores_hidden_panel:" + suffix);
+                if (panelVisible(suffix, panel) || action->isChecked()) return fail("seek_restores_hidden_panel:" + suffix);
                 action->trigger();
             }
             settle();

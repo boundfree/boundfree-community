@@ -16,19 +16,19 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
     notchHarmonicsCheck_ = new QCheckBox;
     notchHarmonicsSpin_ = new QSpinBox;
     notchHarmonicsSpin_->setRange(2, 20);
-    notchHarmonicsSpin_->setMaximumWidth(70);
+    notchHarmonicsSpin_->setMinimumWidth(80);
 
     bandpassEnableCheck_ = new QCheckBox;
     bandpassLowSpin_ = new QDoubleSpinBox;
     bandpassLowSpin_->setRange(0.1, 400.0);
     bandpassLowSpin_->setDecimals(1);
     bandpassLowSpin_->setSuffix(" Hz");
-    bandpassLowSpin_->setMaximumWidth(90);
+    bandpassLowSpin_->setMinimumWidth(120);
     bandpassHighSpin_ = new QDoubleSpinBox;
     bandpassHighSpin_->setRange(0.5, 500.0);
     bandpassHighSpin_->setDecimals(1);
     bandpassHighSpin_->setSuffix(" Hz");
-    bandpassHighSpin_->setMaximumWidth(90);
+    bandpassHighSpin_->setMinimumWidth(120);
 
     applyToSelectedButton_ = new QPushButton;
     clearPerChannelButton_ = new QPushButton;
@@ -50,7 +50,7 @@ void EegProcessingPanel::buildInto(ControlBar* toolbar, ControlBar* filters, con
         spin->setDecimals(1);
         spin->setValue(band.frequency);
         spin->setSuffix(" Hz");
-        spin->setMaximumWidth(90);
+        spin->setMinimumWidth(120);
         notchBandChecks_.push_back(chk);
         notchBandSpins_.push_back(spin);
         filters->addPair(chk, spin);

@@ -1,4 +1,5 @@
 #include "ui/main_window.h"
+#include "ui/preset_spin_box.h"
 #include "ui/record_metadata_dialog.h"
 #include "ui/collapsible_panel.h"
 
@@ -153,21 +154,27 @@ void MainWindow::buildFixedWorkspace() {
     signalSplitter_->setStretchFactor(0, 3);
     signalSplitter_->setStretchFactor(1, 1);
     analysisSplit->addWidget(analysisDock_);
-    auto* parameterScroll = new QScrollArea(analysisSplit);
-    parameterScroll->setObjectName("eegParameterScroll");
-    parameterScroll->setWidgetResizable(true);
-    parameterScroll->setMinimumHeight(48);
-    parameterScroll->setFrameShape(QFrame::NoFrame);
-    parameterScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    auto* parameters = new QWidget(parameterScroll);
-    auto* parameterLayout = new QVBoxLayout(parameters);
-    parameterLayout->setContentsMargins(0, 0, 2, 0);
-    parameterLayout->setSpacing(4);
-    channelScroll_->setMinimumHeight(80);
-    channelScroll_->setMaximumHeight(150);
-    parameterLayout->addWidget(channelDock_);
-    filterPanel_ = new CollapsiblePanel(i18n_->text("app.processing.panel"), parameters);
+    parameterTabs_ = new QTabWidget(analysisSplit);
+    parameterTabs_->setObjectName("eegParameterTabs");
+    parameterTabs_->setMinimumHeight(48);
+    parameterTabs_->setDocumentMode(true);
+    channelScroll_->setMinimumHeight(60);
+    channelScroll_->setMaximumHeight(QWIDGETSIZE_MAX);
+    channelScroll_->setFrameShape(QFrame::NoFrame);
+    channelScroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    channelPanel_->setHeaderVisible(false);
+    parameterTabs_->addTab(channelDock_, i18n_->text("app.browser.channels"));
+    auto* processingScroll = new QScrollArea(parameterTabs_);
+    processingScroll->setObjectName("eegProcessingScroll");
+    processingScroll->setWidgetResizable(true);
+    processingScroll->setFrameShape(QFrame::NoFrame);
+    processingScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* processingPage = new QWidget(processingScroll);
+    auto* processingLayout = new QVBoxLayout(processingPage);
+    processingLayout->setContentsMargins(4, 4, 4, 4);
+    filterPanel_ = new CollapsiblePanel(i18n_->text("app.processing.panel"), processingPage);
     filterPanel_->setObjectName("eegFilterPanel");
+    filterPanel_->setHeaderVisible(false);
     filterPanel_->addWidget(filterToolbar_);
     channelBandpassControls_ = new ChannelBandpassControls(i18n_, filterPanel_);
     channelBandpassControls_->changed = [this](int channel, std::optional<ChannelBandpassUi> setting) {
@@ -176,13 +183,15 @@ void MainWindow::buildFixedWorkspace() {
         applyProcessingAndDisplay();
     };
     filterPanel_->addWidget(channelBandpassControls_);
-    parameterLayout->addWidget(filterPanel_);
-    markerTable_->setMinimumHeight(70);
-    markerTable_->setMaximumHeight(170);
-    parameterLayout->addWidget(markerDock_);
-    parameterLayout->addStretch();
-    parameterScroll->setWidget(parameters);
-    analysisSplit->addWidget(parameterScroll);
+    processingLayout->addWidget(filterPanel_);
+    processingLayout->addStretch();
+    processingScroll->setWidget(processingPage);
+    parameterTabs_->addTab(processingScroll, i18n_->text("app.processing.panel"));
+    markerTable_->setMinimumHeight(60);
+    markerTable_->setMaximumHeight(QWIDGETSIZE_MAX);
+    markerPanel_->setHeaderVisible(false);
+    parameterTabs_->addTab(markerDock_, i18n_->text("app.marker.panel"));
+    analysisSplit->addWidget(parameterTabs_);
     analysisSplit->setStretchFactor(0, 2);
     analysisSplit->setStretchFactor(1, 1);
     analysisSplit->setSizes({280, 180});
@@ -268,8 +277,19 @@ void MainWindow::buildViewMenu() {
         connect(action, &QAction::triggered, dock, &QDockWidget::setVisible);
         connect(dock, &QDockWidget::visibilityChanged, action, &QAction::setChecked);
     };
-    wireToggle(toggleChannelsAction_, channelDock_);
-    wireToggle(toggleMarkersAction_, markerDock_);
+    // Tab visibility is a user preference. QWidget visibility also changes
+    // when another tab is selected and must not uncheck the View action.
+    const auto wireTabToggle = [this](QAction* action, int index) {
+        action->setEnabled(hasCurrentFile_);
+        action->setCheckable(true);
+        action->setChecked(true);
+        connect(action, &QAction::triggered, this, [this, index](bool checked) {
+            parameterTabs_->setTabVisible(index, checked);
+            if (checked) parameterTabs_->setCurrentIndex(index);
+        });
+    };
+    wireTabToggle(toggleChannelsAction_, 0);
+    wireTabToggle(toggleMarkersAction_, 2);
     wireToggle(toggleAnalysisAction_, analysisDock_);
     wireToggle(toggleVideoAction_, videoDock_);
 }
@@ -406,6 +426,7 @@ void MainWindow::applyTheme(bool dark) {
     const QString hoverTone = dark ? QStringLiteral("#33334A") : QStringLiteral("#E0E0E0");
     setStyleSheet(styleSheet() + QString(
         "QSpinBox, QDoubleSpinBox { min-height: 24px; padding: 2px 26px 2px 6px; }"
+        "QDoubleSpinBox[presetControl=\"true\"] QToolButton::menu-indicator { image: none; }"
         "QSpinBox::up-button, QDoubleSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; border-bottom: 1px solid %1; }"
         "QSpinBox::down-button, QDoubleSpinBox::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 22px; border-left: 1px solid %1; }"
         "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: %2; }"
@@ -520,7 +541,9 @@ void MainWindow::buildBrowserControls() {
         refreshPlaybackControls();
     });
     timeWindowLabel_ = new QLabel(this);
-    timeWindowSpin_ = new QDoubleSpinBox(this);
+    timeWindowSpin_ = new PresetDoubleSpinBox({1, 2, 5, 10, 20, 30, 60, 120}, this);
+    timeWindowSpin_->setObjectName("eegWindowSeconds");
+    timeWindowSpin_->setKeyboardTracking(false);
     timeWindowSpin_->setRange(1.0, 120.0);
     timeWindowSpin_->setDecimals(0);
     timeWindowSpin_->setValue(viewState_.windowSeconds);
@@ -535,7 +558,9 @@ void MainWindow::buildBrowserControls() {
         applyBrowserStateToWaveform();
     });
     amplitudeLabel_ = new QLabel(this);
-    amplitudeSpin_ = new QDoubleSpinBox(this);
+    amplitudeSpin_ = new PresetDoubleSpinBox({50, 100, 200, 500, 1000, 2000, 5000}, this);
+    amplitudeSpin_->setKeyboardTracking(false);
+    amplitudeSpin_->setSingleStep(50);
     amplitudeSpin_->setObjectName("eegManualAmplitude");
     amplitudeSpin_->setEnabled(false);
     amplitudeSpin_->setRange(50.0, 5000.0);
@@ -1617,13 +1642,22 @@ void MainWindow::retranslateUi() {
     nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
     positionLabel_->setText(i18n_->text("app.browser.position"));
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
+    timeWindowSpin_->setAccessibleName(timeWindowLabel_->text());
+    static_cast<PresetDoubleSpinBox*>(timeWindowSpin_)->setPresetAccessibleName(timeWindowLabel_->text());
     autoAmplitudeCheck_->setText(i18n_->text("app.browser.auto_amplitude"));
     amplitudeLabel_->setText(i18n_->text("app.browser.amplitude"));
+    amplitudeSpin_->setAccessibleName(amplitudeLabel_->text());
+    static_cast<PresetDoubleSpinBox*>(amplitudeSpin_)->setPresetAccessibleName(amplitudeLabel_->text());
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
     waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"), i18n_->text("app.analysis.amplitude"));
     waveformWidget_->setNumberLocale(i18n_->qlocale());
     channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
     channelPanel_->setTitle(i18n_->text("app.browser.channels"));
+    if (parameterTabs_) {
+        parameterTabs_->setTabText(0, i18n_->text("app.browser.channels"));
+        parameterTabs_->setTabText(1, i18n_->text("app.processing.panel"));
+        parameterTabs_->setTabText(2, i18n_->text("app.marker.panel"));
+    }
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
         if (channelBandpassControls_ != nullptr) channelBandpassControls_->retranslate();
@@ -1774,7 +1808,13 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         }
         markerStore_.replaceFromEvents(events);
     }
-    if (!sameSession) channelDock_->show();
+    if (!sameSession) {
+        parameterTabs_->setTabVisible(0, true);
+        parameterTabs_->setTabVisible(2, true);
+        toggleChannelsAction_->setChecked(true);
+        toggleMarkersAction_->setChecked(true);
+        parameterTabs_->setCurrentIndex(0);
+    }
     refreshBrowserControls();
     refreshProcessingControls();
     applyProcessingAndDisplay();
@@ -1784,7 +1824,6 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         findChild<QSplitter*>("eegAnalysisSplitter")->show();
     }
     refreshPersistentStatus();
-    if (!sameSession) markerDock_->show();
     refreshPlaybackControls();
     refreshMarkerControls();
     playbackElapsed_.restart();

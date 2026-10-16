@@ -16,3 +16,17 @@ def test_channel_parameters():
                             capture_output=True, text=True, timeout=20)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "amplitude=true filters=true identity=true bipolar=true" in result.stdout
+
+
+def test_compact_channel_filter_editor():
+    root = Path(__file__).resolve().parents[2]
+    candidates = [root / "native/build/channel_bandpass_controls_test",
+                  root / "native/build-windows/Release/channel_bandpass_controls_test.exe"]
+    app = next((p for p in candidates if p.exists()), None)
+    if app is None:
+        pytest.skip("Build channel_bandpass_controls_test first")
+    result = subprocess.run([str(app)], cwd=root,
+                            env=dict(os.environ, QT_QPA_PLATFORM="offscreen"),
+                            capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "compact=true drafts=true isolation=true" in result.stdout
