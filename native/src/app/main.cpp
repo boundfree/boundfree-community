@@ -47,6 +47,10 @@
 #include <QMessageBox>
 #include <QPalette>
 #include <QStatusBar>
+#include <QSplitter>
+#include <QScrollArea>
+#include <QAbstractButton>
+#include <QAbstractSpinBox>
 #include <QTimer>
 
 #include <algorithm>
@@ -812,6 +816,183 @@ int main(int argc, char** argv) {
                       << " loading_pseudo=" << loadingPseudo.toStdString()
                       << " opened_pseudo=" << openedPseudo.toStdString()
                       << " opened_en=" << openedEn.toStdString() << "\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-fixed-layout") {
+            QApplication app(argc, argv);
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            bf::FileOpenResult result;
+            result.session.ok = true; result.session.path = "layout.csv"; result.session.format = "CSV";
+            result.session.fs = 100; result.session.duration = 100;
+            result.session.nChannels = 2; result.session.nSamples = 10000;
+            result.session.chNames = {"ch1", "ch2"};
+            result.waveform.fs = 100; result.waveform.t0 = 0; result.waveform.t1 = 10;
+            result.waveform.channelNames = result.session.chNames;
+            result.waveform.data = {std::vector<float>(1000), std::vector<float>(1000)};
+            for (int sample = 0; sample < 1000; ++sample) {
+                result.waveform.data[0][sample] = 50 * std::sin(2 * 3.141592653589793 * 8 * sample / 100.0);
+                result.waveform.data[1][sample] = 30 * std::sin(2 * 3.141592653589793 * 13 * sample / 100.0);
+            }
+            window.showFileOpenResult(result);
+            window.show();
+            const auto settle = []() { QEventLoop loop; QTimer::singleShot(30, &loop, &QEventLoop::quit); loop.exec(); };
+            const auto fail = [&](const QString& detail) {
+                std::cerr << "smoke-ui-fixed-layout-failed " << detail.toStdString() << '\n';
+                const auto geometry = [](QWidget* widget) {
+                    const QSize minimum = widget->minimumSize();
+                    const QSize hint = widget->minimumSizeHint();
+                    std::cerr << "layout_geometry " << widget->metaObject()->className()
+                              << " name=" << widget->objectName().toStdString()
+                              << " size=" << widget->width() << 'x' << widget->height()
+                              << " min=" << minimum.width() << 'x' << minimum.height()
+                              << " min_hint=" << hint.width() << 'x' << hint.height() << '\n';
+                };
+                geometry(&window);
+                for (QWidget* widget : window.findChildren<QWidget*>()) {
+                    if (widget->objectName().startsWith("eeg") || qobject_cast<QTabWidget*>(widget)) geometry(widget);
+                    if (auto* tabs = qobject_cast<QTabWidget*>(widget)) {
+                        for (int tab = 0; tab < tabs->count(); ++tab) geometry(tabs->widget(tab));
+                    }
+                }
+                const QString directory = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+                if (!directory.isEmpty() && QDir().mkpath(directory)) {
+                    const QString path = QDir(directory).filePath("layout-failure.png");
+                    if (window.grab().save(path)) std::cerr << "layout_screenshot " << path.toStdString() << '\n';
+                }
+                return 1;
+            };
+            auto* workspace = window.findChild<QSplitter*>("eegWorkspaceSplitter");
+            auto* signal = window.findChild<QSplitter*>("eegSignalSplitter");
+            auto* analysis = window.findChild<QSplitter*>("eegAnalysisSplitter");
+            auto* top = window.findChild<QWidget*>("eegSignalToolbar");
+            auto* bottom = window.findChild<QWidget*>("eegPlaybackBar");
+            auto* parameters = window.findChild<QScrollArea*>("eegParameterScroll");
+            auto* waveform = window.findChild<bf::WaveformWidget*>();
+            auto* analysisPanel = window.findChild<QWidget*>("eegAnalysisPanel");
+            auto* progress = window.findChild<QSlider*>("eegPlaybackProgress");
+            if (!workspace || !signal || !analysis || !top || !bottom || !parameters || !waveform
+                || !analysisPanel || !progress) return fail("missing_regions");
+            const auto bounds = [&](QWidget* widget) { return QRect(widget->mapTo(&window, QPoint()), widget->size()); };
+            const auto accessible = [&](QWidget* widget) {
+                if (!widget->isVisible() || widget->width() < 8 || widget->height() < 8
+                    || !window.rect().contains(bounds(widget))) return false;
+                QWidget* hit = window.childAt(widget->mapTo(&window, widget->rect().center()));
+                return hit == widget || (hit != nullptr && widget->isAncestorOf(hit));
+            };
+            const auto regionError = [&]() -> QString {
+                if (workspace->orientation() != Qt::Horizontal || signal->orientation() != Qt::Vertical
+                    || analysis->orientation() != Qt::Vertical) return "splitter_orientation";
+                if (bounds(waveform).right() >= bounds(analysisPanel).left()
+                    || bounds(top).bottom() >= bounds(workspace).top()
+                    || bounds(workspace).bottom() >= bounds(bottom).top()) return "region_order";
+                if (!accessible(progress)) return "progress_unreachable";
+                for (QWidget* region : {top, bottom}) {
+                    for (QWidget* child : region->findChildren<QWidget*>()) {
+                        if (qobject_cast<QAbstractButton*>(child) || qobject_cast<QAbstractSpinBox*>(child)
+                            || qobject_cast<QComboBox*>(child) || qobject_cast<QSlider*>(child)) {
+                            if (!accessible(child)) return "control_unreachable:" + child->objectName()
+                                + ":" + child->metaObject()->className();
+                        }
+                    }
+                }
+                for (auto* panel : window.findChildren<QDockWidget*>()) {
+                    if (panel->isFloating() || panel->features() != QDockWidget::NoDockWidgetFeatures)
+                        return "floating_panel";
+                }
+                return {};
+            };
+            const QString screenshotDir = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+            if (!screenshotDir.isEmpty() && !QDir().mkpath(screenshotDir)) return fail("screenshot_directory");
+            for (const QString& locale : {QString("zh_CN"), QString("en_US"), QString("ja_JP"), QString("zh_TW")}) {
+                if (!i18n.loadLocale(locale, &error)) return fail(error);
+                // Retranslation changes height-for-width hints asynchronously.
+                // Let those layout requests settle before requesting a size.
+                settle();
+                for (const QSize size : {QSize(900, 560), QSize(1280, 800)}) {
+                    window.resize(size);
+                    settle();
+                    // A width change can invalidate the previous minimum height.
+                    // Retry the same exact target after that recalculation.
+                    window.resize(size);
+                    settle();
+                    if (!screenshotDir.isEmpty()) {
+                        const QString path = QDir(screenshotDir).filePath(QString("layout-%1-%2x%3.png")
+                            .arg(locale).arg(size.width()).arg(size.height()));
+                        if (!window.grab().save(path)) return fail("screenshot_save");
+                    }
+                    if (window.size() != size) return fail(QString("minimum_size:%1:%2x%3")
+                        .arg(locale).arg(window.width()).arg(window.height()));
+                    const QString problem = regionError();
+                    if (!problem.isEmpty()) return fail(locale + ":" + QString::number(size.width()) + ":" + problem);
+                }
+                auto* toggle = window.findChild<QAction*>("eegToggleAnalysis");
+                if (!toggle || toggle->text() != i18n.text("app.view.analysis")) return fail("untranslated_action");
+            }
+            const int oldBoundary = workspace->sizes().value(0);
+            workspace->setSizes({760, 420});
+            settle();
+            if (workspace->sizes().value(0) == oldBoundary) {
+                workspace->setSizes({560, 620});
+                settle();
+            }
+            if (workspace->sizes().value(0) == oldBoundary || !regionError().isEmpty()) return fail("splitter_resize");
+            auto* analysisTabs = analysisPanel->findChild<QTabWidget*>();
+            if (!analysisTabs || analysisTabs->count() != 4) return fail("analysis_tabs");
+            for (int tab = 0; tab < 4; ++tab) {
+                analysisTabs->setCurrentIndex(tab); settle();
+                if (analysisTabs->currentIndex() != tab || !accessible(analysisTabs->currentWidget())
+                    || !regionError().isEmpty()) return fail("analysis_tab_unreachable:" + QString::number(tab));
+            }
+            analysisTabs->setCurrentIndex(0);
+            auto* filters = window.findChild<QWidget*>("eegFilterPanel");
+            if (!filters) return fail("filter_panel");
+            const auto advancedButtons = filters->findChildren<QPushButton*>();
+            if (advancedButtons.isEmpty()) return fail("advanced_filter_buttons");
+            for (auto* button : advancedButtons) {
+                parameters->ensureWidgetVisible(button, 0, 4); settle();
+                if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->text());
+            }
+            for (const QString& suffix : {QString("Channels"), QString("Markers"), QString("Analysis"), QString("Video")}) {
+                const QString panelName = suffix == "Channels" ? "eegChannelPanel"
+                    : suffix == "Markers" ? "eegMarkerPanel" : "eeg" + suffix + "Panel";
+                auto* panel = window.findChild<QWidget*>(panelName);
+                auto* action = window.findChild<QAction*>("eegToggle" + suffix);
+                if (!panel || !action) return fail("missing_toggle:" + suffix);
+                const bool initial = panel->isVisible();
+                action->trigger(); settle();
+                if (panel->isVisible() == initial || action->isChecked() != panel->isVisible())
+                    return fail("toggle_visibility:" + suffix);
+                if (suffix == "Video" && panel->isVisible()
+                    && bounds(panel).top() <= bounds(waveform).bottom()) return fail("video_not_below_waveform");
+                if (suffix == "Video" && panel->isVisible()) {
+                    window.resize(900, 560); settle();
+                    window.resize(900, 560); settle();
+                    if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
+                    if (window.size() != QSize(900, 560) || !regionError().isEmpty()
+                        || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
+                }
+                action->trigger(); settle();
+                if (panel->isVisible() != initial || action->isChecked() != initial) return fail("toggle_restore:" + suffix);
+            }
+            const QStringList hiddenSuffixes{"Channels", "Markers", "Analysis"};
+            for (const QString& suffix : hiddenSuffixes) window.findChild<QAction*>("eegToggle" + suffix)->trigger();
+            settle();
+            window.showFileOpenResult(result); // A seek response must preserve user panel choices.
+            settle();
+            for (const QString& suffix : hiddenSuffixes) {
+                const QString name = suffix == "Channels" ? "eegChannelPanel"
+                    : suffix == "Markers" ? "eegMarkerPanel" : "eegAnalysisPanel";
+                auto* panel = window.findChild<QWidget*>(name);
+                auto* action = window.findChild<QAction*>("eegToggle" + suffix);
+                if (panel->isVisible() || action->isChecked()) return fail("seek_restores_hidden_panel:" + suffix);
+                action->trigger();
+            }
+            settle();
+            if (!regionError().isEmpty()) return fail("layout_after_toggles");
+            std::cout << "smoke-ui-fixed-layout-ok locales=4 panels=true splitters=true controls=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-continuous-file" && i + 1 < argc) {

@@ -1,4 +1,5 @@
 #include "ui/video_panel.h"
+#include "ui/control_bar.h"
 
 #include "i18n/i18n_service.h"
 
@@ -27,7 +28,7 @@ VideoPanel::VideoPanel(I18nService* i18n, QWidget* parent)
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
 
-    auto* header = new QHBoxLayout();
+    auto* header = new ControlFlowLayout(nullptr);
     titleLabel_ = new QLabel(this);
     openButton_ = new QPushButton(this);
     offsetLabel_ = new QLabel(this);
@@ -45,16 +46,19 @@ VideoPanel::VideoPanel(I18nService* i18n, QWidget* parent)
     header->addWidget(offsetLabel_);
     header->addWidget(offsetSpin_);
     header->addWidget(applyButton_);
-    header->addStretch();
-    header->addWidget(fileLabel_);
+
+    fileLabel_->setWordWrap(true);
+    fileLabel_->setMinimumWidth(0);
+    fileLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     layout->addLayout(header);
+    layout->addWidget(fileLabel_);
 
     videoLabel_ = new QLabel(this);
     videoLabel_->setAlignment(Qt::AlignCenter);
-    videoLabel_->setMinimumHeight(180);
-    videoLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    videoLabel_->setMinimumHeight(60);
+    videoLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     videoLabel_->setStyleSheet("background: #000000;");
-    layout->addWidget(videoLabel_);
+    layout->addWidget(videoLabel_, 1);
 
     player_ = new QMediaPlayer(this);
     audioOutput_ = new QAudioOutput(this);

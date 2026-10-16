@@ -1,6 +1,6 @@
 #include "ui/eeg_processing_panel.h"
 
-#include <QToolBar>
+#include "ui/control_bar.h"
 
 namespace bf {
 
@@ -32,14 +32,11 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
 
     applyToSelectedButton_ = new QPushButton;
     clearPerChannelButton_ = new QPushButton;
-    applyToSelectedButton_->setMaximumWidth(180);
-    clearPerChannelButton_->setMaximumWidth(180);
 }
 
-void EegProcessingPanel::buildInto(QToolBar* toolbar, const ProcessingViewState& state) {
+void EegProcessingPanel::buildInto(ControlBar* toolbar, ControlBar* filters, const ProcessingViewState& state) {
     toolbar->addSeparator();
-    toolbar->addWidget(referenceLabel_);
-    toolbar->addWidget(referenceCombo_);
+    toolbar->addPair(referenceLabel_, referenceCombo_);
 
     toolbar->addSeparator();
     toolbar->addWidget(notchEnableCheck_);
@@ -56,18 +53,16 @@ void EegProcessingPanel::buildInto(QToolBar* toolbar, const ProcessingViewState&
         spin->setMaximumWidth(90);
         notchBandChecks_.push_back(chk);
         notchBandSpins_.push_back(spin);
-        toolbar->addWidget(chk);
-        toolbar->addWidget(spin);
+        filters->addPair(chk, spin);
     }
-    toolbar->addWidget(notchHarmonicsCheck_);
-    toolbar->addWidget(notchHarmonicsSpin_);
+    filters->addPair(notchHarmonicsCheck_, notchHarmonicsSpin_);
 
-    toolbar->addSeparator();
-    toolbar->addWidget(bandpassEnableCheck_);
-    toolbar->addWidget(bandpassLowSpin_);
-    toolbar->addWidget(bandpassHighSpin_);
-    toolbar->addWidget(applyToSelectedButton_);
-    toolbar->addWidget(clearPerChannelButton_);
+    filters->addSeparator();
+    filters->addWidget(bandpassEnableCheck_);
+    filters->addWidget(bandpassLowSpin_);
+    filters->addWidget(bandpassHighSpin_);
+    filters->addWidget(applyToSelectedButton_);
+    filters->addWidget(clearPerChannelButton_);
     connectChanged();
     refreshFromState(state);
 }
@@ -159,9 +154,11 @@ void EegProcessingPanel::retranslateUi(I18nService* i18n) {
     bandpassEnableCheck_->setText(i18n->text("app.processing.bandpass"));
     if (applyToSelectedButton_ != nullptr) {
         applyToSelectedButton_->setText(i18n->text("app.processing.apply_to_selected"));
+        applyToSelectedButton_->setToolTip(applyToSelectedButton_->text());
     }
     if (clearPerChannelButton_ != nullptr) {
         clearPerChannelButton_->setText(i18n->text("app.processing.clear_per_channel"));
+        clearPerChannelButton_->setToolTip(clearPerChannelButton_->text());
     }
 }
 

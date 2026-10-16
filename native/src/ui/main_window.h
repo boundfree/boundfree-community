@@ -34,7 +34,8 @@
 #include <QStackedWidget>
 #include <QSpinBox>
 #include <QTabWidget>
-#include <QToolBar>
+#include "ui/control_bar.h"
+#include <QSplitter>
 #include <QVector>
 #include <QVBoxLayout>
 #include <QTableWidget>
@@ -74,6 +75,7 @@ public:
     QString exportStatusSummary() const;
 
 private:
+    void buildFixedWorkspace();
     void buildViewMenu();
     void buildThemeMenu();
     void applyTheme(bool dark);
@@ -154,7 +156,13 @@ private:
     bool darkTheme_ = false;
     QActionGroup* languageGroup_ = nullptr;
     QVector<QAction*> languageActions_;
-    QToolBar* browserToolbar_ = nullptr;
+    ControlBar* playbackToolbar_ = nullptr;
+    ControlBar* filterToolbar_ = nullptr;
+    QWidget* playbackBar_ = nullptr;
+    QWidget* progressRow_ = nullptr;
+    CollapsiblePanel* filterPanel_ = nullptr;
+    QSplitter* signalSplitter_ = nullptr;
+    ControlBar* browserToolbar_ = nullptr;
     QAction* previousWindowAction_ = nullptr;
     QAction* nextWindowAction_ = nullptr;
     QLabel* positionLabel_ = nullptr;
@@ -199,7 +207,6 @@ private:
 
     QDockWidget* analysisDock_ = nullptr;
     QTabWidget* analysisTabs_ = nullptr;
-    CollapsiblePanel* analysisPanel_ = nullptr;
     QComboBox* psdChannelCombo_ = nullptr;
     QComboBox* psdModeCombo_ = nullptr;
     QCheckBox* psdDbCheck_ = nullptr;

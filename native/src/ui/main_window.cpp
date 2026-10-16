@@ -41,7 +41,10 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     : QMainWindow(parent), version_(version), repoRoot_(repoRoot), i18n_(i18n) {
     setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     centralStack_ = new QStackedWidget(this);
+    centralStack_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    centralStack_->setMinimumSize(320, 180);
     emptyPage_ = new QWidget(centralStack_);
+    emptyPage_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     auto* emptyLayout = new QVBoxLayout(emptyPage_);
     emptyLayout->setAlignment(Qt::AlignCenter);
     auto* logoLabel = new QLabel(emptyPage_);
@@ -60,7 +63,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     waveformWidget_ = new WaveformWidget(this);
     centralStack_->addWidget(emptyPage_);
     centralStack_->addWidget(waveformWidget_);
-    setCentralWidget(centralStack_);
+    waveformWidget_->setMinimumSize(320, 180);
     // Keep the menu bar inside the Qt widget hierarchy on Windows so palette,
     // stylesheet and action geometry are deterministic.
     menuBar()->setNativeMenuBar(false);
@@ -73,6 +76,12 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     buildMarkerDock();
     buildVideoDock();
     buildRecordControls();
+    for (auto* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        combo->setMinimumContentsLength(6);
+        combo->setMinimumWidth(70);
+    }
+    buildFixedWorkspace();
     // Build all top-level menus consecutively after toolbar/dock layout is
     // complete. This keeps their mouse regions in one stable QMenuBar layout.
     buildFileMenu();
@@ -109,6 +118,80 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     // Apply theme only after menu titles/actions are translated, otherwise the
     // first QMenuBar items can stay blank under stylesheet on Windows.
     applyTheme(darkTheme_);
+}
+
+void MainWindow::buildFixedWorkspace() {
+    auto* root = new QWidget(this);
+    auto* layout = new QVBoxLayout(root);
+    layout->setContentsMargins(6, 4, 6, 4);
+    layout->setSpacing(6);
+    layout->addWidget(browserToolbar_);
+    auto* workspace = new QSplitter(Qt::Horizontal, root);
+    workspace->setObjectName("eegWorkspaceSplitter");
+    workspace->setChildrenCollapsible(false);
+    signalSplitter_ = new QSplitter(Qt::Vertical, workspace);
+    signalSplitter_->setObjectName("eegSignalSplitter");
+    signalSplitter_->setChildrenCollapsible(false);
+    auto* analysisSplit = new QSplitter(Qt::Vertical, workspace);
+    analysisSplit->setObjectName("eegAnalysisSplitter");
+    analysisSplit->setChildrenCollapsible(false);
+    const auto fixedPanel = [](QDockWidget* panel, const char* name) {
+        panel->setObjectName(name);
+        panel->setFeatures(QDockWidget::NoDockWidgetFeatures);
+        panel->setAllowedAreas(Qt::NoDockWidgetArea);
+        panel->setTitleBarWidget(new QWidget(panel));
+    };
+    fixedPanel(channelDock_, "eegChannelPanel");
+    fixedPanel(markerDock_, "eegMarkerPanel");
+    fixedPanel(analysisDock_, "eegAnalysisPanel");
+    fixedPanel(videoDock_, "eegVideoPanel");
+    signalSplitter_->addWidget(centralStack_);
+    signalSplitter_->addWidget(videoDock_);
+    signalSplitter_->setStretchFactor(0, 3);
+    signalSplitter_->setStretchFactor(1, 1);
+    analysisSplit->addWidget(analysisDock_);
+    auto* parameterScroll = new QScrollArea(analysisSplit);
+    parameterScroll->setObjectName("eegParameterScroll");
+    parameterScroll->setWidgetResizable(true);
+    parameterScroll->setMinimumHeight(48);
+    parameterScroll->setFrameShape(QFrame::NoFrame);
+    parameterScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* parameters = new QWidget(parameterScroll);
+    auto* parameterLayout = new QVBoxLayout(parameters);
+    parameterLayout->setContentsMargins(0, 0, 2, 0);
+    parameterLayout->setSpacing(4);
+    channelScroll_->setMinimumHeight(80);
+    channelScroll_->setMaximumHeight(150);
+    parameterLayout->addWidget(channelDock_);
+    filterPanel_ = new CollapsiblePanel(i18n_->text("app.processing.panel"), parameters);
+    filterPanel_->setObjectName("eegFilterPanel");
+    filterPanel_->addWidget(filterToolbar_);
+    parameterLayout->addWidget(filterPanel_);
+    markerTable_->setMinimumHeight(70);
+    markerTable_->setMaximumHeight(170);
+    parameterLayout->addWidget(markerDock_);
+    parameterLayout->addStretch();
+    parameterScroll->setWidget(parameters);
+    analysisSplit->addWidget(parameterScroll);
+    analysisSplit->setStretchFactor(0, 2);
+    analysisSplit->setStretchFactor(1, 1);
+    analysisSplit->setSizes({280, 180});
+    workspace->addWidget(signalSplitter_);
+    workspace->addWidget(analysisSplit);
+    workspace->setStretchFactor(0, 2);
+    workspace->setStretchFactor(1, 1);
+    workspace->setSizes({560, 320});
+    layout->addWidget(workspace, 1);
+    playbackBar_ = new QWidget(root);
+    playbackBar_->setObjectName("eegPlaybackBar");
+    auto* playbackLayout = new QVBoxLayout(playbackBar_);
+    playbackLayout->setContentsMargins(0, 0, 0, 0);
+    playbackLayout->setSpacing(2);
+    playbackLayout->addWidget(playbackToolbar_);
+    playbackLayout->addWidget(progressRow_);
+    layout->addWidget(playbackBar_);
+    playbackBar_->hide();
+    setCentralWidget(root);
 }
 
 void MainWindow::buildFileMenu() {
@@ -161,12 +244,16 @@ void MainWindow::buildLanguageMenu() {
 void MainWindow::buildViewMenu() {
     viewMenu_ = menuBar()->addMenu(i18n_->text("app.menu.view"));
     toggleChannelsAction_ = viewMenu_->addAction(QString());
+    toggleChannelsAction_->setObjectName("eegToggleChannels");
     toggleMarkersAction_ = viewMenu_->addAction(QString());
+    toggleMarkersAction_->setObjectName("eegToggleMarkers");
     toggleAnalysisAction_ = viewMenu_->addAction(QString());
+    toggleAnalysisAction_->setObjectName("eegToggleAnalysis");
     toggleVideoAction_ = viewMenu_->addAction(QString());
+    toggleVideoAction_->setObjectName("eegToggleVideo");
     auto wireToggle = [this](QAction* action, QDockWidget* dock) {
         action->setCheckable(true);
-        action->setChecked(dock->isVisible());
+        action->setChecked(!dock->isHidden());
         action->setEnabled(true);
         connect(action, &QAction::triggered, dock, &QDockWidget::setVisible);
         connect(dock, &QDockWidget::visibilityChanged, action, &QAction::setChecked);
@@ -348,14 +435,20 @@ QString MainWindow::currentModeKey() const {
 }
 
 void MainWindow::buildBrowserControls() {
-    browserToolbar_ = addToolBar("Browser");
-    browserToolbar_->setMovable(false);
+    browserToolbar_ = new ControlBar(this);
+    browserToolbar_->setObjectName("eegSignalToolbar");
+    playbackToolbar_ = new ControlBar(this);
+    filterToolbar_ = new ControlBar(this);
+    filterToolbar_->setObjectName("eegFilterControls");
+    progressRow_ = new QWidget(this);
+    auto* progressLayout = new QHBoxLayout(progressRow_);
+    progressLayout->setContentsMargins(4, 0, 4, 0);
 
-    previousWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowBack), QString());
+    previousWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowBack), QString());
     connect(previousWindowAction_, &QAction::triggered, this, [this]() {
         requestWindow(waveformWidget_->timeRange().first - viewState_.windowSeconds);
     });
-    nextWindowAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
+    nextWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
     connect(nextWindowAction_, &QAction::triggered, this, [this]() {
         requestWindow(waveformWidget_->timeRange().first + viewState_.windowSeconds);
     });
@@ -369,10 +462,10 @@ void MainWindow::buildBrowserControls() {
     positionSpin_->setSuffix(" s");
     positionSpin_->setMinimumWidth(100);
     playbackPanel_ = new EegPlaybackPanel(this);
-    browserToolbar_->addSeparator();
-    browserToolbar_->addWidget(positionLabel_);
-    browserToolbar_->addWidget(positionSpin_);
-    browserToolbar_->addWidget(playbackPanel_->progressSlider());
+
+    progressLayout->addWidget(positionLabel_);
+    progressLayout->addWidget(positionSpin_);
+    progressLayout->addWidget(playbackPanel_->progressSlider(), 1);
     connect(playbackPanel_->progressSlider(), &QSlider::sliderPressed, this, [this]() {
         syncVideoToPlayback();
     });
@@ -422,14 +515,11 @@ void MainWindow::buildBrowserControls() {
     firstChannelSpin_->setValue(viewState_.firstVisibleChannel);
 
     browserToolbar_->addSeparator();
-    browserToolbar_->addWidget(timeWindowLabel_);
-    browserToolbar_->addWidget(timeWindowSpin_);
+    browserToolbar_->addPair(timeWindowLabel_, timeWindowSpin_);
     browserToolbar_->addSeparator();
-    browserToolbar_->addWidget(amplitudeLabel_);
-    browserToolbar_->addWidget(amplitudeSpin_);
+    browserToolbar_->addPair(amplitudeLabel_, amplitudeSpin_);
     browserToolbar_->addSeparator();
-    browserToolbar_->addWidget(firstChannelLabel_);
-    browserToolbar_->addWidget(firstChannelSpin_);
+    browserToolbar_->addPair(firstChannelLabel_, firstChannelSpin_);
 
     channelDock_ = new QDockWidget(this);
     channelDock_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -443,7 +533,6 @@ void MainWindow::buildBrowserControls() {
     channelPanel_ = new CollapsiblePanel(i18n_->text("app.browser.channels"), channelDock_);
     channelPanel_->addWidget(channelScroll_);
     channelDock_->setWidget(channelPanel_);
-    addDockWidget(Qt::LeftDockWidgetArea, channelDock_);
     channelDock_->hide();
     browserToolbar_->hide();
 
@@ -474,9 +563,9 @@ void MainWindow::buildBrowserControls() {
 }
 
 void MainWindow::buildPlaybackControls() {
-    playAction_ = browserToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
+    playAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
     connect(playAction_, &QAction::triggered, this, &MainWindow::togglePlayback);
-    playbackPanel_->buildInto(browserToolbar_);
+    playbackPanel_->buildInto(playbackToolbar_);
     connect(playbackPanel_, &EegPlaybackPanel::speedChanged, this, [this](double speed) {
         playback_.setSpeed(speed);
         if (videoPanel_ != nullptr) {
@@ -493,8 +582,8 @@ void MainWindow::buildRecordControls() {
     const QString root = repoRoot_.isEmpty() ? QStringLiteral(BF_REPO_ROOT) : repoRoot_;
     recordController_ = new RecordController(root, version_, this);
     exportController_ = new ExportController(root, version_, this);
-    recordAction_ = browserToolbar_->addAction(QString());
-    exportSegmentAction_ = browserToolbar_->addAction(QString());
+    recordAction_ = playbackToolbar_->addAction(QString());
+    exportSegmentAction_ = playbackToolbar_->addAction(QString());
     connect(recordAction_, &QAction::triggered, this, &MainWindow::toggleRecording);
     connect(exportSegmentAction_, &QAction::triggered, this, &MainWindow::exportSegment);
     connect(recordController_, &RecordController::started, this, [this](const RecordSummary& summary) {
@@ -615,7 +704,7 @@ void MainWindow::buildMarkerDock() {
     markerTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     markerTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     layout->addWidget(markerTable_);
-    auto* buttons = new QHBoxLayout();
+    auto* buttons = new ControlFlowLayout(nullptr);
     deleteMarkerButton_ = new QPushButton(content);
     clearMarkersButton_ = new QPushButton(content);
     exportMarkersButton_ = new QPushButton(content);
@@ -626,7 +715,6 @@ void MainWindow::buildMarkerDock() {
     markerPanel_ = new CollapsiblePanel(i18n_->text("app.marker.panel"), markerDock_);
     markerPanel_->addWidget(content);
     markerDock_->setWidget(markerPanel_);
-    addDockWidget(Qt::RightDockWidgetArea, markerDock_);
     markerDock_->hide();
     connect(deleteMarkerButton_, &QPushButton::clicked, this, &MainWindow::deleteSelectedMarker);
     connect(clearMarkersButton_, &QPushButton::clicked, this, &MainWindow::clearMarkers);
@@ -644,7 +732,6 @@ void MainWindow::buildVideoDock() {
     videoDock_->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::RightDockWidgetArea);
     videoPanel_ = new VideoPanel(i18n_, videoDock_);
     videoDock_->setWidget(videoPanel_);
-    addDockWidget(Qt::BottomDockWidgetArea, videoDock_);
     videoDock_->hide();
     connect(videoPanel_, &VideoPanel::offsetApplyRequested, this, [this]() {
         videoPanel_->applyOffset(playback_.position(), playback_.isPlaying() && !waitingForPlaybackData_
@@ -667,7 +754,7 @@ void MainWindow::buildVideoDock() {
 
 void MainWindow::buildProcessingControls() {
     processingPanel_ = new EegProcessingPanel(this);
-    processingPanel_->buildInto(browserToolbar_, processingState_);
+    processingPanel_->buildInto(browserToolbar_, filterToolbar_, processingState_);
     connect(processingPanel_, &EegProcessingPanel::changed, this, &MainWindow::onProcessingUiChanged);
     connect(processingPanel_, &EegProcessingPanel::applyBandpassToSelected, this, &MainWindow::applyBandpassToSelectedChannels);
     connect(processingPanel_, &EegProcessingPanel::clearPerChannelBandpass, this, &MainWindow::clearPerChannelBandpassOverrides);
@@ -677,15 +764,12 @@ void MainWindow::buildAnalysisDock() {
     analysisDock_ = new QDockWidget(this);
     analysisDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     analysisTabs_ = new QTabWidget(analysisDock_);
-    analysisPanel_ = new CollapsiblePanel(i18n_->text("app.analysis.panel"), analysisDock_);
-    analysisPanel_->addWidget(analysisTabs_);
-    analysisDock_->setWidget(analysisPanel_);
-    addDockWidget(Qt::RightDockWidgetArea, analysisDock_);
+    analysisDock_->setWidget(analysisTabs_);
     analysisDock_->hide();
 
     auto* psdPage = new QWidget(analysisTabs_);
     auto* psdLayout = new QVBoxLayout(psdPage);
-    auto* psdControls = new QHBoxLayout();
+    auto* psdControls = new ControlFlowLayout(nullptr);
     psdChannelCombo_ = new QComboBox(psdPage);
     psdModeCombo_ = new QComboBox(psdPage);
     psdDbCheck_ = new QCheckBox(psdPage);
@@ -699,18 +783,20 @@ void MainWindow::buildAnalysisDock() {
     psdModeCombo_->addItem(QString());
     psdModeCombo_->addItem(QString());
     psdControls->addWidget(psdFmaxSpin_);
-    psdControls->addStretch();
     spectrumWidget_ = new SpectrumWidget(psdPage);
+    spectrumWidget_->setMinimumSize(220, 160);
+    spectrumWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     psdLayout->addLayout(psdControls);
-    psdLayout->addWidget(spectrumWidget_);
+    psdLayout->addWidget(spectrumWidget_, 1);
     psdBandSummaryLabel_ = new QLabel(psdPage);
     psdBandSummaryLabel_->setWordWrap(true);
+    psdBandSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     psdLayout->addWidget(psdBandSummaryLabel_);
     analysisTabs_->addTab(psdPage, QString());
 
     auto* stftPage = new QWidget(analysisTabs_);
     auto* stftLayout = new QVBoxLayout(stftPage);
-    auto* stftControls = new QHBoxLayout();
+    auto* stftControls = new ControlFlowLayout(nullptr);
     stftChannelCombo_ = new QComboBox(stftPage);
     stftResolutionCombo_ = new QComboBox(stftPage);
     stftFmaxSpin_ = new QSpinBox(stftPage);
@@ -720,10 +806,11 @@ void MainWindow::buildAnalysisDock() {
     stftControls->addWidget(stftChannelCombo_);
     stftControls->addWidget(stftResolutionCombo_);
     stftControls->addWidget(stftFmaxSpin_);
-    stftControls->addStretch();
     spectrogramWidget_ = new SpectrogramWidget(stftPage);
+    spectrogramWidget_->setMinimumSize(220, 160);
+    spectrogramWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     stftLayout->addLayout(stftControls);
-    stftLayout->addWidget(spectrogramWidget_);
+    stftLayout->addWidget(spectrogramWidget_, 1);
     analysisTabs_->addTab(stftPage, QString());
 
     auto* trendPage = new QWidget(analysisTabs_);
@@ -731,7 +818,7 @@ void MainWindow::buildAnalysisDock() {
     stftResolutionCombo_->addItem(QString());
     stftResolutionCombo_->addItem(QString());
     auto* trendLayout = new QVBoxLayout(trendPage);
-    auto* trendControls = new QHBoxLayout();
+    auto* trendControls = new ControlFlowLayout(nullptr);
     trendChannelCombo_ = new QComboBox(trendPage);
     trendEpochSpin_ = new QDoubleSpinBox(trendPage);
     trendEpochSpin_->setRange(0.5, 30.0);
@@ -739,15 +826,16 @@ void MainWindow::buildAnalysisDock() {
     trendEpochSpin_->setSuffix(" s");
     trendControls->addWidget(trendChannelCombo_);
     trendControls->addWidget(trendEpochSpin_);
-    trendControls->addStretch();
     trendWidget_ = new BandTrendWidget(trendPage);
+    trendWidget_->setMinimumSize(220, 160);
+    trendWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     trendLayout->addLayout(trendControls);
-    trendLayout->addWidget(trendWidget_);
+    trendLayout->addWidget(trendWidget_, 1);
     analysisTabs_->addTab(trendPage, QString());
 
     auto* coherencePage = new QWidget(analysisTabs_);
     auto* coherenceLayout = new QVBoxLayout(coherencePage);
-    auto* coherenceControls = new QHBoxLayout();
+    auto* coherenceControls = new ControlFlowLayout(nullptr);
     coherenceACombo_ = new QComboBox(coherencePage);
     coherenceBCombo_ = new QComboBox(coherencePage);
     coherenceFmaxSpin_ = new QSpinBox(coherencePage);
@@ -757,12 +845,14 @@ void MainWindow::buildAnalysisDock() {
     coherenceControls->addWidget(coherenceACombo_);
     coherenceControls->addWidget(coherenceBCombo_);
     coherenceControls->addWidget(coherenceFmaxSpin_);
-    coherenceControls->addStretch();
     coherenceWidget_ = new SpectrumWidget(coherencePage);
+    coherenceWidget_->setMinimumSize(220, 160);
+    coherenceWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     coherenceSummaryLabel_ = new QLabel(coherencePage);
     coherenceSummaryLabel_->setWordWrap(true);
+    coherenceSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     coherenceLayout->addLayout(coherenceControls);
-    coherenceLayout->addWidget(coherenceWidget_);
+    coherenceLayout->addWidget(coherenceWidget_, 1);
     coherenceLayout->addWidget(coherenceSummaryLabel_);
     analysisTabs_->addTab(coherencePage, QString());
 
@@ -1264,7 +1354,9 @@ void MainWindow::retranslateUi() {
         action->setChecked(locale == i18n_->locale());
     }
 
+    previousWindowAction_->setText(i18n_->text("app.browser.previous"));
     previousWindowAction_->setToolTip(i18n_->text("app.browser.previous"));
+    nextWindowAction_->setText(i18n_->text("app.browser.next"));
     nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
     positionLabel_->setText(i18n_->text("app.browser.position"));
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
@@ -1276,9 +1368,9 @@ void MainWindow::retranslateUi() {
     channelPanel_->setTitle(i18n_->text("app.browser.channels"));
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
+        if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
     }
     analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
-    analysisPanel_->setTitle(i18n_->text("app.analysis.panel"));
     analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
     analysisTabs_->setTabText(1, i18n_->text("app.analysis.stft"));
     analysisTabs_->setTabText(2, i18n_->text("app.analysis.trend"));
@@ -1302,7 +1394,8 @@ void MainWindow::retranslateUi() {
     stftResolutionCombo_->setItemText(2, i18n_->text("app.analysis.high_frequency"));
     markerModeAction_->setText(i18n_->text("app.marker.mode"));
     markerModeAction_->setToolTip(i18n_->text("app.marker.mode_tooltip"));
-    playAction_->setToolTip(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
+    playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
+    playAction_->setToolTip(playAction_->text());
     if (playbackPanel_ != nullptr) {
         playbackPanel_->retranslateUi(i18n_);
     }
@@ -1401,6 +1494,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     }
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
+    playbackBar_->show();
     if (!sameSession) {
         playbackViewportActive_ = false;
         waveformWidget_->clearTimeRange();
@@ -1421,14 +1515,14 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         }
         markerStore_.replaceFromEvents(events);
     }
-    channelDock_->show();
+    if (!sameSession) channelDock_->show();
     refreshBrowserControls();
     refreshProcessingControls();
     applyProcessingAndDisplay();
     refreshAnalysisControls();
-    analysisDock_->show();
+    if (!sameSession) analysisDock_->show();
     refreshPersistentStatus();
-    markerDock_->show();
+    if (!sameSession) markerDock_->show();
     refreshPlaybackControls();
     refreshMarkerControls();
     playbackElapsed_.restart();

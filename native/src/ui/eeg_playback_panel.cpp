@@ -34,10 +34,9 @@ void EegPlaybackPanel::buildWidgets() {
     });
 }
 
-void EegPlaybackPanel::buildInto(QToolBar* toolbar) {
+void EegPlaybackPanel::buildInto(ControlBar* toolbar) {
     toolbar->addSeparator();
-    toolbar->addWidget(speedLabel_);
-    toolbar->addWidget(speedCombo_);
+    toolbar->addPair(speedLabel_, speedCombo_);
 
     connect(speedCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (refreshing_ || index < 0) {

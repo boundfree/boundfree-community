@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.68-dev",
+  "version": "0.1.69-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 打包实现、WSL2 Linux 可验证部分与 Windows x64 安装包自动化验收已完成（2026-10-15），组织证书签名、干净 Windows 10/11 安装与桌面全流程人工验收待执行。产品版本 `0.1.68-dev`。
+当前阶段：M0–M7 均已完成；M8 打包实现、WSL2 Linux 可验证部分与 Windows x64 安装包自动化验收已完成（2026-10-15），组织证书签名、干净 Windows 10/11 安装与桌面全流程人工验收待执行。产品版本 `0.1.69-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 

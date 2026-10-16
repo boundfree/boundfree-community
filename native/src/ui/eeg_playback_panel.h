@@ -5,7 +5,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QSlider>
-#include <QToolBar>
+#include "ui/control_bar.h"
 #include <QObject>
 
 namespace bf {
@@ -35,7 +35,7 @@ public:
     explicit EegPlaybackPanel(QObject* parent = nullptr);
 
     // Append a separator + speed label + speed combo to the host toolbar.
-    void buildInto(QToolBar* toolbar);
+    void buildInto(ControlBar* toolbar);
 
     // The progress slider widget. MainWindow adds it to the toolbar at the
     // position it belongs (between position spin and window controls).

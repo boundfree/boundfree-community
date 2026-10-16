@@ -9,13 +9,13 @@
 #include <QSpinBox>
 #include <QPushButton>
 #include <QLabel>
-#include <QToolBar>
+#include "ui/control_bar.h"
 #include <QObject>
 
 namespace bf {
 
 // EegProcessingPanel owns the reference / notch / bandpass filter controls that
-// live on the browser toolbar. It is an internal UI-assembly unit extracted from
+// live in the signal bar and collapsible processing region. It is an internal UI-assembly unit extracted from
 // MainWindow; MainWindow holds a pointer and forwards state to/from it. The
 // panel does not own any DSP state itself -- it only mirrors ProcessingViewState
 // into the widgets and reports user edits via changed().
@@ -24,11 +24,11 @@ class EegProcessingPanel : public QObject {
 public:
     explicit EegProcessingPanel(QObject* parent = nullptr);
 
-    // Append the reference / notch / bandpass controls to the host toolbar,
+    // Append common signal controls to the top bar and detailed filters to the side panel,
     // creating the per-notch-band check/spin pairs from the initial state. The
     // band widget count is fixed at construction (matching the original behavior
     // where buildProcessingControls created them once from the default state).
-    void buildInto(QToolBar* toolbar, const ProcessingViewState& state);
+    void buildInto(ControlBar* toolbar, ControlBar* filters, const ProcessingViewState& state);
 
     // Push state into the widgets (blocks emission of changed() while refreshing).
     void refreshFromState(const ProcessingViewState& state);

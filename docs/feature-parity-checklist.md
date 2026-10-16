@@ -144,7 +144,8 @@ v1.1/v2：
 ## 系统级 — M1/M2/M8
 
 - [x] 亮/暗双主题（清华紫），切换同步所有图元配色
-- [x] 可折叠面板（通道/滤波/标注）：三个 dock 内容包入 `CollapsiblePanel`，默认展开、随 locale 重译标题
+- [x] 可折叠面板（通道/处理/标注）：右侧滚动区中的 `CollapsiblePanel` 默认展开、随 locale 重译标题；分析直接显示标签页
+- [x] 固定区域布局：顶部信号设置、左波形/视频、右分析/参数、底部播放录制；禁用面板浮动与拖移，常用操作自动换行（离屏四语言/两尺寸已验，Windows DPI 待验，见 [阶段 3 报告](reports/eeg-ui-stage3-layout.md)）
 - [x] 菜单 + 快捷键（Ctrl+O / Ctrl+Shift+O / Ctrl+Q）
 - [x] 状态栏常驻文件名 + 模式标签（空闲/回放/实时/录制）：`statusFileLabel_` + `statusModeLabel_`（`currentModeKey()` 覆盖 idle/playback/recording），`--smoke-m8-system-ui` 断言
 - [x] i18n：zh_CN/en_US 运行时切换
