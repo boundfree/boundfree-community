@@ -21,6 +21,7 @@
 #include "ui/empty_controls_smoke.h"
 #include "ui/scrub_file_smoke.h"
 #include "ui/analysis_text_smoke.h"
+#include "ui/analysis_refresh_smoke.h"
 #include "ui/reference_labels_smoke.h"
 #include "ui/analysis_widgets.h"
 #include "ui/plot_style.h"
@@ -834,6 +835,7 @@ int main(int argc, char** argv) {
                       << " opened_en=" << openedEn.toStdString() << "\n";
             return 0;
         }
+        if (arg == "--smoke-ui-analysis-refresh") return smokeAnalysisRefresh(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-analysis-text") return smokeAnalysisText(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-reference-labels") return smokeReferenceLabels(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-analysis-presentation") {

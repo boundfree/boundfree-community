@@ -254,6 +254,8 @@ private:
         bool asDb = false;
     };
     std::array<AnalysisPageState, 4> analysisPages_;
+    AnalysisPageState pendingAnalysis_;
+    bool analysisRequestPending_ = false;
     std::array<QLabel*, 4> analysisTitleLabels_{};
     std::array<QLabel*, 4> analysisStatusLabels_{};
     std::array<QLabel*, 4> analysisLegendLabels_{};

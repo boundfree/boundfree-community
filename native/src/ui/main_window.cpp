@@ -9,6 +9,7 @@
 #include "render/waveform_slice.h"
 
 #include <QActionGroup>
+#include <QScopeGuard>
 #include <QPalette>
 #include <QCheckBox>
 #include <QComboBox>
@@ -1032,8 +1033,7 @@ void MainWindow::requestCurrentAnalysis(bool background) {
     if (currentTab < 0 || currentTab >= 4) return;
     // Automatic playback updates must let an expensive analysis finish. User
     // changes still supersede work immediately via a new generation.
-    if (background && requestedAnalysisPage_ == currentTab
-        && analysisPages_[currentTab].state == AnalysisDisplayState::Pending) return;
+    if (background && requestedAnalysisPage_ == currentTab && analysisRequestPending_) return;
     AnalysisRequest request;
     request.fs = currentFile_.waveform.fs;
     if (!(request.fs > 0.0) || windowRequestPending_ || openingFile_) return;
@@ -1072,6 +1072,8 @@ void MainWindow::requestCurrentAnalysis(bool background) {
     if (request.channel < 0 || (request.kind == AnalysisKind::Coherence && request.channelB < 0)) {
         return;
     }
+    if (requestedAnalysisPage_ >= 0 && requestedAnalysisPage_ != currentTab)
+        analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
     // Every request owns one page and its exact input context. A pending result
     // from a previously selected page must never repopulate a different page.
     if (requestedAnalysisPage_ >= 0 && requestedAnalysisPage_ != currentTab
@@ -1081,8 +1083,9 @@ void MainWindow::requestCurrentAnalysis(bool background) {
         clearAnalysisPlot(requestedAnalysisPage_);
         refreshAnalysisPage(requestedAnalysisPage_);
     }
-    auto& page = analysisPages_[currentTab];
-    page = {};
+    auto& displayed = analysisPages_[currentTab];
+    const bool retainResult = background && displayed.state == AnalysisDisplayState::Ready;
+    AnalysisPageState page;
     page.state = AnalysisDisplayState::Pending;
     page.kind = request.kind;
     page.start = request.tStart;
@@ -1094,8 +1097,16 @@ void MainWindow::requestCurrentAnalysis(bool background) {
         page.channel += QStringLiteral(" / ") + currentFile_.waveform.channelNames.value(request.channelB);
     }
     requestedAnalysisPage_ = currentTab;
-    clearAnalysisPlot(currentTab);
-    refreshAnalysisPage(currentTab);
+    pendingAnalysis_ = std::move(page);
+    analysisRequestPending_ = true;
+    // Background playback work keeps the complete last result on screen.
+    // Its time interval belongs to that displayed result until completion.
+    if (!retainResult) {
+        displayed = pendingAnalysis_;
+        clearAnalysisPlot(currentTab);
+        refreshAnalysisPage(currentTab);
+    }
+    analysisStatusLabels_[currentTab]->setProperty("analysisUpdating", retainResult);
     analysisGeneration_ = analysisService_->request(request);
     analysisStatusLabels_[currentTab]->setProperty("analysisGeneration", analysisGeneration_);
     analysisElapsed_.restart();
@@ -1105,9 +1116,14 @@ void MainWindow::invalidateAnalysis() {
     if (analysisService_ != nullptr) analysisService_->cancel();
     analysisGeneration_ = 0;
     requestedAnalysisPage_ = -1;
+    analysisRequestPending_ = false;
+    pendingAnalysis_ = {};
     for (int index = 0; index < 4; ++index) {
         analysisPages_[index] = {};
-        if (analysisStatusLabels_[index] != nullptr) analysisStatusLabels_[index]->setProperty("analysisGeneration", 0);
+        if (analysisStatusLabels_[index] != nullptr) {
+            analysisStatusLabels_[index]->setProperty("analysisGeneration", 0);
+            analysisStatusLabels_[index]->setProperty("analysisUpdating", false);
+        }
         clearAnalysisPlot(index);
         refreshAnalysisPage(index);
     }
@@ -1180,8 +1196,8 @@ void MainWindow::refreshAnalysisPage(int index) {
 
 void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& result) {
     if (generation != analysisGeneration_ || requestedAnalysisPage_ < 0) return;
+    if (!analysisRequestPending_ || result.kind != pendingAnalysis_.kind) return;
     auto& page = analysisPages_[requestedAnalysisPage_];
-    if (page.state != AnalysisDisplayState::Pending || result.kind != page.kind) return;
     const auto finiteVector = [](const std::vector<double>& values) {
         return !values.empty() && std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
     };
@@ -1207,6 +1223,13 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
             });
         break;
     }
+    QWidget* surface = analysisTabs_->widget(requestedAnalysisPage_);
+    const bool updatesEnabled = surface->updatesEnabled();
+    if (updatesEnabled) surface->setUpdatesEnabled(false);
+    const auto restoreUpdates = qScopeGuard([surface, updatesEnabled]() { if (updatesEnabled) surface->setUpdatesEnabled(true); });
+    page = pendingAnalysis_;
+    analysisRequestPending_ = false;
+    analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
     page.state = valid ? AnalysisDisplayState::Ready : AnalysisDisplayState::Empty;
     if (valid) { page.result = result; renderAnalysisResult(requestedAnalysisPage_); }
     else { page.result = {}; clearAnalysisPlot(requestedAnalysisPage_); }
@@ -1460,6 +1483,9 @@ void MainWindow::exportMarkers() {
 void MainWindow::handleAnalysisFailed(int generation, const QString& code, const QString&) {
     if (generation != analysisGeneration_ || requestedAnalysisPage_ < 0) return;
     auto& page = analysisPages_[requestedAnalysisPage_];
+    if (analysisRequestPending_) page = pendingAnalysis_;
+    analysisRequestPending_ = false;
+    analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
     page.state = AnalysisDisplayState::Failed;
     page.errorCode = code;
     page.result = {};

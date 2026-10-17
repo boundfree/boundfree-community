@@ -36,6 +36,8 @@ last_updated: 2026-10-16
 
 补充 6D：修复多语言参考/分析/通道模式下拉的文本宽度，分析属性移除内部滚动并按正常字号三列表格组织。为完整可读文本允许窄窗口最小高度增大，详见 [可读性报告](../reports/eeg-ui-readable-details.md)。
 
+补充 6E：播放后台分析保留旧的完整有效结果，完成后统一替换曲线、摘要与对应时间，防止每次请求清空带来的闪烁，见 [刷新报告](../reports/eeg-ui-analysis-refresh.md)。
+
 ## 已确认代码证据
 
 - `native/src/ui/analysis_widgets.cpp`：SpectrumWidget 创建 QPainterPath 并设置画笔后遗漏 drawPath；PSD/FFT/相干共用该控件。

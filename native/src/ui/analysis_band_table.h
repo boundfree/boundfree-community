@@ -10,7 +10,7 @@ namespace bf {
 // belong in the header; each band has one row with its range and result.
 inline QString analysisBandTable(I18nService* i18n, const QString& valueHeader, const std::vector<double>& values) {
     QString table = QString("<table width='100%' cellspacing='0' cellpadding='4'>"
-        "<tr><th align='left'>%1</th><th align='left'>%2</th><th align='right'>%3</th></tr>")
+        "<tr><th width='25%' align='left'>%1</th><th width='35%' align='left'>%2</th><th width='40%' align='right'>%3</th></tr>")
         .arg(i18n->text("app.analysis.band").toHtmlEscaped(),
              i18n->text("app.analysis.frequency").toHtmlEscaped(), valueHeader.toHtmlEscaped());
     int index = 0;
