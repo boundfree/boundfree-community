@@ -35,15 +35,27 @@ private:
         const auto m = contentsMargins();
         const QRect inner = rect.adjusted(m.left(), m.top(), -m.right(), -m.bottom());
         int x = inner.x(), y = inner.y(), rowHeight = 0;
+        QList<QPair<QLayoutItem*, QRect>> row;
+        const auto placeRow = [&]() {
+            if (apply) for (const auto& entry : row) {
+                QRect geometry = entry.second;
+                geometry.moveTop(y + (rowHeight - geometry.height()) / 2);
+                entry.first->setGeometry(geometry);
+            }
+            row.clear();
+        };
         for (auto* item : items_) {
             if (item->isEmpty()) continue;
             QSize size = item->sizeHint();
             size.setWidth(std::min(size.width(), std::max(1, inner.width())));
-            if (x > inner.x() && x + size.width() > inner.right() + 1) { x = inner.x(); y += rowHeight + spacing(); rowHeight = 0; }
-            if (apply) item->setGeometry(QRect(QPoint(x, y), size));
+            if (x > inner.x() && x + size.width() > inner.right() + 1) {
+                placeRow(); x = inner.x(); y += rowHeight + spacing(); rowHeight = 0;
+            }
+            row.append({item, QRect(QPoint(x, y), size)});
             x += size.width() + spacing();
             rowHeight = std::max(rowHeight, size.height());
         }
+        placeRow();
         return y + rowHeight - rect.y() + m.bottom();
     }
     QList<QLayoutItem*> items_;
@@ -85,6 +97,7 @@ public:
         auto* action = new QAction(icon, text, this);
         QWidget::addAction(action);
         auto* button = new QToolButton(this);
+        button->setProperty("controlBarAction", true);
         button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         button->setDefaultAction(action);
         button->setMinimumHeight(28);

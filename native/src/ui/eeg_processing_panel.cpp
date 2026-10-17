@@ -157,7 +157,12 @@ void EegProcessingPanel::retranslateUi(I18nService* i18n) {
     referenceCombo_->setItemText(1, i18n->text("app.processing.ref.car"));
     referenceCombo_->setItemText(2, i18n->text("app.processing.ref.bipolar"));
     referenceCombo_->setMinimumWidth(referenceCombo_->sizeHint().width());
-    referenceCombo_->view()->setMinimumWidth(referenceCombo_->minimumWidth());
+    int longestItem = 0;
+    for (int item = 0; item < referenceCombo_->count(); ++item)
+        longestItem = std::max(longestItem, referenceCombo_->view()->fontMetrics().horizontalAdvance(referenceCombo_->itemText(item)));
+    // Native popup delegates also reserve check/icon gutters. The row's full
+    // width is not its usable text width (notably with Fusion's menu popup).
+    referenceCombo_->view()->setMinimumWidth(std::max(referenceCombo_->minimumWidth(), longestItem + 64));
     referenceCombo_->updateGeometry();
     // The label/input pair is one flow-layout item. Propagate its new content
     // hint so a longer translation moves the whole pair onto the next row.

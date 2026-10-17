@@ -438,14 +438,19 @@ void MainWindow::applyTheme(bool dark) {
     const QString borderTone = dark ? QStringLiteral("#555577") : QStringLiteral("#AAAAAA");
     const QString hoverTone = dark ? QStringLiteral("#33334A") : QStringLiteral("#E0E0E0");
     setStyleSheet(styleSheet() + QString(
-        "QSpinBox, QDoubleSpinBox { min-height: 24px; padding: 2px 26px 2px 6px; }"
+        "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QToolButton[controlBarAction=\"true\"] { min-height: %4px; max-height: %4px; padding-top: 2px; padding-bottom: 2px; }"
+        "QSpinBox, QDoubleSpinBox, QComboBox { padding-left: 6px; padding-right: 26px; }"
+        "QAbstractSpinBox QLineEdit { min-height: 0px; max-height: 16777215px; padding: 0px; border: none; }"
+        "QToolButton[controlBarAction=\"true\"] { border: 1px solid %1; border-radius: 3px; padding-left: 8px; padding-right: 8px; }"
+        "QComboBox::drop-down { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; }"
+        "QComboBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
         "QDoubleSpinBox[presetControl=\"true\"] QToolButton::menu-indicator { image: none; }"
         "QSpinBox::up-button, QDoubleSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; border-bottom: 1px solid %1; }"
         "QSpinBox::down-button, QDoubleSpinBox::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 22px; border-left: 1px solid %1; }"
         "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: %2; }"
         "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { image: url(:/controls/up-%3.xpm); width: 9px; height: 5px; }"
         "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
-    ).arg(borderTone, hoverTone, arrowTone));
+    ).arg(borderTone, hoverTone, arrowTone).arg(std::max(24, fontMetrics().height() + 4)));
     // Stylesheets can rematerialize some palette roles on Fusion/Windows; re-apply
     // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);

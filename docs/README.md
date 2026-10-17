@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-control-metrics.md`](reports/eeg-ui-control-metrics.md) | 同级控件等高居中、多语言参考菜单完整显示与缩放回归 |
 | [`reports/eeg-ui-analysis-refresh.md`](reports/eeg-ui-analysis-refresh.md) | 播放后台分析保留完整结果、批次更新与防闪烁回归 |
 | [`reports/eeg-ui-readable-details.md`](reports/eeg-ui-readable-details.md) | 多语言下拉完整显示、正常字号频段表格与无滚动详情 |
 | [`reports/eeg-ui-video-height.md`](reports/eeg-ui-video-height.md) | 视频首次展开高度与窗口增高时空间分配 |
