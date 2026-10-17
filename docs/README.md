@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/windows-gui-subsystem.md`](reports/windows-gui-subsystem.md) | Windows 桌面程序使用 GUI 子系统启动，不额外打开终端 |
 | [`reports/eeg-ui-control-metrics.md`](reports/eeg-ui-control-metrics.md) | 同级控件等高居中、多语言参考菜单完整显示与缩放回归 |
 | [`reports/eeg-ui-analysis-refresh.md`](reports/eeg-ui-analysis-refresh.md) | 播放后台分析保留完整结果、批次更新与防闪烁回归 |
 | [`reports/eeg-ui-readable-details.md`](reports/eeg-ui-readable-details.md) | 多语言下拉完整显示、正常字号频段表格与无滚动详情 |

@@ -163,6 +163,12 @@ add_executable(bf_app
     src/ui/analysis_widgets.cpp
     src/ui/analysis_widgets.h
 )
+# Start the desktop UI with the Windows GUI subsystem so Explorer and Start
+# Menu launches do not create an attached console window. Qt's entry point
+# preserves the existing main() and command-line smoke modes.
+if(WIN32)
+    set_target_properties(bf_app PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
 target_include_directories(bf_app PRIVATE src)
 target_link_libraries(bf_app PRIVATE bf_core Qt6::Network)
 target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})
