@@ -11,7 +11,7 @@
 ; an uninstaller. Install/update/uninstall behavior remains a manual gate.
 
 #ifndef BoundFreeVersion
-  #define BoundFreeVersion "0.1.84-dev"
+  #define BoundFreeVersion "0.1.85-dev"
 #endif
 
 ; Win32 VS_VERSIONINFO (VersionInfoVersion / VersionInfoProductVersion)

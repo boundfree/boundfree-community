@@ -118,6 +118,15 @@ public:
         const QString& outputPath,
         const QVector<SidecarEvent>& events,
         int timeoutMs = 30000);
+    SidecarExportResult exportSamples(
+        double fs,
+        const QStringList& chNames,
+        const std::vector<std::vector<float>>& data,
+        double t0,
+        double t1,
+        const QString& outputPath,
+        const QVector<SidecarEvent>& events,
+        int timeoutMs = 30000);
     void stop();
 
 private:

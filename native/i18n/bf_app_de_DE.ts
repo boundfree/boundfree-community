@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>Rohdaten ohne Neureferenzierung oder Filterung. Verarbeitungseinstellungen bleiben erhalten.</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>Speicherort wählen…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>Die Endzeit muss nach der Startzeit liegen.</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>Rohdaten mit den ursprünglichen Kanälen ohne Neureferenzierung oder Filterung exportieren.</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>Mit aktuellen Verarbeitungseinstellungen und Ausgabekanalnamen exportieren. Kanalsichtbarkeit und Anzeigeskalierung beeinflussen den Export nicht.</translation>
+    </message>
   </context>
 </TS>

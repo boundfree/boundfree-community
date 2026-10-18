@@ -613,5 +613,21 @@
       <source>app.signal.raw_hint</source>
       <translation>[!! Using raw data without re-referencing or filtering. Processing settings are retained. ~~~ !!]</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>[!! Choose save location… ~~~ !!]</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>[!! End time must be later than start time. ~~~ !!]</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>[!! Export raw data with the original channels, without re-referencing or filtering. ~~~ !!]</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>[!! Export using the current processing settings and output channel names. Channel visibility and display scale do not affect the export. ~~~ !!]</translation>
+    </message>
   </context>
 </TS>

@@ -368,6 +368,53 @@ SidecarExportResult SidecarClient::exportSegment(
     return result;
 }
 
+SidecarExportResult SidecarClient::exportSamples(
+    double fs, const QStringList& chNames, const std::vector<std::vector<float>>& data,
+    double t0, double t1, const QString& outputPath, const QVector<SidecarEvent>& events, int timeoutMs) {
+    SidecarExportResult result;
+    if (data.empty() || data.front().empty() || data.size() != static_cast<std::size_t>(chNames.size())) {
+        result.error = invalidPayload("shape", "invalid export channel count");
+        return result;
+    }
+    const qint64 nSamples = static_cast<qint64>(data.front().size());
+    const qint64 byteCount = static_cast<qint64>(data.size()) * nSamples * sizeof(float);
+    if (byteCount > kMaxPayloadBytes) {
+        result.error = makeError("ipc.invalid_frame", {{"reason", "export payload exceeds limit"}});
+        return result;
+    }
+    QByteArray payload;
+    payload.resize(byteCount);
+    char* destination = payload.data();
+    for (const auto& channel : data) {
+        if (static_cast<qint64>(channel.size()) != nSamples) {
+            result.error = invalidPayload("shape", "export rows must have equal length");
+            return result;
+        }
+        for (float sample : channel) {
+            quint32 bits = 0;
+            std::memcpy(&bits, &sample, sizeof(bits));
+            qToLittleEndian(bits, reinterpret_cast<uchar*>(destination));
+            destination += sizeof(bits);
+        }
+    }
+    const SidecarResponse response = exchange(
+        "export_samples",
+        {{"fs", fs}, {"ch_names", QJsonArray::fromStringList(chNames)},
+         {"shape", QJsonArray{chNames.size(), nSamples}}, {"dtype", "float32-le"}, {"unit", "uV"},
+         {"t0", t0}, {"t1", t1}, {"path", outputPath}, {"markers", eventsToJson(events)}},
+        payload, false, nullptr, timeoutMs);
+    if (!response.ok) {
+        result.error = response.error;
+        return result;
+    }
+    result.ok = true;
+    result.path = response.result.value("path").toString();
+    result.nChannels = response.result.value("n_channels").toInt();
+    result.nSamples = response.result.value("n_samples").toInt();
+    result.markerCount = response.result.value("marker_count").toInt();
+    return result;
+}
+
 SidecarSliceResult parseSliceBinaryPayload(const QJsonObject& payload, const QByteArray& bytes) {
     SidecarSliceResult result;
     result.handle = payload.value("handle").toString();

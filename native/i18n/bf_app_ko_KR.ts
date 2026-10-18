@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>재참조나 필터링 없이 원본 데이터를 사용합니다. 처리 설정은 유지됩니다.</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>저장 위치 선택…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>종료 시간은 시작 시간보다 늦어야 합니다.</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>재참조나 필터링 없이 원본 데이터와 채널을 내보냅니다.</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>현재 처리 설정과 처리된 채널 이름으로 내보냅니다. 채널 표시 여부와 화면 배율은 내보내기에 영향을 주지 않습니다.</translation>
+    </message>
   </context>
 </TS>

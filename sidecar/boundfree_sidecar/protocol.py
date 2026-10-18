@@ -8,7 +8,7 @@ from .readers.errors import CsvSchemaError, OptionalDependencyMissing
 from .readers.registry import reader_for_path
 from .sessions import FileSessionRegistry
 from .version import load_version
-from .writers.export import export_segment
+from .writers.export import export_segment, export_samples
 from .writers.recording import RecordingRegistry
 
 _sessions = FileSessionRegistry()
@@ -299,6 +299,42 @@ def _handle_export_segment(request_id: Any, params: dict[str, Any]) -> dict[str,
         return error_response(request_id, "export.failed", {"path": destination, "reason": str(exc)})
 
 
+def _handle_export_samples(request_id: Any, params: dict[str, Any], binary_payload: bytes | None) -> dict[str, Any]:
+    destination = _required_string(params, "path")
+    fs = _required_number(params, "fs")
+    t0 = _required_number(params, "t0")
+    t1 = _required_number(params, "t1")
+    names = params.get("ch_names")
+    shape = params.get("shape")
+    markers = _markers(params)
+    for field, valid in (
+        ("path", destination is not None),
+        ("fs", fs is not None and math.isfinite(fs) and fs > 0),
+        ("ch_names", isinstance(names, list) and bool(names) and all(isinstance(name, str) and name for name in names)),
+        ("markers", markers is not None),
+    ):
+        if not valid:
+            return error_response(request_id, "protocol.invalid_params", {"field": field, "reason": "invalid export metadata"})
+    if t0 is None or t1 is None or not math.isfinite(t0) or not math.isfinite(t1) or not 0 <= t0 < t1:
+        return error_response(request_id, "export.invalid_range", {"t0": t0, "t1": t1, "duration": None})
+    if Path(destination).suffix.lower() not in (".edf", ".h5", ".hdf5", ".csv"):
+        return error_response(request_id, "export.unsupported_format", {"path": destination, "suffix": Path(destination).suffix.lower()})
+    if (
+        not isinstance(shape, list) or len(shape) != 2
+        or not all(isinstance(value, int) and not isinstance(value, bool) and value > 0 for value in shape)
+        or shape[0] != len(names) or params.get("dtype") != "float32-le" or params.get("unit") != "uV"
+        or binary_payload is None or len(binary_payload) != shape[0] * shape[1] * 4
+    ):
+        return error_response(request_id, "ipc.invalid_frame", {"reason": "export payload metadata does not match bytes"})
+    try:
+        import numpy as np
+
+        data = np.frombuffer(binary_payload, dtype="<f4").reshape(shape)
+        return success_response(request_id, export_samples(data, fs, names, t0, t1, Path(destination), markers))
+    except Exception as exc:
+        return error_response(request_id, "export.failed", {"path": destination, "reason": str(exc)})
+
+
 def handle_request(request: Any, binary_payload: bytes | None = None) -> dict[str, Any]:
     if not isinstance(request, dict):
         return error_response(None, "protocol.invalid_json")
@@ -322,6 +358,8 @@ def handle_request(request: Any, binary_payload: bytes | None = None) -> dict[st
     }
     if method == "record_write":
         return _handle_record_write(request_id, params, binary_payload)
+    if method == "export_samples":
+        return _handle_export_samples(request_id, params, binary_payload)
     handler = handlers.get(method)
     if handler is None:
         return error_response(request_id, "protocol.unknown_method", {"method": str(method)})

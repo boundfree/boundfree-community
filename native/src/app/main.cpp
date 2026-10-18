@@ -1,5 +1,6 @@
 #include "controller/file_open_controller.h"
 #include "controller/export_controller.h"
+#include "controller/export_data_modes_smoke.h"
 #include "controller/file_session.h"
 #include "controller/request_generation.h"
 #include "controller/processing_view_state.h"
@@ -853,6 +854,9 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-ui-analysis-text") return smokeAnalysisText(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-reference-labels") return smokeReferenceLabels(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-waveform-data-modes") return smokeWaveformDataModes(argc, argv, version, repoRoot);
+        if (arg == "--smoke-export-data-modes" && i + 2 < argc)
+            return smokeExportDataModes(argc, argv, version, repoRoot,
+                QString::fromLocal8Bit(argv[i + 1]), QString::fromLocal8Bit(argv[i + 2]));
         if (arg == "--smoke-ui-analysis-presentation") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);

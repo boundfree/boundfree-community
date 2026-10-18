@@ -142,6 +142,7 @@ v1.1/v2：
 
 ## 片段导出 — M7
 
+- [x] 原始/处理后独立选择：Native 处理后经二进制 IPC 写出 EDF/HDF5/CSV，覆盖参考、滤波、逐通道覆盖、标注与缓存上下文；验收入口 `tests/native/test_waveform_export_modes.py`、`tests/sidecar/test_export_samples.py`，见 [数据模式报告](reports/waveform-data-modes.md)
 
 - [x] 异步导出 EDF / HDF5 / CSV
 - [x] 导出带标注（EDF Annotations / HDF5 events / CSV 侧车）

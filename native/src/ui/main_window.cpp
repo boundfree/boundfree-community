@@ -3,6 +3,7 @@
 #include "ui/analysis_properties.h"
 #include "ui/analysis_band_table.h"
 #include "ui/record_metadata_dialog.h"
+#include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
 
 #include "controller/processing_view_state.h"
@@ -818,16 +819,25 @@ void MainWindow::exportSegment() {
         statusBar()->showMessage(i18n_->text(exportController_->isBusy() ? "error.export.busy" : "app.record.no_file"), 3000);
         return;
     }
-    bool accepted = false;
-    const double t0 = QInputDialog::getDouble(this, i18n_->text("app.export.title"), i18n_->text("app.export.start"), playback_.position(), 0.0, signalDurationSeconds_, 3, &accepted);
-    if (!accepted) return;
-    const double t1 = QInputDialog::getDouble(this, i18n_->text("app.export.title"), i18n_->text("app.export.end"), std::min(signalDurationSeconds_, t0 + viewState_.windowSeconds), 0.0, signalDurationSeconds_, 3, &accepted);
-    if (!accepted) return;
+    const auto range = waveformWidget_->timeRange();
+    const ProcessingViewState exportState = processingState_;
+    const double contextStart = rawWaveform_.t0;
+    const double contextEnd = rawWaveform_.t1;
+    ExportSegmentDialog dialog(i18n_, signalDurationSeconds_, range.first, range.second,
+                               waveformProcessed_, processingDescription(), this);
+    if (dialog.exec() != QDialog::Accepted) return;
+    const double t0 = dialog.startTime();
+    const double t1 = dialog.endTime();
     const QString outputPath = QFileDialog::getSaveFileName(this, i18n_->text("app.export.title"), {}, i18n_->text("app.export.filter"));
     if (outputPath.isEmpty()) return;
     QVector<SidecarEvent> events;
     for (const Marker& marker : markerStore_.markers()) events.push_back({marker.time, marker.label});
-    if (!exportController_->exportAsync(currentFile_.session.path, t0, t1, signalDurationSeconds_, outputPath, events)) {
+    std::optional<ExportProcessingOptions> processing;
+    if (dialog.processed()) {
+        const bool inCache = t0 >= contextStart && t1 <= contextEnd;
+        processing = ExportProcessingOptions{exportState, inCache ? contextStart : t0, inCache ? contextEnd : t1};
+    }
+    if (!exportController_->exportAsync(currentFile_.session.path, t0, t1, signalDurationSeconds_, outputPath, events, processing)) {
         statusBar()->showMessage(i18n_->text("error.export.invalid_range", {{"t0", t0}, {"t1", t1}, {"duration", signalDurationSeconds_}}), 3000);
         return;
     }

@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>Données brutes sans changement de référence ni filtrage. Les réglages de traitement sont conservés.</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>Choisir l’emplacement…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>La fin doit être postérieure au début.</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>Exporter les données et canaux d’origine, sans changement de référence ni filtrage.</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>Exporter selon les réglages de traitement actuels et les noms des canaux de sortie. La visibilité des canaux et l’échelle d’affichage ne modifient pas l’export.</translation>
+    </message>
   </context>
 </TS>

@@ -58,12 +58,10 @@ std::vector<std::string> effectiveChannelNames(
     ReferenceMode mode,
     int nOut) {
     std::vector<std::string> names;
-    if (mode == ReferenceMode::Bipolar) {
-        if (channelNames.size() >= 2) {
-            names.reserve(channelNames.size() - 1);
-            for (std::size_t i = 0; i + 1 < channelNames.size(); ++i) {
-                names.push_back(channelNames[i] + "-" + channelNames[i + 1]);
-            }
+    if (mode == ReferenceMode::Bipolar && channelNames.size() >= 2) {
+        names.reserve(channelNames.size() - 1);
+        for (std::size_t i = 0; i + 1 < channelNames.size(); ++i) {
+            names.push_back(channelNames[i] + "-" + channelNames[i + 1]);
         }
     } else {
         names = channelNames;

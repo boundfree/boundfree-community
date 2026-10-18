@@ -158,6 +158,8 @@ add_executable(bf_app
     src/ui/main_window.h
     src/ui/record_metadata_dialog.cpp
     src/ui/record_metadata_dialog.h
+    src/ui/export_segment_dialog.cpp
+    src/ui/export_segment_dialog.h
     src/ui/activation_dialog.cpp
     src/ui/activation_dialog.h
     src/ui/analysis_widgets.cpp

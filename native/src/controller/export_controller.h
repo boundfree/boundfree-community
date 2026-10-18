@@ -3,13 +3,22 @@
 #include "core/app_error.h"
 #include "core/version.h"
 #include "ipc/sidecar_client.h"
+#include "controller/processing_view_state.h"
 
 #include <QObject>
 #include <QString>
 #include <QThread>
 #include <QVector>
+#include <optional>
 
 namespace bf {
+
+struct ExportProcessingOptions {
+    ProcessingViewState state;
+    // Include the displayed filter context so an export of that window matches its samples.
+    double contextStart = -1.0;
+    double contextEnd = 0.0;
+};
 
 class ExportController final : public QObject {
     Q_OBJECT
@@ -24,7 +33,8 @@ public:
         double t1,
         double duration,
         const QString& outputPath,
-        const QVector<SidecarEvent>& events);
+        const QVector<SidecarEvent>& events,
+        const std::optional<ExportProcessingOptions>& processing = std::nullopt);
     bool isBusy() const { return worker_ != nullptr; }
 
 signals:

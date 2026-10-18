@@ -20,10 +20,10 @@ def run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
                 continue
 
             binary_payload = None
-            if isinstance(request, dict) and request.get("method") == "record_write":
+            if isinstance(request, dict) and request.get("method") in ("record_write", "export_samples"):
                 payload_frame = read_frame(stdin)
                 if payload_frame is None or payload_frame.frame_type != FRAME_BINARY:
-                    raise FrameError("record_write requires a binary payload frame")
+                    raise FrameError("request requires a binary payload frame")
                 binary_payload = payload_frame.payload
 
             response = handle_request(request, binary_payload)

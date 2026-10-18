@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>Datos originales sin cambio de referencia ni filtrado. Se conservan los ajustes de procesamiento.</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>Elegir ubicación…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>La hora final debe ser posterior a la inicial.</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>Exportar los datos y canales originales sin cambio de referencia ni filtrado.</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>Exportar con los ajustes de procesamiento actuales y los nombres de los canales de salida. La visibilidad de los canales y la escala de visualización no afectan a la exportación.</translation>
+    </message>
   </context>
 </TS>

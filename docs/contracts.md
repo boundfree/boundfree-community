@@ -42,7 +42,7 @@ M1-A 需要消费该文件：
 
 ## IPC Envelope
 
-控制消息使用 JSON envelope，传输统一使用长度前缀二进制帧。已实现 `hello/open/get_slice/close/export_markers_csv/record_open/record_write/record_event/record_close/export_segment`。
+控制消息使用 JSON envelope，传输统一使用长度前缀二进制帧。已实现 `hello/open/get_slice/close/export_markers_csv/record_open/record_write/record_event/record_close/export_segment/export_samples`。
 
 请求 envelope：
 
@@ -108,6 +108,15 @@ M7 录制：
 - `record_close`：停止接收并排空已接受数据，返回路径和最终统计。
 
 M7 `export_segment`：请求包含 `src/t0/t1/path/markers`；标注筛选源区间 `[t0,t1]` 并减去 `t0`。成功返回路径、通道数、样本数和标注数。
+
+`export_samples`：Native 处理后的片段写入接口，先发送 JSON 参数，再发送一个二进制数据帧。
+
+- 参数为 `path/fs/ch_names/shape/dtype/unit/t0/t1/markers`；`dtype="float32-le"`、`unit="uV"`，payload 为通道优先的连续小端 float32。
+- `shape` 为两个正整数，第一维必须与 `ch_names` 长度一致，payload 字节数必须为两维乘积的 4 倍；元数据与 payload 不匹配返回 `ipc.invalid_frame`。
+- `fs` 必须为有限正数，样本必须为有限值，时间范围满足 `0 <= t0 < t1`。格式与 `export_segment` 一致，支持 EDF/HDF5/CSV。
+- `t0/t1/markers` 使用源文件时间坐标，写入时按同样规则筛选标注并减去 `t0`。成功响应与 `export_segment` 相同。
+- Native 承担重参考、陷波及逐通道带通，边车只编码收到的样本，不重复实施 DSP。通道名使用处理后的输出名称；显隐、幅度缩放和绘图抽稀不进入导出数据。
+- 该接口为增量新增方法，既有 envelope、帧格式及 `export_segment` 行为保持兼容，`ipc_protocol_version` 保持 `1`。处理后导出要求主程序与边车一同更新。
 
 ## Error Codes
 
@@ -242,6 +251,10 @@ M1-A 需要建立静态检查，覆盖：
 ## 波形幅值与逐通道参数
 
 波形区提供“原始波形 / 处理后波形”选择，默认处理后；选择同时决定波形与频谱分析的输入。原始模式跳过重参考与滤波，保留处理设置，原始通道名称和通道数随之恢复。处理模式继续使用离线零相位处理链。原始模式下逐通道带通编辑区禁用，避免将源通道索引误用于双极等参考输出。
+
+导出对话框集中设置区间和数据来源，默认范围为当前可见区间、默认来源跟随波形；用户可以独立更改导出来源。打开对话框时捕获处理参数和当前缓存范围。处理后导出在工作线程读取、处理、写入；区间位于捕获缓存中时，先处理整个缓存上下文再裁剪，以对齐所显示的滤波结果，否则以用户选择的片段作为滤波上下文。时间到样本的换算遵循读取器的 ties-to-even 舍入。
+
+处理后导出暂使用单切片和单二进制 payload，仍受 `256 MiB` 单帧上限约束，尚非任意长度的流式整文件滤波导出。直接使用原始导出不启用新的 Native 处理路径。EDF 继续遵循原有量化与记录填充规则。
 
 自动幅值是显示变换，不修改样本或分析输入。范围取当前可见时间窗中的有限值，各通道独立；手动模式仍使用统一 µV 半幅。通道纵向滚动不改变时间窗口和标注时间。
 

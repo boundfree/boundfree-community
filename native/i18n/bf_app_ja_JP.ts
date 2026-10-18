@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>再参照やフィルターを適用せず、元のデータを使用します。処理設定は保持されます。</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>保存先を選択…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>終了時刻は開始時刻より後にしてください。</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>再参照やフィルターを適用せず、元のデータとチャンネルを出力します。</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>現在の処理設定と処理後のチャンネル名で出力します。チャンネルの表示状態や表示倍率は出力に影響しません。</translation>
+    </message>
   </context>
 </TS>

@@ -614,5 +614,21 @@
       <source>app.signal.raw_hint</source>
       <translation>目前使用原始資料，未套用重參考或濾波；處理設定已保留。</translation>
     </message>
+    <message>
+      <source>app.export.choose_path</source>
+      <translation>選擇儲存位置…</translation>
+    </message>
+    <message>
+      <source>app.export.range_hint</source>
+      <translation>結束時間必須大於開始時間。</translation>
+    </message>
+    <message>
+      <source>app.export.raw_hint</source>
+      <translation>匯出原始資料和原始通道，不套用重參考或濾波。</translation>
+    </message>
+    <message>
+      <source>app.export.processed_hint</source>
+      <translation>依目前處理設定匯出，保留處理後的通道名稱；不受通道顯隱和顯示幅度影響。</translation>
+    </message>
   </context>
 </TS>

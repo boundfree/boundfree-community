@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/main_window.h"
+#include "ui/export_segment_dialog.h"
 #include <QApplication>
 #include <QDir>
 #include <QEventLoop>
@@ -71,6 +72,17 @@ inline int smokeWaveformDataModes(int argc, char** argv, const bf::VersionInfo& 
     mode->setCurrentIndex(0);
     window.showFileOpenResult(input);
     if (!matches(input.waveform)) return fail("raw_on_reload");
+    bf::ExportSegmentDialog dialog(&i18n, 8, 1, 4, false, window.processingSummary(), &window);
+    if (dialog.processed() || dialog.startTime() != 1 || dialog.endTime() != 4) return fail("export_defaults");
+    auto* exportMode = dialog.findChild<QComboBox*>("eegExportDataMode");
+    auto* end = dialog.findChild<QDoubleSpinBox*>("eegExportEnd");
+    auto* save = dialog.findChild<QPushButton*>("eegExportContinue");
+    exportMode->setCurrentIndex(1);
+    if (!dialog.processed() || mode->currentIndex() != 0) return fail("independent_export_mode");
+    end->setValue(0.5);
+    if (save->isEnabled()) return fail("invalid_range");
+    end->setValue(4);
+    if (!save->isEnabled()) return fail("valid_range");
     const QString directory = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
     if (!directory.isEmpty()) {
         QDir().mkpath(directory);
@@ -81,8 +93,11 @@ inline int smokeWaveformDataModes(int argc, char** argv, const bf::VersionInfo& 
                 mode->setCurrentIndex(index); settle();
                 window.grab().save(QDir(directory).filePath(QString("waveform-%1-%2.png").arg(dark ? "dark" : "light").arg(index)));
             }
+            dialog.show(); settle();
+            dialog.grab().save(QDir(directory).filePath(QString("export-%1.png").arg(dark ? "dark" : "light")));
+            dialog.hide();
         }
     }
-    std::cout << "waveform-data-modes-ok raw=true processed=true channels=true settings=true\n";
+    std::cout << "waveform-data-modes-ok raw=true processed=true channels=true settings=true dialog=true\n";
     return 0;
 }
