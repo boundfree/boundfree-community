@@ -523,6 +523,16 @@ void MainWindow::refreshPersistentStatus() {
 
 void MainWindow::refreshAnalysisInputSummary() {
     if (!analysisInputSummary_) return;
+    if (!waveformProcessed_) {
+        analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
+            + i18n_->text("app.signal.raw") + "\n" + i18n_->text("app.signal.raw_hint"));
+        return;
+    }
+    analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
+        + processingDescription() + "\n" + i18n_->text("app.analysis.preprocessing_hint"));
+}
+
+QString MainWindow::processingDescription() const {
     const char* reference = processingState_.referenceMode == dsp::ReferenceMode::Car ? "app.processing.ref.car"
         : processingState_.referenceMode == dsp::ReferenceMode::Bipolar ? "app.processing.ref.bipolar" : "app.processing.ref.raw";
     QStringList stages{i18n_->text(reference)};
@@ -540,8 +550,7 @@ void MainWindow::refreshAnalysisInputSummary() {
             {"high", i18n_->formatNumber(processingState_.bandpassHigh, 1)}});
     if (!processingState_.perChannelBandpass.empty())
         stages << i18n_->text("app.processing.overrides_summary", {{"count", processingState_.channelBandpassOverrideCount()}});
-    analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n" + stages.join(" · ")
-        + "\n" + i18n_->text("app.analysis.preprocessing_hint"));
+    return stages.join(" · ");
 }
 
 QString MainWindow::currentModeKey() const {
@@ -558,6 +567,18 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_ = new ControlBar(this);
     browserToolbar_->setObjectName("eegSignalToolbar");
     browserToolbar_->setWrappedMinimum(true);
+    waveformDataLabel_ = new QLabel(this);
+    waveformDataCombo_ = new QComboBox(this);
+    waveformDataCombo_->setObjectName("eegWaveformDataMode");
+    waveformDataCombo_->addItems({QString(), QString()});
+    waveformDataCombo_->setCurrentIndex(1);
+    waveformDataCombo_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    waveformDataLabel_->setBuddy(waveformDataCombo_);
+    browserToolbar_->addPair(waveformDataLabel_, waveformDataCombo_);
+    connect(waveformDataCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+        waveformProcessed_ = index == 1;
+        applyProcessingAndDisplay();
+    });
     playbackToolbar_ = new ControlBar(this);
     playbackToolbar_->setWrappedMinimum(true);
     progressRow_ = new QWidget(this);
@@ -1744,7 +1765,18 @@ void MainWindow::rebuildChannelControls() {
             ? currentFile_.waveform.channelNames[channel] : QString("Ch%1").arg(channel + 1));
     }
     if (channelBandpassControls_ != nullptr) {
-        channelBandpassControls_->refresh(names, hasCurrentFile_ ? currentFile_.waveform.fs : 0.0, processingState_);
+        QStringList processingNames = rawWaveform_.channelNames;
+        if (processingState_.referenceMode == dsp::ReferenceMode::Bipolar && processingNames.size() >= 2) {
+            processingNames.clear();
+            for (int index = 0; index + 1 < rawWaveform_.channelNames.size(); ++index)
+                processingNames << rawWaveform_.channelNames[index] + "-" + rawWaveform_.channelNames[index + 1];
+        }
+        channelBandpassControls_->refresh(processingNames, hasCurrentFile_ ? currentFile_.waveform.fs : 0.0, processingState_);
+    }
+    // Overrides address reference outputs. Raw input identities may differ.
+    if (channelFilterPanel_) {
+        channelFilterPanel_->setEnabled(waveformProcessed_);
+        channelFilterPanel_->setToolTip(waveformProcessed_ ? QString() : i18n_->text("app.signal.raw_hint"));
     }
     if (names == channelControlNames_ && channelChecks_.size() == names.size()) {
         for (int channel = 0; channel < channelChecks_.size(); ++channel) {
@@ -1819,6 +1851,14 @@ void MainWindow::retranslateUi() {
     nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
     positionLabel_->setText(i18n_->text("app.browser.position"));
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
+    waveformDataLabel_->setText(i18n_->text("app.signal.data"));
+    waveformDataCombo_->setAccessibleName(waveformDataLabel_->text());
+    waveformDataCombo_->setToolTip(i18n_->text("app.signal.mode_hint"));
+    {
+        const QSignalBlocker blocker(waveformDataCombo_);
+        waveformDataCombo_->setItemText(0, i18n_->text("app.signal.raw"));
+        waveformDataCombo_->setItemText(1, i18n_->text("app.signal.processed"));
+    }
     timeWindowSpin_->setAccessibleName(timeWindowLabel_->text());
     static_cast<PresetDoubleSpinBox*>(timeWindowSpin_)->setPresetAccessibleName(timeWindowLabel_->text());
     autoAmplitudeCheck_->setText(i18n_->text("app.browser.auto_amplitude"));
@@ -1837,6 +1877,10 @@ void MainWindow::retranslateUi() {
     }
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
+        if (!waveformProcessed_) {
+            for (const char* name : {"eegProcessingScope", "eegProcessingFeedback"})
+                if (auto* label = findChild<QLabel*>(name)) label->setText(i18n_->text("app.signal.raw_hint"));
+        }
         if (channelBandpassControls_ != nullptr) channelBandpassControls_->retranslate();
         if (channelFilterPanel_) channelFilterPanel_->setTitle(i18n_->text("app.processing.per_channel"));
         if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
@@ -1946,7 +1990,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
             && result.waveform.t0 <= start + tolerance && result.waveform.t1 + tolerance >= end;
         if (coversTarget) {
             rawWaveform_ = result.waveform;
-            currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+            currentFile_.waveform = selectedWaveform();
             waveformWidget_->setSlice(currentFile_.waveform);
             previewScrubPosition(scrubPreviewPosition_);
         } else if (!cacheCoversPosition(scrubPreviewPosition_)) {
@@ -1994,7 +2038,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     waitingForPlaybackData_ = false;
     playbackElapsed_.restart();
     if (prefetched) {
-        currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+        currentFile_.waveform = selectedWaveform();
         waveformWidget_->setSlice(currentFile_.waveform);
         updatePlaybackViewport();
         if (!playback_.isPlaying() || !analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestCurrentAnalysis(playback_.isPlaying());
@@ -2172,16 +2216,22 @@ void MainWindow::clearPerChannelBandpassOverrides() {
     applyProcessingAndDisplay();
 }
 
+WaveformSlice MainWindow::selectedWaveform() const {
+    return waveformProcessed_ ? applyProcessingToSlice(rawWaveform_, processingState_) : rawWaveform_;
+}
+
 void MainWindow::applyProcessingAndDisplay() {
     if (!hasCurrentFile_) {
         return;
     }
     invalidateAnalysis();
-    currentFile_.waveform = applyProcessingToSlice(rawWaveform_, processingState_);
+    currentFile_.waveform = selectedWaveform();
     waveformWidget_->setSlice(currentFile_.waveform);
     refreshAnalysisControls();
     requestCurrentAnalysis();
     rebuildChannelControls();
+    viewState_.firstVisibleChannel = std::clamp(viewState_.firstVisibleChannel, 0, std::max(0, channelCount() - 1));
+    refreshBrowserControls();
     applyBrowserStateToWaveform();
 }
 

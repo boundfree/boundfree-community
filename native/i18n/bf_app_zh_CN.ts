@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · {channels} 个可见通道 · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>数据</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>原始波形</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>处理后波形</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>切换波形与分析的数据来源；保留滤波和重参考设置。</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>当前使用原始数据，未应用重参考或滤波；处理设置已保留。</translation>
+    </message>
   </context>
 </TS>

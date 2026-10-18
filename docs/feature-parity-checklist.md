@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-10-16
+last_updated: 2026-10-18
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -60,6 +60,8 @@ v1.1/v2：
 - [ ] 每个对外宣称支持的格式均有真实样本和验收记录
 
 ## 波形显示 — M2
+
+- [x] 原始/处理后数据切换：波形与分析使用同一来源，保留处理参数，双极参考通道名称与数量正确；验收入口 `tests/native/test_waveform_data_modes.py`，见 [数据模式报告](reports/waveform-data-modes.md)
 
 - [x] 多通道波形（内置纵向滚动和滚轮、最小110px行高，40通道回归）
 - [x] 通道显隐
@@ -139,6 +141,7 @@ v1.1/v2：
 - [x] 不把 BLE 真实设备采集录制作为 v1 验收项
 
 ## 片段导出 — M7
+
 
 - [x] 异步导出 EDF / HDF5 / CSV
 - [x] 导出带标注（EDF Annotations / HDF5 events / CSV 侧车）

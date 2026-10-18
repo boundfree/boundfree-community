@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · {channels} canaux visibles · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>Données</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>Signal brut</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>Signal traité</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>Changer les données de la courbe et de l’analyse. Les réglages de filtre et de référence sont conservés.</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>Données brutes sans changement de référence ni filtrage. Les réglages de traitement sont conservés.</translation>
+    </message>
   </context>
 </TS>

@@ -23,6 +23,7 @@
 #include "ui/analysis_text_smoke.h"
 #include "ui/analysis_refresh_smoke.h"
 #include "ui/reference_labels_smoke.h"
+#include "ui/waveform_data_modes_smoke.h"
 #include "ui/analysis_widgets.h"
 #include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
@@ -851,6 +852,7 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-ui-analysis-refresh") return smokeAnalysisRefresh(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-analysis-text") return smokeAnalysisText(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-reference-labels") return smokeReferenceLabels(argc, argv, version, repoRoot);
+        if (arg == "--smoke-ui-waveform-data-modes") return smokeWaveformDataModes(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-analysis-presentation") {
             QApplication app(argc, argv);
             bf::I18nService i18n(repoRoot);

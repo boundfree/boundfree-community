@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · 표시 채널 {channels}개 · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>데이터</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>원본 파형</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>처리된 파형</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>파형과 분석의 입력을 전환합니다. 필터 및 참조 설정은 유지됩니다.</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>재참조나 필터링 없이 원본 데이터를 사용합니다. 처리 설정은 유지됩니다.</translation>
+    </message>
   </context>
 </TS>

@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · 表示 {channels} チャンネル · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>データ</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>元の波形</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>処理後の波形</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>波形と解析の入力を切り替えます。フィルターと参照の設定は保持されます。</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>再参照やフィルターを適用せず、元のデータを使用します。処理設定は保持されます。</translation>
+    </message>
   </context>
 </TS>

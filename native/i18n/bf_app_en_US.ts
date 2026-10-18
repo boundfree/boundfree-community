@@ -593,5 +593,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · {channels} visible channels · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>Data</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>Raw waveform</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>Processed waveform</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>Switch the waveform and analysis input. Filter and reference settings are retained.</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>Using raw data without re-referencing or filtering. Processing settings are retained.</translation>
+    </message>
   </context>
 </TS>

@@ -83,6 +83,8 @@ private:
     void applyTheme(bool dark);
     void refreshPersistentStatus();
     void refreshAnalysisInputSummary();
+    QString processingDescription() const;
+    WaveformSlice selectedWaveform() const;
     QString currentModeKey() const;
     void buildFileMenu();
     void buildLanguageMenu();
@@ -176,6 +178,9 @@ private:
     QTabWidget* parameterTabs_ = nullptr;
     QSplitter* signalSplitter_ = nullptr;
     ControlBar* browserToolbar_ = nullptr;
+    QLabel* waveformDataLabel_ = nullptr;
+    QComboBox* waveformDataCombo_ = nullptr;
+    bool waveformProcessed_ = true;
     QAction* previousWindowAction_ = nullptr;
     QAction* nextWindowAction_ = nullptr;
     QLabel* positionLabel_ = nullptr;

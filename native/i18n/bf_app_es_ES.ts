@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · {channels} canales visibles · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>Datos</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>Señal original</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>Señal procesada</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>Cambiar la entrada de la señal y del análisis. Se conservan los ajustes de filtro y referencia.</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>Datos originales sin cambio de referencia ni filtrado. Se conservan los ajustes de procesamiento.</translation>
+    </message>
   </context>
 </TS>

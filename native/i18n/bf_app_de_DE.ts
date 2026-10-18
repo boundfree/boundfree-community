@@ -594,5 +594,25 @@
       <source>app.status.signal_info</source>
       <translation>{format} · {channels} sichtbare Kanäle · {fs} Hz</translation>
     </message>
+    <message>
+      <source>app.signal.data</source>
+      <translation>Daten</translation>
+    </message>
+    <message>
+      <source>app.signal.raw</source>
+      <translation>Rohsignal</translation>
+    </message>
+    <message>
+      <source>app.signal.processed</source>
+      <translation>Verarbeitetes Signal</translation>
+    </message>
+    <message>
+      <source>app.signal.mode_hint</source>
+      <translation>Eingang für Signalansicht und Analyse wechseln. Filter- und Referenzeinstellungen bleiben erhalten.</translation>
+    </message>
+    <message>
+      <source>app.signal.raw_hint</source>
+      <translation>Rohdaten ohne Neureferenzierung oder Filterung. Verarbeitungseinstellungen bleiben erhalten.</translation>
+    </message>
   </context>
 </TS>
