@@ -105,7 +105,7 @@ class TestBuildWindowsPs1:
 
     def test_calls_build_release_ps1_with_correct_args(self):
         """Forwards QtRoot, venv Python, LicensePublicKeyFile, and -SkipSigning
-        to build_release.ps1 via direct named parameters without Invoke-Checked array forwarding."""
+        through named parameters or a named hashtable, without positional array forwarding."""
         t = _text(BUILD_WINDOWS)
         assert "build_release.ps1" in t
         assert not re.search(
@@ -126,6 +126,29 @@ class TestBuildWindowsPs1:
             "-SkipSigning",
         ]
         for call in release_calls:
+            named_table = re.fullmatch(r"&\s+\$ReleaseScript\s+@(\w+)\s*", call)
+            if named_table:
+                # Hashtable splatting binds names, unlike the positional arrays
+                # rejected above. Verify the actual values, not just key names.
+                table_name = re.escape(named_table.group(1))
+                definition = re.search(
+                    rf"\${table_name}\s*=\s*@\{{(.*?)^\s*\}}",
+                    t[:t.index(call)], re.MULTILINE | re.DOTALL,
+                )
+                assert definition, "Named release parameters must be defined before the call"
+                bindings = {
+                    "QtRoot": "$ResolvedQtRoot",
+                    "Python": "$VenvPython",
+                    "Configuration": "$Configuration",
+                    "LicensePublicKeyFile": "$LicensePublicKeyFile",
+                    "SkipSigning": "$true",
+                }
+                for name, value in bindings.items():
+                    assert re.search(
+                        rf"^\s*{name}\s*=\s*{re.escape(value)}\s*$",
+                        definition.group(1), re.MULTILINE | re.IGNORECASE,
+                    ), f"Named release parameter {name} must forward {value}"
+                continue
             for param in required_params:
                 assert param in call, f"Direct call to $ReleaseScript missing required parameter {param}"
     # -- Verification ----------------------------------------------------------

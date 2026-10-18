@@ -29,6 +29,7 @@ last_updated: 2026-10-18
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/windows-build-entry-test-alignment.md`](reports/windows-build-entry-test-alignment.md) | Windows 打包入口命名参数转发断言修正与全量合并门禁 |
 | [`reports/waveform-data-modes.md`](reports/waveform-data-modes.md) | 原始/处理后波形与分析切换、独立导出来源和三格式数值回归 |
 | [`reports/eeg-ui-three-column-workspace.md`](reports/eeg-ui-three-column-workspace.md) | 三栏布局、统一信号预处理、文件入口与分析输入上下文 |
 | [`reports/windows-gui-subsystem.md`](reports/windows-gui-subsystem.md) | Windows 桌面程序使用 GUI 子系统启动，不额外打开终端 |

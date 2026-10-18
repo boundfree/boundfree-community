@@ -69,4 +69,4 @@ i18n、版本同步及 diff 检查通过。截图保存在本地忽略目录 `.i
 
 处理后导出仍是受单切片 **256 MiB** 上限约束的内存处理，不提供流式全文件导出。输入样本单位须为 `uV`；EDF 保留 16 字符通道名限制与 ±3200 µV 量化范围。
 
-上述 66 项为针对性回归与离屏界面检查。合并前另行运行全量 pytest，结果为 335 passed、4 skipped、1 failed；失败项为既有 `tests/scripts/test_windows_build_entry.py::TestBuildWindowsPs1::test_calls_build_release_ps1_with_correct_args`，其参数调用断言尚未适配 Windows 构建入口的命名参数表。该脚本和测试均与本次功能开始前的 HEAD 一致，需独立修正后再次全量验证，方可合入 master。Windows 桌面人工验收及安装包重建尚未执行。
+上述 66 项为针对性回归与离屏界面检查。`0.1.86-dev` 合并前全量回归已通过，结果为 **336 passed、4 skipped（148.45s）**；既有 Windows 参数转发测试已在独立提交中对齐，详情和跳过原因见 [Windows 打包入口命名参数验证对齐](windows-build-entry-test-alignment.md)。跳过项不计为发布验收通过。Windows 桌面人工验收及安装包重建尚未执行。

@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.1.85-dev
+当前版本：0.1.86-dev
 
 版本真值：`version.json`
 
@@ -32,6 +32,25 @@
 - 本仓库在该规范启用前已有完整 Git 历史，最早提交为 `a5b5e018928b8626bb834b859c92e8bbd5466b57 spike: 记录 M0 工具链环境`。
 - `0.1.1-dev` 至 `0.1.41-dev` 对应规范启用前的本地开发历史；这些提交的完整内容以 `git log` 为准，不在本文件逐条补录。
 - 从 `0.1.42-dev` 开始，后续每个有效提交必须同步更新 `version.json` 和本文件，并在本文件记录完整提交说明。
+
+---
+
+test: 对齐 Windows 打包入口的命名参数转发验证
+
+版本：0.1.86-dev
+日期：2026-10-18
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：test
+
+提交标题：
+test: 对齐 Windows 打包入口的命名参数转发验证
+
+提交正文：
+```text
+合并前全量回归发现 Windows 构建入口早已采用 releaseParams 命名参数表，而静态契约测试仍要求调用行包含所有内联参数。更新断言以识别调用前定义的命名参数表，逐项检查 QtRoot、Python、Configuration、LicensePublicKeyFile 的来源及 SkipSigning=true，同时保留对位置参数数组转发的拒绝。生产打包脚本保持原样，补充全量合并门禁验证记录：336 项通过、4 项跳过；冻结边车、发布检查器及真实 Intan 样本相关跳过项不计入发布验收。
+```
 
 ---
 
