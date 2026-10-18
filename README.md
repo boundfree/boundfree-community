@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.81-dev",
+  "version": "0.1.82-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 打包实现、WSL2 Linux 可验证部分与 Windows x64 安装包自动化验收已完成（2026-10-15），组织证书签名、干净 Windows 10/11 安装与桌面全流程人工验收待执行。产品版本 `0.1.81-dev`。
+当前阶段：M0–M7 均已完成；M8 WSL 一键打包入口、Windows x64 安装包构建和命令行自动验收已于 2026-10-17 通过，安装包会按需安装 VC++ 运行库。干净 Windows 10/11 安装、覆盖安装、卸载、桌面全流程人工验收与组织证书签名待执行。产品版本 `0.1.82-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -30,7 +30,7 @@ M0 结论：
 
 ## Current Milestone
 
-M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packaging-release-acceptance.md`](docs/reports/m8-packaging-release-acceptance.md)。Windows x64 安装包已生成并通过仓库自动化验收（版本、系统 UI、边车握手、离线授权门禁、CSV/EDF 打开切片、离线 DSP、回放、频谱分析、录制与导出共 11 项）；组织证书签名、干净 Windows 10/11 安装与卸载、桌面全流程人工验收仍未完成，当前产物不得标为 `rc` 或 `stable`。
+M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packaging-release-acceptance.md`](docs/reports/m8-packaging-release-acceptance.md)。Windows x64 安装包已通过构建和 11 项命令行 smoke；安装器包含按需安装的 VC++ 前置运行库。干净 Windows 10/11 安装、覆盖安装、卸载、组织证书签名与桌面全流程人工验收仍未完成，当前产物不得标为 `rc` 或 `stable`。
 
 已完成阶段的可验证记录：
 
@@ -91,6 +91,14 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 ```
 
 编辑 `config/windows-dev.local.json` 填入 `wsl_sync_target` 和 `qt_root`。
+
+从 WSL2 一键同步、构建、自动验收并把安装包复制回当前仓库：
+
+```bash
+./scripts/wsl/build_windows_dist.sh
+```
+
+`--fast` 会跳过 pip 依赖同步，并复用已有冻结边车；修改过 `sidecar/` 或依赖时请使用完整构建。`--no-sync` 仅适用于 Windows 副本已与当前源码和版本一致的情况。安装包回传到 WSL 仓库的 `dist/`，同时打印 SHA-256。
 
 从 WSL2 单向同步到已存在的 Windows 验证副本：
 

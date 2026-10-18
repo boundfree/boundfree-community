@@ -4,6 +4,13 @@ The full license texts for each bundled third-party component are reproduced
 here. If a license requires the verbatim text to accompany the binary, the
 same text is also placed under `legal/licenses/<component>.txt`.
 
+## Microsoft Visual C++ Redistributable (x64)
+
+The Windows installer embeds Microsoft's official x64 Visual C++
+Redistributable as an installation prerequisite. Redistribution is governed
+by the Microsoft Visual Studio license terms; see Microsoft's documentation
+on [redistributing Visual C++ files](https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170).
+
 ## Qt6 — LGPL v3
 
 BoundFree EEG Native links Qt6 dynamically. Under the GNU LGPL v3, recipients

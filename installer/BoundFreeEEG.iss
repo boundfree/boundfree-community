@@ -7,11 +7,11 @@
 ; Target: Windows 10 x64. DisableDirPage=no (user may choose install folder).
 ; The installer stages the full release directory (bf_app + Qt runtime,
 ; frozen sidecar, version/contracts/i18n/legal), creates Start Menu and
-; desktop shortcuts, supports overwrite installs (PrepareToInstall removes
-; stale files), and registers a clean uninstaller.
+; desktop shortcuts, supports Inno Setup's standard update flow, and registers
+; an uninstaller. Install/update/uninstall behavior remains a manual gate.
 
 #ifndef BoundFreeVersion
-  #define BoundFreeVersion "0.1.81-dev"
+  #define BoundFreeVersion "0.1.82-dev"
 #endif
 
 ; Win32 VS_VERSIONINFO (VersionInfoVersion / VersionInfoProductVersion)
@@ -22,6 +22,12 @@
 ; full SemVer string for user-visible display.
 #ifndef BoundFreeFileVersion
   #define BoundFreeFileVersion "0.1.0.0"
+#endif
+
+; build_release.ps1 reads this from the official Visual C++ Redistributable
+; staged by windeployqt and injects its four-part ProductVersion.
+#ifndef BoundFreeVCRedistVersion
+  #define BoundFreeVCRedistVersion "14.0.0.0"
 #endif
 
 #define BoundFreeAppName "BoundFree EEG"
@@ -69,10 +75,14 @@ Name: "zh"; MessagesFile: "compiler:Default.isl,installer\installer_languages\Ch
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; Flags: unchecked
 
 [Files]
+; Keep the VC++ prerequisite inside Setup and extract it to {tmp} during
+; PrepareToInstall, so a failed runtime install stops the application setup.
+Source: "release\stage\BoundFreeEEG\vc_redist.x64.exe"; Flags: dontcopy noencryption
+
 ; The entire staged release tree lives under release\stage\BoundFreeEEG.
 ; Flags: recursesubdirs copies the directory structure; noprivileges is NOT
 ; set because we install under {autopf} (Program Files) which needs elevation.
-Source: "release\stage\BoundFreeEEG\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "release\stage\BoundFreeEEG\*"; DestDir: "{app}"; Excludes: "vc_redist.x64.exe"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 ; Legal assets are also staged inside the tree; they are captured by the
 ; recursive Source above, but we declare them explicitly so the asset checker
@@ -93,6 +103,104 @@ Filename: "{app}\{#BoundFreeExeName}"; Description: "{cm:LaunchProgram,{#BoundFr
 Type: filesandordirs; Name: "{app}\*.log"
 
 [Code]
+function NextVersionPart(var VersionText: String): Integer;
+var
+  DotPosition: Integer;
+  Part: String;
+begin
+  while Length(VersionText) > 0 do
+  begin
+    if (VersionText[1] >= '0') and (VersionText[1] <= '9') then
+      Break;
+    Delete(VersionText, 1, 1);
+  end;
+
+  DotPosition := Pos('.', VersionText);
+  if DotPosition = 0 then
+  begin
+    Part := VersionText;
+    VersionText := '';
+  end
+  else
+  begin
+    Part := Copy(VersionText, 1, DotPosition - 1);
+    Delete(VersionText, 1, DotPosition);
+  end;
+  Result := StrToIntDef(Part, 0);
+end;
+
+function CompareVersionStrings(LeftText, RightText: String): Integer;
+var
+  Index: Integer;
+  LeftPart: Integer;
+  RightPart: Integer;
+begin
+  Result := 0;
+  for Index := 1 to 4 do
+  begin
+    LeftPart := NextVersionPart(LeftText);
+    RightPart := NextVersionPart(RightText);
+    if LeftPart < RightPart then
+    begin
+      Result := -1;
+      Exit;
+    end;
+    if LeftPart > RightPart then
+    begin
+      Result := 1;
+      Exit;
+    end;
+  end;
+end;
+
+function IsVCRedistInstalled: Boolean;
+var
+  Installed: Cardinal;
+  InstalledVersion: String;
+begin
+  Result := False;
+  if not RegQueryDWordValue(HKLM64, 'Software\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Installed', Installed) then
+    Exit;
+  if Installed <> 1 then
+    Exit;
+  if not RegQueryStringValue(HKLM64, 'Software\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', InstalledVersion) then
+    Exit;
+  Result := CompareVersionStrings(InstalledVersion, '{#BoundFreeVCRedistVersion}') >= 0;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+  RedistPath: String;
+begin
+  Result := '';
+  if IsVCRedistInstalled then
+    Exit;
+
+  ExtractTemporaryFile('vc_redist.x64.exe');
+  RedistPath := ExpandConstant('{tmp}\vc_redist.x64.exe');
+  if not Exec(RedistPath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := 'Could not start the Microsoft Visual C++ Redistributable installer.';
+    Exit;
+  end;
+
+  if ResultCode = 3010 then
+  begin
+    NeedsRestart := True;
+    Result := 'The Microsoft Visual C++ Redistributable requires a restart. Restart Windows, then run this installer again.';
+    Exit;
+  end;
+
+  if IsVCRedistInstalled then
+    Exit;
+
+  if ResultCode <> 0 then
+    Result := 'The Microsoft Visual C++ Redistributable installer failed (exit code ' + IntToStr(ResultCode) + ').'
+  else
+    Result := 'The Microsoft Visual C++ Redistributable completed without installing the required runtime.';
+end;
+
 function GetUninstallString(): String;
 var
   s: String;

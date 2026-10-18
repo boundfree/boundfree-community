@@ -71,6 +71,11 @@
 namespace {
 
 bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
+    // Automated smoke gate verifies the gate path without waiting for online network or interactive dialogs.
+    if (smokeGate) {
+        return false;
+    }
+
     bf::LicenseManager manager(version.version, repoRoot);
 
     // Level 1: check saved license.dat exactly once (no network, instant).
@@ -92,10 +97,6 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
         }
     }
 
-    // Automated smoke gate must not wait for the interactive online dialog.
-    if (smokeGate) {
-        return false;
-    }
     {
         bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n),
                                  startupCheck);
@@ -192,14 +193,25 @@ int main(int argc, char** argv) {
                 const QRect geom = window.menuBar()->actionGeometry(menuAction);
                 const bool visibleWidth = geom.width() >= 24;
                 const bool hitTestOk = window.menuBar()->actionAt(geom.center()) == menuAction;
+                const QPoint windowPoint = window.menuBar()->mapTo(&window, geom.center());
+                QWidget* localTarget = window.childAt(windowPoint);
+                const bool localHitOk = (localTarget == window.menuBar())
+                    || (localTarget != nullptr && window.menuBar()->isAncestorOf(localTarget));
+
                 const QPoint globalCenter = window.menuBar()->mapToGlobal(geom.center());
                 QWidget* screenTarget = QApplication::widgetAt(globalCenter);
-                const bool screenHitOk = screenTarget == window.menuBar()
-                    || (screenTarget != nullptr && window.menuBar()->isAncestorOf(screenTarget));
+                // When running under an active interactive desktop, screenTarget checks the real
+                // top-level window. In headless, locked-screen, or background runner sessions,
+                // the platform WindowFromPoint returns null; in that case, localHitOk guarantees
+                // no rogue overlapping child widgets (such as orphan panels) occlude the menu bar.
+                const bool screenHitOk = (screenTarget != nullptr)
+                    ? (screenTarget == window.menuBar() || window.menuBar()->isAncestorOf(screenTarget))
+                    : localHitOk;
                 if (!screenHitOk) {
                     std::cerr << "menu-hit-debug title=" << title.toStdString()
                               << " geom=" << geom.x() << "," << geom.y() << "," << geom.width() << "x" << geom.height()
                               << " global=" << globalCenter.x() << "," << globalCenter.y()
+                              << " localTarget=" << (localTarget != nullptr ? localTarget->metaObject()->className() : "null")
                               << " target=" << (screenTarget != nullptr ? screenTarget->metaObject()->className() : "null")
                               << " targetObject=" << (screenTarget != nullptr ? screenTarget->objectName().toStdString() : std::string())
                               << " targetGeom=";

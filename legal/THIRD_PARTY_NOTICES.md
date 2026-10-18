@@ -12,9 +12,16 @@ license requires preserving the text verbatim, in
 | ----------- | ---------------- | ----------------------- |
 | Qt6         | 6.8.x            | LGPL v3 (+ GPL/commercial alternative) |
 | pocketfft   | hdronly          | BSD-3-Clause            |
+| Microsoft Visual C++ Redistributable (x64) | Visual Studio toolchain version | Microsoft Visual Studio redistribution terms |
 
 The native host links Qt6 under the GNU LGPL v3. The corresponding source
 offer and combined-works notice are in THIRD_PARTY_LICENSES.md.
+
+The Windows installer includes Microsoft's official x64 Visual C++
+Redistributable as a prerequisite for the native application. It installs the
+redistributable only when a sufficiently recent compatible runtime is not
+already present. Microsoft documents the redistribution terms and package
+location in [Redistributing Visual C++ files](https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170).
 
 ## Python sidecar (frozen with PyInstaller)
 

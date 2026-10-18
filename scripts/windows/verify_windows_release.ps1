@@ -105,6 +105,7 @@ Write-Host "stage=$StageDir"
 @(
     @{ Path = $app; Description = "Native application" },
     @{ Path = $sidecar; Description = "Frozen sidecar" },
+    @{ Path = (Join-Path $StageDir "vc_redist.x64.exe"); Description = "Microsoft Visual C++ x64 Redistributable prerequisite" },
     @{ Path = (Join-Path $StageDir "version.json"); Description = "Staged version metadata" },
     @{ Path = (Join-Path $StageDir "contracts\error_codes.json"); Description = "Staged error-code registry" },
     @{ Path = (Join-Path $StageDir "i18n\bf_app_zh_CN.qm"); Description = "Simplified Chinese translation" },

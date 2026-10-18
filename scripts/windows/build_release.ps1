@@ -93,7 +93,9 @@ param(
 
     [switch] $SkipInstaller,
 
-    [switch] $SkipSigning
+    [switch] $SkipSigning,
+
+    [switch] $SkipSidecarFreeze
 )
 
 $ErrorActionPreference = "Stop"
@@ -201,8 +203,13 @@ Invoke-Native "cmake.exe" @("-S", $NativeDir, "-B", $BuildDir, "-G", "Visual Stu
 Invoke-Native "cmake.exe" @("--build", $BuildDir, "--config", $Configuration, "--target", "bf_app")
 
 # 2. PyInstaller freeze (sidecar)
-Write-Step "2/8 PyInstaller freeze (sidecar)"
-Invoke-Native $Python @("-m", "PyInstaller", "--noconfirm", "--clean", "--distpath", (Join-Path $RepoRoot "release\sidecar-dist"), "--workpath", (Join-Path $RepoRoot "release\sidecar-build"), "boundfree_sidecar.spec") -workDir $SidecarDir
+$SidecarDistExe = Join-Path $RepoRoot "release\sidecar-dist\boundfree_sidecar\boundfree_sidecar.exe"
+if ($SkipSidecarFreeze -and (Test-Path -LiteralPath $SidecarDistExe -PathType Leaf)) {
+    Write-Step "2/8 PyInstaller freeze (sidecar) [SKIPPED - reusing existing frozen sidecar]"
+} else {
+    Write-Step "2/8 PyInstaller freeze (sidecar)"
+    Invoke-Native $Python @("-m", "PyInstaller", "--noconfirm", "--clean", "--distpath", (Join-Path $RepoRoot "release\sidecar-dist"), "--workpath", (Join-Path $RepoRoot "release\sidecar-build"), "boundfree_sidecar.spec") -workDir $SidecarDir
+}
 
 # 3. CMake install into stage
 Write-Step "3/8 CMake install -> $StageDir"
@@ -220,6 +227,24 @@ if (-not (Test-Path $WinDeployQt)) {
 if (-not (Test-Path $QtTranslationsSrc)) {
     throw "Qt translations dir not found: $QtTranslationsSrc (expected under QtRoot)"
 }
+
+# windeployqt uses VCINSTALLDIR to locate and stage the matching official
+# Visual C++ Redistributable. A normal PowerShell session does not set this
+# variable, which otherwise leaves MSVC runtime DLLs out of the installer.
+$VsWhere = Join-Path ([Environment]::GetFolderPath("ProgramFilesX86")) "Microsoft Visual Studio\Installer\vswhere.exe"
+if (-not (Test-Path -LiteralPath $VsWhere -PathType Leaf)) {
+    throw "vswhere.exe not found; install Visual Studio 2022 C++ Build Tools to locate the VC++ runtime."
+}
+$VsInstallPath = (& $VsWhere -latest -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $VsInstallPath) {
+    throw "Unable to locate a Visual Studio installation with the x64 C++ tools."
+}
+$VcInstallDir = Join-Path $VsInstallPath "VC\"
+if (-not (Test-Path -LiteralPath $VcInstallDir -PathType Container)) {
+    throw "Visual Studio VC directory not found: $VcInstallDir"
+}
+$PreviousVcInstallDir = $env:VCINSTALLDIR
+$env:VCINSTALLDIR = $VcInstallDir
 $QtBaseZhCn = Join-Path $QtTranslationsSrc "qtbase_zh_CN.qm"
 $QtBaseJa = Join-Path $QtTranslationsSrc "qtbase_ja.qm"
 $QtBaseEn = Join-Path $QtTranslationsSrc "qtbase_en.qm"
@@ -229,7 +254,24 @@ if (-not (Test-Path $QtBaseZhCn)) {
 if (-not (Test-Path $QtBaseJa)) {
     throw "Qt base translation missing: $QtBaseJa (required for ja_JP)"
 }
-Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
+try {
+    Invoke-Native $WinDeployQt @("--release", "--no-translations", "--no-system-d3d-compiler", "--no-opengl-sw", (Join-Path $StageDir "bf_app.exe"))
+} finally {
+    if ($null -eq $PreviousVcInstallDir) {
+        Remove-Item Env:VCINSTALLDIR -ErrorAction SilentlyContinue
+    } else {
+        $env:VCINSTALLDIR = $PreviousVcInstallDir
+    }
+}
+$VcRedistPath = Join-Path $StageDir "vc_redist.x64.exe"
+if (-not (Test-Path -LiteralPath $VcRedistPath -PathType Leaf)) {
+    throw "windeployqt did not stage vc_redist.x64.exe. Check the Visual Studio C++ workload and VCINSTALLDIR."
+}
+$VcRedistVersion = (Get-Item -LiteralPath $VcRedistPath).VersionInfo.ProductVersion
+if ($VcRedistVersion -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+    throw "Cannot read a four-part VC++ Redistributable version from $VcRedistPath (got '$VcRedistVersion')."
+}
+Write-Host "Staged Microsoft Visual C++ Redistributable x64 version $VcRedistVersion"
 New-Item -ItemType Directory -Force -Path $QtTranslationsDst | Out-Null
 Copy-Item $QtBaseZhCn (Join-Path $QtTranslationsDst "qtbase_zh_CN.qm") -Force
 Copy-Item $QtBaseJa (Join-Path $QtTranslationsDst "qtbase_ja_JP.qm") -Force
@@ -346,7 +388,7 @@ if (-not $SkipInstaller) {
         throw "ISCC not found at: $IsccPath (install Inno Setup 6 or pass -IsccPath)"
     }
     if (-not (Test-Path $DistDir)) { New-Item -ItemType Directory -Path $DistDir | Out-Null }
-    Invoke-Native $IsccPath @("/DBoundFreeVersion=$ProductVersion", "/DBoundFreeFileVersion=$FileVersion", "/Qp", (Join-Path $RepoRoot "installer\BoundFreeEEG.iss")) -workDir $RepoRoot
+    Invoke-Native $IsccPath @("/DBoundFreeVersion=$ProductVersion", "/DBoundFreeFileVersion=$FileVersion", "/DBoundFreeVCRedistVersion=$VcRedistVersion", "/Qp", (Join-Path $RepoRoot "installer\BoundFreeEEG.iss")) -workDir $RepoRoot
 } else {
     Write-Step "7/8 Inno Setup compile (SKIPPED)"
 }
@@ -371,6 +413,10 @@ if ($ChannelRequiresSigning) {
 
 Write-Step "Done"
 Write-Host "Stage: $StageDir"
-if (-not $SkipInstaller) {
-    Write-Host "Installer: $InstallerPath"
+if (-not $SkipInstaller -and (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
+    $installerItem = Get-Item -LiteralPath $InstallerPath
+    $installerHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $InstallerPath).Hash
+    Write-Host "Installer: $InstallerPath" -ForegroundColor Green
+    Write-Host "  Size:   $($installerItem.Length) bytes ($([math]::Round($installerItem.Length / 1MB, 2)) MB)" -ForegroundColor Green
+    Write-Host "  SHA256: $installerHash" -ForegroundColor Green
 }

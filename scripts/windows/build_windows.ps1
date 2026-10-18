@@ -45,7 +45,9 @@ param(
     [string] $VenvDir,
     [string] $LicensePublicKeyFile,
     [switch] $SkipInstaller,
-    [switch] $SkipVerification
+    [switch] $SkipVerification,
+    [switch] $SkipSidecarFreeze,
+    [switch] $SkipPip
 )
 
 Set-StrictMode -Version Latest
@@ -230,16 +232,21 @@ if ($pyVer.Trim() -ne "3.12") {
 }
 
 # ---- venv -------------------------------------------------------------------
-if (-not (Test-Path -LiteralPath $VenvPython -PathType Leaf)) {
+$VenvExisted = Test-Path -LiteralPath $VenvPython -PathType Leaf
+if (-not $VenvExisted) {
     Write-Step "Create Python 3.12 virtual environment"
     & $Bootstrap @BootstrapArgs -m venv $VenvDir
     if ($LASTEXITCODE -ne 0) { throw "venv creation failed." }
 }
 
-Invoke-Checked "Upgrade pip" $VenvPython @("-m", "pip", "install", "--upgrade", "pip")
-Invoke-Checked "Install sidecar build dependencies" $VenvPython @(
-    "-m", "pip", "install", "-e", ("{0}[formats]" -f (Join-Path $RepoRoot "sidecar")), "pyinstaller"
-)
+if (-not $SkipPip -or -not $VenvExisted) {
+    Invoke-Checked "Upgrade pip" $VenvPython @("-m", "pip", "install", "--upgrade", "pip")
+    Invoke-Checked "Install sidecar build dependencies" $VenvPython @(
+        "-m", "pip", "install", "-e", ("{0}[formats]" -f (Join-Path $RepoRoot "sidecar")), "pyinstaller"
+    )
+} else {
+    Write-Step "Pip dependency sync [SKIPPED - fast mode]"
+}
 Invoke-Checked "Verify sidecar dependencies" $VenvPython @(
     "-c", "import PyInstaller, h5py, mne, neo, pyedflib; print('sidecar-build-dependencies-ok')"
 )
@@ -256,11 +263,19 @@ Write-Host "  LicKey    = $LicensePublicKeyFile"
 Write-Step "Build release package"
 Push-Location $RepoRoot
 try {
-    if ($IsccPath) {
-        & $ReleaseScript -QtRoot $ResolvedQtRoot -Python $VenvPython -Configuration $Configuration -LicensePublicKeyFile $LicensePublicKeyFile -IsccPath $IsccPath -SkipSigning -SkipInstaller:$SkipInstaller
-    } else {
-        & $ReleaseScript -QtRoot $ResolvedQtRoot -Python $VenvPython -Configuration $Configuration -LicensePublicKeyFile $LicensePublicKeyFile -SkipSigning -SkipInstaller:$SkipInstaller
+    $releaseParams = @{
+        QtRoot                = $ResolvedQtRoot
+        Python                = $VenvPython
+        Configuration         = $Configuration
+        LicensePublicKeyFile  = $LicensePublicKeyFile
+        SkipSigning           = $true
+        SkipInstaller         = [bool]$SkipInstaller
+        SkipSidecarFreeze     = [bool]$SkipSidecarFreeze
     }
+    if ($IsccPath) {
+        $releaseParams["IsccPath"] = $IsccPath
+    }
+    & $ReleaseScript @releaseParams
     if ($LASTEXITCODE -ne 0) { throw "Build release package failed (exit $LASTEXITCODE)." }
 } finally {
     Pop-Location
@@ -274,7 +289,15 @@ if ($SkipVerification) {
 
 $verifyArgs = [string[]]@()
 if ($SkipInstaller) { $verifyArgs += "-SkipInstaller" }
-Invoke-Checked "Windows automated acceptance" $VerifyScript $verifyArgs
+try {
+    Invoke-Checked "Windows automated acceptance" $VerifyScript $verifyArgs
+} catch {
+    $expectedInstaller = Join-Path $RepoRoot "dist\BoundFreeEEG_Setup_$($version.version).exe"
+    if (Test-Path -LiteralPath $expectedInstaller -PathType Leaf) {
+        Write-Warning "Automated acceptance failed, but installer artifact was successfully created at: $expectedInstaller"
+    }
+    throw
+}
 
 Write-Host ""
 Write-Host "Windows dev build and acceptance complete." -ForegroundColor Green

@@ -36,7 +36,17 @@ FORBIDDEN_LEGAL_DEPS = ("PySide6", "pyqtgraph", "cryptography")
 # acknowledged in the legal notices + license texts. Omitting them would
 # under-disclose; over-declaring PySide6/pyqtgraph/cryptography would
 # mis-attribute the old reference stack.
-REQUIRED_ACKNOWLEDGED_DEPS = ("Qt6", "pocketfft", "MNE", "numpy", "h5py", "matplotlib", "scipy", "pandas")
+REQUIRED_ACKNOWLEDGED_DEPS = (
+    "Qt6",
+    "pocketfft",
+    "Microsoft Visual C++ Redistributable",
+    "MNE",
+    "numpy",
+    "h5py",
+    "matplotlib",
+    "scipy",
+    "pandas",
+)
 
 # Patterns that indicate private key material or keygen tooling. The public
 # license-signing key resource is allowed; private keys and key generators
@@ -413,6 +423,42 @@ def check_i18n_release() -> CheckResult:
         return CheckResult(name, False, "; ".join(failures))
     return CheckResult(name, True, ".qm-only staging; qtbase_zh_CN/ja_JP forced; no .ts runtime")
 
+
+def check_vc_runtime_packaging() -> CheckResult:
+    """Ensure a compatible VC++ runtime is bundled and installed before app launch."""
+    name = "Windows VC++ runtime prerequisite"
+    build_path = REPO_ROOT / "scripts" / "windows" / "build_release.ps1"
+    verify_path = REPO_ROOT / "scripts" / "windows" / "verify_windows_release.ps1"
+    iss_path = REPO_ROOT / "installer" / "BoundFreeEEG.iss"
+    missing = [p.name for p in (build_path, verify_path, iss_path) if not p.is_file()]
+    if missing:
+        return CheckResult(name, False, f"missing packaging files: {missing}")
+
+    build = _read_text(build_path)
+    verify = _read_text(verify_path)
+    iss = _read_text(iss_path)
+    failures: list[str] = []
+    if "VCINSTALLDIR" not in build or "vswhere.exe" not in build:
+        failures.append("build must resolve Visual Studio and set VCINSTALLDIR for windeployqt")
+    if '"vc_redist.x64.exe"' not in build or "windeployqt did not stage vc_redist.x64.exe" not in build:
+        failures.append("build must fail if windeployqt did not stage vc_redist.x64.exe")
+    if "BoundFreeVCRedistVersion=$VcRedistVersion" not in build:
+        failures.append("build must pass the staged redistributable version to ISCC")
+    if '"vc_redist.x64.exe"' not in verify:
+        failures.append("Windows acceptance must require the staged VC++ redistributable")
+    if "Flags: dontcopy noencryption" not in iss or "ExtractTemporaryFile('vc_redist.x64.exe')" not in iss:
+        failures.append("installer must embed the VC++ redistributable as a temporary prerequisite")
+    if "function PrepareToInstall(var NeedsRestart: Boolean): String" not in iss or "Exec(RedistPath" not in iss:
+        failures.append("installer must run the prerequisite before app installation and check its result")
+    if 'Excludes: "vc_redist.x64.exe"' not in iss:
+        failures.append("installer must keep the VC++ installer out of the installed application directory")
+    if "RegQueryDWordValue(HKLM64" not in iss or "RegQueryStringValue(HKLM64" not in iss:
+        failures.append("installer must inspect the 64-bit installed runtime and version")
+
+    if failures:
+        return CheckResult(name, False, "; ".join(failures))
+    return CheckResult(name, True, "windeployqt redistributable staged, version-bound, and installed when required")
+
 # ---------------------------------------------------------------------------
 # Stable/rc signing policy (parse build_release.ps1)
 # ---------------------------------------------------------------------------
@@ -478,6 +524,7 @@ CHECKS = (
     check_legal,
     check_no_private_keys,
     check_i18n_release,
+    check_vc_runtime_packaging,
 )
 
 

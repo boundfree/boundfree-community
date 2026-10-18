@@ -3,7 +3,7 @@ title: M8 Windows 打包与发布验收记录
 doc_type: report
 status: active
 owner: BoundFree
-last_updated: 2026-10-15
+last_updated: 2026-10-17
 milestone: M8
 ---
 
@@ -13,7 +13,7 @@ milestone: M8
 
 M8 打包实现与当前 WSL2 Linux 可验证部分已完成：冻结边车、Native 安装布局、安装目录资源定位、主题与系统 UI、离线授权实现、发布资产检查及全量回归通过。
 
-M8 的 Windows 自动化部分已完成：2026-10-15 在 Windows x64 发布机执行 MSVC Release 构建、边车冻结、`windeployqt`、Inno Setup 安装包生成与仓库自动化验收（11 项 smoke 全通过），证据见「Windows 自动化验收执行记录」。组织证书代码签名、干净 Windows 10/11 安装与卸载、以及桌面全流程人工验收仍未完成；当前产物不得标为 `rc` 或 `stable`。
+M8 的 Windows 构建与命令行自动验收已于 2026-10-17 通过：WSL 一键入口完成同步、MSVC Release 构建、边车冻结、`windeployqt`、Inno Setup 安装包生成、Windows smoke 和产物回传。构建现明确设置 `VCINSTALLDIR`，把匹配的官方 x64 VC++ Redistributable 编入安装器，并在安装前检查系统版本、运行前置包且校验安装结果。干净 Windows 10/11 的实际安装、覆盖安装、卸载、桌面人工验收、组织证书代码签名和正式授权兼容仍未完成；当前产物不得标为 `rc` 或 `stable`。
 
 ## 已实现范围
 
@@ -22,6 +22,7 @@ M8 的 Windows 自动化部分已完成：2026-10-15 在 Windows x64 发布机�
 - CMake install 规则组装 Native、版本、错误码、i18n 与法务资源。
 - `installer/BoundFreeEEG.iss` 定义 Windows 10 x64、自选安装目录、快捷方式、卸载和法务文件。
 - `build_release.ps1` 固定 MSVC Release、边车冻结、CMake install、`windeployqt`、Inno Setup 与签名顺序；`rc/stable` 缺少签名配置时失败。
+- Windows 打包会通过 `vswhere` 定位 Visual Studio C++ 工具链并设置 `VCINSTALLDIR`；缺少 x64 VC++ Redistributable 时构建失败。Inno Setup 在复制应用文件前运行它，检查退出码与重启需求；已有同版本或更新运行库时跳过。
 - Native 离线授权实现机器码兼容、RSA-2048 PSS-SHA256 校验、保存/加载与启动门禁；正式发布仍须注入实际公钥并执行旧版真实密钥兼容验收。
 - 主窗口实现亮/暗主题、清华紫高亮、dock 显隐菜单、文件/视频/退出快捷键、常驻文件和模式状态。
 - i18n 静态检查覆盖 `zh_CN/en_US/pseudo` 与保留 locale 的 key 完整性；后端错误保持 `code + params` 并由 UI 本地化。
@@ -101,13 +102,29 @@ python3 -m json.tool contracts/error_codes.json
 
 本次同时修正 `scripts/windows/verify_windows_release.ps1` 在出厂 Windows PowerShell 5.1 下无法运行的三处问题：文件缺少 UTF-8 BOM 导致中文 here-string 解析失败；`param()` 默认值引用 `$PSScriptRoot`（5.1 下为空）；`Invoke-Checked` 的 `2>&1` 会把原生命令 stderr 当致命错误，而系统 UI smoke 的诊断行走 stderr。修后该脚本在 Windows PowerShell 5.1 与 PowerShell 7 下都能跑完。
 
+## Windows 一键打包回归（2026-10-17）
+
+在同一台 Windows 11 x64 构建机通过 WSL2 执行 `./scripts/wsl/build_windows_dist.sh`，未使用 `--fast`、`--skip-verify` 或 `--no-sync`。完整执行源码同步、依赖检查、MSVC Release 构建、PyInstaller 冻结、CMake install、`windeployqt`、Inno 编译、自动 smoke 与安装包回传。
+
+| 项 | 结果 |
+|---|---|
+| 版本 | `0.1.82-dev`（channel `dev`，未签名） |
+| VC++ Redistributable | x64 `14.44.35211.0`，已进入 Inno 安装包；当前机器注册版本 `14.51.36247.00`，安装脚本应跳过 |
+| 安装包 | `dist/BoundFreeEEG_Setup_0.1.82-dev.exe`，111,867,134 字节 |
+| SHA-256 | `b55e722f708b138582e3edb7a026bf82ab176bdfcc4df4e6308267ed082c7cb5` |
+| 验收输出 | `release\windows-acceptance\20261017-175636\` |
+| 自动 smoke | 11 项全部通过：版本、系统 UI、边车握手、授权门禁、CSV/EDF、DSP、回放、频谱、录制、导出 |
+
+Inno Setup 编译通过，验收脚本也确认 stage 中存在 VC++ 前置包。安装包安装/覆盖/卸载尚未在干净机器上实测；本机已有较新 VC++ runtime，且当前会话非管理员，因此本次没有声称验证该安装路径。
+
 ## Windows 发布门禁
 
 `[x]` 表示已有验收证据，`[ ]` 表示仍待验收：
 
 - [x] Visual Studio 2022 x64 Release 构建（2026-10-15，见上节）。
-- [x] Inno Setup 安装包生成与 SHA-256 记录（安装/覆盖安装/卸载流程仍未测）。
-- [ ] `windeployqt` 后在无 Qt/Python 开发环境的干净 Windows 10/11 用户上启动。当前包未部署 MSVC 运行时（`windeployqt` 报告 `VCINSTALLDIR` 未设置），干净机需先安装 VC++ 2015-2022 运行时。
+- [x] Inno Setup 安装包生成、VC++ 前置包编入及 SHA-256 记录（2026-10-17）。
+- [x] Windows 自动化验收 11 项 smoke（2026-10-17）。
+- [ ] 在无 Qt/Python/VC++ 开发运行环境的干净 Windows 10/11 上安装并启动，验证 VC++ 前置安装成功。
 - [ ] Inno Setup 安装、覆盖安装、卸载和自选安装目录。
 - [ ] 使用正式公钥和旧版真实授权 key 完成激活兼容验收。
 - [ ] 打开文件、回放、DSP、分析、视频、录制和三格式导出全流程桌面人工验收（自动化 smoke 已通过）。
@@ -116,7 +133,7 @@ python3 -m json.tool contracts/error_codes.json
 
 ## 已知边界
 
-- 历史证据来自 WSL2 Linux 与 Qt offscreen 环境；2026-10-15 的 Windows 自动化验收也仍是命令行 smoke（无真实桌面交互、显示、驱动与媒体后端验证）。
+- 历史证据来自 WSL2 Linux 与 Qt offscreen 环境；2026-10-17 的 Windows 自动化验收仍是命令行 smoke（无真实桌面交互、显示、驱动与媒体后端验证）。
 - Linux stage 不是交付物；仅用于验证 CMake install 布局与脱离源码目录运行。
 - 开发环境 Qt Multimedia 报告 FFmpeg GPL 构建；Windows 发布前必须核对实际随包二进制及许可证，不能沿用开发环境结论。
 - 真实组织代码签名证书、正式授权公钥和旧版真实授权样本不在仓库中，必须由发布环境安全注入。
