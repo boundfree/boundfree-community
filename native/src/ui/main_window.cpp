@@ -91,8 +91,8 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     // Build all top-level menus consecutively after toolbar/dock layout is
     // complete. This keeps their mouse regions in one stable QMenuBar layout.
     buildFileMenu();
-    buildLanguageMenu();
     buildViewMenu();
+    buildLanguageMenu();
     buildThemeMenu();
     // 订阅 I18nService 语言切换信号，统一刷新常驻 UI；避免在各回调里手工 retranslate。
     connect(i18n_, &I18nService::languageChanged, this, [this]() {
@@ -117,9 +117,9 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     statusModeLabel_ = new QLabel(this);
     statusFileLabel_->setMinimumWidth(40);
     statusModeLabel_->setMinimumWidth(40);
-    statusBar()->addPermanentWidget(statusModeLabel_);
     statusBar()->addPermanentWidget(statusFileLabel_);
-    resize(900, 560);
+    statusBar()->addPermanentWidget(statusModeLabel_);
+    resize(1280, 800);
     retranslateUi();
     // Apply theme only after menu titles/actions are translated, otherwise the
     // first QMenuBar items can stay blank under stylesheet on Windows.
@@ -131,7 +131,7 @@ void MainWindow::buildFixedWorkspace() {
     auto* layout = new QVBoxLayout(root);
     layout->setContentsMargins(6, 4, 6, 4);
     layout->setSpacing(6);
-    layout->addWidget(browserToolbar_);
+
     auto* workspace = new QSplitter(Qt::Horizontal, root);
     workspace->setObjectName("eegWorkspaceSplitter");
     workspace->setChildrenCollapsible(false);
@@ -167,7 +167,10 @@ void MainWindow::buildFixedWorkspace() {
         });
     });
     analysisSplit->addWidget(analysisDock_);
-    parameterTabs_ = new QTabWidget(analysisSplit);
+    parameterTabs_ = new QTabWidget(workspace);
+    parameterTabs_->hide();
+    parameterTabs_->setMinimumWidth(228);
+    parameterTabs_->setUsesScrollButtons(true);
     parameterTabs_->setObjectName("eegParameterTabs");
     parameterTabs_->setMinimumHeight(48);
     parameterTabs_->setDocumentMode(true);
@@ -195,7 +198,14 @@ void MainWindow::buildFixedWorkspace() {
         else processingState_.clearChannelBandpass(channel);
         applyProcessingAndDisplay();
     };
-    filterPanel_->addWidget(channelBandpassControls_);
+    channelFilterPanel_ = new CollapsiblePanel(i18n_->text("app.processing.per_channel"), filterPanel_);
+    channelFilterPanel_->setObjectName("eegPerChannelFilters");
+    channelFilterPanel_->addWidget(channelBandpassControls_);
+    channelFilterPanel_->addWidget(filterToolbar_->findChild<QPushButton*>("eegApplyBandpassToSelected"));
+    channelFilterPanel_->addWidget(filterToolbar_->findChild<QPushButton*>("eegClearChannelBandpass"));
+    channelFilterPanel_->setExpanded(false);
+    filterPanel_->addWidget(channelFilterPanel_);
+    filterPanel_->addWidget(filterToolbar_->findChild<QLabel*>("eegProcessingFeedback"));
     processingLayout->addWidget(filterPanel_);
     processingLayout->addStretch();
     processingScroll->setWidget(processingPage);
@@ -204,15 +214,27 @@ void MainWindow::buildFixedWorkspace() {
     markerTable_->setMaximumHeight(QWIDGETSIZE_MAX);
     markerPanel_->setHeaderVisible(false);
     parameterTabs_->addTab(markerDock_, i18n_->text("app.marker.panel"));
-    analysisSplit->addWidget(parameterTabs_);
-    analysisSplit->setStretchFactor(0, 2);
-    analysisSplit->setStretchFactor(1, 1);
-    analysisSplit->setSizes({280, 180});
-    workspace->addWidget(signalSplitter_);
+    // Scope follows the horizontal reading order: shared signal settings,
+    // waveform browsing, then parameters belonging to the active analysis.
+    auto* signalPage = new QWidget(workspace);
+    signalPage->setObjectName("eegSignalPage");
+    auto* signalLayout = new QVBoxLayout(signalPage);
+    signalLayout->setContentsMargins(0, 0, 0, 0);
+    signalLayout->setSpacing(6);
+    waveformTitle_ = new QLabel(signalPage);
+    auto titleFont = waveformTitle_->font(); titleFont.setBold(true);
+    waveformTitle_->setFont(titleFont);
+    waveformTitle_->hide();
+    signalLayout->addWidget(waveformTitle_);
+    signalLayout->addWidget(browserToolbar_);
+    signalLayout->addWidget(signalSplitter_, 1);
+    workspace->addWidget(parameterTabs_);
+    workspace->addWidget(signalPage);
     workspace->addWidget(analysisSplit);
-    workspace->setStretchFactor(0, 2);
-    workspace->setStretchFactor(1, 1);
-    workspace->setSizes({560, 320});
+    workspace->setStretchFactor(0, 0);
+    workspace->setStretchFactor(1, 3);
+    workspace->setStretchFactor(2, 2);
+    workspace->setSizes({260, 600, 400});
     layout->addWidget(workspace, 1);
     playbackBar_ = new QWidget(root);
     playbackBar_->setObjectName("eegPlaybackBar");
@@ -304,6 +326,8 @@ void MainWindow::buildViewMenu() {
     wireTabToggle(toggleChannelsAction_, 0);
     wireTabToggle(toggleMarkersAction_, 2);
     wireToggle(toggleAnalysisAction_, analysisDock_);
+    connect(toggleAnalysisAction_, &QAction::triggered,
+        findChild<QSplitter*>("eegAnalysisSplitter"), &QWidget::setVisible);
     wireToggle(toggleVideoAction_, videoDock_);
 }
 
@@ -451,6 +475,9 @@ void MainWindow::applyTheme(bool dark) {
         "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { image: url(:/controls/up-%3.xpm); width: 9px; height: 5px; }"
         "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
     ).arg(borderTone, hoverTone, arrowTone).arg(std::max(24, fontMetrics().height() + 4)));
+    setStyleSheet(styleSheet() + QString(
+        "QFrame[processingDivider=\"true\"] { border: none; min-height: 1px; max-height: 1px; background: %1; }")
+        .arg(dark ? "#555577" : "#CCCCCC"));
     // Stylesheets can rematerialize some palette roles on Fusion/Windows; re-apply
     // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);
@@ -483,8 +510,38 @@ void MainWindow::refreshPersistentStatus() {
     if (statusFileLabel_ == nullptr || statusModeLabel_ == nullptr) {
         return;
     }
-    statusFileLabel_->setText(hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() : QString());
+    int visibleChannels = 0;
+    for (int channel = std::clamp(viewState_.firstVisibleChannel, 0, channelCount()); channel < channelCount(); ++channel)
+        if (viewState_.isChannelVisible(channel)) ++visibleChannels;
+    statusFileLabel_->setText(hasCurrentFile_ ? i18n_->text("app.status.signal_info", {
+        {"format", currentFile_.session.format},
+        {"channels", visibleChannels},
+        {"fs", i18n_->formatNumber(currentFile_.waveform.fs, 0)},
+    }) : QString());
     statusModeLabel_->setText(i18n_->text(currentModeKey()));
+}
+
+void MainWindow::refreshAnalysisInputSummary() {
+    if (!analysisInputSummary_) return;
+    const char* reference = processingState_.referenceMode == dsp::ReferenceMode::Car ? "app.processing.ref.car"
+        : processingState_.referenceMode == dsp::ReferenceMode::Bipolar ? "app.processing.ref.bipolar" : "app.processing.ref.raw";
+    QStringList stages{i18n_->text(reference)};
+    if (processingState_.notchEnabled) {
+        QStringList frequencies;
+        for (const auto& band : processingState_.notchBands)
+            if (band.enabled) frequencies << i18n_->formatNumber(band.frequency, 1);
+        if (!frequencies.isEmpty()) stages << i18n_->text("app.processing.notch_summary", {{"frequencies", frequencies.join(" / ")}});
+        if (!frequencies.isEmpty() && processingState_.notchHarmonics)
+            stages << i18n_->text("app.processing.harmonics_summary", {{"multiple", processingState_.notchHarmonicMultiple}});
+    }
+    if (processingState_.globalBandpassEnabled)
+        stages << i18n_->text("app.processing.bandpass_summary", {
+            {"low", i18n_->formatNumber(processingState_.bandpassLow, 1)},
+            {"high", i18n_->formatNumber(processingState_.bandpassHigh, 1)}});
+    if (!processingState_.perChannelBandpass.empty())
+        stages << i18n_->text("app.processing.overrides_summary", {{"count", processingState_.channelBandpassOverrideCount()}});
+    analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n" + stages.join(" · ")
+        + "\n" + i18n_->text("app.analysis.preprocessing_hint"));
 }
 
 QString MainWindow::currentModeKey() const {
@@ -503,8 +560,6 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_->setWrappedMinimum(true);
     playbackToolbar_ = new ControlBar(this);
     playbackToolbar_->setWrappedMinimum(true);
-    filterToolbar_ = new ControlBar(this);
-    filterToolbar_->setObjectName("eegFilterControls");
     progressRow_ = new QWidget(this);
     auto* progressLayout = new QHBoxLayout(progressRow_);
     progressLayout->setContentsMargins(4, 0, 4, 0);
@@ -512,10 +567,6 @@ void MainWindow::buildBrowserControls() {
     previousWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowBack), QString());
     connect(previousWindowAction_, &QAction::triggered, this, [this]() {
         requestWindow(waveformWidget_->timeRange().first - viewState_.windowSeconds);
-    });
-    nextWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
-    connect(nextWindowAction_, &QAction::triggered, this, [this]() {
-        requestWindow(waveformWidget_->timeRange().first + viewState_.windowSeconds);
     });
 
     positionLabel_ = new QLabel(this);
@@ -605,7 +656,8 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_->addWidget(autoAmplitudeCheck_);
     browserToolbar_->addPair(amplitudeLabel_, amplitudeSpin_);
     browserToolbar_->addSeparator();
-    browserToolbar_->addPair(firstChannelLabel_, firstChannelSpin_);
+    auto* channelNavigation = new ControlBar(this);
+    channelNavigation->addPair(firstChannelLabel_, firstChannelSpin_);
 
     channelDock_ = new QDockWidget(this);
     channelDock_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -617,6 +669,7 @@ void MainWindow::buildBrowserControls() {
     channelListLayout_->setSpacing(2);
     channelScroll_->setWidget(channelListWidget_);
     channelPanel_ = new CollapsiblePanel(i18n_->text("app.browser.channels"), channelDock_);
+    channelPanel_->addWidget(channelNavigation);
     channelPanel_->addWidget(channelScroll_);
     channelDock_->setWidget(channelPanel_);
     channelDock_->hide();
@@ -651,6 +704,11 @@ void MainWindow::buildBrowserControls() {
 void MainWindow::buildPlaybackControls() {
     playAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
     connect(playAction_, &QAction::triggered, this, &MainWindow::togglePlayback);
+    nextWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
+    connect(nextWindowAction_, &QAction::triggered, this, [this]() {
+        requestWindow(waveformWidget_->timeRange().first + viewState_.windowSeconds);
+    });
+
     playbackPanel_->buildInto(playbackToolbar_);
     connect(playbackPanel_, &EegPlaybackPanel::speedChanged, this, [this](double speed) {
         playback_.setSpeed(speed);
@@ -834,7 +892,7 @@ void MainWindow::buildVideoDock() {
 
 void MainWindow::buildProcessingControls() {
     processingPanel_ = new EegProcessingPanel(this);
-    processingPanel_->buildInto(browserToolbar_, filterToolbar_, processingState_);
+    filterToolbar_ = processingPanel_->buildWidget(processingState_, this);
     connect(processingPanel_, &EegProcessingPanel::changed, this, &MainWindow::onProcessingUiChanged);
     connect(processingPanel_, &EegProcessingPanel::applyBandpassToSelected, this, &MainWindow::applyBandpassToSelectedChannels);
     connect(processingPanel_, &EegProcessingPanel::clearPerChannelBandpass, this, &MainWindow::clearPerChannelBandpassOverrides);
@@ -845,7 +903,22 @@ void MainWindow::buildAnalysisDock() {
     analysisDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     analysisTabs_ = new QTabWidget(analysisDock_);
     analysisTabs_->setObjectName("eegAnalysisTabs");
-    analysisDock_->setWidget(analysisTabs_);
+    auto* analysisPage = new QWidget(analysisDock_);
+    auto* analysisLayout = new QVBoxLayout(analysisPage);
+    analysisLayout->setContentsMargins(4, 4, 4, 4);
+    analysisLayout->setSpacing(8);
+    analysisHeading_ = new QLabel(analysisPage);
+    auto headingFont = analysisHeading_->font(); headingFont.setBold(true);
+    analysisHeading_->setFont(headingFont);
+    analysisLayout->addWidget(analysisHeading_);
+    analysisLayout->addWidget(analysisTabs_, 1);
+    analysisInputSummary_ = new QLabel(analysisPage);
+    analysisInputSummary_->setObjectName("eegAnalysisInputSummary");
+    analysisInputSummary_->setWordWrap(true);
+    analysisInputSummary_->setTextFormat(Qt::PlainText);
+    analysisInputSummary_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    analysisLayout->addWidget(analysisInputSummary_);
+    analysisDock_->setWidget(analysisPage);
     analysisDock_->hide();
 
     const auto addHeader = [this](QWidget* page, QVBoxLayout* layout, int index) {
@@ -976,9 +1049,20 @@ void MainWindow::buildAnalysisDock() {
     coherenceFmaxSpin_->setRange(5, 500);
     coherenceFmaxSpin_->setValue(100);
     coherenceFmaxSpin_->setSuffix(" Hz");
-    coherenceControls->addWidget(coherenceACombo_);
-    coherenceControls->addWidget(coherenceBCombo_);
-    coherenceControls->addWidget(coherenceFmaxSpin_);
+    const auto labeledControl = [coherencePage, coherenceControls](QLabel*& label, QWidget* control) {
+        auto* pair = new QWidget(coherencePage);
+        auto* row = new QVBoxLayout(pair);
+        row->setContentsMargins(0, 0, 0, 0); row->setSpacing(4);
+        label = new QLabel(pair); label->setBuddy(control);
+        row->addWidget(label); row->addWidget(control);
+        coherenceControls->addWidget(pair);
+    };
+    coherenceACombo_->setObjectName("eegCoherenceChannelA");
+    coherenceBCombo_->setObjectName("eegCoherenceChannelB");
+    coherenceFmaxSpin_->setObjectName("eegCoherenceFmax");
+    labeledControl(coherenceALabel_, coherenceACombo_);
+    labeledControl(coherenceBLabel_, coherenceBCombo_);
+    labeledControl(coherenceFmaxLabel_, coherenceFmaxSpin_);
     coherenceWidget_ = new SpectrumWidget(coherencePage);
     coherenceWidget_->setObjectName("eegAnalysisPlot_3");
     coherenceWidget_->setMinimumSize(220, 160);
@@ -1702,7 +1786,8 @@ void MainWindow::rebuildChannelControls() {
 
 void MainWindow::retranslateUi() {
     const QScopedValueRollback<bool> analysisTranslationGuard(refreshingAnalysisControls_, true);
-    setWindowTitle(i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}}));
+    const QString productTitle = i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}});
+    setWindowTitle(hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() + " — " + productTitle : productTitle);
     centralLabel_->setText(i18n_->text(emptyStateKey_, emptyStateParams_));
     fileMenu_->setTitle(i18n_->text("app.menu.file"));
     fileMenu_->menuAction()->setText(i18n_->text("app.menu.file"));
@@ -1753,8 +1838,18 @@ void MainWindow::retranslateUi() {
     if (processingPanel_ != nullptr) {
         processingPanel_->retranslateUi(i18n_);
         if (channelBandpassControls_ != nullptr) channelBandpassControls_->retranslate();
+        if (channelFilterPanel_) channelFilterPanel_->setTitle(i18n_->text("app.processing.per_channel"));
         if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
     }
+    waveformTitle_->setText(i18n_->text("app.workspace.waveform"));
+    analysisHeading_->setText(i18n_->text("app.analysis.panel"));
+    coherenceALabel_->setText(i18n_->text("app.analysis.channel_a"));
+    coherenceBLabel_->setText(i18n_->text("app.analysis.channel_b"));
+    coherenceFmaxLabel_->setText(i18n_->text("app.analysis.frequency_limit"));
+    coherenceACombo_->setAccessibleName(coherenceALabel_->text());
+    coherenceBCombo_->setAccessibleName(coherenceBLabel_->text());
+    coherenceFmaxSpin_->setAccessibleName(coherenceFmaxLabel_->text());
+    refreshAnalysisInputSummary();
     analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
     analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
     analysisTabs_->setTabText(1, i18n_->text("app.analysis.stft"));
@@ -1909,6 +2004,8 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     }
     centralStack_->setCurrentWidget(waveformWidget_);
     browserToolbar_->show();
+    waveformTitle_->show();
+    parameterTabs_->show();
     playbackBar_->show();
     if (!sameSession) {
         playbackViewportActive_ = false;
@@ -1935,7 +2032,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         parameterTabs_->setTabVisible(2, true);
         toggleChannelsAction_->setChecked(true);
         toggleMarkersAction_->setChecked(true);
-        parameterTabs_->setCurrentIndex(0);
+        parameterTabs_->setCurrentIndex(1);
     }
     refreshBrowserControls();
     refreshProcessingControls();

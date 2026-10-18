@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>Processing</translation>
+      <translation>Vorverarbeitung</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>PSD (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>Frequenzband</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>Gilt für Wellenformen und alle Analysen</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>Neureferenzierung</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>Standard für alle Kanäle</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>Änderungen aktualisieren Wellenformen und Analysen automatisch</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>Kerbfrequenz {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>Wellenformen</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>Kanal A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>Kanal B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>Frequenzgrenze</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>Eingangssignal</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>Vorverarbeitung im linken Bereich einstellen.</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>Kerbfilter {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>Bandpass {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>{count} Kanalüberschreibungen</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>Oberschwingungen bis {multiple}×</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · {channels} sichtbare Kanäle · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

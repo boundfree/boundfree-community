@@ -51,6 +51,9 @@ inline int smokeAnalysisText(int argc, char** argv, const bf::VersionInfo& versi
                 if (!properties || qobject_cast<QScrollArea*>(properties) || !properties->isVisible()) return fail("scrolling_properties");
                 const QRect propertyBounds(properties->mapTo(&window, QPoint()), properties->size());
                 if (!window.rect().contains(propertyBounds)) return fail("properties_outside_window");
+                auto* inputContext = window.findChild<QLabel*>("eegAnalysisInputSummary");
+                if (!inputContext || inputContext->height() < inputContext->heightForWidth(inputContext->width()))
+                    return fail("input_context_clipped");
                 for (const char* role : {"Status", "Legend", "Summary"}) {
                     auto* label = window.findChild<QLabel*>(QString("eegAnalysis%1_%2").arg(role).arg(page));
                     if (!label->isVisible() || label->text().isEmpty()) continue;

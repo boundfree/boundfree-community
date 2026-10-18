@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>処理</translation>
+      <translation>信号前処理</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>パワースペクトル密度 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>帯域</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>波形とすべての解析に適用</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>再参照</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>全チャンネルの既定値</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>変更後に波形と解析を自動更新</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>ノッチ周波数 {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>波形</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>チャンネル A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>チャンネル B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>周波数上限</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>入力信号</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>前処理の設定は左側のパネルにあります。</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>ノッチ {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>バンドパス {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>チャンネル別設定 {count} 件</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>高調波は {multiple} 倍まで</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · 表示 {channels} チャンネル · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

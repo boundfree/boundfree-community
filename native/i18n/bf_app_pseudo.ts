@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>[!! Processing !!]</translation>
+      <translation>[!! Preprocessing !!]</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -529,5 +529,69 @@
     <message><source>app.analysis.db_unit</source><translation>[!! PSD (dB re 1 µV²/Hz) !!]</translation></message>
     <message><source>app.analysis.color_range</source><translation>[!! {min}–{max} dB re 1 µV²/Hz !!]</translation></message>
     <message><source>app.analysis.band</source><translation>[!! Baand !!]</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>[!! Applies to waveforms and all analyses !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>[!! Re-reference !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>[!! Default for all channels !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>[!! Changes automatically update waveforms and analyses !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>[!! Notch frequency {index} !!]</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>[!! Waveforms !!]</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>[!! Channel A !!]</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>[!! Channel B !!]</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>[!! Frequency limit !!]</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>[!! Input signal !!]</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>[!! Preprocessing settings are in the left sidebar. !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>[!! Notch {frequencies} Hz !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>[!! Bandpass {low}–{high} Hz !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>[!! {count} channel overrides !!]</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>[!! Harmonics up to {multiple}× !!]</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>[!! {format} · {channels} visible channels · {fs} Hz !!]</translation>
+    </message>
   </context>
 </TS>

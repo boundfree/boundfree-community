@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>Processing</translation>
+      <translation>신호 전처리</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>전력 스펙트럼 밀도 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>대역</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>파형 및 모든 분석에 적용</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>재참조</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>모든 채널의 기본값</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>변경 시 파형과 분석을 자동 업데이트</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>노치 주파수 {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>파형</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>채널 A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>채널 B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>주파수 상한</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>입력 신호</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>전처리 설정은 왼쪽 패널에 있습니다.</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>노치 {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>대역 통과 {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>채널별 설정 {count}개</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>최대 {multiple}배 고조파</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · 표시 채널 {channels}개 · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

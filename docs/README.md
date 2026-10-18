@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-10-16
+last_updated: 2026-10-17
 ---
 
 # 文档索引
@@ -29,6 +29,7 @@ last_updated: 2026-10-16
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/eeg-ui-three-column-workspace.md`](reports/eeg-ui-three-column-workspace.md) | 三栏布局、统一信号预处理、文件入口与分析输入上下文 |
 | [`reports/windows-gui-subsystem.md`](reports/windows-gui-subsystem.md) | Windows 桌面程序使用 GUI 子系统启动，不额外打开终端 |
 | [`reports/eeg-ui-control-metrics.md`](reports/eeg-ui-control-metrics.md) | 同级控件等高居中、多语言参考菜单完整显示与缩放回归 |
 | [`reports/eeg-ui-analysis-refresh.md`](reports/eeg-ui-analysis-refresh.md) | 播放后台分析保留完整结果、批次更新与防闪烁回归 |

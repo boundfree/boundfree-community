@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>處理</translation>
+      <translation>訊號預處理</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>功率譜密度 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>頻段</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>作用於波形與全部分析</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>重參考</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>預設套用至全部通道</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>修改後自動更新波形與分析</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>陷波頻率 {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>波形</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>通道 A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>通道 B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>頻率上限</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>輸入訊號</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>預處理設定見左側「訊號預處理」</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>陷波 {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>帶通 {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>{count} 個逐通道設定</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>諧波至 {multiple} 倍頻</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · {channels} 個可見通道 · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

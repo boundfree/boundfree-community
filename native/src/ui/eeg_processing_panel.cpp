@@ -2,6 +2,9 @@
 
 #include "ui/control_bar.h"
 #include <QAbstractItemView>
+#include <QFormLayout>
+#include <QFrame>
+#include <QVBoxLayout>
 
 namespace bf {
 
@@ -38,40 +41,100 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
     bandpassHighSpin_->setMinimumWidth(120);
 
     applyToSelectedButton_ = new QPushButton;
+    applyToSelectedButton_->setObjectName("eegApplyBandpassToSelected");
     clearPerChannelButton_ = new QPushButton;
+    clearPerChannelButton_->setObjectName("eegClearChannelBandpass");
 }
 
-void EegProcessingPanel::buildInto(ControlBar* toolbar, ControlBar* filters, const ProcessingViewState& state) {
-    toolbar->addSeparator();
-    toolbar->addPair(referenceLabel_, referenceCombo_);
-
-    toolbar->addSeparator();
-    toolbar->addWidget(notchEnableCheck_);
-    notchBandChecks_.clear();
-    notchBandSpins_.clear();
-    for (const NotchBandUi& band : state.notchBands) {
-        auto* chk = new QCheckBox;
+QWidget* EegProcessingPanel::buildWidget(const ProcessingViewState& state, QWidget* parent) {
+    auto* page = new QWidget(parent);
+    page->setObjectName("eegFilterControls");
+    auto* box = new QVBoxLayout(page);
+    box->setContentsMargins(8, 8, 8, 8);
+    box->setSpacing(8);
+    const auto label = [page](bool bold = false) {
+        auto* result = new QLabel(page);
+        result->setWordWrap(true);
+        result->setTextFormat(Qt::PlainText);
+        auto font = result->font(); font.setBold(bold); result->setFont(font);
+        return result;
+    };
+    const auto separator = [&]() {
+        auto* line = new QFrame(page);
+        line->setFrameShape(QFrame::HLine);
+        line->setProperty("processingDivider", true);
+        box->addSpacing(4); box->addWidget(line); box->addSpacing(4);
+    };
+    const auto form = [](QWidget* section) {
+        auto* layout = new QFormLayout(section);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(8);
+        layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        layout->setRowWrapPolicy(QFormLayout::WrapLongRows);
+        return layout;
+    };
+    title_ = label(true); scope_ = label();
+    scope_->setObjectName("eegProcessingScope");
+    box->addWidget(title_); box->addWidget(scope_);
+    separator();
+    auto* reference = new QWidget(page);
+    reference->setObjectName("eegReferenceSection");
+    referenceTitle_ = label(true); box->addWidget(referenceTitle_);
+    form(reference)->addRow(referenceLabel_, referenceCombo_);
+    box->addWidget(reference);
+    separator();
+    auto* notch = new QWidget(page);
+    notch->setObjectName("eegNotchSection");
+    auto* notchLayout = new QVBoxLayout(notch);
+    notchLayout->setContentsMargins(0, 0, 0, 0); notchLayout->setSpacing(8);
+    notchEnableCheck_->setObjectName("eegNotchEnabled");
+    notchLayout->addWidget(notchEnableCheck_);
+    for (int index = 0; index < static_cast<int>(state.notchBands.size()); ++index) {
+        const auto& band = state.notchBands[index];
+        auto* row = new QWidget(notch);
+        auto* layout = new QHBoxLayout(row);
+        layout->setContentsMargins(12, 0, 0, 0); layout->setSpacing(6);
+        auto* chk = new QCheckBox(row);
+        auto* spin = new QDoubleSpinBox(row);
+        chk->setObjectName(QString("eegNotchBandEnabled_%1").arg(index));
+        spin->setObjectName(QString("eegNotchFrequency_%1").arg(index));
         chk->setChecked(band.enabled);
-        auto* spin = new QDoubleSpinBox;
-        spin->setRange(1.0, 500.0);
-        spin->setDecimals(1);
-        spin->setValue(band.frequency);
-        spin->setSuffix(" Hz");
-        spin->setMinimumWidth(120);
-        notchBandChecks_.push_back(chk);
-        notchBandSpins_.push_back(spin);
-        filters->addPair(chk, spin);
+        spin->setRange(1.0, 500.0); spin->setDecimals(1);
+        spin->setValue(band.frequency); spin->setSuffix(" Hz");
+        spin->setMinimumWidth(120); spin->setKeyboardTracking(false);
+        notchBandChecks_.push_back(chk); notchBandSpins_.push_back(spin);
+        layout->addWidget(chk); layout->addWidget(spin, 1);
+        notchLayout->addWidget(row);
     }
-    filters->addPair(notchHarmonicsCheck_, notchHarmonicsSpin_);
-
-    filters->addSeparator();
-    filters->addWidget(bandpassEnableCheck_);
-    filters->addWidget(bandpassLowSpin_);
-    filters->addWidget(bandpassHighSpin_);
-    filters->addWidget(applyToSelectedButton_);
-    filters->addWidget(clearPerChannelButton_);
+    auto* harmonics = new QWidget(notch);
+    auto* harmonicsLayout = form(harmonics);
+    harmonicsLayout->addRow(notchHarmonicsCheck_, notchHarmonicsSpin_);
+    notchLayout->addWidget(harmonics);
+    box->addWidget(notch);
+    separator();
+    auto* bandpass = new QWidget(page);
+    bandpass->setObjectName("eegGlobalBandpassSection");
+    auto* bandpassLayout = form(bandpass);
+    bandpassEnableCheck_->setObjectName("eegGlobalBandpassEnabled");
+    bandpassLayout->addRow(bandpassEnableCheck_);
+    lowLabel_ = label(); highLabel_ = label(); bandpassScope_ = label();
+    bandpassLowSpin_->setObjectName("eegGlobalBandpassLow");
+    bandpassHighSpin_->setObjectName("eegGlobalBandpassHigh");
+    bandpassLowSpin_->setKeyboardTracking(false); bandpassHighSpin_->setKeyboardTracking(false);
+    bandpassLayout->addRow(lowLabel_, bandpassLowSpin_);
+    bandpassLayout->addRow(highLabel_, bandpassHighSpin_);
+    bandpassLayout->addRow(bandpassScope_);
+    box->addWidget(bandpass);
+    separator();
+    // Keep existing bulk override actions available in the same signal scope.
+    box->addWidget(applyToSelectedButton_);
+    box->addWidget(clearPerChannelButton_);
+    feedback_ = label();
+    feedback_->setObjectName("eegProcessingFeedback");
+    box->addWidget(feedback_);
     connectChanged();
     refreshFromState(state);
+    return page;
 }
 
 void EegProcessingPanel::connectChanged() {
@@ -164,15 +227,21 @@ void EegProcessingPanel::retranslateUi(I18nService* i18n) {
     // width is not its usable text width (notably with Fusion's menu popup).
     referenceCombo_->view()->setMinimumWidth(std::max(referenceCombo_->minimumWidth(), longestItem + 64));
     referenceCombo_->updateGeometry();
-    // The label/input pair is one flow-layout item. Propagate its new content
-    // hint so a longer translation moves the whole pair onto the next row.
-    if (auto* group = referenceCombo_->parentWidget()) {
-        if (group->layout()) group->layout()->invalidate();
-        group->updateGeometry();
-        if (auto* toolbar = group->parentWidget()) {
-            if (toolbar->layout()) toolbar->layout()->invalidate();
-            toolbar->updateGeometry();
-        }
+    title_->setText(i18n->text("app.processing.panel"));
+    scope_->setText(i18n->text("app.processing.scope"));
+    referenceTitle_->setText(i18n->text("app.processing.reference_section"));
+    lowLabel_->setText(i18n->text("app.processing.low"));
+    highLabel_->setText(i18n->text("app.processing.high"));
+    bandpassScope_->setText(i18n->text("app.processing.default_scope"));
+    feedback_->setText(i18n->text("app.processing.automatic"));
+    referenceLabel_->setBuddy(referenceCombo_);
+    referenceCombo_->setAccessibleName(referenceLabel_->text());
+    bandpassLowSpin_->setAccessibleName(lowLabel_->text());
+    bandpassHighSpin_->setAccessibleName(highLabel_->text());
+    for (int index = 0; index < notchBandChecks_.size(); ++index) {
+        const QString name = i18n->text("app.processing.notch_band", {{"index", index + 1}});
+        notchBandChecks_[index]->setAccessibleName(name);
+        notchBandSpins_[index]->setAccessibleName(name);
     }
     notchEnableCheck_->setText(i18n->text("app.processing.notch"));
     notchHarmonicsCheck_->setText(i18n->text("app.processing.harmonics"));

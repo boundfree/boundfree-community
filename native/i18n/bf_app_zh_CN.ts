@@ -156,7 +156,7 @@
     </message>
     <message>
       <source>app.processing.notch</source>
-      <translation>陷波</translation>
+      <translation>陷波滤波</translation>
     </message>
     <message>
       <source>app.processing.harmonics</source>
@@ -164,11 +164,11 @@
     </message>
     <message>
       <source>app.processing.bandpass</source>
-      <translation>带通</translation>
+      <translation>全局带通</translation>
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>处理</translation>
+      <translation>信号预处理</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>功率谱密度 (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>频段</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>作用于波形与全部分析</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>重参考</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>默认应用于全部通道</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>修改后自动更新波形与分析</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>陷波频率 {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>波形</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>通道 A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>通道 B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>频率上限</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>输入信号</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>预处理设置见左侧“信号预处理”</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>陷波 {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>带通 {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>{count} 个逐通道设置</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>谐波至 {multiple} 倍频</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · {channels} 个可见通道 · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

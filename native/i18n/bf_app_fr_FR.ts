@@ -168,7 +168,7 @@
     </message>
     <message>
       <source>app.processing.panel</source>
-      <translation>Processing</translation>
+      <translation>Prétraitement</translation>
     </message>
     <message>
       <source>app.processing.apply_to_selected</source>
@@ -530,5 +530,69 @@
     <message><source>app.analysis.db_unit</source><translation>DSP (dB re 1 µV²/Hz)</translation></message>
     <message><source>app.analysis.color_range</source><translation>{min}–{max} dB re 1 µV²/Hz</translation></message>
     <message><source>app.analysis.band</source><translation>Bande</translation></message>
+    <message>
+      <source>app.processing.scope</source>
+      <translation>Appliqué aux signaux et à toutes les analyses</translation>
+    </message>
+    <message>
+      <source>app.processing.reference_section</source>
+      <translation>Re-référencement</translation>
+    </message>
+    <message>
+      <source>app.processing.default_scope</source>
+      <translation>Valeur par défaut pour tous les canaux</translation>
+    </message>
+    <message>
+      <source>app.processing.automatic</source>
+      <translation>Les modifications actualisent automatiquement les signaux et analyses</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_band</source>
+      <translation>Fréquence coupe-bande {index}</translation>
+    </message>
+    <message>
+      <source>app.workspace.waveform</source>
+      <translation>Signaux</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_a</source>
+      <translation>Canal A</translation>
+    </message>
+    <message>
+      <source>app.analysis.channel_b</source>
+      <translation>Canal B</translation>
+    </message>
+    <message>
+      <source>app.analysis.frequency_limit</source>
+      <translation>Fréquence maximale</translation>
+    </message>
+    <message>
+      <source>app.analysis.input_signal</source>
+      <translation>Signal d’entrée</translation>
+    </message>
+    <message>
+      <source>app.analysis.preprocessing_hint</source>
+      <translation>Réglages du prétraitement dans le panneau gauche.</translation>
+    </message>
+    <message>
+      <source>app.processing.notch_summary</source>
+      <translation>Coupe-bande {frequencies} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.bandpass_summary</source>
+      <translation>Passe-bande {low}–{high} Hz</translation>
+    </message>
+    <message>
+      <source>app.processing.overrides_summary</source>
+      <translation>{count} réglages par canal</translation>
+    </message>
+    <message>
+      <source>app.processing.harmonics_summary</source>
+      <translation>Harmoniques jusqu’à {multiple}×</translation>
+    </message>
+    <message>
+      <source>app.status.signal_info</source>
+      <translation>{format} · {channels} canaux visibles · {fs} Hz</translation>
+    </message>
   </context>
 </TS>

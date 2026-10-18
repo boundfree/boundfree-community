@@ -6,6 +6,10 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QSplitter>
+#include <QStackedWidget>
+#include <QTabBar>
+#include <QTabWidget>
+#include <QStyle>
 #include <QTimer>
 #include <QWidget>
 #include <QLabel>
@@ -69,6 +73,20 @@ protected:
 private:
     void refreshOwnerGeometry() {
         for (QWidget* owner = parentWidget(); owner; owner = owner->parentWidget()) {
+            // The tab stack can be squeezed below its visible page's wrapped
+            // minimum when the dock also has a heading and input context.
+            // Reserve only the active page; hidden translated pages must not
+            // retain a taller minimum after changing tabs or languages.
+            if (auto* stack = qobject_cast<QStackedWidget*>(owner)) {
+                auto* page = stack->currentWidget();
+                stack->setMinimumHeight(page ? page->minimumHeight() : 0);
+            }
+            if (auto* tabs = qobject_cast<QTabWidget*>(owner)) {
+                auto* page = tabs->currentWidget();
+                const int chrome = tabs->tabBar()->sizeHint().height()
+                    + 2 * tabs->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, nullptr, tabs);
+                tabs->setMinimumHeight((page ? page->minimumHeight() : 0) + chrome);
+            }
             if (owner->layout()) {
                 owner->layout()->invalidate();
                 owner->layout()->activate();

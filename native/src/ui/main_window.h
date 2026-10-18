@@ -82,6 +82,7 @@ private:
     void buildThemeMenu();
     void applyTheme(bool dark);
     void refreshPersistentStatus();
+    void refreshAnalysisInputSummary();
     QString currentModeKey() const;
     void buildFileMenu();
     void buildLanguageMenu();
@@ -166,10 +167,12 @@ private:
     QActionGroup* languageGroup_ = nullptr;
     QVector<QAction*> languageActions_;
     ControlBar* playbackToolbar_ = nullptr;
-    ControlBar* filterToolbar_ = nullptr;
+    QWidget* filterToolbar_ = nullptr;
     QWidget* playbackBar_ = nullptr;
     QWidget* progressRow_ = nullptr;
     CollapsiblePanel* filterPanel_ = nullptr;
+    CollapsiblePanel* channelFilterPanel_ = nullptr;
+    QLabel* waveformTitle_ = nullptr;
     QTabWidget* parameterTabs_ = nullptr;
     QSplitter* signalSplitter_ = nullptr;
     ControlBar* browserToolbar_ = nullptr;
@@ -220,6 +223,11 @@ private:
 
     QDockWidget* analysisDock_ = nullptr;
     QTabWidget* analysisTabs_ = nullptr;
+    QLabel* analysisHeading_ = nullptr;
+    QLabel* analysisInputSummary_ = nullptr;
+    QLabel* coherenceALabel_ = nullptr;
+    QLabel* coherenceBLabel_ = nullptr;
+    QLabel* coherenceFmaxLabel_ = nullptr;
     QComboBox* psdChannelCombo_ = nullptr;
     QComboBox* psdModeCombo_ = nullptr;
     QCheckBox* psdDbCheck_ = nullptr;

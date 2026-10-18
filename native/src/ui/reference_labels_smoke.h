@@ -34,7 +34,7 @@ inline int smokeReferenceLabels(int argc, char** argv, const bf::VersionInfo& ve
     window.showFileOpenResult(result);
     window.resize(900, 560); window.show();
     auto* combo = window.findChild<QComboBox*>("eegReferenceMode");
-    auto* toolbar = window.findChild<QWidget*>("eegSignalToolbar");
+    auto* toolbar = window.findChild<QWidget*>("eegFilterControls");
     if (!combo || !toolbar) return 1;
     const auto settle = []() { QEventLoop loop; QTimer::singleShot(25, &loop, &QEventLoop::quit); loop.exec(); };
     const auto fail = [&](const char* reason) {

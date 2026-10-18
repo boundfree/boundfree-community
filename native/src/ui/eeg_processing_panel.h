@@ -15,7 +15,7 @@
 namespace bf {
 
 // EegProcessingPanel owns the reference / notch / bandpass filter controls that
-// live in the signal bar and collapsible processing region. It is an internal UI-assembly unit extracted from
+// live together in the global preprocessing sidebar. It is an internal UI-assembly unit extracted from
 // MainWindow; MainWindow holds a pointer and forwards state to/from it. The
 // panel does not own any DSP state itself -- it only mirrors ProcessingViewState
 // into the widgets and reports user edits via changed().
@@ -24,11 +24,11 @@ class EegProcessingPanel : public QObject {
 public:
     explicit EegProcessingPanel(QObject* parent = nullptr);
 
-    // Append common signal controls to the top bar and detailed filters to the side panel,
+    // Build grouped reference, notch and bandpass settings in one sidebar,
     // creating the per-notch-band check/spin pairs from the initial state. The
     // band widget count is fixed at construction (matching the original behavior
     // where buildProcessingControls created them once from the default state).
-    void buildInto(ControlBar* toolbar, ControlBar* filters, const ProcessingViewState& state);
+    QWidget* buildWidget(const ProcessingViewState& state, QWidget* parent);
 
     // Push state into the widgets (blocks emission of changed() while refreshing).
     void refreshFromState(const ProcessingViewState& state);
@@ -53,6 +53,13 @@ private:
     void connectChanged();
 
     QLabel* referenceLabel_ = nullptr;
+    QLabel* title_ = nullptr;
+    QLabel* scope_ = nullptr;
+    QLabel* referenceTitle_ = nullptr;
+    QLabel* lowLabel_ = nullptr;
+    QLabel* highLabel_ = nullptr;
+    QLabel* bandpassScope_ = nullptr;
+    QLabel* feedback_ = nullptr;
     QComboBox* referenceCombo_ = nullptr;
     QCheckBox* notchEnableCheck_ = nullptr;
     QVector<QCheckBox*> notchBandChecks_;

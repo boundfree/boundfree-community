@@ -29,6 +29,7 @@
 #include "ui/video_panel.h"
 
 #include <QApplication>
+#include <QScrollBar>
 #include <QMenuBar>
 #include <QStyleFactory>
 #include <QAction>
@@ -1170,6 +1171,28 @@ int main(int argc, char** argv) {
             auto* progress = window.findChild<QSlider*>("eegPlaybackProgress");
             if (!workspace || !signal || !analysis || !top || !bottom || !parameters || !waveform
                 || !analysisPanel || !progress || !processingScroll || parameters->count() != 3) return fail("missing_regions");
+            auto* notch = window.findChild<QCheckBox*>("eegNotchEnabled");
+            auto* notchSection = window.findChild<QWidget*>("eegNotchSection");
+            auto* notchFrequency = window.findChild<QDoubleSpinBox*>("eegNotchFrequency_0");
+            auto* reference = window.findChild<QComboBox*>("eegReferenceMode");
+            auto* inputSummary = window.findChild<QLabel*>("eegAnalysisInputSummary");
+            if (!notch || !notchSection || !notchFrequency || !reference || !inputSummary
+                || !parameters->isAncestorOf(reference) || !parameters->isAncestorOf(notch)
+                || !notchSection->isAncestorOf(notch) || !notchSection->isAncestorOf(notchFrequency)
+                || analysisPanel->isAncestorOf(parameters)) return fail("preprocessing_scope");
+            if (!window.windowTitle().contains("layout.csv")) return fail("filename_in_title");
+            bool openInMenu = false;
+            for (auto* menu : window.findChildren<QMenu*>())
+                for (auto* action : menu->actions())
+                    if (action->shortcut() == QKeySequence::Open && menu->title() == i18n.text("app.menu.file")) openInMenu = true;
+            if (!openInMenu) return fail("open_file_menu");
+            // Changing preprocessing must update both the DSP state and the
+            // read-only analysis context; changing analysis page keeps it global.
+            notchFrequency->setValue(25);
+            notch->setChecked(true);
+            if (!window.processingViewState().notchEnabled || !inputSummary->text().contains("25"))
+                return fail("preprocessing_update");
+            notch->setChecked(false);
             const auto bounds = [&](QWidget* widget) { return QRect(widget->mapTo(&window, QPoint()), widget->size()); };
             const auto accessible = [&](QWidget* widget) {
                 if (!widget->isVisible() || widget->width() < 8 || widget->height() < 8
@@ -1181,8 +1204,11 @@ int main(int argc, char** argv) {
                 if (workspace->orientation() != Qt::Horizontal || signal->orientation() != Qt::Vertical
                     || analysis->orientation() != Qt::Vertical) return "splitter_orientation";
                 if (bounds(waveform).right() >= bounds(analysisPanel).left()
-                    || bounds(top).bottom() >= bounds(workspace).top()
+                    || bounds(parameters).right() >= bounds(waveform).left()
+                    || bounds(top).bottom() >= bounds(waveform).top()
                     || bounds(workspace).bottom() >= bounds(bottom).top()) return "region_order";
+                if (workspace->count() != 3 || top->isAncestorOf(window.findChild<QWidget*>("eegNotchEnabled")))
+                    return "signal_scope";
                 if (!accessible(progress)) return "progress_unreachable";
                 for (QWidget* region : {top, bottom}) {
                     for (QWidget* child : region->findChildren<QWidget*>()) {
@@ -1230,10 +1256,10 @@ int main(int argc, char** argv) {
                 if (!toggle || toggle->text() != i18n.text("app.view.analysis")) return fail("untranslated_action");
             }
             const int oldBoundary = workspace->sizes().value(0);
-            workspace->setSizes({760, 420});
+            workspace->setSizes({280, 560, 420});
             settle();
             if (workspace->sizes().value(0) == oldBoundary) {
-                workspace->setSizes({560, 620});
+                workspace->setSizes({240, 400, 620});
                 settle();
             }
             if (workspace->sizes().value(0) == oldBoundary || !regionError().isEmpty()) return fail("splitter_resize");
@@ -1262,6 +1288,9 @@ int main(int argc, char** argv) {
                 || parameters->tabText(2) != i18n.text("app.marker.panel")) return fail("parameter_tab_translation");
             parameters->setCurrentIndex(1); settle();
             if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-processing.png"));
+            auto* channelFilters = window.findChild<bf::CollapsiblePanel*>("eegPerChannelFilters");
+            if (!channelFilters || channelFilters->isExpanded()) return fail("per_channel_default_expanded");
+            channelFilters->setExpanded(true); settle();
             const auto advancedButtons = filters->findChildren<QPushButton*>();
             if (advancedButtons.isEmpty()) return fail("advanced_filter_buttons");
             for (auto* button : advancedButtons) {
@@ -1279,7 +1308,11 @@ int main(int argc, char** argv) {
                 auto* action = window.findChild<QAction*>("eegToggle" + suffix);
                 if (!panel || !action) return fail("missing_toggle:" + suffix);
                 const bool initial = panelVisible(suffix, panel);
+                const int initialWaveformWidth = waveform->width();
                 action->trigger(); settle();
+                if (suffix == "Analysis" && !panel->isVisible()
+                    && (analysis->isVisible() || waveform->width() <= initialWaveformWidth))
+                    return fail("hidden_analysis_keeps_empty_column");
                 if (panelVisible(suffix, panel) == initial || action->isChecked() != panelVisible(suffix, panel))
                     return fail("toggle_visibility:" + suffix);
                 if (suffix == "Video" && panel->isVisible()
@@ -1311,6 +1344,28 @@ int main(int argc, char** argv) {
             }
             settle();
             if (!regionError().isEmpty()) return fail("layout_after_toggles");
+            if (!screenshotDir.isEmpty()) {
+                if (!i18n.loadLocale("zh_CN", &error)) return fail(error);
+                channelFilters->setExpanded(false);
+                parameters->setCurrentIndex(1);
+                auto preview = window.processingViewState();
+                preview.globalBandpassEnabled = true;
+                preview.notchEnabled = true;
+                window.setProcessingViewStateForBrowser(preview);
+                analysisTabs->setCurrentIndex(3);
+                window.resize(1440, 900); settle();
+                window.resize(1440, 900); settle();
+                processingScroll->verticalScrollBar()->setValue(0);
+                settle();
+                window.grab().save(QDir(screenshotDir).filePath("workspace-coherence.png"));
+                for (auto* menu : window.findChildren<QMenu*>()) {
+                    if (menu->title() != i18n.text("app.menu.file")) continue;
+                    menu->popup(window.menuBar()->mapToGlobal(QPoint(0, window.menuBar()->height())));
+                    settle();
+                    menu->grab().save(QDir(screenshotDir).filePath("file-menu.png"));
+                    menu->hide(); break;
+                }
+            }
             std::cout << "smoke-ui-fixed-layout-ok locales=4 panels=true splitters=true controls=true\n";
             return 0;
         }
