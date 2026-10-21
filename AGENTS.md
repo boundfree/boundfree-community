@@ -31,12 +31,13 @@
 
 ## Development Stage
 
-- 当前版本为 `0.1.86-dev`。
+- 当前版本为 `0.2.2-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
 - M8 打包入口、Windows x64 安装包构建及命令行自动验收已于 2026-10-17 验证；VC++ 运行库作为安装前置依赖随包处理。干净 Windows 10/11 安装、覆盖安装、卸载、桌面人工验收、组织证书签名与正式授权兼容仍待验收（见 `docs/reports/m8-packaging-release-acceptance.md`）。
+- 已实现专用脑电/眼电离线分离工作区、自有 FastICA、人工标签撤销与 float64 可追溯八文件导出；本地数值、文件协议与 Qt 工作流有回归，真实电极效果、新手用户研究和干净机安装仍需独立验收。入口与具体格式能力见 `docs/reports/offline-eeg-separation.md`。
 - 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
-- 产品版本当前为 `0.1.86-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
+- 产品版本当前为 `0.2.2-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
 
 ## Branch And Version Rules
 

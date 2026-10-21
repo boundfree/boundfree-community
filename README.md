@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.86-dev",
+  "version": "0.2.2-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 WSL 一键打包入口、Windows x64 安装包构建和命令行自动验收已于 2026-10-17 通过，安装包会按需安装 VC++ 运行库。干净 Windows 10/11 安装、覆盖安装、卸载、桌面全流程人工验收与组织证书签名待执行。产品版本 `0.1.86-dev`。
+当前阶段：M0–M7 均已完成；M8 WSL 一键打包入口、Windows x64 安装包构建和命令行自动验收已于 2026-10-17 通过，安装包会按需安装 VC++ 运行库。干净 Windows 10/11 安装、覆盖安装、卸载、桌面全流程人工验收与组织证书签名待执行。产品版本 `0.2.2-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -133,3 +133,11 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 - 不要从 WSL 用相对路径或 Linux 风格路径启动 Windows 侧 `bf_app.exe`。`VersionService::detectRepoRoot(argv[0])` 在解析不到应用目录时会回退到当前工作目录，于是资源根变成 WSL/源码目录：边车会退化为 `python -m boundfree_sidecar`（本机命中 `E:\miniconda3`，没有 mne），EDF/BDF/BrainVision/EEGLAB/FIF 会报 `reader.open_failed`。用完整 Windows 路径（`& 'E:\...\release\stage\BoundFreeEEG\bf_app.exe'`）或在 PowerShell 里调用。
 - 边车冷启动首次打开 MNE 格式文件要 import mne，可能超过 `SidecarClient` 的 3 秒 `open` 超时并报 `ipc.sidecar_timeout`；重跑验收脚本即可通过（热态首次约 2.2 秒）。
 - Windows 工作副本整体改名或移动后，`native\build-windows` 里的 CMakeCache 仍指向老绝对路径，下次 configure 会失败；删除该目录重新配置即可（会触发一次全量构建）。
+
+## 脑电 / 眼电离线分离
+
+在“视图 → 脑电 / 眼电分离”进入专用工作区。首次体验可点击“打开教学记录 → 开始分离”；教学数据是自有数学源混合，只用于学习操作。
+
+真实记录先批量指定观测与可选眼电/肌电参考通道，再检查成分波形与线索并人工判断来源。初始信号全部保留在“未确定”组；修改来源即时更新预览，可撤销，不必重新拟合。保留未确定成分也可以在检查确认后导出。
+
+完整结果为七份 CSV 和 `analysis.json`，含来源指纹、输入配置、矩阵、均值、人工标签和回读校验。现有浏览滤波与回放位置不会自动进入分离输入。算法限制、格式条件及验收边界见[实施记录](docs/reports/offline-eeg-separation.md)。

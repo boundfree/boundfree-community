@@ -18,6 +18,7 @@
 #include "ui/video_panel.h"
 #include "ui/collapsible_panel.h"
 #include "ui/channel_bandpass_controls.h"
+#include "ui/eeg_separation_workspace.h"
 
 #include <QActionGroup>
 #include <QCheckBox>
@@ -35,6 +36,7 @@
 #include <QStackedWidget>
 #include <QSpinBox>
 #include <QTabWidget>
+#include <QTabBar>
 #include "ui/control_bar.h"
 #include <QSplitter>
 #include <QVector>
@@ -78,6 +80,8 @@ public:
 
 private:
     void buildFixedWorkspace();
+    void switchWorkspace(int index);
+    void resetSeparationForBrowserSource();
     void buildViewMenu();
     void buildThemeMenu();
     void applyTheme(bool dark);
@@ -144,6 +148,12 @@ private:
     VersionInfo version_;
     QString repoRoot_;
     I18nService* i18n_ = nullptr;
+    QStackedWidget* workspaceStack_ = nullptr;
+    QTabBar* workspaceNavigation_ = nullptr;
+    EegSeparationController* separationController_ = nullptr;
+    EegSeparationWorkspace* separationWorkspace_ = nullptr;
+    QAction* separationAction_ = nullptr;
+    bool separationResetPending_ = false;
     QStackedWidget* centralStack_ = nullptr;
     QWidget* emptyPage_ = nullptr;
     QLabel* centralLabel_ = nullptr;

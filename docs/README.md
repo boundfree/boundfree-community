@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-10-18
+last_updated: 2026-10-20
 ---
 
 # 文档索引
@@ -29,6 +29,8 @@ last_updated: 2026-10-18
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/offline-eeg-separation.md`](reports/offline-eeg-separation.md) | 脑电眼电专用离线工作区、结果播放、双工作区导航、幅度预览与通道交互、输入格式、教学流程、回读导出及集成验收 |
+| [`reports/offline-eeg-numerical-provenance.md`](reports/offline-eeg-numerical-provenance.md) | 自有数值代码迁移清单、Pro 逐值对照、数值与控制器回归 |
 | [`reports/windows-build-entry-test-alignment.md`](reports/windows-build-entry-test-alignment.md) | Windows 打包入口命名参数转发断言修正与全量合并门禁 |
 | [`reports/waveform-data-modes.md`](reports/waveform-data-modes.md) | 原始/处理后波形与分析切换、独立导出来源和三格式数值回归 |
 | [`reports/eeg-ui-three-column-workspace.md`](reports/eeg-ui-three-column-workspace.md) | 三栏布局、统一信号预处理、文件入口与分析输入上下文 |

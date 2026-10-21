@@ -33,6 +33,8 @@ mne_datas, mne_binaries, mne_hiddenimports = collect_all("mne")
 h5py_datas, h5py_binaries, h5py_hiddenimports = collect_all("h5py")
 pyedflib_datas, pyedflib_binaries, pyedflib_hiddenimports = collect_all("pyedflib")
 numpy_datas, numpy_binaries, numpy_hiddenimports = collect_all("numpy")
+neo_datas, neo_binaries, neo_hiddenimports = collect_all("neo")
+quantities_datas, quantities_binaries, quantities_hiddenimports = collect_all("quantities")
 
 a = Analysis(
     ["frozen_main.py"],
@@ -42,12 +44,16 @@ a = Analysis(
         + h5py_binaries
         + pyedflib_binaries
         + numpy_binaries
+        + neo_binaries
+        + quantities_binaries
     ),
     datas=(
         mne_datas
         + h5py_datas
         + pyedflib_datas
         + numpy_datas
+        + neo_datas
+        + quantities_datas
         + [
             ("../version.json", "."),
             ("../contracts/error_codes.json", "contracts"),
@@ -58,6 +64,8 @@ a = Analysis(
         + h5py_hiddenimports
         + pyedflib_hiddenimports
         + numpy_hiddenimports
+        + neo_hiddenimports
+        + quantities_hiddenimports
         + ["h5py", "pyedflib", "numpy", "matplotlib", "pkg_resources._vendor.appdirs"]
     ),
     hookspath=[],

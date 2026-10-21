@@ -629,5 +629,543 @@
       <source>app.export.processed_hint</source>
       <translation>Export using the current processing settings and output channel names. Channel visibility and display scale do not affect the export.</translation>
     </message>
+    <message>
+      <source>app.separation.title</source>
+      <translation>EEG / EOG separation</translation>
+    </message>
+    <message>
+      <source>app.separation.subtitle</source>
+      <translation>Review EEG candidates and eye estimates; inspect muscle contributions.</translation>
+    </message>
+    <message>
+      <source>app.separation.back</source>
+      <translation>Back to browsing</translation>
+    </message>
+    <message>
+      <source>app.separation.open</source>
+      <translation>Open recording…</translation>
+    </message>
+    <message>
+      <source>app.separation.no_source</source>
+      <translation>Choose a recording. Your original file is preserved.</translation>
+    </message>
+    <message>
+      <source>app.separation.source_summary</source>
+      <translation>{file}
+{channels} channels · {seconds} s</translation>
+    </message>
+    <message>
+      <source>app.separation.range</source>
+      <translation>Analysis interval · start / duration (5–120 s)</translation>
+    </message>
+    <message>
+      <source>app.separation.start_time</source>
+      <translation>Analysis start time</translation>
+    </message>
+    <message>
+      <source>app.separation.duration</source>
+      <translation>Analysis duration</translation>
+    </message>
+    <message>
+      <source>app.separation.roles_help</source>
+      <translation>Assign every channel. Use at least 2 observations. References provide clues and are excluded from the mixture. Select multiple channels to set their roles in bulk.</translation>
+    </message>
+    <message>
+      <source>app.separation.channel</source>
+      <translation>Channel</translation>
+    </message>
+    <message>
+      <source>app.separation.role</source>
+      <translation>Role</translation>
+    </message>
+    <message>
+      <source>app.separation.role_0</source>
+      <translation>Unconfirmed</translation>
+    </message>
+    <message>
+      <source>app.separation.role_1</source>
+      <translation>Observation</translation>
+    </message>
+    <message>
+      <source>app.separation.role_2</source>
+      <translation>Eye reference</translation>
+    </message>
+    <message>
+      <source>app.separation.role_3</source>
+      <translation>Muscle reference</translation>
+    </message>
+    <message>
+      <source>app.separation.role_4</source>
+      <translation>Exclude</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk</source>
+      <translation>Apply to these {count} channels</translation>
+    </message>
+    <message>
+      <source>app.separation.advanced</source>
+      <translation>More settings · 500 Hz / notch off by default</translation>
+    </message>
+    <message>
+      <source>app.separation.notch_off</source>
+      <translation>Notch off</translation>
+    </message>
+    <message>
+      <source>app.separation.notch</source>
+      <translation>Line-noise notch</translation>
+    </message>
+    <message>
+      <source>app.separation.output_rate</source>
+      <translation>Output sample rate</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_title</source>
+      <translation>Group preview · synchronized time</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_mode</source>
+      <translation>Amplitude scale</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_shared</source>
+      <translation>Shared scale</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_individual</source>
+      <translation>Fit each group</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_zoom</source>
+      <translation>Display zoom</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_shared</source>
+      <translation>All groups use the same µV scale for direct amplitude comparison. Zoom changes only the display.</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_individual</source>
+      <translation>Each group fits its own amplitude to reveal small waveforms; group heights cannot be used to compare amplitudes.</translation>
+    </message>
+    <message>
+      <source>app.separation.peak_to_peak</source>
+      <translation>Peak-to-peak in current view: {value} µV</translation>
+    </message>
+    <message>
+      <source>app.separation.small_wave</source>
+      <translation>Small waveform: zoom in to inspect</translation>
+    </message>
+    <message>
+      <source>app.separation.clipped_wave</source>
+      <translation>Some waveforms exceed the display range; reduce the zoom</translation>
+    </message>
+    <message>
+      <source>app.separation.splitter_help</source>
+      <translation>Drag left or right to resize the panels; when focused, use the left and right arrow keys</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_selection</source>
+      <translation>{count} channels selected · set roles in bulk</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_role</source>
+      <translation>Bulk channel role</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_channel</source>
+      <translation>View channel</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window_visible</source>
+      <translation>Per screen</translation>
+    </message>
+    <message>
+      <source>app.separation.waveform_zoom</source>
+      <translation>Waveform zoom</translation>
+    </message>
+    <message>
+      <source>app.separation.play</source>
+      <translation>Play</translation>
+    </message>
+    <message>
+      <source>app.separation.pause</source>
+      <translation>Pause</translation>
+    </message>
+    <message>
+      <source>app.separation.restart</source>
+      <translation>Back to start</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_position</source>
+      <translation>Playback position {current} / {total}</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_help</source>
+      <translation>Play the separated results without rerunning the analysis.</translation>
+    </message>
+    <message>
+      <source>app.separation.cursor_time</source>
+      <translation>Cursor {time} s</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_end</source>
+      <translation>End of analysis interval reached</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace</source>
+      <translation>Waveform browser</translation>
+    </message>
+    <message>
+      <source>app.separation.separation_workspace</source>
+      <translation>EEG / EOG separation</translation>
+    </message>
+    <message>
+      <source>app.separation.workspace_navigation</source>
+      <translation>Workspace</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace_help</source>
+      <translation>Switch to waveforms and spectra while keeping this separation result. A recording opened only in the separation workspace is not automatically loaded into the browser.</translation>
+    </message>
+    <message>
+      <source>app.separation.zoom_factor</source>
+      <translation>{value}×</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window</source>
+      <translation>Preview duration (keeps the analysis interval)</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_position</source>
+      <translation>Preview position</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_title</source>
+      <translation>Review sources · unresolved is allowed</translation>
+    </message>
+    <message>
+      <source>app.separation.component</source>
+      <translation>Component</translation>
+    </message>
+    <message>
+      <source>app.separation.source</source>
+      <translation>Manual label</translation>
+    </message>
+    <message>
+      <source>app.separation.group_0</source>
+      <translation>EEG candidate</translation>
+    </message>
+    <message>
+      <source>app.separation.group_1</source>
+      <translation>Eye estimate</translation>
+    </message>
+    <message>
+      <source>app.separation.group_2</source>
+      <translation>Muscle contribution</translation>
+    </message>
+    <message>
+      <source>app.separation.group_3</source>
+      <translation>Unresolved</translation>
+    </message>
+    <message>
+      <source>app.separation.undo</source>
+      <translation>Undo last label</translation>
+    </message>
+    <message>
+      <source>app.separation.clues_empty</source>
+      <translation>After separation, select a component to inspect its clues.</translation>
+    </message>
+    <message>
+      <source>app.separation.clues</source>
+      <translation>Clues, not accuracy
+Eye-reference correlation: {eye}
+Muscle-reference correlation: {muscle}
+High-frequency power: {high}%
+Consider waveforms, spectrum and recording context. Missing clues do not rule out artifacts.</translation>
+    </message>
+    <message>
+      <source>app.separation.source_caption</source>
+      <translation>Component amplitude uses arbitrary units. Numbers can change with input. Labels update the preview without refitting.</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmed</source>
+      <translation>Reviewed; unresolved is allowed</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmation_help</source>
+      <translation>You may leave components unresolved. Confirm again after changing labels.</translation>
+    </message>
+    <message>
+      <source>app.separation.cancel</source>
+      <translation>Cancel task</translation>
+    </message>
+    <message>
+      <source>app.separation.retry</source>
+      <translation>Retry…</translation>
+    </message>
+    <message>
+      <source>app.separation.start</source>
+      <translation>Start separation</translation>
+    </message>
+    <message>
+      <source>app.separation.export</source>
+      <translation>Confirm and export…</translation>
+    </message>
+    <message>
+      <source>app.separation.next_busy</source>
+      <translation>Processing. You may cancel; completed results are kept.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_open</source>
+      <translation>Step 1: Open a recording and confirm its interval and channel roles.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_roles</source>
+      <translation>Next: Confirm every channel role. Select multiple rows to assign them together.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_range</source>
+      <translation>Choose 2–32 observations and a 5–120 s interval inside the recording.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_start</source>
+      <translation>Inputs confirmed. Start separation, then review the components.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_review</source>
+      <translation>Next: Review each component. Leave uncertain sources unresolved, then check the confirmation box.</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_inspecting</source>
+      <translation>Inspecting recording, units and channels…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_running</source>
+      <translation>Reading the selected interval and separating…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_exporting</source>
+      <translation>Preparing export files…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_publishing</source>
+      <translation>Finishing the save. Please wait…</translation>
+    </message>
+    <message>
+      <source>app.separation.setup_notice</source>
+      <translation>Analysis settings are separate from browsing. Input changes invalidate previous results. The original recording is preserved.</translation>
+    </message>
+    <message>
+      <source>app.separation.review_notice</source>
+      <translation>Components start unresolved; their signals remain in that group. Manual labels do not establish physiological origin.</translation>
+    </message>
+    <message>
+      <source>app.separation.exported</source>
+      <translation>Exported to {path}</translation>
+    </message>
+    <message>
+      <source>app.separation.error_generic</source>
+      <translation>Operation incomplete ({code}). Check the inputs or choose a new save location and retry.</translation>
+    </message>
+    <message>
+      <source>app.separation.analysis_trace</source>
+      <translation>Analysis input · µV · includes mean</translation>
+    </message>
+    <message>
+      <source>app.separation.component_trace</source>
+      <translation>Selected component · arbitrary units</translation>
+    </message>
+    <message>
+      <source>app.separation.spectrum</source>
+      <translation>Full-interval power spectral density · arbitrary units²/Hz</translation>
+    </message>
+    <message>
+      <source>app.separation.no_result</source>
+      <translation>Your signal will appear after separation.</translation>
+    </message>
+    <message>
+      <source>app.separation.empty_group</source>
+      <translation>No components assigned to this group yet</translation>
+    </message>
+    <message>
+      <source>app.separation.export_title</source>
+      <translation>Review export contents</translation>
+    </message>
+    <message>
+      <source>app.separation.export_notice</source>
+      <translation>Export 7 CSV files and 1 JSON manifest. The mean and reconstruction parameters are in JSON. Unresolved components are kept. Choose a new folder name; files are published together after saving.</translation>
+    </message>
+    <message>
+      <source>app.separation.choose_export</source>
+      <translation>Choose save location…</translation>
+    </message>
+    <message>
+      <source>app.separation.export_parent</source>
+      <translation>Choose parent folder</translation>
+    </message>
+    <message>
+      <source>app.separation.new_directory</source>
+      <translation>New results folder (enter a name that does not exist)</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_request</source>
+      <translation>Check channel roles, analysis interval and sample rate, then retry.
+
+field: {field}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_invalid</source>
+      <translation>This recording cannot be used. Check its integrity, format, time axis and channel units.
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unsupported_source</source>
+      <translation>This recording format or layout is not supported for analysis. Choose a supported offline recording.
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_changed</source>
+      <translation>The recording changed during analysis. Reopen it and separate again.
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unknown_unit</source>
+      <translation>Channel units are unknown. Add supported physical units to the source before analysis.
+
+unit: {unit}</translation>
+    </message>
+    <message>
+      <source>error.analysis.discontinuous_time</source>
+      <translation>The interval contains time discontinuities. Choose a continuous interval and retry.
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.resource_limit</source>
+      <translation>The selection exceeds processing limits. Shorten the interval, reduce observations or lower the output rate.
+
+bytes: {bytes}, limit_bytes: {limit_bytes}</translation>
+    </message>
+    <message>
+      <source>error.analysis.handle_not_found</source>
+      <translation>The analysis recording is closed. Reopen it and retry.
+
+handle: {handle}</translation>
+    </message>
+    <message>
+      <source>error.analysis.export_failed</source>
+      <translation>Saving failed. Check free space and folder permissions, then retry at a new location.
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.reconstruction_failed</source>
+      <translation>Reconstruction validation failed. No results were exported. Analyze again and keep the source for investigation.
+
+error_uV: {error_uV}</translation>
+    </message>
+    <message>
+      <source>error.analysis.destination_exists</source>
+      <translation>The destination exists. Choose a new results folder name that does not exist.
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_range</source>
+      <translation>The interval is invalid. Choose a continuous 5–120 s interval inside the recording.</translation>
+    </message>
+    <message>
+      <source>error.analysis.missing_context</source>
+      <translation>The interval lacks filter context. Adjust its start time or shorten the interval.</translation>
+    </message>
+    <message>
+      <source>error.analysis.input_too_large</source>
+      <translation>The selection is too large. Shorten the interval or reduce observation channels.</translation>
+    </message>
+    <message>
+      <source>error.analysis.flat_channel</source>
+      <translation>An observation channel is flat. Exclude the channel and retry.</translation>
+    </message>
+    <message>
+      <source>error.analysis.low_rank</source>
+      <translation>Observations are too similar for stable separation. Remove duplicate channels or choose another interval.</translation>
+    </message>
+    <message>
+      <source>error.analysis.not_converged</source>
+      <translation>Separation did not converge. Choose another interval or adjust observations and retry.</translation>
+    </message>
+    <message>
+      <source>error.analysis.non_finite</source>
+      <translation>The recording contains non-finite values. Analysis stopped. Check the source data.</translation>
+    </message>
+    <message>
+      <source>error.analysis.cancelled</source>
+      <translation>Task cancelled. Adjust settings and retry when ready.</translation>
+    </message>
+    <message>
+      <source>app.separation.no_reference</source>
+      <translation>No reference provided</translation>
+    </message>
+    <message>
+      <source>app.separation.open_teaching</source>
+      <translation>Open teaching recording</translation>
+    </message>
+    <message>
+      <source>app.separation.example_labels</source>
+      <translation>Load this recording's example labels</translation>
+    </message>
+    <message>
+      <source>app.separation.teaching_notice</source>
+      <translation>This teaching recording mixes known synthetic sources to demonstrate the workflow. It does not establish performance on real recordings. Example labels apply only to this recording.</translation>
+    </message>
+    <message>
+      <source>app.separation.unknown</source>
+      <translation>Unknown</translation>
+    </message>
+    <message>
+      <source>app.separation.hardware</source>
+      <translation>Hardware reference: {reference}
+Acquisition bandwidth: {lower} – {upper} Hz
+Software cannot restore frequencies removed during acquisition.</translation>
+    </message>
+    <message>
+      <source>error.analysis.adc_saturation</source>
+      <translation>An observation saturated during acquisition. Choose an unclipped interval or exclude the affected channel and retry.
+
+channel_id: {channel_id}, rail_samples: {rail_samples}, n_samples: {n_samples}</translation>
+    </message>
+    <message>
+      <source>app.separation.export_files</source>
+      <translation>original_uV.csv
+analysis_uV.csv
+eeg_uV.csv
+eog_uV.csv
+emg_uV.csv
+unresolved_uV.csv
+residual_uV.csv
+analysis.json</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_title</source>
+      <translation>Confirm CSV physical unit</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_required</source>
+      <translation>This CSV does not declare physical units. Select the actual acquisition unit. Cancel to verify the source if unsure; the recording will stay closed.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_rate</source>
+      <translation>The output rate must not exceed the source rate. Choose 250 or 500 Hz. If the source is below 250 Hz, choose another recording.</translation>
+    </message>
+    <message>
+      <source>app.separation.next_selected</source>
+      <translation>Use at most 40 observation and reference channels in total. Exclude channels you do not need.</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_details</source>
+      <translation>Reference clues and values (not accuracy)</translation>
+    </message>
   </context>
 </TS>

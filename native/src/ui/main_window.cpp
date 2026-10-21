@@ -246,7 +246,61 @@ void MainWindow::buildFixedWorkspace() {
     playbackLayout->addWidget(progressRow_);
     layout->addWidget(playbackBar_);
     playbackBar_->hide();
-    setCentralWidget(root);
+    workspaceStack_ = new QStackedWidget(this);
+    workspaceStack_->setObjectName("eegWorkspaceStack");
+    workspaceStack_->addWidget(root);
+    const QString separationRoot = repoRoot_.isEmpty() ? QStringLiteral(BF_REPO_ROOT) : repoRoot_;
+    separationController_ = new EegSeparationController(separationRoot, version_, this);
+    connect(separationController_, &EegSeparationController::stateChanged, this, [this] {
+        if (separationResetPending_ && !separationController_->isBusy()) {
+            separationResetPending_ = false;
+            separationController_->clearSource();
+        }
+    }, Qt::QueuedConnection);
+    separationWorkspace_ = new EegSeparationWorkspace(separationController_, i18n_, workspaceStack_);
+    workspaceStack_->addWidget(separationWorkspace_);
+    auto* workspaceRoot = new QWidget(this);
+    auto* workspaceLayout = new QVBoxLayout(workspaceRoot);
+    workspaceLayout->setContentsMargins(0, 0, 0, 0);
+    workspaceLayout->setSpacing(0);
+    workspaceNavigation_ = new QTabBar(workspaceRoot);
+    workspaceNavigation_->setObjectName("eegWorkspaceNavigation");
+    workspaceNavigation_->setExpanding(false);
+    workspaceNavigation_->setUsesScrollButtons(true);
+    workspaceNavigation_->setFocusPolicy(Qt::StrongFocus);
+    workspaceNavigation_->addTab(i18n_->text("app.separation.browser_workspace"));
+    workspaceNavigation_->addTab(i18n_->text("app.separation.separation_workspace"));
+    connect(workspaceNavigation_, &QTabBar::currentChanged, this, &MainWindow::switchWorkspace);
+    workspaceLayout->addWidget(workspaceNavigation_);
+    workspaceLayout->addWidget(workspaceStack_, 1);
+    setCentralWidget(workspaceRoot);
+}
+
+void MainWindow::switchWorkspace(int index) {
+    if (index < 0 || index >= workspaceStack_->count()) return;
+    if (index == 1) {
+        if (playback_.isPlaying()) {
+            playback_.pause();
+            playbackTimer_.stop();
+            refreshPlaybackControls();
+            syncVideoToPlayback();
+        }
+        // Seed an empty analysis workspace once; subsequent visits retain its results.
+        if (hasCurrentFile_ && separationController_->source().path.isEmpty()
+            && !separationController_->isBusy())
+            separationController_->openSource(currentFile_.session.path);
+    } else {
+        separationWorkspace_->pausePreview();
+    }
+    workspaceStack_->setCurrentIndex(index);
+    {
+        const QSignalBlocker navigationBlocker(workspaceNavigation_);
+        workspaceNavigation_->setCurrentIndex(index);
+    }
+    if (separationAction_) {
+        const QSignalBlocker actionBlocker(separationAction_);
+        separationAction_->setChecked(index == 1);
+    }
 }
 
 void MainWindow::buildFileMenu() {
@@ -330,6 +384,13 @@ void MainWindow::buildViewMenu() {
     connect(toggleAnalysisAction_, &QAction::triggered,
         findChild<QSplitter*>("eegAnalysisSplitter"), &QWidget::setVisible);
     wireToggle(toggleVideoAction_, videoDock_);
+    viewMenu_->addSeparator();
+    separationAction_ = viewMenu_->addAction(QString());
+    separationAction_->setObjectName("eegOpenSeparation");
+    separationAction_->setCheckable(true);
+    connect(separationAction_, &QAction::triggered, this, [this](bool checked) {
+        switchWorkspace(checked ? 1 : 0);
+    });
 }
 
 void MainWindow::buildThemeMenu() {
@@ -500,6 +561,7 @@ void MainWindow::applyTheme(bool dark) {
         waveformWidget_->setPalette(palette);
         waveformWidget_->setDarkTheme(darkTheme_);
     }
+    if (separationWorkspace_) separationWorkspace_->setDarkTheme(darkTheme_);
     if (spectrumWidget_ != nullptr) spectrumWidget_->setDarkTheme(darkTheme_);
     if (spectrogramWidget_ != nullptr) spectrogramWidget_->setDarkTheme(darkTheme_);
     if (trendWidget_ != nullptr) trendWidget_->setDarkTheme(darkTheme_);
@@ -1839,6 +1901,17 @@ void MainWindow::retranslateUi() {
     quitAction_->setText(i18n_->text("app.action.quit"));
     languageMenu_->setTitle(i18n_->text("app.menu.language"));
     languageMenu_->menuAction()->setText(i18n_->text("app.menu.language"));
+    if (separationAction_) separationAction_->setText(i18n_->text("app.separation.separation_workspace"));
+    if (workspaceNavigation_) {
+        workspaceNavigation_->setAccessibleName(i18n_->text("app.separation.workspace_navigation"));
+        workspaceNavigation_->setTabText(0, i18n_->text("app.separation.browser_workspace"));
+        workspaceNavigation_->setTabText(1, i18n_->text("app.separation.separation_workspace"));
+        const QString workspaceHelp = i18n_->text("app.separation.browser_workspace_help");
+        workspaceNavigation_->setTabToolTip(0, workspaceHelp);
+        workspaceNavigation_->setTabToolTip(1, workspaceHelp);
+        workspaceNavigation_->setAccessibleDescription(workspaceHelp);
+        if (separationAction_) separationAction_->setToolTip(workspaceHelp);
+    }
     viewMenu_->setTitle(i18n_->text("app.menu.view"));
     viewMenu_->menuAction()->setText(i18n_->text("app.menu.view"));
     toggleChannelsAction_->setText(i18n_->text("app.view.channels"));
@@ -1967,7 +2040,16 @@ void MainWindow::setSidecarFailed(const AppError& error) {
     retranslateUi();
 }
 
+void MainWindow::resetSeparationForBrowserSource() {
+    switchWorkspace(0);
+    separationController_->clearSource();
+    // Atomic publication may already be committed; discard its view after acknowledgement.
+    separationResetPending_ = separationController_->isBusy();
+}
+
 void MainWindow::showFileOpenLoading(const QString& path) {
+    if (!hasCurrentFile_ || currentFile_.session.path != path)
+        resetSeparationForBrowserSource();
     cancelScrubPreview();
     openingFile_ = true;
     playback_.pause();
@@ -1984,6 +2066,9 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 }
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
+    if ((!hasCurrentFile_ || currentFile_.session.path != result.session.path)
+        && (!separationController_->source().path.isEmpty() || separationController_->isBusy()))
+        resetSeparationForBrowserSource();
     setLoading(false);
     const bool sameSession = !openingFile_ && hasCurrentFile_ && currentFile_.session.path == result.session.path;
     if (!sameSession) cancelScrubPreview();

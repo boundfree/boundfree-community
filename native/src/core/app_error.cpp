@@ -1,5 +1,6 @@
 #include "core/app_error.h"
 
+#include <atomic>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -12,8 +13,8 @@ namespace bf {
 namespace {
 
 int nextTraceId() {
-    static int counter = 0;
-    return ++counter;
+    static std::atomic<int> counter{0};
+    return counter.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 QJsonArray loadErrorCodes() {

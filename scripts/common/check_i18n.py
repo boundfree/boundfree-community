@@ -343,7 +343,7 @@ def check_no_hardcoded_english_in_ui() -> None:
     for path in NATIVE_SRC.rglob("*"):
         if path.suffix not in {".cpp", ".h"}:
             continue
-        rel_path = str(path.relative_to(NATIVE_SRC))
+        rel_path = path.relative_to(NATIVE_SRC).as_posix()
         # 测试文件不扫描（非目标）。
         if "_test" in path.name or "smoke" in path.name:
             continue

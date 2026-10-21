@@ -44,6 +44,7 @@ def test_sidecar_hello_returns_product_and_protocol_versions():
         "result": {
             "product_version": version["version"],
             "ipc_protocol_version": version["ipc_protocol_version"],
+            "analysis_capabilities": ["source-f64-v1", "bundle-f64-v1"],
         },
     }
 
