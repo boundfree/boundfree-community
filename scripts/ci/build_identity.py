@@ -27,9 +27,9 @@ def resolve(source: str, number: str, attempt: str, sha: str, *, release: bool =
         if tag != 'community-v' + source:
             raise ValueError('tag must exactly match community-v<version.json version>')
         return source
-    if versions.default_channel(source) == 'dev':
-        return f'{parsed.major}.{parsed.minor}.{parsed.patch}-dev.{number}.{attempt}+g{sha[:8]}'
-    return source
+    # Every ordinary CI run is an internal dev build, including version-prep PRs.
+    # Only the explicit Release workflow preserves beta/stable identities.
+    return f'{parsed.major}.{parsed.minor}.{parsed.patch}-dev.{number}.{attempt}+g{sha[:8]}'
 
 
 def main() -> None:

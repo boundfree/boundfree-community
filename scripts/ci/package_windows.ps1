@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$pfx = $null
 $version = Get-Content version.json -Raw | ConvertFrom-Json
 $parameters = @{
     QtRoot = $env:QT_ROOT_DIR

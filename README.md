@@ -80,7 +80,7 @@ boundfree-community/
 - 使用 `dev`（内部开发）、`beta.N`（小范围试用）、无后缀版本（正式发布）。普通提交无需递增产品版本。
 - `version.json` 为唯一版本真值；阶段调整运行 `version_sync.py next/set`，同步五处元数据，`version.md` 记录交付阶段。
 - `master` 每次合入自动运行 GitHub Actions，生成 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档，保留 30 天，不自动发布 Release。PR 同样执行构建和测试。
-- 开发包显示如 `0.2.2-dev.158.1+g12345678`，表示第 158 次 CI、第 1 次尝试及源提交；不会回写 Git。
+- 普通 CI 始终生成内部 dev 包；只有独立 Release Action 保留 beta/stable 版本。开发包显示如 `0.2.2-dev.158.1+g12345678`，表示第 158 次 CI、第 1 次尝试及源提交；不会回写 Git。
 - 对外发布使用 `community-vX.Y.Z[-beta.N]` tag，手动运行 Release Action，检查草稿后再点击发布。历史 `v3.*` 为上游历史，不能用作 Community 产品版本。
 - 产品版本与 `ipc_protocol_version` 独立维护。详见 [版本与发布 SOP](docs/release-sop.md)。
 

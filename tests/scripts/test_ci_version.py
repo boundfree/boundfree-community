@@ -40,3 +40,8 @@ def test_channel_mismatch_fails_before_writing():
     with pytest.raises(SystemExit):
         version_sync.set_version('0.2.2', 'dev')
     assert version_sync.VERSION_JSON.read_bytes() == before
+
+
+@pytest.mark.parametrize('source', ['0.2.2-dev', '0.2.2-beta.1', '0.2.2'])
+def test_ordinary_ci_never_labels_an_unsigned_package_stable(source):
+    assert identity.resolve(source, '158', '1', SHA) == '0.2.2-dev.158.1+gaaaaaaaa'
