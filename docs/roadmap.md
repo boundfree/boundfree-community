@@ -3,7 +3,7 @@ title: 项目路线图
 doc_type: plan
 status: active
 owner: BoundFree
-last_updated: 2026-07-21
+last_updated: 2026-10-23
 ---
 
 # 项目路线图
@@ -12,7 +12,7 @@ last_updated: 2026-07-21
 
 ## 当前状态
 
-当前版本为 `0.1.0-dev`。M0 技术验证已完成：
+当前版本以根目录 `version.json` 为准（按交付阶段维护，日常构建编号由 CI 生成）。M0 技术验证已完成：
 
 - IPC：stdio + JSON 控制消息 + 长度前缀二进制 payload 已用于 M2 的文件 `open/get_slice` 路径。
 - 渲染：真实 Windows GPU/显示验收已通过（见 [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md)）。
@@ -45,7 +45,7 @@ v1 在架构上必须保持底座的可扩展边界——数据源抽象、Sessi
 
 M2-5 已收口：CSV、HDF5、EDF/BDF、BrainVision、EEGLAB 与 FIF 已有验收证据；Intan RHS 与 BBK/DAT/LSD 仍未实现。
 M3 DSP 算法层与静态浏览离线处理已落地：重参考、陷波、带通和黄金文件比对通过。当前 UI 仅提供全局带通开关。
-M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完成。M8 打包实现和 WSL2 Linux 可验证部分已完成（见 [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md)）；Windows x64 构建、Inno Setup 安装包、组织证书签名与干净 Windows 10/11 全流程仍是发布硬门禁。产品版本保持 `0.1.0-dev`，不得标为 `rc` 或 `stable`。
+M4 频谱分析、M5 回放标注、M6 视频同步与 M7 录制导出均已完成。M8 打包实现和 WSL2 Linux 可验证部分已完成（见 [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md)）；Windows x64 构建、Inno Setup 安装包、组织证书签名与干净 Windows 10/11 全流程仍是发布硬门禁。产品仍处于开发/试用阶段，未经门禁验收不得标为 `stable`。版本和云端构建发布操作见 [`release-sop.md`](release-sop.md)。
 
 Spike 分析线已完成**底座打通的原型**（非发布件）：`bf_core` 共享静态库已从单体拆出，`bf_spike` 独立可执行入口、Spike 分析服务层（检测→sorting→组装 `SpikeAnalysis` 后台线程）、4 个纯 QPainter 视图（簇波形/raster/PSTH/ISI）与共享数据模型 `dsp/spike_types.h` 均已落地并可编译运行；Spike 检测（MAD 阈值+不应期）与 sorting（PCA+K-Means）DSP 引擎带单测（purity=1）。端到端冒烟以 30 kHz 合成信号验证 `fs` 全程来自文件 metadata、未硬编码。**仍缺**：真实 Intan 样本回归（当前仅合成信号）、Spike 视图的 GPU/大道数性能门禁、sorting 数值黄金基线、与底座标注/导出的整合。详见 [`reports/spike-foundation-acceptance.md`](reports/spike-foundation-acceptance.md)。
 

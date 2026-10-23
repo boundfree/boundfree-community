@@ -37,7 +37,7 @@ else:
 
 
 def run_gate(sandbox, version='0.2.2-beta.1', *, annotated=True, on_master=True,
-             tag=None, issue=None, accepted='false', release='absent'):
+             tag=None, issue=None, accepted='false', release='absent', workflow_ref='refs/heads/master'):
     tmp, git = sandbox
     channel = 'beta' if '-beta' in version else 'stable'
     (tmp / 'version.json').write_text(json.dumps({'version': version, 'release_channel': channel}))
@@ -52,7 +52,7 @@ def run_gate(sandbox, version='0.2.2-beta.1', *, annotated=True, on_master=True,
     name = tag or 'community-v' + version
     git('tag', *(['-a', name, '-m', 'test'] if annotated else [name]))
     env = dict(os.environ, PATH=str(tmp / 'bin') + os.pathsep + os.environ['PATH'],
-               RELEASE_TAG=name, GITHUB_REPOSITORY='owner/community',
+               RELEASE_TAG=name, GITHUB_REPOSITORY='owner/community', GITHUB_REF=workflow_ref,
                ACCEPTANCE_ISSUE=issue or 'https://github.com/owner/community/issues/2',
                ACCEPTED=accepted, FAKE_RELEASE=release, GITHUB_OUTPUT=str(tmp / 'output'))
     result = subprocess.run([sys.executable, str(ROOT / 'scripts/ci/release_preflight.py')],
@@ -69,6 +69,7 @@ def test_beta_preflight_produces_exact_commit(sandbox):
     {'annotated': False}, {'on_master': False}, {'tag': 'community-v0.2.3-beta.1'},
     {'issue': 'https://github.com/another/community/issues/2'},
     {'version': '0.2.2'}, {'release': 'exists'}, {'release': 'error'},
+    {'workflow_ref': 'refs/heads/feature/unreviewed'},
 ])
 def test_preflight_blocks_unsafe_release(sandbox, options):
     result, output, _ = run_gate(sandbox, **options)

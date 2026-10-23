@@ -12,6 +12,8 @@ from build_identity import resolve
 def git(*args):
     return subprocess.check_output(['git', *args], text=True).strip()
 
+if os.environ.get('GITHUB_REF', 'refs/heads/master') != 'refs/heads/master':
+    raise SystemExit('Run Community Release from the master workflow branch')
 tag = os.environ['RELEASE_TAG']
 if not re.fullmatch(r'community-v\d+\.\d+\.\d+(?:-beta\.[1-9][0-9]*)?', tag):
     raise SystemExit('Only community-vX.Y.Z[-beta.N] release tags are allowed')
