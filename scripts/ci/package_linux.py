@@ -11,7 +11,7 @@ import tarfile
 root = Path.cwd()
 qt = Path(os.environ['QT_ROOT_DIR'])
 stage = root / 'release/stage/BoundFreeEEG'
-subprocess.run(['cmake', '--install', 'native/build', '--prefix', str(stage)], check=True)
+subprocess.run(['cmake', '--install', 'native/build-release', '--prefix', str(stage)], check=True)
 shutil.copytree(root / 'release/sidecar-dist/boundfree_sidecar', stage / 'sidecar', dirs_exist_ok=True)
 for category in ('platforms', 'platforminputcontexts', 'imageformats', 'multimedia',
                  'tls', 'xcbglintegrations', 'wayland-shell-integration',

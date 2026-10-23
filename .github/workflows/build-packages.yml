@@ -69,13 +69,13 @@ jobs:
       - name: Configure and compile (Linux)
         if: runner.os == 'Linux'
         run: |
-          cmake -S native -B native/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DBF_REQUIRE_LICENSE=ON -DBF_LICENSE_PUBLIC_KEY_FILE="$PWD/license_public.pem"
+          cmake -S native -B native/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DBF_REQUIRE_LICENSE=OFF
           cmake --build native/build --parallel 2
       - name: Configure and compile (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cmake -S native -B native/build-windows -G "Visual Studio 17 2022" -A x64 "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR" -DBF_REQUIRE_LICENSE=ON "-DBF_LICENSE_PUBLIC_KEY_FILE=$PWD/license_public.pem"
+          cmake -S native -B native/build-windows -G "Visual Studio 17 2022" -A x64 "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR" -DBF_REQUIRE_LICENSE=OFF
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cmake --build native/build-windows --config Release --parallel 2
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -101,6 +101,11 @@ jobs:
         if: runner.os == 'Linux'
         working-directory: sidecar
         run: python -m PyInstaller --noconfirm --clean --distpath ../release/sidecar-dist --workpath ../release/sidecar-build boundfree_sidecar.spec
+      - name: Compile licensed distribution (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native -B native/build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DBF_REQUIRE_LICENSE=ON -DBF_LICENSE_PUBLIC_KEY_FILE="$PWD/license_public.pem"
+          cmake --build native/build-release --target bf_app --parallel 2
       - name: Package and smoke test Linux archive
         if: runner.os == 'Linux'
         run: python scripts/ci/package_linux.py

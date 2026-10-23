@@ -31,6 +31,8 @@ last_updated: 2026-10-23
 5. Windows 运行里面的 `BoundFreeEEG_Setup_*.exe`；Linux 解压 `.tar.gz` 后运行 `BoundFreeEEG/BoundFreeEEG.sh`。
 6. 核对旁边 `SHA256SUMS-*.txt` 和 `build-info-*.json`。保存缺陷时附上完整版本和提交 SHA。
 
+源码回归使用开发配置以避免激活弹窗；实际安装包另行使用 `BF_REQUIRE_LICENSE=ON` 和仓库公钥构建，并执行授权门禁 smoke。
+
 Artifacts 默认保留 30 天，过期可从同一代码提交重新构建（开发包重跑次数变化）。值得长期保留的试用版应走 beta Release。GitHub 当前仓库访问权限同样限制下载权限；本流程不自动公开仓库。
 
 手动重建：**Actions → Community CI → Run workflow**，选分支。按钮要求工作流已在默认分支存在；首次接入在 PR 上验证，合入后按钮才可正常使用。
