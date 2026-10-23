@@ -1,4 +1,5 @@
 #include "ui/eeg_separation_workspace.h"
+#include "ui/export_segment_dialog.h"
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
@@ -14,6 +15,7 @@
 #include <QLineEdit>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QProcess>
 #include <QPushButton>
 #include <QSettings>
 #include <QSlider>
@@ -635,10 +637,84 @@ int main(int argc, char **argv) {
     controller.setSettings(changedSettings);
     if (isPlaying() || controller.output() || play->isEnabled() || restart->isEnabled())
         return fail("analysis input invalidation retains playback or stale transport controls");
+
+    // Actual editors must not round source bounds outward for either export mode.
+    for (double end : {12.288, 24577. / 2000., 3073. / 256., 12583. / 1024.}) {
+        for (bool processed : {false, true}) {
+            bf::ExportSegmentDialog dialog(&i18n, end, 0, end, processed, {});
+            auto *endEditor = dialog.findChild<QDoubleSpinBox *>("eegExportEnd");
+            if (!endEditor || dialog.startTime() != 0 || dialog.endTime() > end ||
+                std::abs(dialog.endTime() - end) > 1e-6 || dialog.processed() != processed)
+                return fail("fractional full-file export rounds beyond the source bound");
+            endEditor->setValue(endEditor->maximum());
+            if (dialog.endTime() > end)
+                return fail("export maximum bypasses the exact source bound");
+        }
+    }
+
+    // Sources ending between milliseconds expose time-editor round trips and
+    // resampled playback tails. Use real sidecar I/O with independent known sources.
+    QTemporaryDir precisionSources;
+    if (!precisionSources.isValid())
+        return fail("cannot create fractional-duration fixtures");
+    const QString fixtureScript = QStringLiteral(R"PY(
+import sys, h5py, numpy as np
+from pathlib import Path
+for fs, count in [(2000,24576),(2000,24577),(1024,12583),(256,3073)]:
+    t=np.arange(count)/fs
+    eye=18*np.sin(2*np.pi*.18*t)
+    for blink in [2.2,5.1,9.3,11.6]: eye+=100*np.exp(-((t-blink)/.12)**2)
+    sources=np.array([12*np.sin(2*np.pi*10*t)+4*np.sin(2*np.pi*63*t),eye,
+                      (np.random.default_rng(12138).random(count)-.5)*30])
+    data=np.array([[1,.5,.3],[.3,1.2,.1],[1,-.2,1.1]])@sources
+    with h5py.File(Path(sys.argv[1])/f'{fs}-{count}.h5','w') as f:
+        eeg=f.create_dataset('eeg',data=data)
+        eeg.attrs['fs']=fs; eeg.attrs['unit']='uV'
+        eeg.attrs['ch_names']=np.array(['obs0','obs1','obs2'],dtype='S')
+)PY");
+    QProcess createPrecision;
+    createPrecision.start(qEnvironmentVariable("BF_PYTHON_EXECUTABLE", "python3"),
+                          {"-c", fixtureScript, precisionSources.path()});
+    if (!createPrecision.waitForStarted(10000) || !createPrecision.waitForFinished(30000) ||
+        createPrecision.exitCode() != 0)
+        return fail("cannot generate fractional-duration source data");
+    for (const auto pair : {std::pair<int,int>{2000,24576}, {2000,24577}, {1024,12583}, {256,3073}}) {
+        failure.clear();
+        controller.openSource(QDir(precisionSources.path()).filePath(QStringLiteral("%1-%2.h5").arg(pair.first).arg(pair.second)));
+        if (!wait([&] { return !controller.isBusy(); }) || !failure.isEmpty())
+            return fail("fractional-duration source cannot be opened");
+        for (int row = 0; row < 3; ++row)
+            qobject_cast<QComboBox *>(table->cellWidget(row, 1))->setCurrentIndex(1);
+        auto *duration = ui.findChild<QDoubleSpinBox *>("separationDuration");
+        const double sourceEnd = pair.second / double(pair.first);
+        if (!duration || !main->isEnabled() || duration->value() > sourceEnd ||
+            std::llround(duration->value() * pair.first) != pair.second) {
+            std::cerr << "Fractional interval: fs=" << pair.first << " samples=" << pair.second
+                      << " editor=" << (duration ? duration->value() : -1)
+                      << " settings=" << controller.settings().duration
+                      << " enabled=" << main->isEnabled() << '\n';
+            return fail("default fractional duration loses samples or exceeds EOF");
+        }
+        // Editing one field copies the other editors back into controller settings.
+        start->setValue(.001);
+        start->setValue(0);
+        if (!main->isEnabled() || controller.settings().duration > sourceEnd ||
+            std::llround(controller.settings().duration * pair.first) != pair.second)
+            return fail("time-editor round trip changes the default sample endpoint");
+        main->click();
+        if (!wait([&] { return !controller.isBusy(); }) || !failure.isEmpty() || !controller.output() ||
+            controller.output()->manifest.value("sample_count").toInteger() != pair.second)
+            return fail("fractional full-file analysis does not preserve the source sample count");
+        previewPosition->setValue(1000);
+        const double lastPosition = ui.property("previewPositionSeconds").toDouble();
+        if (lastPosition > sourceEnd + 1e-12 || std::abs(lastPosition - sourceEnd) > .0041)
+            return fail("resampled preview playback ends past the analyzed source interval");
+    }
     std::cout << "eeg-separation-ui-ok real_signal=true roles=true labels=true undo=true confirmation=true "
                  "export=true contextual_batch=true splitter_drag=true amplitude_controls=true "
                  "visible_peak_to_peak=true fixed_interval_scales=true preview_playback_1x=true "
                  "preview_pause_seek_end=true synchronized_cursor=true display_preserves_analysis=true "
+                 "fractional_ranges=true export_bounds=true playback_tail_bounds=true "
                  "locales=5 compact=1280x900\n";
     return 0;
 }

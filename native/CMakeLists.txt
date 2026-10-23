@@ -302,6 +302,8 @@ add_executable(eeg_separation_controller_test
 target_link_libraries(eeg_separation_controller_test PRIVATE bf_core)
 add_executable(eeg_separation_workspace_test
     src/ui/eeg_separation_workspace_test.cpp
+    src/ui/export_segment_dialog.cpp
+    src/ui/export_segment_dialog.h
     src/ui/eeg_separation_workspace.cpp
     src/ui/eeg_separation_workspace.h
     src/controller/eeg_separation_controller.cpp

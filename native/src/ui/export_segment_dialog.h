@@ -23,6 +23,7 @@ private:
     void retranslateUi();
     I18nService* i18n_;
     QString processingSummary_;
+    double sourceDuration_;
     QDoubleSpinBox* start_;
     QDoubleSpinBox* end_;
     QComboBox* mode_;

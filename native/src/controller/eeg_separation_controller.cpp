@@ -214,7 +214,8 @@ void EegSeparationController::openSource(const QString& path, const QString& csv
                 self->source_ = source;
                 self->settings_.roles.assign(source.channels.size(), 0);
                 if (source.teaching) self->settings_.roles = {1,1,1,2,3};
-                self->settings_.duration = std::min(120.0, source.duration());
+                // Match the time editors without rounding a full-file interval past EOF.
+                self->settings_.duration = std::floor(std::min(120.0, source.duration()) * 1e6) / 1e6;
                 self->settings_.outputRate = source.fs >= 500 ? 500 : 250;
                 self->setState(State::Ready); emit self->sourceChanged();
             });

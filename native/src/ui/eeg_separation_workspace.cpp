@@ -334,12 +334,12 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
     il->addWidget(rangeLabel_);
     start_ = new QDoubleSpinBox(input);
     start_->setObjectName("separationStart");
-    start_->setDecimals(3);
+    start_->setDecimals(6);
     start_->setSuffix(" s");
     start_->setRange(0, 8640000);
     duration_ = new QDoubleSpinBox(input);
     duration_->setObjectName("separationDuration");
-    duration_->setDecimals(3);
+    duration_->setDecimals(6);
     duration_->setSuffix(" s");
     duration_->setRange(5, 120);
     duration_->setValue(60);
@@ -813,8 +813,14 @@ void EegSeparationWorkspace::refresh() {
 }
 double EegSeparationWorkspace::previewDuration() const {
     const auto output = controller_->output();
-    return output && !output->analysis.empty() && output->fs > 0
-               ? output->analysis[0].size() / output->fs : 0.;
+    if (!output || output->analysis.empty() || output->fs <= 0)
+        return 0.;
+    const double resampledDuration = output->analysis[0].size() / output->fs;
+    const double sourceRate = output->manifest.value("source_rate").toDouble();
+    const double sourceSamples = output->manifest.value("sample_count").toDouble();
+    // The final resampled sample may cover only part of an output-rate period.
+    return sourceRate > 0 && sourceSamples > 0
+               ? std::min(resampledDuration, sourceSamples / sourceRate) : resampledDuration;
 }
 void EegSeparationWorkspace::refreshPlaybackControls() {
     const bool available = controller_->output() && !controller_->isBusy();
