@@ -10,6 +10,8 @@ last_updated: 2026-10-23
 
 本文收口分支、版本、文档格式和验证规则。历史细节见 [`archive/git-development.md`](archive/git-development.md) 与 [`archive/documentation-style.md`](archive/documentation-style.md)。
 
+日常操作按 [提交与交付 SOP](contribution-sop.md)；版本、构建与发版按 [版本与发布 SOP](release-sop.md)。代码代理使用仓库技能 [community-delivery](../.agents/skills/community-delivery/SKILL.md)，PR 使用仓库模板。修改流程时在同一 PR 同步受影响的入口、规范与模板，避免维护多套规则。
+
 ## Branch Model
 
 `master` 是唯一日常集成主线；功能使用短期 `feature/*`、`fix/*`、`docs/*` 分支，通过 PR 合入。历史 `release` 分支不再作为发版要求。紧急修复可从已发布 tag 创建 `hotfix/*`，再同步回 `master`。正式 tag 必须位于 `master` 可达的提交上。
@@ -48,7 +50,7 @@ Windows 正式版必须签名，并完成干净 Windows 10/11、升级/卸载、
 
 当前有效文档集中在 `docs/` 根目录。`docs/archive/` 仅用于历史追溯。
 
-Markdown 文档要求：
+`docs/` 中当前 Markdown 文档要求（根目录约定文件、PR 模板和 skill 按各自格式维护）：
 
 - 文件名使用小写英文、数字和连字符。
 - 每个 Markdown 文件以 YAML front matter 开头。

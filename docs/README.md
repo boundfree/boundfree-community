@@ -22,6 +22,8 @@ last_updated: 2026-10-23
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
 | [`release-sop.md`](release-sop.md) | 发布 SOP | 版本调整、自动打包、Artifacts、Release 草稿与验收 Issue |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
+| [`contribution-sop.md`](contribution-sop.md) | 提交与交付 SOP | 开始修改、本地验证、提交、PR、主线包检查与 Gitee 同步 |
+| [`community-delivery`](../.agents/skills/community-delivery/SKILL.md) | 仓库技能 | 代理开发交付入口；引用操作 SOP，不重复维护规则 |
 | [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
 | [`architecture-design.md`](architecture-design.md) | 架构设计 | C++/Qt6 主程序与 Python 边车总体架构 |
 | [`feature-parity-checklist.md`](feature-parity-checklist.md) | 验收清单 | 新旧上位机功能对齐和黄金文件验收条目 |
