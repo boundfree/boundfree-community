@@ -113,10 +113,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          if (-not (Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) {
-            choco install innosetup --version=6.4.3 --yes --no-progress
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          $compilerVersion = [version]'0.0.0.0'
+          if (Test-Path $iscc) {
+            $info = (Get-Item $iscc).VersionInfo
+            $compilerVersion = [version]::new($info.FileMajorPart, $info.FileMinorPart, $info.FileBuildPart, $info.FilePrivatePart)
+          }
+          if ($compilerVersion -lt [version]'6.5.0.0') {
+            choco upgrade innosetup --version=6.7.1 --yes --no-progress
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
+          Write-Host "Inno Setup compiler: $((Get-Item $iscc).VersionInfo.FileVersion)"
       - name: Build, install, smoke test and uninstall Windows Setup
         if: runner.os == 'Windows'
         shell: pwsh

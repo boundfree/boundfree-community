@@ -390,7 +390,7 @@ if (-not (Test-Path $ChineseLanguageFile)) {
     throw "ChineseSimplified.isl missing: $ChineseLanguageFile"
 }
 $ChineseLanguageContent = Get-Content -Raw -LiteralPath $ChineseLanguageFile
-if ($ChineseLanguageContent -notmatch "(?m)^\[LangOptions\]$" -or $ChineseLanguageContent -notmatch "(?m)^LanguageName=") {
+if ($ChineseLanguageContent -notmatch "(?m)^\[LangOptions\]\r?$" -or $ChineseLanguageContent -notmatch "(?m)^LanguageName=") {
     throw "ChineseSimplified.isl is not a valid Inno Setup language file: $ChineseLanguageFile"
 }
 
