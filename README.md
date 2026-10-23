@@ -66,7 +66,7 @@ boundfree-community/
 ├── AGENTS.md                    # 仓库级开发指导
 ├── README.md                    # 项目入口说明
 ├── version.json                 # 产品版本与 IPC 协议版本真值
-├── version.md                   # 提交级版本记录
+├── version.md                   # 交付阶段版本记录
 ├── docs/                        # 当前核心文档与历史归档
 ├── native/                      # C++/Qt6 主程序
 ├── sidecar/                     # Python 编解码边车
@@ -77,10 +77,12 @@ boundfree-community/
 
 - 日常开发基于 `master`。
 - 当前开发以已完成的 M1–M8 能力为基础，按当前里程碑从 `master` 创建 `feature/*`、`fix/*`、`spike/*` 或 `docs/*` 分支。
-- `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
-- `version.json` 是产品版本真值；根目录 [`version.md`](version.md) 从版本同步规范启用提交开始记录每次有效提交的版本、日期、作者、提交标题和提交正文。
-- 每个合入 `master` 的有效提交递增版本并更新 `version.md`；提交前运行 `python3 scripts/common/version_sync.py check`。
-- 产品版本和 `ipc_protocol_version` 分开维护。
+- 使用 `dev`（内部开发）、`beta.N`（小范围试用）、无后缀版本（正式发布）。普通提交无需递增产品版本。
+- `version.json` 为唯一版本真值；阶段调整运行 `version_sync.py next/set`，同步五处元数据，`version.md` 记录交付阶段。
+- `master` 每次合入自动运行 GitHub Actions，生成 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档，保留 30 天，不自动发布 Release。PR 同样执行构建和测试。
+- 开发包显示如 `0.2.2-dev.158.1+g12345678`，表示第 158 次 CI、第 1 次尝试及源提交；不会回写 Git。
+- 对外发布使用 `community-vX.Y.Z[-beta.N]` tag，手动运行 Release Action，检查草稿后再点击发布。历史 `v3.*` 为上游历史，不能用作 Community 产品版本。
+- 产品版本与 `ipc_protocol_version` 独立维护。详见 [版本与发布 SOP](docs/release-sop.md)。
 
 ## Windows Dev Build
 

@@ -1,0 +1,75 @@
+name: Community Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing annotated tag: community-vX.Y.Z[-beta.N]'
+        type: string
+        required: true
+      acceptance_issue:
+        description: 'URL of this repository release checklist Issue with acceptance evidence'
+        type: string
+        required: true
+      stable_acceptance_confirmed:
+        description: 'Stable only: clean-machine, upgrade, GUI and license acceptance completed'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: community-release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+      channel: ${{ steps.check.outputs.channel }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check immutable tag, version, mainline and release checklist
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ACCEPTANCE_ISSUE: ${{ inputs.acceptance_issue }}
+          ACCEPTED: ${{ inputs.stable_acceptance_confirmed }}
+        run: python scripts/ci/release_preflight.py
+  build:
+    needs: preflight
+    uses: ./.github/workflows/build-packages.yml
+    with:
+      source_ref: ${{ needs.preflight.outputs.sha }}
+      release_build: true
+      release_tag: ${{ inputs.tag }}
+    secrets:
+      BF_CODE_SIGN_PFX_BASE64: ${{ secrets.BF_CODE_SIGN_PFX_BASE64 }}
+      BF_CODE_SIGN_PASSWORD: ${{ secrets.BF_CODE_SIGN_PASSWORD }}
+  draft:
+    needs: [preflight, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: BoundFreeEEG-*
+          path: packages
+          merge-multiple: true
+      - name: Create reviewable Release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ACCEPTANCE_ISSUE: ${{ inputs.acceptance_issue }}
+          CHANNEL: ${{ needs.preflight.outputs.channel }}
+        shell: bash
+        run: |
+          printf 'Source: %s\nAcceptance: %s\nBuild: %s/%s/actions/runs/%s\n\nCheck assets and SHA256SUMS before publishing this draft.\n' "$RELEASE_TAG" "$ACCEPTANCE_ISSUE" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > release-notes.md
+          args=()
+          if [ "$CHANNEL" = beta ]; then args+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" packages/* --verify-tag --draft --title "Community ${RELEASE_TAG#community-v}" --notes-file release-notes.md "${args[@]}"

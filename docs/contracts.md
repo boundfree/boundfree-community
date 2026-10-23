@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-20
+last_updated: 2026-10-23
 ---
 
 # 基础契约
@@ -12,7 +12,7 @@ last_updated: 2026-10-20
 
 ## Version Source
 
-根目录 `version.json` 是唯一人工维护版本源。
+根目录 `version.json` 是唯一人工维护版本源。按交付阶段调整，日常提交不递增。CI 在临时检出中追加开发构建标识，并将相同版本传给 Native、冻结边车与安装包；`build-info.json` 保存基础版本、完整提交 SHA 和运行编号，不改变 IPC 协议。操作见 `release-sop.md`。
 
 ```json
 {

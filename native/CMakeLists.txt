@@ -428,3 +428,6 @@ add_executable(channel_bandpass_controls_test src/ui/channel_bandpass_controls_t
 target_link_libraries(channel_bandpass_controls_test PRIVATE bf_core Qt6::Widgets)
 target_compile_definitions(channel_bandpass_controls_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 add_dependencies(channel_bandpass_controls_test bf_i18n_qm)
+
+# Optional CI provenance; generated per run and never committed.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../build-info.json DESTINATION . OPTIONAL)

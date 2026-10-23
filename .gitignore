@@ -24,3 +24,5 @@ __pycache__/
 
 # Per-machine Windows build and WSL synchronization paths
 config/windows-dev.local.json
+
+build-info.json

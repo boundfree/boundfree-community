@@ -76,9 +76,7 @@ $version = Get-Content -Raw -LiteralPath $versionPath | ConvertFrom-Json
 if ($version.release_channel -notin @("dev", "alpha", "beta", "rc", "stable")) {
     throw "Unknown release channel: $($version.release_channel)"
 }
-if ($version.release_channel -in @("rc", "stable")) {
-    throw "This script is for unsigned dev acceptance only. Channel '$($version.release_channel)' requires code-signing verification."
-}
+$RequiresSignature = $version.release_channel -in @("rc", "stable")
 
 if (-not $StageDir) {
     $StageDir = Join-Path $RepoRoot "release\stage\BoundFreeEEG"
@@ -152,6 +150,12 @@ if (-not $SkipInstaller) {
     $installerSignature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
     $signatureRows += [PSCustomObject]@{ Path = $InstallerPath; Status = $installerSignature.Status; StatusMessage = $installerSignature.StatusMessage }
     "SHA256  $($installerHash.Hash)  $InstallerPath" | Out-File -Encoding ascii (Join-Path $outputDir "installer-sha256.txt")
+}
+if ($RequiresSignature) {
+    foreach ($row in $signatureRows) {
+        if ($row.Status -ne 'Valid') { throw "Required Authenticode verification failed: $($row.Path) ($($row.Status))" }
+    }
+    if ($SkipInstaller) { throw 'Stable/rc acceptance requires the signed installer.' }
 }
 $signatureRows | ConvertTo-Json | Out-File -Encoding utf8 (Join-Path $outputDir "signature-status.json")
 

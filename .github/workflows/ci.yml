@@ -1,0 +1,17 @@
+name: Community CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: community-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    uses: ./.github/workflows/build-packages.yml
+    with:
+      source_ref: ${{ github.sha }}
