@@ -42,23 +42,30 @@ function Invoke-Checked {
     )
 
     Write-Host "==> $Name" -ForegroundColor Cyan
-    # Windows PowerShell 5.1 turns a native command's stderr output into a
-    # terminating NativeCommandError while $ErrorActionPreference is Stop, and
-    # the app writes diagnostic lines (menu-hit-debug, ...) to stderr. Relax the
-    # preference for the call and keep fail/pass driven by the exit code.
-    $previousErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $result = & $Executable @Arguments 2>&1
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousErrorActionPreference
+    # GUI-subsystem applications do not reliably set LASTEXITCODE in pwsh.
+    # Explicit process handles also ensure the verifier waits for Qt to exit.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $Executable
+    $info.Arguments = (($Arguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join ' ')
+    $info.WorkingDirectory = if ($WorkingDirectory) { $WorkingDirectory } else { $RepoRoot }
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $process = [System.Diagnostics.Process]::Start($info)
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    if (-not $process.WaitForExit(180000)) {
+        $process.Kill()
+        throw "$Name timed out after 180 seconds."
     }
-    $result | ForEach-Object { Write-Host $_ }
-    if ($exitCode -ne 0) {
-        throw "$Name failed with exit code $exitCode."
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
+    if ($stdout) { Write-Host $stdout }
+    if ($stderr) { Write-Host $stderr }
+    if ($process.ExitCode -ne 0) {
+        throw "$Name failed with exit code $($process.ExitCode)."
     }
-    return ($result -join [Environment]::NewLine)
+    return ($stdout + [Environment]::NewLine + $stderr)
 }
 
 function Require-Path {
