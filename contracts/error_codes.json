@@ -268,6 +268,128 @@
     },
 
     {
+      "code": "analysis.invalid_request",
+      "params": ["field", "reason"],
+      "retryable": false,
+      "description": "Offline analysis request metadata is invalid."
+    },
+    {
+      "code": "analysis.source_invalid",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Offline source metadata or samples are invalid."
+    },
+    {
+      "code": "analysis.unsupported_source",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Source format or required analysis capability is unavailable."
+    },
+    {
+      "code": "analysis.source_changed",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Source fingerprint changed after the analysis snapshot."
+    },
+    {
+      "code": "analysis.unknown_unit",
+      "params": ["unit"],
+      "retryable": false,
+      "description": "Offline analysis requires an explicit voltage unit."
+    },
+    {
+      "code": "analysis.discontinuous_time",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Source sample timestamps are discontinuous."
+    },
+    {
+      "code": "analysis.resource_limit",
+      "params": ["bytes", "limit_bytes"],
+      "retryable": false,
+      "description": "Requested analysis payload exceeds the bounded allocation limit."
+    },
+    {
+      "code": "analysis.handle_not_found",
+      "params": ["handle"],
+      "retryable": false,
+      "description": "Offline analysis source or staged bundle handle does not exist."
+    },
+    {
+      "code": "analysis.export_failed",
+      "params": ["path", "reason"],
+      "retryable": false,
+      "description": "Offline bundle encoding, verification or publication failed."
+    },
+    {
+      "code": "analysis.reconstruction_failed",
+      "params": ["error_uV"],
+      "retryable": false,
+      "description": "Offline group recomposition exceeded the numerical tolerance."
+    },
+    {
+      "code": "analysis.destination_exists",
+      "params": ["path"],
+      "retryable": false,
+      "description": "Offline export destination already exists and cannot be replaced."
+    },
+
+    {
+      "code": "analysis.invalid_range",
+      "params": [],
+      "retryable": false,
+      "description": "Offline analysis interval is outside source or supported limits."
+    },
+    {
+      "code": "analysis.missing_context",
+      "params": [],
+      "retryable": false,
+      "description": "Offline resampling source context is incomplete."
+    },
+    {
+      "code": "analysis.input_too_large",
+      "params": [],
+      "retryable": false,
+      "description": "Offline analysis input or output sample limit is exceeded."
+    },
+    {
+      "code": "analysis.flat_channel",
+      "params": [],
+      "retryable": false,
+      "description": "Offline observation contains a flat channel."
+    },
+    {
+      "code": "analysis.low_rank",
+      "params": [],
+      "retryable": false,
+      "description": "Offline observation rank is insufficient."
+    },
+    {
+      "code": "analysis.not_converged",
+      "params": [],
+      "retryable": false,
+      "description": "Offline separation did not converge."
+    },
+    {
+      "code": "analysis.non_finite",
+      "params": [],
+      "retryable": false,
+      "description": "Offline numerical input or result is not finite."
+    },
+    {
+      "code": "analysis.cancelled",
+      "params": [],
+      "retryable": false,
+      "description": "Offline analysis task was cancelled."
+    },
+    {
+      "code": "analysis.adc_saturation",
+      "params": ["channel_id", "rail_samples", "n_samples"],
+      "retryable": false,
+      "description": "Selected amplifier contains excessive raw ADC rail samples."
+    },
+
+    {
       "code": "internal.unexpected",
       "params": ["operation"],
       "retryable": false,

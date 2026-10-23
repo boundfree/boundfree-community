@@ -3,7 +3,7 @@ title: 功能对齐验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-10-18
+last_updated: 2026-10-20
 reference_repo: ../boundfree-eeg-upper-computer
 ---
 
@@ -189,3 +189,16 @@ v1.1/v2：
 - [x] 空白段黑屏：`--smoke-m6-sync` 断言空白段 blank+pause+seek0 且幂等
 - [x] 边车 MNE `collect_all` 完整收录：`tests/sidecar/test_bug_regressions_spec.py` 静态断言 spec 含 `collect_all('mne')` 与 onedir COLLECT
 - [x] 切换文件断开旧会话信号：`--smoke-ui-open-file-dispose` + `--smoke-ui-window-latest` 覆盖控制器析构与二次请求；跨不同 path 切换 smoke 尚无（partial）
+
+## 专用离线分离增量能力
+
+- [x] 独立输入与分析区间、观测/参考用途、抗混叠重采样、可选陷波与 FastICA。
+- [x] 默认未确定、人工来源判断、同步分组重建、撤销和确认失效规则。
+- [x] 持久双工作区导航、视图菜单同步、切换保留结果并暂停播放。
+- [x] 分离结果播放/暂停/回到开头、同步游标、拖动定位、末尾停止、整段固定幅度及当前窗峰峰值。
+- [x] 教学记录随包分发，按 SHA-256 和元数据识别模板；真实记录不自动生理分类。
+- [x] float64 样本传输、七份 CSV 加 JSON、单次均值恒等式、回读与不覆盖发布。
+- [ ] 真实电极记录效果独立评估与至少三名无 ICA 经验用户任务走查。
+- [ ] 干净 Windows 安装、高 DPI 桌面人工验收与正式发布门禁。
+
+当前格式与平台运行证据见[实施报告](reports/offline-eeg-separation.md)。

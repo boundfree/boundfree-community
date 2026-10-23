@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import error_payload, make_error
+from .analysis_io import AnalysisError, handle_analysis
 from .readers.errors import CsvSchemaError, OptionalDependencyMissing
 from .readers.registry import reader_for_path
 from .sessions import FileSessionRegistry
@@ -344,8 +345,18 @@ def handle_request(request: Any, binary_payload: bytes | None = None) -> dict[st
     method = request["method"]
     if method == "hello":
         version = load_version()
-        return success_response(request_id, {"product_version": version.version, "ipc_protocol_version": version.ipc_protocol_version})
+        return success_response(request_id, {"product_version": version.version, "ipc_protocol_version": version.ipc_protocol_version,
+                                             "analysis_capabilities": ["source-f64-v1", "bundle-f64-v1"]})
     params = _params(request)
+    if method in ("analysis_source_open", "analysis_source_read", "analysis_source_close",
+                  "analysis_bundle_write", "analysis_bundle_publish", "analysis_bundle_discard"):
+        try:
+            return success_response(request_id, handle_analysis(method, params, binary_payload))
+        except AnalysisError as exc:
+            return error_response(request_id, exc.code, exc.params)
+        except Exception as exc:
+            return error_response(request_id, "analysis.export_failed" if method.startswith("analysis_bundle")
+                                  else "analysis.source_invalid", {"path": str(params.get("path", "")), "reason": str(exc)})
     handlers = {
         "open": _handle_open,
         "get_slice": _handle_get_slice,

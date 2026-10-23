@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-18
+last_updated: 2026-10-23
 ---
 
 # 基础契约
@@ -12,7 +12,7 @@ last_updated: 2026-10-18
 
 ## Version Source
 
-根目录 `version.json` 是唯一人工维护版本源。
+根目录 `version.json` 是唯一人工维护版本源。按交付阶段调整，日常提交不递增。CI 在临时检出中追加开发构建标识，并将相同版本传给 Native、冻结边车与安装包；`build-info.json` 保存基础版本、完整提交 SHA 和运行编号，不改变 IPC 协议。操作见 `release-sop.md`。
 
 ```json
 {
@@ -259,3 +259,113 @@ M1-A 需要建立静态检查，覆盖：
 自动幅值是显示变换，不修改样本或分析输入。范围取当前可见时间窗中的有限值，各通道独立；手动模式仍使用统一 µV 半幅。通道纵向滚动不改变时间窗口和标注时间。
 
 逐通道带通覆盖 map 缺项表示继承全局，`enabled=false` 表示显式关闭。覆盖按参考后的输出索引应用，双极输出 i 对应源 i 减源 i+1。切换参考保留覆盖，新文件清除覆盖与未提交草稿；全局设置保留。逐行非法输入不写入处理状态，必须修正或明确取消。
+
+## Offline EEG / EOG Analysis I/O
+
+新增方法通过 `hello.result.analysis_capabilities` 协商，能力为
+`source-f64-v1`、`bundle-f64-v1`。属于协议 v1 的增量方法，原有
+`get_slice/export_samples/record_write` 的 float32 帧语义不变；未声明能力的边车不得调用。
+边车只做文件 I/O、数值回读与来源验证，分离算法和人工标签决策在 Native。
+
+### Source snapshots
+
+- `analysis_source_open {path,csv_unit?}` 返回独立 `handle`、绝对 `path`、`fs`、`n_samples`、
+  `n_channels`、`duration`、`ch_names`、稳定索引字符串 `channel_ids`、
+  `fingerprint:{sha256,size,mtime_ns}`、`format`、`unit:"uV"`、`hardware`、`time_axis`。
+  硬件参考、上下带宽和陷波未知值为 JSON `null`，不得假装未滤波。
+- `analysis_source_read {handle,first_sample,n_samples,channel_ids}`：整数半开区间
+  `[first_sample,first_sample+n_samples)`，通道 ID 必须唯一、有效、最多 40 路，返回顺序与请求一致。
+  JSON 包含 `shape:[C,N]`、`dtype:"float64-le"`、`unit:"uV"`、`fs`、
+  `first_sample`、`channel_ids`、`fingerprint`、`payload_bytes`，随后一个连续小端
+  C-order float64 二进制帧。分配前检查 `C*N*8 <= 256 MiB`；所有样本必须有限。
+- `analysis_source_close {handle}` 释放专用来源，不影响浏览会话。
+
+本次专用读取支持传统单文件、附头 RHD/RHS，使用 Neo 0.14.5 RawIO memmap 的
+amplifier stream `0`。时间戳分块检查，允许 32 位回绕，拒绝不连续；不走
+Neo `read_block` 或旧 Intan reader 的整文件缓存。读取及写出前后重新计算文件
+SHA-256，不能只依赖 mtime；哈希顺序扫描有 I/O 耗时，数组内存保持有界。
+
+同时支持明确的 HDF5 `eeg[C,N]` 数据集：必须提供显式 `fs`、`unit`、`ch_names`，
+单位可为 `uV/µV/μV/mV/V` 并统一成 µV。其规则轴由 schema 的 fs 声明，
+`time_axis:"regular-by-schema"`；不声称已经验证不存在的逐样本时间戳。
+虚拟、外部链接、外部存储及另带时间戳轴的数据集拒绝进入此路径。
+CSV 支持 UTF-8（可带 BOM）的标准 `time_s,<channel>...` 表，时间列必须首列、
+从 **0 秒**开始、严格递增且均匀采样，至少两点，fs 由前两点推导并验证全轴。
+不接受非零起点、不规则间隔、缺口、标注表、非有限信号或重复通道名；
+全文件顺序验证 metadata，但不缓存整表，读取只分配请求片段，通道顺序保持一致。
+
+CSV 单位必须由各列后缀声明（例如 `Cz[uV]`、`EOG[mV]`，可以混合），
+或由 `analysis_source_open.csv_unit` 显式指定 `uV/mV/V`。无后缀且未指定时返回
+`analysis.unknown_unit {unit:"unknown"}`，UI 提供一次单位确认后重试。
+既有 Community CSV 导出没有可区分的来源/单位声明，因此也走此确认，不能凭
+`time_s` 列名猜为 µV。单位后缀有声明时优先，未知声明不被全局确认覆盖。
+返回 `csv_unit`、`input_units`、`input_unit_explicit_by_user`，Native 保留到清单，
+重新读取同一输入应原样传回 csv_unit。
+
+EDF/连续 EDF+ 使用 pyedflib 逐通道 `readSignal(start,n,digital=False)`，
+保留 float64 校准值并按物理单位换算成 µV；拒绝未知单位、通道采样率不同、
+样本数不一致、无效校准、EDF+D（头保留区的非连续标记）。
+`time_axis:"continuous-edf-records"` 表示格式声明的连续记录时间轴，不声称修复
+或独立审计不符合 EDF+C 声明的异常 TAL 时间注释。硬件预滤波原文保存在
+`hardware.prefilter_text`，未解析带宽/参考仍为 null。
+其他格式返回 `analysis.unsupported_source`；通用浏览支持列表不变。
+
+### Verified result bundles
+
+`analysis_bundle_write` 请求先发送 JSON，随后一个二进制帧：
+
+- `path` 为尚不存在的新目录，父目录必须存在；绝不覆盖已有目录或源文件。
+- `fs` 为有限正数，`t0` 为相对源文件起点的非负秒值，`ch_names` 为观测通道名称。
+- `shape:[7,C,N]`，`2 <= C <= 32`、`1 <= N <= 60000`、总 payload <=256 MiB。
+  `dtype:"float64-le"`、`unit:"uV"`。
+- 七组按 `original/analysis/eeg/eog/emg/unresolved/residual` 顺序连续排列，
+  每组为通道优先数组。均值不重复加入贡献组。
+- `manifest` 必须包含 `mean:[C]` 和 `source:{path,fingerprint}`，其余算法设置、
+  人工标签、软件版本、通道与样本映射、白化/混合矩阵和评分由 Native 写入并保留。
+- `stage_only:true` 是 Native 默认调用方式，完成编码、回读和来源验证后返回
+  `token/staged:true/temporary_path/path/files/readback_error_uV`，此时正式目录不存在。
+- `analysis_bundle_publish {token}` 在协调器确认当前任务仍有效后发布；再次检查来源，
+  使用原子且不替换已有目标的目录重命名，返回 `published:true/staged:false/path/files`。
+- `analysis_bundle_discard {token}` 丢弃暂存；stdio EOF/正常退出会清理进程内暂存。
+  可选 `cancel_path` 为 Native 创建的内部控制文件路径（不含科研数据）。
+  边车在写出/回读每 256 行、每组边界和发布前检查其是否存在；存在时返回
+  `analysis.cancelled` 并清理暂存。Native 标记旧代无效、创建控制文件并继续排空响应，
+  正常取消不杀进程，也不留下隐藏暂存。发布开始后协调器禁止取消，避免已提交结果被误报取消。
+  强制终止进程可能留下 `.boundfree-analysis-*` 隐藏临时目录，**不会发布为正式结果目录**；不能把
+  杀进程视作跨进程事务的确认。若未请求 `stage_only`，写出会直接发布，限内部工具使用。
+
+CSV 固定 `time_s` 第一列，再按观测通道顺序输出，使用 locale 无关 `.17g` 精度。
+八个文件为七个 `*_uV.csv` 和 `analysis.json`。边车写入同父目录临时目录、fsync、
+逐值回读检查 float64 无损，并验证
+`analysis = mean + eeg + eog + emg + unresolved + residual` 最大误差 <=`1e-6 µV`。
+清单 schema 为 `boundfree.community.offline-eeg.v1`，不冒充 Pro 清单的字段兼容性；
+清单记录七个 CSV 的 SHA-256 和字节数，响应另提供 JSON 自身哈希。
+
+新增错误码全部 `retryable:false`：
+
+| code | params |
+| --- | --- |
+| `analysis.invalid_request` | `field,reason` |
+| `analysis.source_invalid` | `path,reason` |
+| `analysis.unsupported_source` | `path,reason` |
+| `analysis.source_changed` | `path` |
+| `analysis.unknown_unit` | `unit` |
+| `analysis.discontinuous_time` | `path` |
+| `analysis.resource_limit` | `bytes,limit_bytes` |
+| `analysis.handle_not_found` | `handle` |
+| `analysis.export_failed` | `path,reason` |
+| `analysis.reconstruction_failed` | `error_uV` |
+| `analysis.destination_exists` | `path` |
+
+Intan 读取在浮点缩放前按原始 ADC 整数 dtype 的 min/max 统计轨值，
+所选区间每通道 rail 样本数大于 `n_samples//1000`（0.1%）返回
+`analysis.adc_saturation {channel_id,rail_samples,n_samples}`。可接受的低比例及零比例
+通过 `analysis_source_read.result.saturation` 报告：阈值和每通道计数、比例、
+原始 dtype/轨值、由真实 gain/offset 换算的 `rails_uV`；非 Intan 输入该字段为 null。
+硬件带宽仅作来源事实展示，软件重建不宣称恢复硬件已滤除的低频。
+
+Native 数值流程增量错误码（全部无参数、不可重试）：
+`analysis.invalid_range`、`analysis.missing_context`、`analysis.input_too_large`、
+`analysis.flat_channel`、`analysis.low_rank`、`analysis.not_converged`、
+`analysis.non_finite`、`analysis.cancelled`。重建误差使用已有
+`analysis.reconstruction_failed {error_uV}`。

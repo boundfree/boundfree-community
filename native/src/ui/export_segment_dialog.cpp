@@ -13,7 +13,7 @@
 namespace bf {
 ExportSegmentDialog::ExportSegmentDialog(I18nService* i18n, double duration, double start, double end,
                                        bool processed, const QString& processingSummary, QWidget* parent)
-    : QDialog(parent), i18n_(i18n), processingSummary_(processingSummary) {
+    : QDialog(parent), i18n_(i18n), processingSummary_(processingSummary), sourceDuration_(duration) {
     setObjectName("eegExportSegmentDialog");
     resize(480, 280);
     auto* form = new QFormLayout(this);
@@ -68,8 +68,9 @@ ExportSegmentDialog::ExportSegmentDialog(I18nService* i18n, double duration, dou
     retranslateUi();
 }
 
-double ExportSegmentDialog::startTime() const { return start_->value(); }
-double ExportSegmentDialog::endTime() const { return end_->value(); }
+// QDoubleSpinBox rounds even its maximum. Preserve the exact source bound.
+double ExportSegmentDialog::startTime() const { return std::clamp(start_->value(), 0.0, sourceDuration_); }
+double ExportSegmentDialog::endTime() const { return std::clamp(end_->value(), 0.0, sourceDuration_); }
 bool ExportSegmentDialog::processed() const { return mode_->currentIndex() == 1; }
 
 void ExportSegmentDialog::retranslateUi() {

@@ -630,5 +630,543 @@
       <source>app.export.processed_hint</source>
       <translation>按当前处理设置导出，保留处理后的通道名称；不受通道显隐和显示幅度影响。</translation>
     </message>
+    <message>
+      <source>app.separation.title</source>
+      <translation>脑电 / 眼电分离</translation>
+    </message>
+    <message>
+      <source>app.separation.subtitle</source>
+      <translation>保留脑电候选与眼电估计，人工检查并减少肌电干扰</translation>
+    </message>
+    <message>
+      <source>app.separation.back</source>
+      <translation>返回浏览</translation>
+    </message>
+    <message>
+      <source>app.separation.open</source>
+      <translation>打开分析记录…</translation>
+    </message>
+    <message>
+      <source>app.separation.no_source</source>
+      <translation>先选择一份记录，原始文件会保留。</translation>
+    </message>
+    <message>
+      <source>app.separation.source_summary</source>
+      <translation>{file}
+{channels} 通道 · {seconds} 秒</translation>
+    </message>
+    <message>
+      <source>app.separation.range</source>
+      <translation>分析区间 · 开始时间 / 时长（5–120 秒）</translation>
+    </message>
+    <message>
+      <source>app.separation.start_time</source>
+      <translation>分析开始时间</translation>
+    </message>
+    <message>
+      <source>app.separation.duration</source>
+      <translation>分析时长</translation>
+    </message>
+    <message>
+      <source>app.separation.roles_help</source>
+      <translation>选择每个通道的用途。观测至少 2 个；参考只提供线索，不参与混合分离。多选通道可批量设置。</translation>
+    </message>
+    <message>
+      <source>app.separation.channel</source>
+      <translation>通道</translation>
+    </message>
+    <message>
+      <source>app.separation.role</source>
+      <translation>用途</translation>
+    </message>
+    <message>
+      <source>app.separation.role_0</source>
+      <translation>待确认</translation>
+    </message>
+    <message>
+      <source>app.separation.role_1</source>
+      <translation>参与分离</translation>
+    </message>
+    <message>
+      <source>app.separation.role_2</source>
+      <translation>眼电参考</translation>
+    </message>
+    <message>
+      <source>app.separation.role_3</source>
+      <translation>肌电参考</translation>
+    </message>
+    <message>
+      <source>app.separation.role_4</source>
+      <translation>排除</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk</source>
+      <translation>应用到这 {count} 个通道</translation>
+    </message>
+    <message>
+      <source>app.separation.advanced</source>
+      <translation>更多参数 · 默认 500 Hz / 陷波关闭</translation>
+    </message>
+    <message>
+      <source>app.separation.notch_off</source>
+      <translation>陷波关闭</translation>
+    </message>
+    <message>
+      <source>app.separation.notch</source>
+      <translation>工频陷波</translation>
+    </message>
+    <message>
+      <source>app.separation.output_rate</source>
+      <translation>输出采样率</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_title</source>
+      <translation>分组预览 · 同步时间轴</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_mode</source>
+      <translation>幅度标尺</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_shared</source>
+      <translation>统一标尺</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_individual</source>
+      <translation>各组适配</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_zoom</source>
+      <translation>显示放大</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_shared</source>
+      <translation>各组使用同一 µV 标尺，可直接比较幅度。放大只改变显示。</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_individual</source>
+      <translation>每组单独适配幅度，便于查看小波形；各组高度不能用于比较幅度。</translation>
+    </message>
+    <message>
+      <source>app.separation.peak_to_peak</source>
+      <translation>当前视窗峰峰值 {value} µV</translation>
+    </message>
+    <message>
+      <source>app.separation.small_wave</source>
+      <translation>波形较小，可放大查看</translation>
+    </message>
+    <message>
+      <source>app.separation.clipped_wave</source>
+      <translation>部分波形超出显示范围，请减小放大倍数</translation>
+    </message>
+    <message>
+      <source>app.separation.splitter_help</source>
+      <translation>左右拖动调整区域宽度；也可聚焦后按左右方向键</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_selection</source>
+      <translation>已选 {count} 个通道 · 批量设置用途</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_role</source>
+      <translation>批量通道用途</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_channel</source>
+      <translation>查看通道</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window_visible</source>
+      <translation>每屏显示</translation>
+    </message>
+    <message>
+      <source>app.separation.waveform_zoom</source>
+      <translation>波形放大</translation>
+    </message>
+    <message>
+      <source>app.separation.play</source>
+      <translation>播放</translation>
+    </message>
+    <message>
+      <source>app.separation.pause</source>
+      <translation>暂停</translation>
+    </message>
+    <message>
+      <source>app.separation.restart</source>
+      <translation>回到开头</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_position</source>
+      <translation>播放位置 {current} / {total}</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_help</source>
+      <translation>播放已分离的结果；不重新运行分析。</translation>
+    </message>
+    <message>
+      <source>app.separation.cursor_time</source>
+      <translation>游标 {time} s</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_end</source>
+      <translation>已到分析区间末尾</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace</source>
+      <translation>波形浏览</translation>
+    </message>
+    <message>
+      <source>app.separation.separation_workspace</source>
+      <translation>脑电 / 眼电分离</translation>
+    </message>
+    <message>
+      <source>app.separation.workspace_navigation</source>
+      <translation>工作区</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace_help</source>
+      <translation>切换到波形与频谱页面，保留本次分离结果。单独在分离工作区打开的记录不会自动加载到浏览页面。</translation>
+    </message>
+    <message>
+      <source>app.separation.zoom_factor</source>
+      <translation>{value} 倍</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window</source>
+      <translation>预览窗口时长（不改变分析区间）</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_position</source>
+      <translation>预览位置</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_title</source>
+      <translation>判断来源 · 可保留未确定</translation>
+    </message>
+    <message>
+      <source>app.separation.component</source>
+      <translation>成分</translation>
+    </message>
+    <message>
+      <source>app.separation.source</source>
+      <translation>人工判断</translation>
+    </message>
+    <message>
+      <source>app.separation.group_0</source>
+      <translation>脑电候选</translation>
+    </message>
+    <message>
+      <source>app.separation.group_1</source>
+      <translation>眼电估计</translation>
+    </message>
+    <message>
+      <source>app.separation.group_2</source>
+      <translation>肌电贡献</translation>
+    </message>
+    <message>
+      <source>app.separation.group_3</source>
+      <translation>未确定</translation>
+    </message>
+    <message>
+      <source>app.separation.undo</source>
+      <translation>撤销上次判断</translation>
+    </message>
+    <message>
+      <source>app.separation.clues_empty</source>
+      <translation>分离完成后，选择一个成分查看线索。</translation>
+    </message>
+    <message>
+      <source>app.separation.clues</source>
+      <translation>线索，不是准确率
+眼电参考相关：{eye}
+肌电参考相关：{muscle}
+高频功率占比：{high}%
+请结合波形、频谱和记录背景判断。无线索不代表没有伪迹。</translation>
+    </message>
+    <message>
+      <source>app.separation.source_caption</source>
+      <translation>成分幅度为任意单位；成分编号会随输入变化。改变判断立即更新预览，不会重新计算。</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmed</source>
+      <translation>我已检查，可保留未确定</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmation_help</source>
+      <translation>无需把每个成分都分类。修改判断后需要重新确认。</translation>
+    </message>
+    <message>
+      <source>app.separation.cancel</source>
+      <translation>取消当前任务</translation>
+    </message>
+    <message>
+      <source>app.separation.retry</source>
+      <translation>重试…</translation>
+    </message>
+    <message>
+      <source>app.separation.start</source>
+      <translation>开始分离</translation>
+    </message>
+    <message>
+      <source>app.separation.export</source>
+      <translation>确认并导出…</translation>
+    </message>
+    <message>
+      <source>app.separation.next_busy</source>
+      <translation>正在处理。可以取消，已完成的结果会保留。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_open</source>
+      <translation>第 1 步：打开记录，确认分析区间和通道用途。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_roles</source>
+      <translation>下一步：确认所有通道用途。可多选后批量设定。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_range</source>
+      <translation>请选 2–32 个观测通道，并确保 5–120 秒分析区间未超出记录。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_start</source>
+      <translation>输入已确认。点击「开始分离」，完成后逐个检查成分。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_review</source>
+      <translation>下一步：选择成分并判断来源。不确定就保留「未确定」，检查后勾选确认。</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_inspecting</source>
+      <translation>正在检查记录、单位和通道…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_running</source>
+      <translation>正在读取所选区间并分离…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_exporting</source>
+      <translation>正在准备导出文件…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_publishing</source>
+      <translation>正在完成保存，请稍候…</translation>
+    </message>
+    <message>
+      <source>app.separation.setup_notice</source>
+      <translation>分析设置独立于普通浏览。修改输入会使上次结果失效。原始记录不会被修改。</translation>
+    </message>
+    <message>
+      <source>app.separation.review_notice</source>
+      <translation>初始成分全部为「未确定」，信号仍保留在该组。分组结果是人工判断，不代表生理来源已被证实。</translation>
+    </message>
+    <message>
+      <source>app.separation.exported</source>
+      <translation>已导出到 {path}</translation>
+    </message>
+    <message>
+      <source>app.separation.error_generic</source>
+      <translation>操作未完成（{code}）。请检查输入或选择新的保存位置后重试。</translation>
+    </message>
+    <message>
+      <source>app.separation.analysis_trace</source>
+      <translation>分析输入 · µV · 含均值</translation>
+    </message>
+    <message>
+      <source>app.separation.component_trace</source>
+      <translation>所选成分 · 任意单位</translation>
+    </message>
+    <message>
+      <source>app.separation.spectrum</source>
+      <translation>整段功率谱密度 · 任意单位²/Hz</translation>
+    </message>
+    <message>
+      <source>app.separation.no_result</source>
+      <translation>完成分离后在这里查看真实信号。</translation>
+    </message>
+    <message>
+      <source>app.separation.empty_group</source>
+      <translation>还没有归入这组的成分</translation>
+    </message>
+    <message>
+      <source>app.separation.export_title</source>
+      <translation>检查导出清单</translation>
+    </message>
+    <message>
+      <source>app.separation.export_notice</source>
+      <translation>将导出 7 份 CSV 与 1 份 JSON。均值与重建参数保存在 JSON，未确定成分会保留。请选择一个尚不存在的新文件夹名称，保存完成后一次发布。</translation>
+    </message>
+    <message>
+      <source>app.separation.choose_export</source>
+      <translation>选择保存位置…</translation>
+    </message>
+    <message>
+      <source>app.separation.export_parent</source>
+      <translation>选择保存位置</translation>
+    </message>
+    <message>
+      <source>app.separation.new_directory</source>
+      <translation>新建分析结果文件夹（请输入尚不存在的名称）</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_request</source>
+      <translation>请检查通道用途、分析区间与采样率设置后重试。
+
+field: {field}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_invalid</source>
+      <translation>无法使用这份记录。请检查文件是否完整，并确认格式、时间轴和通道单位受支持。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unsupported_source</source>
+      <translation>当前记录格式或保存方式尚不支持分析，请选择受支持的离线记录。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_changed</source>
+      <translation>分析期间原始记录发生变化。请重新打开记录并分离。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unknown_unit</source>
+      <translation>无法确认通道单位，暂不进行分析。请为原始文件补全受支持的物理单位。
+
+unit: {unit}</translation>
+    </message>
+    <message>
+      <source>error.analysis.discontinuous_time</source>
+      <translation>所选区间存在时间中断。请选择一段连续记录后重试。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.resource_limit</source>
+      <translation>所选数据超过处理上限。请缩短区间、减少观测通道或降低输出采样率。
+
+bytes: {bytes}, limit_bytes: {limit_bytes}</translation>
+    </message>
+    <message>
+      <source>error.analysis.handle_not_found</source>
+      <translation>分析记录已关闭。请重新打开记录后重试。
+
+handle: {handle}</translation>
+    </message>
+    <message>
+      <source>error.analysis.export_failed</source>
+      <translation>保存未完成。请检查磁盘空间与目录写入权限，然后选择新位置重试。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.reconstruction_failed</source>
+      <translation>重建校验未通过，本次结果未导出。请重新分析，保留原始记录用于排查。
+
+error_uV: {error_uV}</translation>
+    </message>
+    <message>
+      <source>error.analysis.destination_exists</source>
+      <translation>目标名称已存在。请选择一个尚不存在的新结果文件夹名称。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_range</source>
+      <translation>分析区间超出记录或长度不符合要求。请选择记录内 5–120 秒的连续区间。</translation>
+    </message>
+    <message>
+      <source>error.analysis.missing_context</source>
+      <translation>区间边缘缺少滤波所需数据，请调整分析开始时间或缩短区间。</translation>
+    </message>
+    <message>
+      <source>error.analysis.input_too_large</source>
+      <translation>分析数据量过大，请缩短区间或减少观测通道。</translation>
+    </message>
+    <message>
+      <source>error.analysis.flat_channel</source>
+      <translation>观测通道包含恒定或近乎无变化的信号。请排除该通道后重试。</translation>
+    </message>
+    <message>
+      <source>error.analysis.low_rank</source>
+      <translation>观测通道过于相似，无法稳定分离。请移除重复通道或选择另一段记录。</translation>
+    </message>
+    <message>
+      <source>error.analysis.not_converged</source>
+      <translation>本次分离未收敛，未生成结果。请换一段记录或调整观测通道后重试。</translation>
+    </message>
+    <message>
+      <source>error.analysis.non_finite</source>
+      <translation>记录中出现非有限数值，分析已停止。请检查原始数据。</translation>
+    </message>
+    <message>
+      <source>error.analysis.cancelled</source>
+      <translation>任务已取消，可以调整设置后重试。</translation>
+    </message>
+    <message>
+      <source>app.separation.no_reference</source>
+      <translation>未提供参考</translation>
+    </message>
+    <message>
+      <source>app.separation.open_teaching</source>
+      <translation>打开教学记录</translation>
+    </message>
+    <message>
+      <source>app.separation.example_labels</source>
+      <translation>载入本教学记录的示例标记</translation>
+    </message>
+    <message>
+      <source>app.separation.teaching_notice</source>
+      <translation>教学记录由已知源人工混合合成，用于学习操作；不代表真实记录的分离效果。示例标记仅限本记录。</translation>
+    </message>
+    <message>
+      <source>app.separation.unknown</source>
+      <translation>未知</translation>
+    </message>
+    <message>
+      <source>app.separation.hardware</source>
+      <translation>硬件参考：{reference}
+采集带宽：{lower} – {upper} Hz
+软件无法恢复采集时已滤除的频率。</translation>
+    </message>
+    <message>
+      <source>error.analysis.adc_saturation</source>
+      <translation>原始观测信号出现采集饱和，请选择未饱和区间或排除受影响通道后重试。
+
+channel_id: {channel_id}, rail_samples: {rail_samples}, n_samples: {n_samples}</translation>
+    </message>
+    <message>
+      <source>app.separation.export_files</source>
+      <translation>original_uV.csv
+analysis_uV.csv
+eeg_uV.csv
+eog_uV.csv
+emg_uV.csv
+unresolved_uV.csv
+residual_uV.csv
+analysis.json</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_title</source>
+      <translation>确认 CSV 物理单位</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_required</source>
+      <translation>这份 CSV 未声明物理单位。请选择采集时的实际单位，不确定时请取消并核对数据来源。取消后不会打开记录。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_rate</source>
+      <translation>输出采样率不能高于原始采样率。请选择 250 Hz 或 500 Hz；原始记录低于 250 Hz 时，请选择另一份记录。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_selected</source>
+      <translation>观测与参考总计最多 40 个通道。请将不需要的通道设为「排除」。</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_details</source>
+      <translation>参考线索与数值（不代表准确率）</translation>
+    </message>
   </context>
 </TS>

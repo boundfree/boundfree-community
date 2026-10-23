@@ -10,6 +10,7 @@
 
 #include <QByteArray>
 #include <vector>
+#include <functional>
 
 namespace bf {
 
@@ -18,6 +19,7 @@ struct SidecarHelloResult {
     QString productVersion;
     int ipcProtocolVersion = 0;
     AppError error;
+    QStringList analysisCapabilities;
 };
 
 struct SidecarResponse {
@@ -95,6 +97,11 @@ public:
 
     SidecarHelloResult startAndHello(const VersionInfo& version, int timeoutMs = 3000);
     SidecarResponse request(const QString& method, const QJsonObject& params, int timeoutMs = 3000);
+    // Explicit binary methods negotiate their own dtype; existing slices remain float32.
+    SidecarResponse requestBinary(const QString& method, const QJsonObject& params,
+                                  const QByteArray& outgoing, QByteArray* incoming,
+                                  int timeoutMs = 30000);
+    void setCancellation(std::function<bool()> cancelled) { cancelled_ = std::move(cancelled); }
     SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000);
     SidecarResponse exportMarkersCsv(const QString& path, const QVector<SidecarEvent>& events, int timeoutMs = 3000);
     SidecarSliceResult getSlice(const QString& handle, double t0, double t1, int timeoutMs = 3000);
@@ -142,6 +149,7 @@ private:
 
     QString repoRoot_;
     QProcess process_;
+    std::function<bool()> cancelled_;
 };
 
 }  // namespace bf

@@ -110,3 +110,14 @@ MNE; not directly invoked by the sidecar.
 pandas is Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry,
 Inc. and PyData Development Team. Licensed under the BSD-3-Clause license.
 Bundled transitively via MNE; not directly invoked by the sidecar.
+
+## Neo and quantities
+
+Neo 0.14.5 is Copyright (c) 2010-2025, Neo authors and contributors,
+licensed under BSD-3-Clause. The complete installed license is preserved in
+`licenses/Neo-BSD-3-Clause.txt`. The Intan reader remains unmodified; the
+analysis adapter subclasses its timestamp continuity hook to validate bounded blocks.
+
+quantities 0.16.x supplies Neo unit support. Its original BSD-compatible
+license text and included Scimath notices are preserved verbatim in
+`licenses/Quantities-license.rst`.

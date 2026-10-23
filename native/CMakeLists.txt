@@ -56,6 +56,8 @@ option(BF_REQUIRE_LICENSE "Require an embedded release public key for license ve
 set(BF_LICENSE_PUBLIC_KEY_FILE "" CACHE FILEPATH "Path to RSA-2048 public key PEM (SubjectPublicKeyInfo)")
 
 set(BF_DSP_SOURCES
+    src/dsp/ica_core.cpp
+    src/dsp/eeg_separation.cpp
     src/dsp/biquad.cpp
     src/dsp/filter_design.cpp
     src/dsp/npy_io.cpp
@@ -150,6 +152,10 @@ add_executable(bf_app
     src/app/main.cpp
     src/controller/analysis_service.cpp
     src/controller/analysis_service.h
+    src/controller/eeg_separation_controller.cpp
+    src/controller/eeg_separation_controller.h
+    src/ui/eeg_separation_workspace.cpp
+    src/ui/eeg_separation_workspace.h
     src/ui/eeg_processing_panel.cpp
     src/ui/eeg_processing_panel.h
     src/ui/eeg_playback_panel.cpp
@@ -284,6 +290,27 @@ add_executable(m3_dsp_test src/dsp/m3_dsp_test.cpp)
 target_include_directories(m3_dsp_test PRIVATE src)
 target_link_libraries(m3_dsp_test PRIVATE bf_dsp)
 
+add_executable(ica_core_test src/dsp/ica_core_test.cpp)
+target_link_libraries(ica_core_test PRIVATE bf_dsp)
+add_executable(eeg_separation_test src/dsp/eeg_separation_test.cpp)
+target_link_libraries(eeg_separation_test PRIVATE bf_dsp)
+
+add_executable(eeg_separation_controller_test
+    src/controller/eeg_separation_controller_test.cpp
+    src/controller/eeg_separation_controller.cpp
+    src/controller/eeg_separation_controller.h)
+target_link_libraries(eeg_separation_controller_test PRIVATE bf_core)
+add_executable(eeg_separation_workspace_test
+    src/ui/eeg_separation_workspace_test.cpp
+    src/ui/export_segment_dialog.cpp
+    src/ui/export_segment_dialog.h
+    src/ui/eeg_separation_workspace.cpp
+    src/ui/eeg_separation_workspace.h
+    src/controller/eeg_separation_controller.cpp
+    src/controller/eeg_separation_controller.h)
+target_link_libraries(eeg_separation_workspace_test PRIVATE bf_core)
+add_dependencies(eeg_separation_workspace_test bf_i18n_qm)
+
 add_executable(m4_spectral_test src/dsp/m4_spectral_test.cpp)
 target_include_directories(m4_spectral_test PRIVATE src)
 target_link_libraries(m4_spectral_test PRIVATE bf_dsp Threads::Threads)
@@ -360,6 +387,8 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../contracts/error_codes.json
     DESTINATION contracts
 )
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../samples/offline-eeg
+    DESTINATION samples)
 
 # i18n .qm：发布产物只安装已验收的 stable locale；pseudo 仅留在构建目录供测试。
 # 运行时从 BF_RESOURCE_ROOT/应用目录/repo root 下的 i18n/bf_app_<locale>.qm 加载。
@@ -399,3 +428,6 @@ add_executable(channel_bandpass_controls_test src/ui/channel_bandpass_controls_t
 target_link_libraries(channel_bandpass_controls_test PRIVATE bf_core Qt6::Widgets)
 target_compile_definitions(channel_bandpass_controls_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 add_dependencies(channel_bandpass_controls_test bf_i18n_qm)
+
+# Optional CI provenance; generated per run and never committed.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../build-info.json DESTINATION . OPTIONAL)

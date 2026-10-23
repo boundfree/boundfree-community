@@ -3,9 +3,17 @@ from typing import BinaryIO
 
 from .framing import FRAME_BINARY, FrameError, read_frame, write_frame, write_json_frame
 from .protocol import error_response, handle_request
+from .analysis_io import cleanup
 
 
 def run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
+    try:
+        return _run_stdio(stdin, stdout)
+    finally:
+        cleanup()
+
+
+def _run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
     while True:
         try:
             frame = read_frame(stdin)
@@ -20,7 +28,7 @@ def run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
                 continue
 
             binary_payload = None
-            if isinstance(request, dict) and request.get("method") in ("record_write", "export_samples"):
+            if isinstance(request, dict) and request.get("method") in ("record_write", "export_samples", "analysis_bundle_write"):
                 payload_frame = read_frame(stdin)
                 if payload_frame is None or payload_frame.frame_type != FRAME_BINARY:
                     raise FrameError("request requires a binary payload frame")
@@ -30,15 +38,15 @@ def run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
             response_payload = None
             if (
                 isinstance(request, dict)
-                and request.get("method") == "get_slice"
+                and request.get("method") in ("get_slice", "analysis_source_read")
                 and response.get("ok") is True
             ):
                 import numpy as np
 
                 result = response["result"]
-                data = np.ascontiguousarray(result.pop("data"), dtype="<f4")
+                data = np.ascontiguousarray(result.pop("data"), dtype="<f8" if request["method"] == "analysis_source_read" else "<f4")
                 response_payload = data.tobytes(order="C")
-                result["dtype"] = "float32-le"
+                result["dtype"] = "float64-le" if request["method"] == "analysis_source_read" else "float32-le"
                 result["payload_bytes"] = len(response_payload)
 
             write_json_frame(stdout, response)

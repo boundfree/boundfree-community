@@ -29,6 +29,8 @@ location in [Redistributing Visual C++ files](https://learn.microsoft.com/en-us/
 | ----------- | ---------------- | ----------------------- |
 | MNE-Python  | 1.12.x           | BSD-3-Clause            |
 | NumPy       | 2.x              | BSD-3-Clause            |
+| Neo         | 0.14.5           | BSD-3-Clause            |
+| quantities  | 0.16.x           | BSD-3-Clause compatible (bundled license notices) |
 | h5py        | 3.16.x           | BSD-3-Clause            |
 | pyedflib    | 0.1.x            | BSD-2-Clause            |
 | matplotlib  | 3.10.x           | Matplotlib license (PSF-based) |
@@ -52,3 +54,7 @@ This release does NOT ship PySide6, pyqtgraph, or cryptography. Those were
 part of the legacy Python/PySide6 reference application and are not
 distributed with the native C++/Qt6 release. Do not declare them as bundled
 dependencies of this product.
+
+Neo supplies the Intan RHD/RHS memory-mapped decoder for offline separation.
+Its original license is preserved in `licenses/Neo-BSD-3-Clause.txt`; quantities
+unit support and its included notices are preserved in `licenses/Quantities-license.rst`.

@@ -46,6 +46,8 @@ REQUIRED_ACKNOWLEDGED_DEPS = (
     "matplotlib",
     "scipy",
     "pandas",
+    "Neo",
+    "quantities",
 )
 
 # Patterns that indicate private key material or keygen tooling. The public

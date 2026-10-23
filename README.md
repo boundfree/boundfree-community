@@ -10,13 +10,13 @@ BoundFree EEG Native 是 BoundFree 脑电上位机的 C++/Qt6 原生重写项目
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.1.86-dev",
+  "version": "0.2.2-dev",
   "release_channel": "dev",
   "ipc_protocol_version": 1
 }
 ```
 
-当前阶段：M0–M7 均已完成；M8 WSL 一键打包入口、Windows x64 安装包构建和命令行自动验收已于 2026-10-17 通过，安装包会按需安装 VC++ 运行库。干净 Windows 10/11 安装、覆盖安装、卸载、桌面全流程人工验收与组织证书签名待执行。产品版本 `0.1.86-dev`。
+当前阶段：M0–M7 均已完成；M8 WSL 一键打包入口、Windows x64 安装包构建和命令行自动验收已于 2026-10-17 通过，安装包会按需安装 VC++ 运行库。干净 Windows 10/11 安装、覆盖安装、卸载、桌面全流程人工验收与组织证书签名待执行。产品版本 `0.2.2-dev`。
 
 产品分线：BoundFree EEG 按信号范式分为共享同一套底座的两条产品线。**第一版本（v1）只交付「公共底座 + EEG 分析线」**，即面向动物电生理科研场景的通用 EEG/LFP/电生理文件分析软件；v1 的主线是完整迁移旧 Python/PySide6 版的文件打开、懒加载、波形浏览、DSP、频谱分析、事件标注、视频同步、片段导出、录制与 Session 骨架、离线授权和 Windows 发布能力。
 
@@ -66,7 +66,7 @@ boundfree-community/
 ├── AGENTS.md                    # 仓库级开发指导
 ├── README.md                    # 项目入口说明
 ├── version.json                 # 产品版本与 IPC 协议版本真值
-├── version.md                   # 提交级版本记录
+├── version.md                   # 交付阶段版本记录
 ├── docs/                        # 当前核心文档与历史归档
 ├── native/                      # C++/Qt6 主程序
 ├── sidecar/                     # Python 编解码边车
@@ -77,10 +77,12 @@ boundfree-community/
 
 - 日常开发基于 `master`。
 - 当前开发以已完成的 M1–M8 能力为基础，按当前里程碑从 `master` 创建 `feature/*`、`fix/*`、`spike/*` 或 `docs/*` 分支。
-- `release` 是稳定发布占位分支，首个 `rc` 或 `stable` 版本前不打正式 tag。
-- `version.json` 是产品版本真值；根目录 [`version.md`](version.md) 从版本同步规范启用提交开始记录每次有效提交的版本、日期、作者、提交标题和提交正文。
-- 每个合入 `master` 的有效提交递增版本并更新 `version.md`；提交前运行 `python3 scripts/common/version_sync.py check`。
-- 产品版本和 `ipc_protocol_version` 分开维护。
+- 使用 `dev`（内部开发）、`beta.N`（小范围试用）、无后缀版本（正式发布）。普通提交无需递增产品版本。
+- `version.json` 为唯一版本真值；阶段调整运行 `version_sync.py next/set`，同步五处元数据，`version.md` 记录交付阶段。
+- `master` 每次合入自动运行 GitHub Actions，生成 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档，保留 30 天，不自动发布 Release。PR 同样执行构建和测试。
+- 普通 CI 始终生成内部 dev 包；只有独立 Release Action 保留 beta/stable 版本。开发包显示如 `0.2.2-dev.158.1+g12345678`，表示第 158 次 CI、第 1 次尝试及源提交；不会回写 Git。
+- 对外发布使用 `community-vX.Y.Z[-beta.N]` tag，手动运行 Release Action，检查草稿后再点击发布。历史 `v3.*` 为上游历史，不能用作 Community 产品版本。
+- 产品版本与 `ipc_protocol_version` 独立维护。详见 [版本与发布 SOP](docs/release-sop.md)。
 
 ## Windows Dev Build
 
@@ -133,3 +135,11 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 - 不要从 WSL 用相对路径或 Linux 风格路径启动 Windows 侧 `bf_app.exe`。`VersionService::detectRepoRoot(argv[0])` 在解析不到应用目录时会回退到当前工作目录，于是资源根变成 WSL/源码目录：边车会退化为 `python -m boundfree_sidecar`（本机命中 `E:\miniconda3`，没有 mne），EDF/BDF/BrainVision/EEGLAB/FIF 会报 `reader.open_failed`。用完整 Windows 路径（`& 'E:\...\release\stage\BoundFreeEEG\bf_app.exe'`）或在 PowerShell 里调用。
 - 边车冷启动首次打开 MNE 格式文件要 import mne，可能超过 `SidecarClient` 的 3 秒 `open` 超时并报 `ipc.sidecar_timeout`；重跑验收脚本即可通过（热态首次约 2.2 秒）。
 - Windows 工作副本整体改名或移动后，`native\build-windows` 里的 CMakeCache 仍指向老绝对路径，下次 configure 会失败；删除该目录重新配置即可（会触发一次全量构建）。
+
+## 脑电 / 眼电离线分离
+
+在“视图 → 脑电 / 眼电分离”进入专用工作区。首次体验可点击“打开教学记录 → 开始分离”；教学数据是自有数学源混合，只用于学习操作。
+
+真实记录先批量指定观测与可选眼电/肌电参考通道，再检查成分波形与线索并人工判断来源。初始信号全部保留在“未确定”组；修改来源即时更新预览，可撤销，不必重新拟合。保留未确定成分也可以在检查确认后导出。
+
+完整结果为七份 CSV 和 `analysis.json`，含来源指纹、输入配置、矩阵、均值、人工标签和回读校验。现有浏览滤波与回放位置不会自动进入分离输入。算法限制、格式条件及验收边界见[实施记录](docs/reports/offline-eeg-separation.md)。

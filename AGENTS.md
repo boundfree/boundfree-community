@@ -31,22 +31,26 @@
 
 ## Development Stage
 
-- 当前版本为 `0.1.86-dev`。
+- 当前版本为 `0.2.2-dev`。
 - M0 技术验证已完成，结论为 conditional go。
 - 真实 GPU/显示门禁已通过（见 `docs/reports/m2-rendering-gpu-gate.md`）。
 - M8 打包入口、Windows x64 安装包构建及命令行自动验收已于 2026-10-17 验证；VC++ 运行库作为安装前置依赖随包处理。干净 Windows 10/11 安装、覆盖安装、卸载、桌面人工验收、组织证书签名与正式授权兼容仍待验收（见 `docs/reports/m8-packaging-release-acceptance.md`）。
+- 已实现专用脑电/眼电离线分离工作区、自有 FastICA、人工标签撤销与 float64 可追溯八文件导出；本地数值、文件协议与 Qt 工作流有回归，真实电极效果、新手用户研究和干净机安装仍需独立验收。入口与具体格式能力见 `docs/reports/offline-eeg-separation.md`。
 - 自研硬件采集仍属于 v1.1/v2，不纳入 M8 发布门禁。
-- 产品版本当前为 `0.1.86-dev`；每个有效提交必须递增产品版本并更新根目录 `version.md`。
+- 产品版本当前为 `0.2.2-dev`；按交付阶段更新版本，日常提交由 Git 记录，CI 自动产生唯一构建标识。
 
 ## Branch And Version Rules
 
 - 日常开发基于 `master`。
 - 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`；当前阶段不绑定历史 `feature/m1-foundation` 分支。
-- `release` 是稳定发布分支；当前可作为占位分支，但首个 `rc` 或 `stable` 版本前不得打正式 tag。
-- 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
+- 使用 `master` 加短功能分支；历史 `release` 分支仅供追溯，不再要求维护第二条发布线。
+- 已发布版本紧急修复从正式 tag 切 `hotfix/*`，修复同步回 `master` 后发布新版本。
 - `version.json` 是产品版本和 IPC 协议版本的单一真值来源。
-- 根目录 `version.md` 从版本同步规范启用提交开始记录每个有效提交对应的版本、日期、作者、提交标题和提交正文。
-- 每个合入 `master` 的有效提交必须运行 `python3 scripts/common/version_sync.py next ...`（或 `set ...`）更新版本。该命令自动同步五处版本号：`version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss`；禁止手工只改 `version.json` 绕过流程。提交前运行 `python3 scripts/common/version_sync.py check` 校验五处版本号一致（不一致会报 FAIL）。
+- 根目录 `version.md` 记录交付阶段变化，日常提交详情保留在 Git。
+- 需要切换交付阶段时运行 `python3 scripts/common/version_sync.py next ...` 或 `set ...`，同步 `version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss`。普通提交无需递增产品版本；提交前运行 `python3 scripts/common/version_sync.py check`。
+- 默认只使用 `dev`、`beta.N`、`stable`。CI 构建开发包时临时追加运行编号、重跑次数和提交 SHA，不回写仓库。
+- `master` 每次推送自动构建 Windows 安装包和 Ubuntu 24.04 归档；Release 只由人工触发并生成草稿，使用 `community-v*` annotated tag，禁止覆盖已发布版本。
+- 具体操作见 `docs/release-sop.md`；每次对外发版使用本仓库 Release checklist Issue 模板。
 - 产品版本和 `ipc_protocol_version` 必须分开维护。
 
 ## Technical Constraints
@@ -68,7 +72,7 @@
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
 - 新增共享接口时，同步更新相关契约文档和测试计划。
 - 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/development-guide.md`。
-- 代码和文档应保持小步提交。每次有效提交应同步更新 `version.json` 和根目录 `version.md`。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
+- 代码和文档应保持小步提交。仅交付阶段变化时同步产品版本与 `version.md`。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
 
 ## Verification
 

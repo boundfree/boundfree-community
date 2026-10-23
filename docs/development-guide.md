@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-07-23
+last_updated: 2026-10-23
 ---
 
 # 开发规范
@@ -12,77 +12,37 @@ last_updated: 2026-07-23
 
 ## Branch Model
 
-- `master` 是日常开发集成分支，代表下一个版本的开发状态。
-- `release` 是稳定发布分支，只保存已发布或准备发布的稳定提交。
-- 正式发布 tag 只打在 `release` 分支。
-- 当前 `release` 分支是占位稳定线；首个 `rc` 或 `stable` 版本前不从该分支打 tag。
-- 普通开发从 `master` 切短分支：
-  - `feature/*`：功能或阶段开发。
-  - `fix/*`：开发期修复。
-  - `spike/*`：技术验证。
-  - `docs/*`：文档调整。
-- 已发布版本紧急修复从 `release` 或正式 tag 切 `hotfix/*`。
-
-当前阶段从 `master` 创建短分支：
-
-```bash
-git switch master
-git switch -c feature/m4-spectral
-```
+`master` 是唯一日常集成主线；功能使用短期 `feature/*`、`fix/*`、`docs/*` 分支，通过 PR 合入。历史 `release` 分支不再作为发版要求。紧急修复可从已发布 tag 创建 `hotfix/*`，再同步回 `master`。正式 tag 必须位于 `master` 可达的提交上。
 
 ## Version Rules
 
-产品版本遵循 SemVer：
+`version.json` 为唯一人工维护真值。采用 SemVer，默认只用三种状态：
 
-```text
-MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
-```
+| 状态 | 仓库版本示例 | 用途 |
+| --- | --- | --- |
+| dev | `0.2.2-dev` | 内部开发；CI 临时生成 `0.2.2-dev.158.1+g12345678` |
+| beta | `0.2.2-beta.1` | 选定交付范围的小范围试用；继续修复后 `.2` |
+| stable | `0.2.2` | 已完成约定范围验收的正式版本 |
 
-迁移期使用 `0.x.y`。第一个完整客户可用版本发布为 `1.0.0`。
+普通功能开发、修复、测试、文档提交无需递增产品版本。`version.md` 从本规范起记录交付阶段，逐提交详情使用 Git；旧记录保留。PATCH 用于已发布版本的修复，MINOR 用于新的阶段能力，MAJOR 用于重大不兼容变化；`0.x` 表示产品仍在成型。首个完整、可持续交付版本考虑 `1.0.0`。`alpha/rc` 仅保留旧脚本兼容，不作为默认日常流程。
 
-`version.json` 是唯一产品版本真值；根目录 `version.md` 是提交级人工可读版本记录。每个合入 `master` 的有效提交都必须更新产品版本和 `version.md`，但不为每个提交创建 release tag。Git commit 标题只保留一行摘要，完整提交说明写入 `version.md`。
-
-版本更新规则：
-
-- `PATCH`：默认路径。每个普通功能、修复、文档、测试、重构或发布链路提交递增一次，例如 `0.1.41-dev` -> `0.1.42-dev`。
-- `MINOR`：阶段性公开能力边界变化时递增，并将 `PATCH` 归零。适用于完成新的里程碑、增加新的产品线能力、引入新的文件/分析/录制/发布能力边界，或需要对外说明的功能阶段，例如 `0.1.41-dev` -> `0.2.0-dev`。
-- `MAJOR`：正式稳定大版本或不兼容产品边界变化时递增，并将 `MINOR/PATCH` 归零。迁移期继续使用 `0.x.y`；第一个完整客户可用版本发布为 `1.0.0`。若出现不兼容的数据、授权、部署或 IPC 产品边界，也必须评估 MAJOR。
-- `rc`：准备发布候选版时使用当前开发版本号切换为 `X.Y.Z-rc.N`，并设置 `release_channel: rc`。
-- `stable`：正式发布时去掉 prerelease，设置 `release_channel: stable`，并只在 `release` 分支创建 annotated tag。
-- `hotfix`：从已发布 tag 或 `release` 分支修复时递增 `PATCH`，并发布更高稳定版本；已发布 tag 不复用、不覆盖。
-
-版本同步命令：
+版本变化使用同步工具，一次更新五处元数据并新增阶段记录：
 
 ```bash
-python3 scripts/common/version_sync.py next patch --type feat --summary "新增能力摘要" --scope native/src/...
-python3 scripts/common/version_sync.py next minor --type feat --summary "完成阶段能力摘要"
-python3 scripts/common/version_sync.py set 0.2.0-rc.1 --channel rc --type chore --summary "准备 0.2.0-rc.1"
-python3 scripts/common/version_sync.py set 0.2.0 --channel stable --type chore --summary "发布 0.2.0"
+python3 scripts/common/version_sync.py set 0.2.2-beta.1 --type chore --summary "准备首轮试用"
+python3 scripts/common/version_sync.py set 0.2.2 --type chore --summary "完成阶段验收并准备正式发布"
+python3 scripts/common/version_sync.py next patch --type chore --summary "开启下一修复版本"
+python3 scripts/common/version_sync.py next minor --type chore --summary "开启下一功能阶段"
 python3 scripts/common/version_sync.py check
 ```
 
-提交要求：功能改动、`version.json`、`version.md` 和受影响的镜像版本说明必须放在同一个提交中。Git commit 只写一行摘要，完整提交说明写入 `version.md`。旧历史提交以 `git log` 为准，不在 `version.md` 逐条回填。`version_sync.py check` 是提交前门禁。
-
-产品版本与 `ipc_protocol_version` 分开维护。IPC 协议 envelope、字段语义、payload 布局或不兼容错误码契约变化时，必须评估是否增加 `ipc_protocol_version`。
+切换版本的提交应包含全部同步文件；普通提交只需保证校验通过。IPC 版本独立维护，仅协议不兼容变化时评估递增。产品版本各段上限为 Windows FileVersion 的 65535；完整 SemVer 与构建编号显示在 AppVersion / `version.json`，Win32 四段数值保留基础版本加 `.0`，不作为包的唯一标识。
 
 ## Release Flow
 
-正式发布流程：
+具体操作、门禁、下载位置和恢复方法见 [release-sop.md](release-sop.md)。`master` 每次推送和 PR 自动编译、回归并打包；产物存 GitHub Actions Artifacts，默认保留 30 天，不自动生成 Release。手动 Release Action 只接受 `community-vX.Y.Z[-beta.N]` annotated tag，重新测试并构建相应提交，然后生成草稿。公开发布由维护者检查后点击 Publish。
 
-1. 确认 `master` 已包含要发布的全部提交。
-2. 从 `master` 创建 `release-prep/vX.Y.Z`。
-3. 修改 `version.json` 为 `X.Y.Z-rc.N` 和 `release_channel: rc`。
-4. 构建安装包并完成 QA。
-5. QA 通过后修改为 `X.Y.Z` 和 `release_channel: stable`。
-6. 合并到 `release`。
-7. 在 `release` 上创建 annotated tag，例如 `vX.Y.Z`。
-8. 从 tag 构建发布包。
-9. 将发布提交同步回 `master`。
-10. 在 `master` 继续使用 `next patch` 或按下一阶段边界使用 `next minor` 开启后续开发版本。
-
-已经公开发布的 tag 不复用、不覆盖。需要修复时发布更高 patch 版本。
-
-M8 起构建和签名使用根目录 `build_release.ps1`。`rc/stable` 必须签署并验证 `bf_app.exe`、冻结边车和最终安装包；`-SkipSigning` 只允许 `dev/alpha/beta`。Windows x64 构建、Inno Setup 安装、干净 Windows 10/11 全流程、正式授权公钥兼容和 `signtool verify /pa` 未通过前，不得进入 `rc` 或 `stable`。
+Windows 正式版必须签名，并完成干净 Windows 10/11、升级/卸载、桌面和授权兼容验收。自动化 runner 上安装/运行/卸载是回归证据，不能替代上述人工验收。`scripts/windows/build_release.ps1` 保留正式版签名门禁；证书缺失时应失败。历史 tag 不覆盖，构建和 Release 失败后按 SOP 处理。
 
 ## Documentation Rules
 
@@ -134,7 +94,7 @@ last_updated: 2026-07-06
 - subject 尽量控制在一行内；需要细节时写 body。
 - body 可选；用中文说明动机、影响范围或为何不做某事。多段用空行分隔。
 - 一次提交只做一类事；不要把无关改动混在同一提交。
-- 每个有效提交必须包含对应的 `version.json` 和根目录 `version.md` 更新；修复同一提交时可 amend，不额外递增版本。
+- 普通提交不递增产品版本；交付阶段变化时用同步脚本更新五处版本元数据和阶段记录。
 - 不写无信息量的 subject，例如 `更新`、`修复 bug`、`wip`、`update`。
 - type 保持英文小写；subject 与 body 使用中文。
 

@@ -1,13 +1,13 @@
 ﻿<#
 .SYNOPSIS
-  Validates a Windows BoundFree EEG dev release after build_release.ps1.
+  Validates a Windows BoundFree EEG release after build_release.ps1.
 
 .DESCRIPTION
   Verifies the staged release tree, frozen sidecar, core command-line smoke
   scenarios, optional Inno Setup installer, and writes a checklist for the
   remaining manual Windows 10 acceptance work. It never reads, creates, or
-  copies private keys. Code signing is observed and reported, not required,
-  so an unsigned dev build is valid.
+  copies private keys. Code signing is observed for dev/beta and required
+  for rc/stable; an unsigned dev build remains valid.
 
 .EXAMPLE
   .\scripts\verify_windows_release.ps1
@@ -42,23 +42,30 @@ function Invoke-Checked {
     )
 
     Write-Host "==> $Name" -ForegroundColor Cyan
-    # Windows PowerShell 5.1 turns a native command's stderr output into a
-    # terminating NativeCommandError while $ErrorActionPreference is Stop, and
-    # the app writes diagnostic lines (menu-hit-debug, ...) to stderr. Relax the
-    # preference for the call and keep fail/pass driven by the exit code.
-    $previousErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $result = & $Executable @Arguments 2>&1
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousErrorActionPreference
+    # GUI-subsystem applications do not reliably set LASTEXITCODE in pwsh.
+    # Explicit process handles also ensure the verifier waits for Qt to exit.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $Executable
+    $info.Arguments = (($Arguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join ' ')
+    $info.WorkingDirectory = if ($WorkingDirectory) { $WorkingDirectory } else { $RepoRoot }
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $process = [System.Diagnostics.Process]::Start($info)
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    if (-not $process.WaitForExit(180000)) {
+        $process.Kill()
+        throw "$Name timed out after 180 seconds."
     }
-    $result | ForEach-Object { Write-Host $_ }
-    if ($exitCode -ne 0) {
-        throw "$Name failed with exit code $exitCode."
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
+    if ($stdout) { Write-Host $stdout }
+    if ($stderr) { Write-Host $stderr }
+    if ($process.ExitCode -ne 0) {
+        throw "$Name failed with exit code $($process.ExitCode)."
     }
-    return ($result -join [Environment]::NewLine)
+    return ($stdout + [Environment]::NewLine + $stderr)
 }
 
 function Require-Path {
@@ -76,9 +83,7 @@ $version = Get-Content -Raw -LiteralPath $versionPath | ConvertFrom-Json
 if ($version.release_channel -notin @("dev", "alpha", "beta", "rc", "stable")) {
     throw "Unknown release channel: $($version.release_channel)"
 }
-if ($version.release_channel -in @("rc", "stable")) {
-    throw "This script is for unsigned dev acceptance only. Channel '$($version.release_channel)' requires code-signing verification."
-}
+$RequiresSignature = $version.release_channel -in @("rc", "stable")
 
 if (-not $StageDir) {
     $StageDir = Join-Path $RepoRoot "release\stage\BoundFreeEEG"
@@ -152,6 +157,12 @@ if (-not $SkipInstaller) {
     $installerSignature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
     $signatureRows += [PSCustomObject]@{ Path = $InstallerPath; Status = $installerSignature.Status; StatusMessage = $installerSignature.StatusMessage }
     "SHA256  $($installerHash.Hash)  $InstallerPath" | Out-File -Encoding ascii (Join-Path $outputDir "installer-sha256.txt")
+}
+if ($RequiresSignature) {
+    foreach ($row in $signatureRows) {
+        if ($row.Status -ne 'Valid') { throw "Required Authenticode verification failed: $($row.Path) ($($row.Status))" }
+    }
+    if ($SkipInstaller) { throw 'Stable/rc acceptance requires the signed installer.' }
 }
 $signatureRows | ConvertTo-Json | Out-File -Encoding utf8 (Join-Path $outputDir "signature-status.json")
 

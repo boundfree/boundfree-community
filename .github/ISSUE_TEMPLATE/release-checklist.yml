@@ -1,0 +1,38 @@
+name: Community 发版验收
+description: 本仓库每次 beta / stable 发布的范围、证据与交付检查单
+title: "[发版] Community "
+body:
+  - type: markdown
+    attributes:
+      value: "先阅读 docs/release-sop.md。此 Issue 记录验收，不会自动触发构建或发布。"
+  - type: input
+    id: version
+    attributes:
+      label: 目标版本与 tag
+      placeholder: 0.2.2-beta.1 / community-v0.2.2-beta.1
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 交付范围、变更与已知限制
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 验收证据
+      description: 填写源提交、CI URL、测试报告、目标系统、安装升级卸载、桌面操作、代表性文件与签名状态；未执行的项目明确标为待验收。
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 交付检查（未执行的不要勾选）
+      options:
+        - label: 版本同步、源提交与 annotated tag 一致，主线 CI 成功
+        - label: 代表性数据的打开、播放、分析、标注和导出验证通过
+        - label: 目标 Windows 安装、覆盖升级、卸载及桌面流程已验证
+        - label: Linux 目标桌面与发布归档已验证（不交付 Linux 时在证据说明）
+        - label: 正式版签名与授权兼容验证通过（beta 可明确说明未签名）
+        - label: 已检查 Release 草稿、双平台产物及 SHA256，并补齐已知限制

@@ -630,5 +630,543 @@
       <source>app.export.processed_hint</source>
       <translation>現在の処理設定と処理後のチャンネル名で出力します。チャンネルの表示状態や表示倍率は出力に影響しません。</translation>
     </message>
+    <message>
+      <source>app.separation.title</source>
+      <translation>脳波・眼電分離</translation>
+    </message>
+    <message>
+      <source>app.separation.subtitle</source>
+      <translation>脳波候補と眼電推定を確認し、筋電寄与を調べます。</translation>
+    </message>
+    <message>
+      <source>app.separation.back</source>
+      <translation>閲覧に戻る</translation>
+    </message>
+    <message>
+      <source>app.separation.open</source>
+      <translation>記録を開く…</translation>
+    </message>
+    <message>
+      <source>app.separation.no_source</source>
+      <translation>記録を選択してください。元のファイルは保持されます。</translation>
+    </message>
+    <message>
+      <source>app.separation.source_summary</source>
+      <translation>{file}
+{channels} チャンネル · {seconds} 秒</translation>
+    </message>
+    <message>
+      <source>app.separation.range</source>
+      <translation>解析区間 · 開始 / 長さ（5–120 秒）</translation>
+    </message>
+    <message>
+      <source>app.separation.start_time</source>
+      <translation>解析開始時刻</translation>
+    </message>
+    <message>
+      <source>app.separation.duration</source>
+      <translation>解析時間</translation>
+    </message>
+    <message>
+      <source>app.separation.roles_help</source>
+      <translation>各チャンネルを指定します。観測は2つ以上。参照は手掛かりに使い、混合分離には含めません。複数のチャンネルを選択すると用途を一括設定できます。</translation>
+    </message>
+    <message>
+      <source>app.separation.channel</source>
+      <translation>チャンネル</translation>
+    </message>
+    <message>
+      <source>app.separation.role</source>
+      <translation>用途</translation>
+    </message>
+    <message>
+      <source>app.separation.role_0</source>
+      <translation>未確認</translation>
+    </message>
+    <message>
+      <source>app.separation.role_1</source>
+      <translation>観測</translation>
+    </message>
+    <message>
+      <source>app.separation.role_2</source>
+      <translation>眼電参照</translation>
+    </message>
+    <message>
+      <source>app.separation.role_3</source>
+      <translation>筋電参照</translation>
+    </message>
+    <message>
+      <source>app.separation.role_4</source>
+      <translation>除外</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk</source>
+      <translation>この {count} チャンネルに適用</translation>
+    </message>
+    <message>
+      <source>app.separation.advanced</source>
+      <translation>詳細設定 · 既定500 Hz / ノッチ無効</translation>
+    </message>
+    <message>
+      <source>app.separation.notch_off</source>
+      <translation>ノッチ無効</translation>
+    </message>
+    <message>
+      <source>app.separation.notch</source>
+      <translation>電源ノッチ</translation>
+    </message>
+    <message>
+      <source>app.separation.output_rate</source>
+      <translation>出力サンプリング周波数</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_title</source>
+      <translation>グループ表示 · 時間同期</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_mode</source>
+      <translation>振幅スケール</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_shared</source>
+      <translation>共通スケール</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_individual</source>
+      <translation>グループごとに調整</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_zoom</source>
+      <translation>表示倍率</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_shared</source>
+      <translation>すべてのグループに同じ µV スケールを使うため、振幅を直接比較できます。拡大は表示だけに影響します。</translation>
+    </message>
+    <message>
+      <source>app.separation.amplitude_help_individual</source>
+      <translation>小さな波形を見やすくするため、グループごとに振幅を調整します。グループ間の波形の高さでは振幅を比較できません。</translation>
+    </message>
+    <message>
+      <source>app.separation.peak_to_peak</source>
+      <translation>表示区間のピーク間振幅 {value} µV</translation>
+    </message>
+    <message>
+      <source>app.separation.small_wave</source>
+      <translation>波形が小さいため、拡大して確認してください</translation>
+    </message>
+    <message>
+      <source>app.separation.clipped_wave</source>
+      <translation>一部の波形が表示範囲を超えています。表示倍率を下げてください</translation>
+    </message>
+    <message>
+      <source>app.separation.splitter_help</source>
+      <translation>左右にドラッグして領域の幅を調整します。フォーカス後は左右の矢印キーも使えます</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_selection</source>
+      <translation>{count} チャンネルを選択中 · 用途を一括設定</translation>
+    </message>
+    <message>
+      <source>app.separation.bulk_role</source>
+      <translation>チャンネル用途の一括設定</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_channel</source>
+      <translation>表示チャンネル</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window_visible</source>
+      <translation>1画面の表示時間</translation>
+    </message>
+    <message>
+      <source>app.separation.waveform_zoom</source>
+      <translation>波形の表示倍率</translation>
+    </message>
+    <message>
+      <source>app.separation.play</source>
+      <translation>再生</translation>
+    </message>
+    <message>
+      <source>app.separation.pause</source>
+      <translation>一時停止</translation>
+    </message>
+    <message>
+      <source>app.separation.restart</source>
+      <translation>先頭に戻る</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_position</source>
+      <translation>再生位置 {current} / {total}</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_help</source>
+      <translation>分離済みの結果を再生します。解析は再実行しません。</translation>
+    </message>
+    <message>
+      <source>app.separation.cursor_time</source>
+      <translation>カーソル {time} s</translation>
+    </message>
+    <message>
+      <source>app.separation.playback_end</source>
+      <translation>解析区間の末尾です</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace</source>
+      <translation>波形ブラウザー</translation>
+    </message>
+    <message>
+      <source>app.separation.separation_workspace</source>
+      <translation>脳波 / 眼電分離</translation>
+    </message>
+    <message>
+      <source>app.separation.workspace_navigation</source>
+      <translation>ワークスペース</translation>
+    </message>
+    <message>
+      <source>app.separation.browser_workspace_help</source>
+      <translation>波形とスペクトルの画面に切り替え、今回の分離結果を保持します。分離ワークスペースでのみ開いた記録は、ブラウザーには自動で読み込まれません。</translation>
+    </message>
+    <message>
+      <source>app.separation.zoom_factor</source>
+      <translation>{value} 倍</translation>
+    </message>
+    <message>
+      <source>app.separation.display_window</source>
+      <translation>表示時間（解析区間は変更されません）</translation>
+    </message>
+    <message>
+      <source>app.separation.preview_position</source>
+      <translation>表示位置</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_title</source>
+      <translation>由来を確認 · 未確定でも保存できます</translation>
+    </message>
+    <message>
+      <source>app.separation.component</source>
+      <translation>成分</translation>
+    </message>
+    <message>
+      <source>app.separation.source</source>
+      <translation>手動分類</translation>
+    </message>
+    <message>
+      <source>app.separation.group_0</source>
+      <translation>脳波候補</translation>
+    </message>
+    <message>
+      <source>app.separation.group_1</source>
+      <translation>眼電推定</translation>
+    </message>
+    <message>
+      <source>app.separation.group_2</source>
+      <translation>筋電寄与</translation>
+    </message>
+    <message>
+      <source>app.separation.group_3</source>
+      <translation>未確定</translation>
+    </message>
+    <message>
+      <source>app.separation.undo</source>
+      <translation>前の分類を元に戻す</translation>
+    </message>
+    <message>
+      <source>app.separation.clues_empty</source>
+      <translation>分離後、成分を選んで手掛かりを確認します。</translation>
+    </message>
+    <message>
+      <source>app.separation.clues</source>
+      <translation>手掛かり（正解率ではありません）
+眼電参照相関：{eye}
+筋電参照相関：{muscle}
+高周波パワー比：{high}%
+波形・周波数・記録条件を合わせて判断してください。手掛かりがなくてもアーチファクトは否定できません。</translation>
+    </message>
+    <message>
+      <source>app.separation.source_caption</source>
+      <translation>成分振幅は任意単位です。番号は入力により変化します。分類変更は再計算せず表示に反映されます。</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmed</source>
+      <translation>確認済み（未確定を含めて保存）</translation>
+    </message>
+    <message>
+      <source>app.separation.confirmation_help</source>
+      <translation>すべての成分を分類する必要はありません。変更後は再確認してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.cancel</source>
+      <translation>処理をキャンセル</translation>
+    </message>
+    <message>
+      <source>app.separation.retry</source>
+      <translation>再試行…</translation>
+    </message>
+    <message>
+      <source>app.separation.start</source>
+      <translation>分離を開始</translation>
+    </message>
+    <message>
+      <source>app.separation.export</source>
+      <translation>確認して書き出す…</translation>
+    </message>
+    <message>
+      <source>app.separation.next_busy</source>
+      <translation>処理中です。キャンセルできます。完了済みの結果は保持されます。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_open</source>
+      <translation>手順1：記録を開き、解析区間とチャンネル用途を確認します。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_roles</source>
+      <translation>次へ：すべてのチャンネル用途を確認します。複数選択して一括指定できます。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_range</source>
+      <translation>観測を2–32個選択し、記録内で5–120秒の区間を指定してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_start</source>
+      <translation>入力を確認しました。分離を開始し、各成分を確認してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_review</source>
+      <translation>次へ：成分の由来を確認します。迷う場合は未確定のまま、確認欄にチェックしてください。</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_inspecting</source>
+      <translation>記録・単位・チャンネルを確認中…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_running</source>
+      <translation>指定区間の読み込み・分離中…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_exporting</source>
+      <translation>書き出しファイルを準備中…</translation>
+    </message>
+    <message>
+      <source>app.separation.progress_publishing</source>
+      <translation>保存を完了しています。お待ちください…</translation>
+    </message>
+    <message>
+      <source>app.separation.setup_notice</source>
+      <translation>解析設定は閲覧設定と独立しています。入力変更で前の結果は無効になります。元の記録は変更されません。</translation>
+    </message>
+    <message>
+      <source>app.separation.review_notice</source>
+      <translation>初期状態は全成分が未確定で、そのグループに信号が保持されます。手動分類は生理的由来の証明ではありません。</translation>
+    </message>
+    <message>
+      <source>app.separation.exported</source>
+      <translation>{path} に書き出しました</translation>
+    </message>
+    <message>
+      <source>app.separation.error_generic</source>
+      <translation>処理が完了しませんでした（{code}）。入力または保存先を確認して再試行してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.analysis_trace</source>
+      <translation>解析入力 · µV · 平均を含む</translation>
+    </message>
+    <message>
+      <source>app.separation.component_trace</source>
+      <translation>選択成分 · 任意単位</translation>
+    </message>
+    <message>
+      <source>app.separation.spectrum</source>
+      <translation>全区間のパワースペクトル密度 · 任意単位²/Hz</translation>
+    </message>
+    <message>
+      <source>app.separation.no_result</source>
+      <translation>分離後、ここに実際の信号が表示されます。</translation>
+    </message>
+    <message>
+      <source>app.separation.empty_group</source>
+      <translation>このグループにはまだ成分がありません</translation>
+    </message>
+    <message>
+      <source>app.separation.export_title</source>
+      <translation>書き出し内容の確認</translation>
+    </message>
+    <message>
+      <source>app.separation.export_notice</source>
+      <translation>CSV 7個とJSON 1個を書き出します。平均・再構成設定はJSONに保存し、未確定成分も保持します。新しいフォルダー名を指定してください。保存完了後にまとめて公開されます。</translation>
+    </message>
+    <message>
+      <source>app.separation.choose_export</source>
+      <translation>保存先を選択…</translation>
+    </message>
+    <message>
+      <source>app.separation.export_parent</source>
+      <translation>保存先の親フォルダーを選択</translation>
+    </message>
+    <message>
+      <source>app.separation.new_directory</source>
+      <translation>新規結果フォルダー（未使用の名前）</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_request</source>
+      <translation>チャンネル用途・解析区間・サンプリング周波数を確認してください。
+
+field: {field}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_invalid</source>
+      <translation>記録を使用できません。ファイルの完全性・形式・時刻・単位を確認してください。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unsupported_source</source>
+      <translation>この記録形式または保存方式は解析に未対応です。対応する記録を選択してください。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.source_changed</source>
+      <translation>解析中に記録が変更されました。開き直して分離してください。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.unknown_unit</source>
+      <translation>単位を確認できないため解析できません。元の記録に対応する物理単位を設定してください。
+
+unit: {unit}</translation>
+    </message>
+    <message>
+      <source>error.analysis.discontinuous_time</source>
+      <translation>指定区間に時刻の不連続があります。連続した区間を選択してください。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.resource_limit</source>
+      <translation>処理上限を超えました。区間・観測数・出力周波数を減らしてください。
+
+bytes: {bytes}, limit_bytes: {limit_bytes}</translation>
+    </message>
+    <message>
+      <source>error.analysis.handle_not_found</source>
+      <translation>解析記録は閉じられています。開き直してください。
+
+handle: {handle}</translation>
+    </message>
+    <message>
+      <source>error.analysis.export_failed</source>
+      <translation>保存できませんでした。空き容量と書き込み権限を確認し、新しい保存先で再試行してください。
+
+path: {path}, reason: {reason}</translation>
+    </message>
+    <message>
+      <source>error.analysis.reconstruction_failed</source>
+      <translation>再構成の検証に失敗したため書き出しませんでした。元の記録を保持して解析をやり直してください。
+
+error_uV: {error_uV}</translation>
+    </message>
+    <message>
+      <source>error.analysis.destination_exists</source>
+      <translation>保存先は既に存在します。未使用の結果フォルダー名を指定してください。
+
+path: {path}</translation>
+    </message>
+    <message>
+      <source>error.analysis.invalid_range</source>
+      <translation>解析区間が無効です。記録内の連続した5–120秒を指定してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.missing_context</source>
+      <translation>フィルター用の前後データが不足しています。開始時刻や長さを調整してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.input_too_large</source>
+      <translation>入力が大きすぎます。区間や観測チャンネル数を減らしてください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.flat_channel</source>
+      <translation>観測に平坦な信号があります。そのチャンネルを除外してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.low_rank</source>
+      <translation>観測が似すぎて安定して分離できません。重複チャンネルを除くか区間を変更してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.not_converged</source>
+      <translation>分離が収束しませんでした。区間または観測チャンネルを変更してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.non_finite</source>
+      <translation>非有限値があるため解析を停止しました。元のデータを確認してください。</translation>
+    </message>
+    <message>
+      <source>error.analysis.cancelled</source>
+      <translation>処理をキャンセルしました。設定を調整して再試行できます。</translation>
+    </message>
+    <message>
+      <source>app.separation.no_reference</source>
+      <translation>参照なし</translation>
+    </message>
+    <message>
+      <source>app.separation.open_teaching</source>
+      <translation>教材記録を開く</translation>
+    </message>
+    <message>
+      <source>app.separation.example_labels</source>
+      <translation>この教材の分類例を適用</translation>
+    </message>
+    <message>
+      <source>app.separation.teaching_notice</source>
+      <translation>既知の合成信号を混合した操作学習用記録です。実記録での分離性能は保証しません。分類例はこの教材だけに適用します。</translation>
+    </message>
+    <message>
+      <source>app.separation.unknown</source>
+      <translation>不明</translation>
+    </message>
+    <message>
+      <source>app.separation.hardware</source>
+      <translation>ハード参照：{reference}
+収録帯域：{lower} – {upper} Hz
+収録時に除去された周波数は復元できません。</translation>
+    </message>
+    <message>
+      <source>error.analysis.adc_saturation</source>
+      <translation>観測信号が収録時に飽和しています。飽和のない区間を選ぶか、該当チャンネルを除外してください。
+
+channel_id: {channel_id}, rail_samples: {rail_samples}, n_samples: {n_samples}</translation>
+    </message>
+    <message>
+      <source>app.separation.export_files</source>
+      <translation>original_uV.csv
+analysis_uV.csv
+eeg_uV.csv
+eog_uV.csv
+emg_uV.csv
+unresolved_uV.csv
+residual_uV.csv
+analysis.json</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_title</source>
+      <translation>CSV の物理単位を確認</translation>
+    </message>
+    <message>
+      <source>app.separation.unit_required</source>
+      <translation>このCSVには物理単位の指定がありません。収録時の実際の単位を選択してください。不明な場合はキャンセルして元のデータを確認してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_rate</source>
+      <translation>出力周波数は入力以下にしてください。250 Hzか500 Hzを選択します。入力が250 Hz未満の場合は別の記録を使用してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_selected</source>
+      <translation>観測と参照は合計40チャンネルまでです。不要なチャンネルを除外してください。</translation>
+    </message>
+    <message>
+      <source>app.separation.evidence_details</source>
+      <translation>参照と数値（正解率ではありません）</translation>
+    </message>
   </context>
 </TS>

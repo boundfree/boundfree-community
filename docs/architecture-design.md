@@ -4,7 +4,7 @@ title: C++/Qt6 原生主程序 + Python 编解码边车 架构设计
 doc_type: architecture
 status: approved
 owner: BoundFree
-last_updated: 2026-07-08
+last_updated: 2026-10-20
 reviewed_at: 2026-07-04
 reference_repo: ../boundfree-eeg-upper-computer  # 旧 Python 版，仅作参考与黄金文件来源
 supersedes_decision:
@@ -257,3 +257,13 @@ v1 仍保留 `native/realtime/`、数据源抽象、Session、录制写盘、分
 - 本设计**取代**参考仓库 `docs/08-architecture-baseline.md` 中「不进行语言迁移」的旧决策；
   其余分层原则（UI 只管 UI、算法不进 UI、数据 `[n_ch, n_samp]`/μV、视频从属 EEG 时钟等）
   在新架构中**继续沿用**。
+
+## 专用离线脑电眼电分离
+
+主窗口使用持久的双工作区导航与视图菜单统一控制外层栈。`EegSeparationWorkspace` 与常规浏览切换，进入时暂停浏览回放并保留位置，离开时暂停分离结果预览。`EegSeparationController` 持有独立来源快照、输入配置、后台任务代次、人工标签、撤销历史与检查确认，不复用周期频谱服务和浏览处理状态。
+
+`bf_dsp` 中的 `ica_core` / `eeg_separation` 只执行 double 数值处理，来源是 BoundFree 自有 Pro 实现的纯算法部分。科研文件解码与结果编码全部由 `sidecar/analysis_io` 执行。专用读取采用显式 `float64-le` 能力协商，既有浏览 `float32-le` 及协议 envelope 保持兼容。
+
+后台读取/计算协作取消并由代次丢弃旧结果；修改分类仅更新分组贡献。导出先暂存、逐值回读并检查单次均值重建，再由协调器提交为全新目录；提交临界区短暂禁用取消。来源文件从不被覆盖。详见[专用契约](contracts.md)与[数值来源](reports/offline-eeg-numerical-provenance.md)。
+
+分离结果预览使用 UI 自有的单调计时器推进游标，固定 1 倍速度，不调用科学分析控制器重新拟合；隐藏、输入/标签/显示切换和导出会暂停。分组与所选成分同步时间窗，纵轴按完整区间固定，峰峰值按可见样本计算，频谱保持整段结果。

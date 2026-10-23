@@ -1,0 +1,55 @@
+{
+  "schema": "boundfree.separation-teaching.v1",
+  "file": "teaching.h5",
+  "sha256": "d79f22b7705a3d6cbc4a4abe492ac1bbcaaa8e92d14e4f840d3b8b16ff567e54",
+  "fs": 500,
+  "n_samples": 8000,
+  "ch_names": [
+    "Mixed-1",
+    "Mixed-2",
+    "Mixed-3",
+    "Eye-reference",
+    "Muscle-reference"
+  ],
+  "channel_ids": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "roles": [
+    1,
+    1,
+    1,
+    2,
+    3
+  ],
+  "seed": 12138,
+  "duration_s": 16,
+  "synthetic": true,
+  "generator": "scripts/common/generate_separation_teaching.py",
+  "mixing": [
+    [
+      1.0,
+      0.5,
+      0.3
+    ],
+    [
+      0.3,
+      1.2,
+      0.1
+    ],
+    [
+      1.0,
+      -0.2,
+      1.1
+    ]
+  ],
+  "sources": [
+    "oscillations",
+    "slow/blink waveform",
+    "burst noise"
+  ],
+  "notice": "Synthetic mathematical mixture for learning the workflow; not evidence of physiological separation accuracy."
+}

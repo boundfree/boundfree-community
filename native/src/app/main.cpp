@@ -61,6 +61,8 @@
 #include <QAbstractButton>
 #include <QAbstractSpinBox>
 #include <QTimer>
+#include <QSettings>
+#include <QTemporaryDir>
 
 #include <algorithm>
 #include <array>
@@ -1112,6 +1114,133 @@ int main(int argc, char** argv) {
             mode(0)->setCurrentIndex(1);
             if (window.processingViewState().perChannelBandpass.at(0).enabled) return fail("invalid_draft_cannot_disable");
             std::cout << "smoke-ui-channel-parameters-ok amplitude=true filters=true identity=true bipolar=true\n";
+            return 0;
+        }
+        if (arg == "--smoke-ui-workspace-navigation") {
+            QApplication app(argc, argv);
+            // This early smoke path never invokes licensing and isolates UI preferences.
+            QTemporaryDir preferences;
+            if (!preferences.isValid()) return 1;
+            QSettings::setDefaultFormat(QSettings::IniFormat);
+            QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, preferences.path());
+            QCoreApplication::setOrganizationName("BoundFreeNavigationSmoke");
+            QCoreApplication::setApplicationName("BoundFreeNavigationSmoke");
+            bf::I18nService i18n(repoRoot);
+            QString error;
+            if (!i18n.loadLocale("en_US", &error)) return 1;
+            bf::MainWindow window(version, &i18n, repoRoot);
+            window.resize(1280, 900);
+            window.show();
+            auto* navigation = window.findChild<QTabBar*>("eegWorkspaceNavigation");
+            auto* stack = window.findChild<QStackedWidget*>("eegWorkspaceStack");
+            auto* action = window.findChild<QAction*>("eegOpenSeparation");
+            auto* controller = window.findChild<bf::EegSeparationController*>();
+            const auto fail = [&](const QString& reason) {
+                std::cerr << "smoke-ui-workspace-navigation-failed " << reason.toStdString()
+                          << " last_error=" << error.toStdString() << '\n';
+                return 1;
+            };
+            const auto wait = [](int ms) {
+                QEventLoop loop; QTimer::singleShot(ms, &loop, &QEventLoop::quit); loop.exec();
+            };
+            const auto until = [&](const std::function<bool()>& ready, int timeout) {
+                QElapsedTimer elapsed; elapsed.start();
+                while (!ready() && elapsed.elapsed() < timeout) wait(20);
+                return ready();
+            };
+            if (!navigation || !stack || !action || !controller || navigation->count() != 2
+                || navigation->currentIndex() != 0 || stack->currentIndex() != 0)
+                return fail("initial_controls");
+            QObject::connect(controller, &bf::EegSeparationController::failed, &window,
+                             [&](const bf::AppError& failure) { error = formatErrorDetail(failure); });
+            bf::FileOpenResult browser;
+            browser.session.ok = true;
+            browser.session.path = QDir(repoRoot).filePath("samples/offline-eeg/teaching.h5");
+            browser.session.format = "HDF5";
+            browser.session.fs = 500; browser.session.duration = 16;
+            browser.session.nChannels = 5; browser.session.nSamples = 8000;
+            browser.session.chNames = {"Mixed-1", "Mixed-2", "Mixed-3", "Eye-reference", "Muscle-reference"};
+            browser.waveform.fs = 500; browser.waveform.t0 = 0; browser.waveform.t1 = 16;
+            browser.waveform.channelNames = browser.session.chNames;
+            browser.waveform.data.assign(5, std::vector<float>(8000));
+            for (int channel = 0; channel < 5; ++channel)
+                for (int sample = 0; sample < 8000; ++sample)
+                    browser.waveform.data[channel][sample] = 20 * std::sin(sample * .02 * (channel + 1));
+            window.showFileOpenResult(browser);
+            QAction* browserPlay = nullptr;
+            for (auto* candidate : window.findChildren<QAction*>())
+                if (candidate->text() == i18n.text("app.playback.play")) browserPlay = candidate;
+            if (!browserPlay || !browserPlay->isEnabled()) return fail("browser_play_control");
+            browserPlay->trigger();
+            wait(80);
+            if (browserPlay->text() != i18n.text("app.playback.pause")) return fail("browser_play_start");
+            navigation->setCurrentIndex(1);
+            if (!action->isChecked() || stack->currentIndex() != 1
+                || browserPlay->text() != i18n.text("app.playback.play"))
+                return fail("enter_separation_pauses_browser");
+            if (!until([&] { return !controller->isBusy(); }, 60000)
+                || controller->state() != bf::EegSeparationController::State::Ready
+                || controller->source().path != browser.session.path)
+                return fail("inherit_browser_source");
+            controller->start();
+            if (!until([&] { return !controller->isBusy(); }, 60000) || !controller->output())
+                return fail("teaching_fit");
+            controller->applyTeachingLabels();
+            controller->setConfirmed(true);
+            const auto output = controller->output();
+            const auto labels = controller->labels();
+            const auto settings = controller->settings();
+            auto* workspace = stack->widget(1);
+            auto* previewPlay = workspace->findChild<QPushButton*>("separationPlay");
+            if (!previewPlay || !previewPlay->isEnabled()) return fail("preview_play_control");
+            previewPlay->click();
+            wait(120);
+            if (!workspace->property("previewPlaying").toBool()
+                || workspace->property("previewPositionSeconds").toDouble() <= 0)
+                return fail("preview_play_start");
+            action->trigger();
+            const double pausedPosition = workspace->property("previewPositionSeconds").toDouble();
+            wait(180);
+            if (navigation->currentIndex() != 0 || stack->currentIndex() != 0 || action->isChecked()
+                || workspace->property("previewPlaying").toBool()
+                || workspace->property("previewPositionSeconds").toDouble() != pausedPosition)
+                return fail("menu_return_pauses_hidden_preview");
+            const QString screenshots = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+            QStringList navigationLocales = i18n.supportedLocales();
+            // Pseudo is a development-only locale and is intentionally absent from packages.
+            // A source checkout must still load it successfully to catch expansion regressions.
+            if (QFile::exists(QDir(repoRoot).filePath("native/i18n/bf_app_pseudo.ts")))
+                navigationLocales.append("pseudo");
+            for (const QString& locale : navigationLocales) {
+                if (!i18n.loadLocale(locale, &error)) return fail("locale_load");
+                for (int index : {1, 0}) {
+                    navigation->setCurrentIndex(index);
+                    wait(40);
+                    if (window.size() != QSize(1280, 900) || !navigation->isVisible()
+                        || stack->currentIndex() != index || action->isChecked() != (index == 1)
+                        || navigation->tabText(0) != i18n.text("app.separation.browser_workspace")
+                        || navigation->tabText(1) != i18n.text("app.separation.separation_workspace")
+                        || !navigation->rect().contains(navigation->tabRect(1))
+                        || navigation->accessibleName() != i18n.text("app.separation.workspace_navigation")
+                        || navigation->tabToolTip(0) != i18n.text("app.separation.browser_workspace_help"))
+                        return fail("locale_navigation_" + locale);
+                    const auto& current = controller->settings();
+                    if (controller->output() != output || controller->labels() != labels
+                        || !controller->isConfirmed() || current.roles != settings.roles
+                        || current.start != settings.start || current.duration != settings.duration
+                        || current.outputRate != settings.outputRate || current.notchHz != settings.notchHz)
+                        return fail("navigation_preserves_analysis_" + locale);
+                    if (locale == "zh_CN" && !screenshots.isEmpty() && QDir().mkpath(screenshots)
+                        && !window.grab().save(QDir(screenshots).filePath(index == 1
+                            ? "navigation-separation-zhCN.png" : "navigation-browser-zhCN.png")))
+                        return fail("screenshot_write");
+                }
+            }
+            action->trigger();
+            if (navigation->currentIndex() != 1 || stack->currentIndex() != 1 || !action->isChecked())
+                return fail("menu_enter_sync");
+            std::cout << "smoke-ui-workspace-navigation-ok locales=" << navigationLocales.size()
+                      << " navigation=true menu=true inheritance=true browser_paused=true preview_paused=true retained=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-empty-controls") return smokeEmptyControls(argc, argv, version, repoRoot);

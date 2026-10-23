@@ -7,8 +7,10 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QProcessEnvironment>
+#include <QElapsedTimer>
 #include <QtEndian>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -89,13 +91,30 @@ bool SidecarClient::writeFrame(quint8 frameType, const QByteArray& payload, int 
     if (process_.write(header) != header.size() || process_.write(payload) != payload.size()) {
         return false;
     }
-    return process_.waitForBytesWritten(timeoutMs);
+    QElapsedTimer elapsed;
+    elapsed.start();
+    while (process_.bytesToWrite() > 0) {
+        if ((cancelled_ && cancelled_()) || elapsed.elapsed() >= timeoutMs ||
+            process_.state() == QProcess::NotRunning) return false;
+        process_.waitForBytesWritten(std::max(1, std::min(100, timeoutMs - static_cast<int>(elapsed.elapsed()))));
+    }
+    return true;
 }
 
 bool SidecarClient::readFrame(quint8* frameType, QByteArray* payload, int timeoutMs) {
+    QElapsedTimer elapsed;
+    elapsed.start();
+    const auto waitForData = [&]() {
+        while (process_.bytesAvailable() == 0) {
+            if ((cancelled_ && cancelled_()) || elapsed.elapsed() >= timeoutMs ||
+                process_.state() == QProcess::NotRunning) return false;
+            process_.waitForReadyRead(std::max(1, std::min(100, timeoutMs - static_cast<int>(elapsed.elapsed()))));
+        }
+        return !(cancelled_ && cancelled_());
+    };
     QByteArray header;
     while (header.size() < 5) {
-        if (process_.bytesAvailable() == 0 && !process_.waitForReadyRead(timeoutMs)) {
+        if (!waitForData()) {
             return false;
         }
         header += process_.read(5 - header.size());
@@ -108,7 +127,7 @@ bool SidecarClient::readFrame(quint8* frameType, QByteArray* payload, int timeou
     payload->clear();
     payload->reserve(static_cast<int>(payloadSize));
     while (static_cast<quint32>(payload->size()) < payloadSize) {
-        if (process_.bytesAvailable() == 0 && !process_.waitForReadyRead(timeoutMs)) {
+        if (!waitForData()) {
             return false;
         }
         *payload += process_.read(static_cast<qint64>(payloadSize - static_cast<quint32>(payload->size())));
@@ -223,6 +242,8 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
         return result;
     }
     result.productVersion = response.result.value("product_version").toString();
+    for (const auto& capability : response.result.value("analysis_capabilities").toArray())
+        result.analysisCapabilities.append(capability.toString());
     result.ipcProtocolVersion = response.result.value("ipc_protocol_version").toInt();
     if (result.ipcProtocolVersion != version.ipcProtocolVersion) {
         result.error = makeError("protocol.version_mismatch", {{"expected", version.ipcProtocolVersion}, {"actual", result.ipcProtocolVersion}});
@@ -234,6 +255,12 @@ SidecarHelloResult SidecarClient::startAndHello(const VersionInfo& version, int 
 
 SidecarResponse SidecarClient::request(const QString& method, const QJsonObject& params, int timeoutMs) {
     return exchange(method, params, {}, false, nullptr, timeoutMs);
+}
+
+SidecarResponse SidecarClient::requestBinary(const QString& method, const QJsonObject& params,
+                                           const QByteArray& outgoing, QByteArray* incoming,
+                                           int timeoutMs) {
+    return exchange(method, params, outgoing, incoming != nullptr, incoming, timeoutMs);
 }
 
 SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {

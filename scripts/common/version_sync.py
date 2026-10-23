@@ -2,7 +2,7 @@
 """Synchronize BoundFree EEG Native product version metadata.
 
 version.json is the only version truth. version.md is the human-readable
-per-commit ledger from the version-sync adoption commit onward.
+delivery-stage ledger; ordinary commits are recorded by Git.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ README = ROOT / "README.md"
 AGENTS = ROOT / "AGENTS.md"
 ISS = ROOT / "installer" / "BoundFreeEEG.iss"
 
-VERSION_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$")
+VERSION_RE = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$")
 CHANNELS = {"dev", "alpha", "beta", "rc", "stable"}
 TYPES = ("feat", "fix", "docs", "test", "chore", "spike", "refactor", "perf")
 
@@ -48,6 +48,14 @@ def parse_version(value: str) -> ParsedVersion:
     match = VERSION_RE.fullmatch(value)
     if not match:
         raise SystemExit(f"invalid SemVer: {value}")
+    for group in (match.group(4), match.group(5)):
+        if group and any(not part for part in group.split(".")):
+            raise SystemExit(f"invalid SemVer: {value}")
+    if match.group(4) and any(part.isdigit() and len(part) > 1 and part[0] == "0"
+                              for part in match.group(4).split(".")):
+        raise SystemExit(f"invalid SemVer: {value}")
+    if any(int(match.group(i)) > 65535 for i in (1, 2, 3)):
+        raise SystemExit("version components exceed Windows FileVersion limit (65535)")
     return ParsedVersion(int(match.group(1)), int(match.group(2)), int(match.group(3)), match.group(4), match.group(5))
 
 
@@ -78,6 +86,8 @@ def set_version(version: str, channel: str | None) -> None:
     chosen_channel = channel or default_channel(version)
     if chosen_channel not in CHANNELS:
         raise SystemExit(f"invalid release_channel: {chosen_channel}")
+    if chosen_channel != default_channel(version):
+        raise SystemExit(f"channel {chosen_channel} does not match version {version}")
     data = read_version_json()
     data["version"] = version
     data["release_channel"] = chosen_channel
@@ -110,7 +120,7 @@ def update_readme_version(version: str) -> None:
 def update_agents_version(version: str) -> None:
     text = AGENTS.read_text(encoding="utf-8")
     text = re.sub(r"当前版本为 `[^`]+`", f"当前版本为 `{version}`", text, count=1)
-    text = re.sub(r"产品版本当前为 `[^`]+`；每个有效提交必须递增产品版本并更新根目录 `version.md`。", f"产品版本当前为 `{version}`；每个有效提交必须递增产品版本并更新根目录 `version.md`。", text, count=1)
+    text = re.sub(r"产品版本当前为 `[^`]+`", f"产品版本当前为 `{version}`", text, count=1)
     AGENTS.write_text(text, encoding="utf-8")
 
 
@@ -173,7 +183,7 @@ def check_sync() -> list[str]:
     if channel not in CHANNELS:
         failures.append(f"invalid release_channel: {channel}")
     expected_channel = default_channel(version)
-    if channel != expected_channel and not (channel == "dev" and expected_channel in {"alpha", "beta"}):
+    if channel != expected_channel:
         failures.append(f"release_channel={channel} does not match version {version} (expected {expected_channel})")
     if VERSION_MD.exists():
         vm = VERSION_MD.read_text(encoding="utf-8")

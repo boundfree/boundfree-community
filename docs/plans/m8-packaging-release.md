@@ -3,7 +3,7 @@ title: M8 Windows 打包与发布验收计划
 doc_type: plan
 status: active
 owner: BoundFree
-last_updated: 2026-07-22
+last_updated: 2026-10-23
 milestone: M8
 ---
 
@@ -14,6 +14,8 @@ milestone: M8
 把 C++/Qt6 主程序、Python 编解码边车、Qt 运行时、版本/错误/i18n 资源与法务材料组装为可复现的 Windows x64 安装包，并建立代码签名和干净机验收门禁。
 
 ## Current State
+
+云端构建与版本管理已扩展为 Windows / Ubuntu 双平台流水线，操作见 [发布 SOP](../release-sop.md)，实际验证结果见 [云端流程验收](../reports/community-release-automation.md)。下面保留 M8 原始发布范围；Ubuntu 归档属于后续构建扩展。
 
 - M1–M7 已完成；M8 打包代码、系统 UI 收口与离线授权实现已落地。
 - Native 与边车均支持安装目录资源定位；冻结边车、CMake install 布局和脱离源码工作目录启动已在 WSL2 Linux 验证。

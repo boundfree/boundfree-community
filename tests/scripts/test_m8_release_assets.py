@@ -217,13 +217,12 @@ class TestCheckScript:
             pytest.skip("check 脚本不存在")
         r = subprocess.run(
             [sys.executable, "-c",
-             "import sys; sys.path.insert(0,'scripts'); "
+             "import sys; sys.path.insert(0,'scripts/common'); "
              "from check_release_assets import check_signing_policy; "
              "print(check_signing_policy('stable').detail); "
              "print(check_signing_policy('dev').detail)"],
             cwd=ROOT, capture_output=True, text=True, timeout=30)
-        if r.returncode != 0:
-            pytest.skip(f"checker 调用失败 (可能仍在修复):\n{r.stderr}")
+        assert r.returncode == 0, r.stderr
         assert "signing_required=True" in r.stdout
         assert "signing_required=False" in r.stdout
 

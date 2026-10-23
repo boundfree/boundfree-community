@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-10-18
+last_updated: 2026-10-23
 ---
 
 # 文档索引
@@ -20,6 +20,7 @@ last_updated: 2026-10-18
 | [`plans/eeg-ui-recovery.md`](plans/eeg-ui-recovery.md) | 当前计划 | 旧版 UI 对齐、分析曲线与进度交互的分阶段修复 |
 | [`plans/m8-packaging-release.md`](plans/m8-packaging-release.md) | 当前计划 | M8 冻结边车、安装布局、系统收口与 Windows 发布门禁 |
 | [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
+| [`release-sop.md`](release-sop.md) | 发布 SOP | 版本调整、自动打包、Artifacts、Release 草稿与验收 Issue |
 | [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
 | [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
 | [`architecture-design.md`](architecture-design.md) | 架构设计 | C++/Qt6 主程序与 Python 边车总体架构 |
@@ -29,6 +30,9 @@ last_updated: 2026-10-18
 
 | 文档 | 作用 |
 | --- | --- |
+| [`reports/community-release-automation.md`](reports/community-release-automation.md) | Community 云端构建与发布流程实跑结果及验收边界 |
+| [`reports/offline-eeg-separation.md`](reports/offline-eeg-separation.md) | 脑电眼电专用离线工作区、结果播放、双工作区导航、幅度预览与通道交互、输入格式、教学流程、回读导出及集成验收 |
+| [`reports/offline-eeg-numerical-provenance.md`](reports/offline-eeg-numerical-provenance.md) | 自有数值代码迁移清单、Pro 逐值对照、数值与控制器回归 |
 | [`reports/windows-build-entry-test-alignment.md`](reports/windows-build-entry-test-alignment.md) | Windows 打包入口命名参数转发断言修正与全量合并门禁 |
 | [`reports/waveform-data-modes.md`](reports/waveform-data-modes.md) | 原始/处理后波形与分析切换、独立导出来源和三格式数值回归 |
 | [`reports/eeg-ui-three-column-workspace.md`](reports/eeg-ui-three-column-workspace.md) | 三栏布局、统一信号预处理、文件入口与分析输入上下文 |
@@ -83,4 +87,4 @@ last_updated: 2026-10-18
 - 当前阶段计划必须在实施前创建；已完成阶段计划更新为 `completed`，并以 `reports/` 中验收记录作为交付证据。
 - 已完成阶段的可交付结论以 `reports/` 中对应验收记录与测试结果为准。
 - 版本、IPC、错误码和 i18n 契约优先更新 [`contracts.md`](contracts.md)。
-- 提交级版本记录从规范启用提交开始维护在根目录 `version.md`；分支、版本号更新时机、文档格式和验证规则优先更新 [`development-guide.md`](development-guide.md)。
+- 交付阶段版本记录维护在根目录 `version.md`；分支、版本号更新时机、文档格式和验证规则优先更新 [`development-guide.md`](development-guide.md)。

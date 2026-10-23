@@ -11,7 +11,7 @@
 ; an uninstaller. Install/update/uninstall behavior remains a manual gate.
 
 #ifndef BoundFreeVersion
-  #define BoundFreeVersion "0.1.86-dev"
+  #define BoundFreeVersion "0.2.2-dev"
 #endif
 
 ; Win32 VS_VERSIONINFO (VersionInfoVersion / VersionInfoProductVersion)
@@ -88,6 +88,7 @@ Source: "release\stage\BoundFreeEEG\*"; DestDir: "{app}"; Excludes: "vc_redist.x
 ; recursive Source above, but we declare them explicitly so the asset checker
 ; can confirm they are present in the iss.
 Source: "release\stage\BoundFreeEEG\legal\*"; DestDir: "{app}\legal"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "release\stage\BoundFreeEEG\samples\*"; DestDir: "{app}\samples"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{group}\{#BoundFreeAppName}"; Filename: "{app}\{#BoundFreeExeName}"; WorkingDir: "{app}"; Comment: "{#BoundFreeAppName}"
