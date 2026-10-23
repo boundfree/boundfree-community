@@ -69,5 +69,5 @@ with tempfile.TemporaryDirectory() as temp:
     env = dict(os.environ, QT_QPA_PLATFORM='offscreen')
     env.pop('BF_PYTHON_EXECUTABLE', None)
     env.pop('PYTHONPATH', None)
-    for args in (['--version'], ['--smoke-sidecar'], ['--smoke-ui-workspace-navigation']):
+    for args in (['--version'], ['--smoke-license-gate'], ['--smoke-sidecar'], ['--smoke-ui-workspace-navigation']):
         subprocess.run([str(app), *args], cwd=temp, env=env, check=True, timeout=180)

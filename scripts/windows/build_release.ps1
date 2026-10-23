@@ -235,10 +235,23 @@ $VsWhere = Join-Path ([Environment]::GetFolderPath("ProgramFilesX86")) "Microsof
 if (-not (Test-Path -LiteralPath $VsWhere -PathType Leaf)) {
     throw "vswhere.exe not found; install Visual Studio 2022 C++ Build Tools to locate the VC++ runtime."
 }
-$VsInstallPath = (& $VsWhere -latest -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1).Trim()
-if ($LASTEXITCODE -ne 0 -or -not $VsInstallPath) {
-    throw "Unable to locate a Visual Studio installation with the x64 C++ tools."
+# Read ExitCode from the process itself. In a fresh pwsh session the pipeline
+# subexpression does not reliably populate LASTEXITCODE under StrictMode.
+$VsWhereInfo = New-Object System.Diagnostics.ProcessStartInfo
+$VsWhereInfo.FileName = $VsWhere
+$VsWhereInfo.Arguments = '-latest -products * -version "[17.0,18.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath'
+$VsWhereInfo.UseShellExecute = $false
+$VsWhereInfo.RedirectStandardOutput = $true
+$VsWhereInfo.RedirectStandardError = $true
+$VsWhereProcess = [System.Diagnostics.Process]::Start($VsWhereInfo)
+$VsWhereOutputTask = $VsWhereProcess.StandardOutput.ReadToEndAsync()
+$VsWhereErrorTask = $VsWhereProcess.StandardError.ReadToEndAsync()
+$VsWhereProcess.WaitForExit()
+$VsInstallPath = ($VsWhereOutputTask.Result -split '\r?\n' | Where-Object { $_.Trim() } | Select-Object -First 1)
+if ($VsWhereProcess.ExitCode -ne 0 -or -not $VsInstallPath) {
+    throw "Unable to locate a Visual Studio installation with the x64 C++ tools: $($VsWhereErrorTask.Result)"
 }
+$VsInstallPath = $VsInstallPath.Trim()
 $VcInstallDir = Join-Path $VsInstallPath "VC\"
 if (-not (Test-Path -LiteralPath $VcInstallDir -PathType Container)) {
     throw "Visual Studio VC directory not found: $VcInstallDir"

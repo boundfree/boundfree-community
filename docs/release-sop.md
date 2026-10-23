@@ -93,7 +93,7 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 
 ## 6. 失败、重跑与版本不可变
 
-- PR / master CI 失败：打开失败 step，修复后提交；可用 Re-run failed jobs 排查临时网络问题。测试报告在 `reports-*` Artifact。
+- PR / master CI 失败：打开失败 step，修复后提交；可用 Re-run all jobs 排查临时网络问题并保持双平台尝试编号一致。测试报告在 `reports-*` Artifact。
 - 依赖或网络失败：可以重跑；开发包生成新的尝试编号，不覆盖旧包。依赖直接版本已固定，runner 镜像和传递依赖仍可能变化，完整可复现环境尚需锁定。
 - Release 构建失败且尚无草稿：若是环境问题，在同一 tag 上重跑；若需修改源码，创建新 beta.N 或新 PATCH，不移动 tag。
 - 已有草稿或已发布 Release：工作流拒绝覆盖。改用新版本；不替换已经对外分发的同版本安装包。
