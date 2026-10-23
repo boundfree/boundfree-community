@@ -31,20 +31,27 @@ $installer = (Get-ChildItem dist/BoundFreeEEG_Setup_*.exe | Select-Object -First
 $destination = Join-Path $env:RUNNER_TEMP 'community-installed'
 $install = Start-Process $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$destination`"") -Wait -PassThru
 if ($install.ExitCode -notin @(0, 3010)) { throw "Setup exit code $($install.ExitCode)" }
-$originalPath = $env:PATH
+$runtimeNames = @('PATH', 'BF_PYTHON_EXECUTABLE', 'PYTHONPATH', 'BF_RESOURCE_ROOT',
+                  'QT_PLUGIN_PATH', 'QT_QPA_PLATFORM_PLUGIN_PATH', 'QML2_IMPORT_PATH',
+                  'QML_IMPORT_PATH', 'QT_ROOT_DIR')
+$originalEnvironment = @{}
+foreach ($name in $runtimeNames) {
+    $originalEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+}
 try {
-    # Ensure a developer Qt/Python path cannot rescue the installed application.
+    foreach ($name in $runtimeNames) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    # Test the installed tree with no developer Python, Qt or QML search paths.
     $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
-    Remove-Item Env:BF_PYTHON_EXECUTABLE -ErrorAction SilentlyContinue
-    Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+    $env:QT_PLUGIN_PATH = $destination
     $env:BF_RESOURCE_ROOT = $destination
     foreach ($argument in @('--version', '--smoke-sidecar', '--smoke-ui-workspace-navigation')) {
         $result = Start-Process (Join-Path $destination 'bf_app.exe') -ArgumentList $argument -WorkingDirectory $env:RUNNER_TEMP -Wait -PassThru
         if ($result.ExitCode -ne 0) { throw "Installed app failed $argument ($($result.ExitCode))" }
     }
 } finally {
-    $env:PATH = $originalPath
-    Remove-Item Env:BF_RESOURCE_ROOT -ErrorAction SilentlyContinue
+    foreach ($name in $runtimeNames) {
+        [Environment]::SetEnvironmentVariable($name, $originalEnvironment[$name], 'Process')
+    }
 }
 $uninstall = Start-Process (Join-Path $destination 'unins000.exe') -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
 if ($uninstall.ExitCode -ne 0) { throw "Uninstall exit code $($uninstall.ExitCode)" }

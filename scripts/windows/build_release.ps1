@@ -294,6 +294,15 @@ if (Test-Path $QtBaseEn) {
     Write-Host "qtbase_en.qm not present; en_US runtime does not require it" -ForegroundColor Yellow
 }
 
+# Keep runtime plugin lookup inside the installed tree. The offscreen platform
+# allows the same installed package to be smoke-tested on hosted runners.
+$OffscreenPlugin = Join-Path $QtRoot "plugins\platforms\qoffscreen.dll"
+if (-not (Test-Path -LiteralPath $OffscreenPlugin)) {
+    throw "Qt offscreen platform plugin missing: $OffscreenPlugin"
+}
+Copy-Item $OffscreenPlugin (Join-Path $StageDir "platforms\qoffscreen.dll") -Force
+"[Paths]`nPrefix=.`nPlugins=.`nTranslations=translations`n" | Set-Content -Encoding ascii (Join-Path $StageDir "qt.conf")
+
 # 5. Stage sidecar + version/contracts/legal; assert app .qm
 Write-Step "5/8 Stage sidecar + version/contracts/legal; assert app .qm"
 $SidecarSrc = Join-Path $RepoRoot (Join-Path "release" "sidecar-dist" | Join-Path -ChildPath "boundfree_sidecar")
