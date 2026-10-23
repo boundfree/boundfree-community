@@ -10,6 +10,8 @@ last_updated: 2026-10-23
 
 本流程仅适用于本仓库。GitHub `Vsonic12138/boundfree-eeg-native` 承载 Actions；Gitee `BigYellow12138/boundfree-community` 可保留代码副本。推送 Gitee 本身不会触发 GitHub Actions；合入 GitHub `master` 才会自动构建。两个远端的可见性独立，不因本流程改变。
 
+开始修改、暂存与提交、PR 审查、主线 CI 和 Gitee 同步按 [提交与交付 SOP](contribution-sop.md)。仓库代理入口为 [community-delivery skill](../.agents/skills/community-delivery/SKILL.md)，只引用本流程，不另维护一份发布规则。
+
 ## 1. 只记住三个状态
 
 | 面向谁 | 仓库版本 | 安装包版本示例 | 是否自动发布 Release |

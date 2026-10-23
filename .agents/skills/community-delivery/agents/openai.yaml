@@ -1,0 +1,4 @@
+interface:
+  display_name: "Community 开发交付"
+  short_description: "遵循本仓库的提交、版本、双平台构建和发布流程，记录验证证据"
+  default_prompt: "使用 $community-delivery 按仓库 SOP 完成本次修改与交付，并报告验证结果。"

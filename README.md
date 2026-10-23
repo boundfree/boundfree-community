@@ -54,6 +54,9 @@ M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packagi
 | [docs/plans/m8-packaging-release.md](docs/plans/m8-packaging-release.md) | 当前 M8 打包实现、Windows 发布门禁与验收条件 |
 | [docs/contracts.md](docs/contracts.md) | 版本、IPC、错误码、i18n 基础契约 |
 | [docs/development-guide.md](docs/development-guide.md) | 分支、版本、文档和验证规范 |
+| [docs/contribution-sop.md](docs/contribution-sop.md) | 从修改到提交、PR、主线构建及 Gitee 同步的操作流程 |
+| [docs/release-sop.md](docs/release-sop.md) | 交付阶段版本、Actions 产物和手动 Release 草稿 |
+| [.agents/skills/community-delivery/SKILL.md](.agents/skills/community-delivery/SKILL.md) | 仓库专用开发交付技能；支持的代理可调用 `$community-delivery` |
 | [docs/architecture-design.md](docs/architecture-design.md) | 长期架构设计 |
 | [docs/feature-parity-checklist.md](docs/feature-parity-checklist.md) | 新旧版本功能对齐验收清单 |
 
@@ -64,6 +67,7 @@ M8 正在发布验收：实现与当前环境验证见 [`docs/reports/m8-packagi
 ```text
 boundfree-community/
 ├── AGENTS.md                    # 仓库级开发指导
+├── .agents/skills/              # 随仓库维护的开发交付技能
 ├── README.md                    # 项目入口说明
 ├── version.json                 # 产品版本与 IPC 协议版本真值
 ├── version.md                   # 交付阶段版本记录

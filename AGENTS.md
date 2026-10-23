@@ -29,6 +29,13 @@
 
 `docs/archive/` 仅用于历史追溯，不作为日常实施入口。
 
+## Repository Delivery Skill
+
+- 本仓库修改与交付使用仓库专用技能 [community-delivery](.agents/skills/community-delivery/SKILL.md)。代理开始修改前应加载该技能；不支持技能发现的工具直接读取该文件。
+- 人工开发者按 [提交与交付 SOP](docs/contribution-sop.md) 操作；版本调整与发版继续以 [版本与发布 SOP](docs/release-sop.md) 为准。支持仓库技能的工具可显式调用 `$community-delivery`。
+- 技能不扩大任务授权，不自动要求对外发布。PR 使用 `.github/pull_request_template.md`，记录版本判断、验证证据与未验收项。
+- 流程规则变化时，在同一 PR 核对规范、SOP、技能和模板，只同步受影响的内容；不要复制另一套互相矛盾的流程。
+
 ## Development Stage
 
 - 当前版本为 `0.2.2-dev`。
@@ -71,7 +78,7 @@
 - 后端不得返回用户可见的本地化文案；统一返回 `code + params`。
 - UI 可见文本从第一版开始走 i18n，不新增硬编码中文。
 - 新增共享接口时，同步更新相关契约文档和测试计划。
-- 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md` 和 `docs/development-guide.md`。
+- 修改版本、发布、文档规范时，同步检查 `README.md`、`AGENTS.md`、`docs/development-guide.md`、两份交付/发布 SOP、仓库技能和 PR/Issue 模板。
 - 代码和文档应保持小步提交。仅交付阶段变化时同步产品版本与 `version.md`。提交信息统一使用中文 Conventional Commits 格式（`type: 中文摘要`），细则见 `docs/development-guide.md` 的 Commit Rules。允许的 type：`feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。type 用英文，subject 与 body 用中文。
 
 ## Verification
