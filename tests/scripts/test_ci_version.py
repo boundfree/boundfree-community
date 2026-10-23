@@ -45,3 +45,18 @@ def test_channel_mismatch_fails_before_writing():
 @pytest.mark.parametrize('source', ['0.2.2-dev', '0.2.2-beta.1', '0.2.2'])
 def test_ordinary_ci_never_labels_an_unsigned_package_stable(source):
     assert identity.resolve(source, '158', '1', SHA) == '0.2.2-dev.158.1+gaaaaaaaa'
+
+
+def test_delivery_cycle_updates_all_five_mirrors(tmp_path, monkeypatch):
+    for attribute, relative in [('VERSION_JSON', 'version.json'), ('VERSION_MD', 'version.md'),
+                                ('README', 'README.md'), ('AGENTS', 'AGENTS.md'),
+                                ('ISS', 'installer/BoundFreeEEG.iss')]:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((ROOT / relative).read_bytes())
+        monkeypatch.setattr(version_sync, attribute, target)
+    for value in ('0.2.2-beta.1', '0.2.2-beta.2', '0.2.2', '0.2.3-dev'):
+        version_sync.set_version(value, None)
+        version_sync.add_entry(value, 'chore', '测试交付阶段')
+        assert version_sync.check_sync() == []
+    assert version_sync.bump('minor') == '0.3.0-dev'

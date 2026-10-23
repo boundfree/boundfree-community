@@ -1,13 +1,13 @@
 ﻿<#
 .SYNOPSIS
-  Validates a Windows BoundFree EEG dev release after build_release.ps1.
+  Validates a Windows BoundFree EEG release after build_release.ps1.
 
 .DESCRIPTION
   Verifies the staged release tree, frozen sidecar, core command-line smoke
   scenarios, optional Inno Setup installer, and writes a checklist for the
   remaining manual Windows 10 acceptance work. It never reads, creates, or
-  copies private keys. Code signing is observed and reported, not required,
-  so an unsigned dev build is valid.
+  copies private keys. Code signing is observed for dev/beta and required
+  for rc/stable; an unsigned dev build remains valid.
 
 .EXAMPLE
   .\scripts\verify_windows_release.ps1

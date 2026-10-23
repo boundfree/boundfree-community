@@ -3,6 +3,7 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -51,6 +52,7 @@ def main() -> None:
     info = {'source_version': source, 'version': version, 'git_commit': sha,
             'run_number': args.number, 'run_attempt': args.attempt, 'tag': args.tag,
             'release_build': args.release}
+    info['run_url'] = f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
     Path('build-info.json').write_text(json.dumps(info, indent=2) + '\n')
     print(version)
 

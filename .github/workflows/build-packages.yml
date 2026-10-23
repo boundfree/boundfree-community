@@ -54,7 +54,11 @@ jobs:
           modules: qtmultimedia qtshadertools
           cache: true
       - name: Install Python build and test dependencies
-        run: python -m pip install -r scripts/ci/requirements.txt "./sidecar[formats]"
+        shell: bash
+        run: |
+          python -m pip install -r scripts/ci/requirements.txt "./sidecar[formats]"
+          mkdir -p release/test-results
+          python -m pip freeze > release/test-results/requirements-resolved.txt
       - name: Validate source version and release assets
         run: |
           python scripts/common/version_sync.py check
