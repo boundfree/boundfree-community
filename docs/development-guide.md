@@ -20,7 +20,7 @@ last_updated: 2026-10-24
 
 ## Collaboration Platforms
 
-Issue、PR、评审、验收和构建统一在 GitHub 管理。Gitee 是国内源码与 Release 镜像，每次发布后同步相同 tag、版本说明和国内安装包下载，并核对原包 SHA256；不另建 Gitee Issue/PR。实际同步按两份 SOP 执行，普通提交只构建 dev 包。
+Issue、PR、评审、验收和构建统一在 GitHub 管理。Gitee 是国内源码与 Release 镜像，每次发布后同步相同 tag、版本说明和国内安装包下载，并核对原包 SHA256；不另建 Gitee Issue/PR。两边共用一条 Community 主线，职责、访问权限与远端配置统一见 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序)；普通提交只构建 dev 包。自动/人工步骤和两边发布完成条件见 [发布 SOP 第 0 节](release-sop.md#0-从开发包到双平台发布)。
 
 ## Branch Model
 

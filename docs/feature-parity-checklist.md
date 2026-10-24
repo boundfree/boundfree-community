@@ -27,6 +27,8 @@ last_updated: 2026-10-24
 - [x] 冻结边车、Qt/运行库组装、Windows Setup 与 Ubuntu 24.04 x86_64 归档。
 - [x] PR 和主线双平台 CI；Windows runner 安装/隔离开发路径运行/卸载，Linux 归档解压后运行。
 - [x] 日常 dev 构建身份、阶段版本同步和 Release 预检；错误 tag 拒绝及重跑入口有验证。
+- [x] Beta1 annotated tag、独立双平台 Release 构建、GitHub 草稿及六个原始附件核对；实际证据见 [Issue #5](https://github.com/Vsonic12138/boundfree-eeg-native/issues/5)。
+- [x] Gitee 分卷准备、原包 SHA256 校验与 Windows/Linux 还原脚本回归；本地准备不代表远端镜像已发布。
 
 ## 仍待验收
 
@@ -41,7 +43,7 @@ last_updated: 2026-10-24
 | 免费核心与扩展授权 | 官方包保留激活，验收发布后允许公开下载、使用仍需有效授权；免费核心免激活、独立扩展及功能权益属于后续阶段，尚待实现与验收 |
 | 组织代码签名 | stable 必须 Authenticode 签名且验证通过，不能以 unsigned 包替代 |
 | 实际分发依赖与法务 | 已补齐 Qt LGPL/GPL 完整正文并校验完整性；仍须逐包核对 Qt Multimedia/FFmpeg、Python 冻结依赖的许可正文、归属及对应源码获取信息，静态检查不替代二进制分发清单核验 |
-| 首个实际 beta 草稿 | 选定交付版本、annotated tag 和验收 Issue，正向跑通独立 Release；普通 CI 成功不代表此项完成 |
+| 首轮 beta 公开发布与国内镜像 | GitHub 草稿已经生成；实机、真实授权和分发许可仍待验收。发布后同步 Gitee tag/说明/分卷，并实际访客下载还原核对原包 SHA256；当前尚未公开发布 |
 | 历史回归 partial | 标注连接次数与跨不同路径切文件的专用 smoke 仍需按历史收口记录独立核验，不因整理文档补勾 |
 
 BBK/DAT/LSD 目前无正式读取实现；硬件/BLE 真实采集、设备监控和 12 小时长稳未纳入当前交付，后续需另行立项。具体产品范围见 [路线](roadmap.md)。

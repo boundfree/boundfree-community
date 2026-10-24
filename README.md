@@ -2,6 +2,19 @@
 
 BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生主程序负责界面、绘图、DSP、授权与国际化，Python 边车负责科研文件读写。
 
+## GitHub 与 Gitee 的关系
+
+这是同一个 **BoundFree Community** 项目的两个托管地址，共用代码历史、产品版本和发布 tag；不是两套独立产品或开发主线。Community 与商业 Pro 是不同产品，不适用此镜像关系。
+
+| 平台 | 地址与职责 |
+| --- | --- |
+| GitHub · 研发主仓库 | [Vsonic12138/boundfree-eeg-native](https://github.com/Vsonic12138/boundfree-eeg-native)：Issue、PR、评审、验收、Actions 构建及发布来源 |
+| Gitee · 国内镜像 | [BigYellow12138/boundfree-community](https://gitee.com/BigYellow12138/boundfree-community)：同步已验证源码、发布 tag、版本说明和国内安装包下载 |
+
+代码只在 GitHub 经 PR 合入 `master`，验证后单向同步到 Gitee；不在 Gitee 另建 Issue/PR 或独立维护修改。GitHub 当前私有，访问代码、提交 Issue/PR 和下载其产物需要仓库权限；Gitee 当前公开，可浏览源码，已发布官方包允许公开下载但仍需激活。镜像安排不改变源码的 Apache-2.0 权利。
+
+日常开发按 [提交与交付 SOP](docs/contribution-sop.md)，发版按 [版本与发布 SOP](docs/release-sop.md)。两份 SOP 分别说明代码同步与 Release 同步，推送 Git 不能代替发布安装包。
+
 ## 当前状态
 
 产品版本 `0.2.2-beta.1`，唯一版本源为 [version.json](version.json)：
@@ -18,7 +31,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 已实现文件浏览、原始/处理后数据切换、参考/滤波、频谱、播放与标注、视频同步、录制/导出，以及专用脑电/眼电离线分离工作区。Community 当前聚焦 EEG/LFP 与离线混合信号分析；Pro 的 Spike 采集产品独立维护。本仓库保留的 `bf_spike` 仅为历史原型，不是当前发布承诺。
 
-主线和 PR 均自动构建 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档。安装态 smoke 已有云端验证；真实分离效果、干净机/高 DPI、正式授权兼容、组织签名与首个实际 beta 草稿仍需分别验收，当前不宣称 stable。
+主线和 PR 均自动构建 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档。Beta1 的 annotated tag、独立双平台构建与 GitHub 草稿已生成并核对；当前仍是未公开的候选版，Gitee 尚无公开 Release，验收证据与待验项见 [Issue #5](https://github.com/Vsonic12138/boundfree-eeg-native/issues/5)。真实分离效果、目标桌面/干净机/高 DPI、真实授权兼容、完整第三方分发许可及正式版组织签名仍待分别验收，当前不宣称 stable。
 
 ## 开源许可与商业扩展
 

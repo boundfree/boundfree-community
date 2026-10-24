@@ -12,6 +12,23 @@ last_updated: 2026-10-24
 
 开始修改、暂存与提交、PR 审查、主线 CI 和 Gitee 同步按 [提交与交付 SOP](contribution-sop.md)。仓库代理入口为 [community-delivery skill](../.agents/skills/community-delivery/SKILL.md)，只引用本流程，不另维护一份发布规则。
 
+## 0. 从开发包到双平台发布
+
+两个托管地址、访问权限、远端配置和单向源码同步的职责以 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序) 为准。这里的“两平台发布”指 GitHub/Gitee 这两个托管平台；Windows/Linux 是安装包的目标系统，不能混为一谈。
+
+| 触发 / 操作 | 自动还是人工 | 产物 / 完成条件 |
+| --- | --- | --- |
+| GitHub PR、`master` 更新 | 自动 `Community CI` | 编译、回归和内部 dev 安装包；不创建 tag/Release |
+| 源码同步到 Gitee | 维护者快进推送 | 两边 `master` 完整 SHA 一致；不会复制 Release 或触发 GitHub 构建 |
+| 选择 beta/stable、更新阶段版本 | 维护者在 GitHub PR 中完成 | 五处版本同步，PR 和主线 CI 成功，选定发布源 SHA |
+| 创建 annotated tag、运行 `Community Release` | 维护者选择，Action 构建 | 从 tag 精确源提交重建并验证，生成 GitHub 草稿；不自动 Publish |
+| 实机验收、检查包与发布草稿 | 维护者记录到 GitHub 验收 Issue 并 Publish | GitHub Release 已发布，版本/tag/源 SHA/原包 SHA256 明确 |
+| 同步 Gitee tag、说明和国内下载 | 维护者按第 7 节执行 | 同版本、同源 SHA，实际回下载还原原包 SHA256 一致；回填同一验收 Issue |
+
+当前**只有构建和 GitHub 草稿生成由 Action 执行**；GitHub Publish、Gitee 源码/Release 同步仍由维护者执行，没有自动镜像 Action。完成 GitHub 发布但 Gitee 附件未上传或未验证时，状态应写“GitHub 已发布，Gitee 镜像待完成”，不能写“两边已发布”。
+
+先完成发布前的目标阶段验收，再 Publish；Gitee 实际上传与访客下载核验是发布后的收尾步骤，不循环要求草稿阶段已经完成。版本中的 `beta` 只说明交付阶段，不表示已完成实机验收或已公开。
+
 ## 1. 只记住三个状态
 
 | 面向谁 | 仓库版本 | 安装包版本示例 | 是否自动发布 Release |
@@ -65,7 +82,7 @@ python3 scripts/common/version_sync.py check
 
 ## 4. 创建 beta / stable Release 草稿
 
-1. 在本仓库 **Issues → New issue → Community 发版验收** 创建一次发版的验收记录，填入目标版本、变更范围、目标系统、验证结果和限制。
+1. 在 **GitHub 本仓库 → Issues → New issue → Community 发版验收** 创建一次发版的验收记录，填入目标版本、变更范围、目标系统、验证结果和限制。
 2. 把版本准备 PR 合入 GitHub `master`，等待该提交的 CI 全部成功。确认这份源代码就是要交付的版本。
 3. 在该提交创建 annotated tag（以下以 beta 为例）：
 

@@ -44,11 +44,13 @@
 
 - 当前版本为 `0.2.2-beta.1`。
 - 已有 EEG/LFP 浏览、处理、播放、标注、视频、录制/导出与专用脑电/眼电分离；当前重点是实际记录、用户走查和发布验收，具体范围与限制见路线及清单。
-- Windows/Linux 云端构建和安装态 smoke 已通过；干净机、桌面、高 DPI、组织签名、真实授权兼容及实际 beta 草稿仍分别验收。历史 GPU 证据不能代替当前所有负载结论。
+- Windows/Linux 云端构建和安装态 smoke 已通过；Beta1 tag、独立构建与 GitHub 草稿已生成并核对，公开发布仍待实机/真实授权及分发许可验收，Gitee 尚无公开 Release。干净机、桌面、高 DPI 和组织签名仍分别验收。历史 GPU 证据不能代替当前所有负载结论。
 - `bf_spike` 为保留的历史原型，不是 Community 当前发布承诺；自研硬件/BLE 闭环需另行确定范围。
 - 按交付阶段更新版本，日常提交由 Git 记录，CI 自动产生唯一构建标识。
 
 ## Collaboration Platforms
+
+GitHub/Gitee 是同一 Community 项目的研发主仓库与国内镜像，共用代码/版本/tag；不是 Community 与 Pro 两个产品的对应关系。远端配置、同步方向与职责表见 [提交 SOP 第 0 节](docs/contribution-sop.md#0-两个托管地址与协作顺序)，构建/发布的自动与人工步骤见 [发布 SOP 第 0 节](docs/release-sop.md#0-从开发包到双平台发布)。
 
 - Issue、PR、代码评审、发版验收和 Actions 统一在 GitHub `Vsonic12138/boundfree-eeg-native` 管理；不在 Gitee 新建或镜像 Issue/PR。
 - Gitee `BigYellow12138/boundfree-community` 是国内源码和 Release 镜像。每次发布后必须同步 tag、说明和国内安装包下载，核对同一源提交与原包 SHA256；仅推送 Git 不能视为 Release 已同步。
