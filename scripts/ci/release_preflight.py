@@ -35,11 +35,19 @@ if 'pull_request' in issue:
     raise SystemExit('Acceptance must be an Issue, not a pull request')
 if data['release_channel'] == 'stable' and os.environ.get('ACCEPTED') != 'true':
     raise SystemExit('Stable acceptance must be explicitly confirmed')
-# A 404 means absent; any authentication/server error must also stop the run.
-check = subprocess.run(['gh', 'api', f'repos/{repo}/releases/tags/{tag}'], capture_output=True, text=True)
-if check.returncode == 0:
-    raise SystemExit('Release already exists; use a new version (including for drafts)')
-if 'HTTP 404' not in check.stderr:
+# The by-tag endpoint can return 404 for a draft. List all pages, including
+# drafts visible to the authenticated repository token, before building.
+check = subprocess.run(['gh', 'api', '--paginate', '--slurp',
+                        f'repos/{repo}/releases?per_page=100'], capture_output=True, text=True)
+if check.returncode != 0:
     raise SystemExit(check.stderr)
+pages = json.loads(check.stdout)
+if not isinstance(pages, list) or not pages or any(not isinstance(page, list) for page in pages):
+    raise SystemExit('Invalid GitHub releases list response')
+releases = [release for page in pages for release in page]
+if any(not isinstance(release, dict) or not isinstance(release.get('tag_name'), str) for release in releases):
+    raise SystemExit('Invalid GitHub release metadata')
+if any(release['tag_name'] == tag for release in releases):
+    raise SystemExit('Release already exists; use a new version (including for drafts)')
 with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
     output.write(f'sha={sha}\nchannel={data["release_channel"]}\n')

@@ -80,6 +80,8 @@ git push origin refs/tags/community-v0.2.2-beta.1
 6. 两个平台都成功后，在 **Releases** 生成草稿。beta 带 prerelease 标记；stable 不带。检查包名、版本、SHA256、变更说明与验收 Issue，再由维护者点击 **Publish release**。
 7. 可按需把已验证代码和 tag 同步到 Gitee；本流程不自动创建 Gitee Release。
 
+草稿页面 URL 可能含 `untagged-*`，产品 tag 以 Release 元数据中的 `tag_name` 为准。通过 API 编辑草稿说明时显式保留目标 `tag_name`、`draft=true` 和 prerelease 状态，编辑后再次核对；不要把草稿页面 URL 当作 Git tag。
+
 不得给 `dev` 创建 Release。tag 创建本身不会自动发布。手动 `Community CI` 也不会创建草稿。Release 构建从精确提交重建，不从另一个 CI 随意取包；草稿引用的是自己的构建运行与 SHA256。
 
 ## 5. 对外发布门槛
@@ -106,7 +108,7 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 - PR / master CI 失败：打开失败 step，修复后提交；可用 Re-run all jobs 排查临时网络问题并保持双平台尝试编号一致。测试报告在 `reports-*` Artifact。
 - 依赖或网络失败：可以重跑；开发包生成新的尝试编号，不覆盖旧包。依赖直接版本已固定，runner 镜像和传递依赖仍可能变化，完整可复现环境尚需锁定。
 - Release 构建失败且尚无草稿：若是环境问题，在同一 tag 上重跑；若需修改源码，创建新 beta.N 或新 PATCH，不移动 tag。
-- 已有草稿或已发布 Release：工作流拒绝覆盖。改用新版本；不替换已经对外分发的同版本安装包。
+- 已有草稿或已发布 Release：预检分页列出 Release 并按 tag 拦截，编译前拒绝覆盖。按 tag 查询的接口可能对草稿返回 404，不能以此判断该版本不存在。改用新版本；不替换已经对外分发的同版本安装包。
 - 默认只读 token；仅生成 Release 草稿的 job 有 `contents: write`。PR 构建不会获得签名 secrets。
 - Windows 下载的是 Setup 安装包；Linux 当前为 **Ubuntu 24.04 x86_64** 归档，含 Qt、冻结边车和主要动态库，不承诺其他发行版或 AppImage 兼容。仍依赖目标桌面、驱动和系统服务。
 
