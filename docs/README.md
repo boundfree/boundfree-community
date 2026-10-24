@@ -18,7 +18,7 @@ last_updated: 2026-10-24
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
 | 查询分支、提交、版本和文档规则 | [development-guide.md](development-guide.md) |
 | 完成修改、提交、PR、主线构建和远端同步 | [contribution-sop.md](contribution-sop.md) |
-| 更新交付版本、下载安装包或发布 Release | [release-sop.md](release-sop.md) |
+| 更新交付版本、下载安装包、授权测试 Beta 或发布 Release | [release-sop.md](release-sop.md) |
 | 配置本地 WSL2 / Windows 构建与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 | 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
 | 确定开源许可、贡献与商业扩展归属 | [许可与扩展边界](../legal/LICENSING.md) |

@@ -4,14 +4,14 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 ## 当前状态
 
-产品版本 `0.2.2-dev`，唯一版本源为 [version.json](version.json)：
+产品版本 `0.2.2-beta.1`，唯一版本源为 [version.json](version.json)：
 
 ```json
 {
   "schema_version": 1,
   "product_name": "BoundFree EEG",
-  "version": "0.2.2-dev",
-  "release_channel": "dev",
+  "version": "0.2.2-beta.1",
+  "release_channel": "beta",
   "ipc_protocol_version": 1
 }
 ```
@@ -25,6 +25,8 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 本仓库的自有核心采用 [Apache-2.0](LICENSE)，包含当前 ICA、人工成分标记、分组重建与结果导出；允许科研和商业使用、修改及再分发。第三方作品继续适用各自许可，BoundFree 商标权不随代码许可授予。
 
 未来付费扩展在独立私有仓库维护源码与商业许可，通过公开接口集成，不把专有实现混入本仓库。范围与贡献规则见 [许可与扩展边界](legal/LICENSING.md)。本次仅落实许可：现有官方安装包的整机激活门禁仍待迁移，不能视作免费核心与扩展授权已实现。
+
+首轮 Beta 保留现有整机激活，仅向已授权测试者定向交付官方安装包；测试范围、下载权限和验收按发布 SOP 记录。免费核心免激活及扩展权益迁移留待后续阶段。该官方包交付安排不改变 Apache-2.0 对源码的授权。
 
 ## 使用与开发入口
 
