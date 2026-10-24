@@ -1,10 +1,15 @@
 # Third-Party Notices
 
 This file lists the third-party components distributed with BoundFree EEG
-Native, their version targets, and license identifiers. Full license texts
-are in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) and, where the
-license requires preserving the text verbatim, in
-[licenses/](licenses/).
+Native, their version targets, and license identifiers. The license index is
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md); explicitly collected full
+texts are in [licenses/](licenses/), with additional upstream notices in the
+frozen sidecar's package metadata. This index does not replace verification
+of the actual distributed files and their required license copies.
+
+The BoundFree-authored Community core is licensed under Apache-2.0; see
+[LICENSE.txt](LICENSE.txt), [NOTICE.txt](NOTICE.txt) and [LICENSING.md](LICENSING.md).
+This does not change the licenses of the third-party components below.
 
 ## Native host (C++/Qt6)
 
@@ -14,8 +19,9 @@ license requires preserving the text verbatim, in
 | pocketfft   | hdronly          | BSD-3-Clause            |
 | Microsoft Visual C++ Redistributable (x64) | Visual Studio toolchain version | Microsoft Visual Studio redistribution terms |
 
-The native host links Qt6 under the GNU LGPL v3. The corresponding source
-offer and combined-works notice are in THIRD_PARTY_LICENSES.md.
+The native host links Qt6 under the GNU LGPL v3. License references and the
+combined-works notice are in THIRD_PARTY_LICENSES.md; package-specific source
+availability and relinking still require verification before distribution.
 
 The Windows installer includes Microsoft's official x64 Visual C++
 Redistributable as a prerequisite for the native application. It installs the

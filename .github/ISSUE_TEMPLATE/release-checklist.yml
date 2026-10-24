@@ -36,3 +36,4 @@ body:
         - label: Linux 目标桌面与发布归档已验证（不交付 Linux 时在证据说明）
         - label: 正式版签名与授权兼容验证通过（beta 可明确说明未签名）
         - label: 已检查 Release 草稿、双平台产物及 SHA256，并补齐已知限制
+        - label: 已核对 Apache-2.0 LICENSE、NOTICE、许可边界和第三方声明随包分发，激活限制已如实说明

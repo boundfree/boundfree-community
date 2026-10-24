@@ -5,8 +5,10 @@
 发布契约。
 """
 
+import importlib.util
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -199,6 +201,85 @@ class TestLegal:
 
 
 # -- Release check script ----------------------------------------------------
+
+@pytest.fixture
+def licensing_tree(tmp_path, monkeypatch):
+    """Exercise release checks against isolated, deliberately damaged legal assets."""
+    spec = importlib.util.spec_from_file_location("bf_licensing_asset_check", CHECK)
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, module)
+    spec.loader.exec_module(module)
+    for relative in ("LICENSE", "NOTICE", "legal/LICENSE.txt", "legal/NOTICE.txt",
+                     "legal/LICENSING.md", "legal/THIRD_PARTY_LICENSES.md", "legal/THIRD_PARTY_NOTICES.md",
+                     "legal/licenses/LGPL-3.0.txt", "legal/licenses/GPL-3.0.txt"):
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    return module, tmp_path
+
+
+class TestCoreLicensing:
+    def test_current_licensing_assets_pass(self, licensing_tree):
+        checker, _ = licensing_tree
+        assert checker.check_core_license().ok
+        assert checker.check_legal().ok
+
+    @pytest.mark.parametrize("relative", ["LICENSE", "NOTICE", "legal/LICENSING.md"])
+    def test_missing_license_or_policy_fails(self, licensing_tree, relative):
+        checker, root = licensing_tree
+        (root / relative).unlink()
+        result = checker.check_core_license()
+        assert not result.ok and relative in result.detail
+
+    @pytest.mark.parametrize("relative", ["legal/LICENSE.txt", "legal/NOTICE.txt"])
+    def test_packaged_legal_drift_fails(self, licensing_tree, relative):
+        checker, root = licensing_tree
+        with (root / relative).open("a", encoding="utf-8") as output:
+            output.write("\nUnexpected packaging change\n")
+        result = checker.check_core_license()
+        assert not result.ok and relative in result.detail
+
+    def test_truncated_license_fails_even_when_copies_match(self, licensing_tree):
+        checker, root = licensing_tree
+        for relative in ("LICENSE", "legal/LICENSE.txt"):
+            (root / relative).write_text("Apache License\nVersion 2.0, January 2004\n", encoding="utf-8")
+        result = checker.check_core_license()
+        assert not result.ok and "section" in result.detail
+
+    def test_old_proprietary_core_declaration_fails(self, licensing_tree):
+        checker, root = licensing_tree
+        with (root / "legal/THIRD_PARTY_LICENSES.md").open("a", encoding="utf-8") as output:
+            output.write("\nThe host uses the BoundFree-proprietary license.\n")
+        result = checker.check_legal()
+        assert not result.ok and "obsolete proprietary core" in result.detail
+
+    @pytest.mark.parametrize("filename", ["LGPL-3.0.txt", "GPL-3.0.txt"])
+    def test_missing_qt_license_fails(self, licensing_tree, filename):
+        checker, root = licensing_tree
+        (root / "legal/licenses" / filename).unlink()
+        result = checker.check_legal()
+        assert not result.ok and filename in result.detail
+
+    @pytest.mark.parametrize("filename", ["LGPL-3.0.txt", "GPL-3.0.txt"])
+    def test_qt_license_summary_or_modified_terms_fail(self, licensing_tree, filename):
+        checker, root = licensing_tree
+        path = root / "legal/licenses" / filename
+        original = path.read_text(encoding="utf-8")
+        for damaged in ("\n".join(original.splitlines()[:8]),
+                        original.replace("Everyone is permitted", "Nobody is permitted", 1)):
+            assert damaged != original
+            path.write_text(damaged, encoding="utf-8")
+            result = checker.check_legal()
+            assert not result.ok and filename in result.detail
+
+    def test_windows_license_line_endings_pass(self, licensing_tree):
+        checker, root = licensing_tree
+        for filename in ("LGPL-3.0.txt", "GPL-3.0.txt"):
+            path = root / "legal/licenses" / filename
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        assert checker.check_legal().ok
+
 
 class TestCheckScript:
     def test_exists_and_has_run_all(self):

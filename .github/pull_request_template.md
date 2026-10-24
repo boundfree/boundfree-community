@@ -16,5 +16,6 @@
 - [ ] `version_sync.py check` 与 `git diff --check HEAD` 已通过，版本判断符合规范
 - [ ] 已执行与改动相关的验证，记录未验收项；最新 PR CI 结果已核对
 - [ ] 相关使用说明/契约已同步；若修改流程，已核对 SOP、skill、AGENTS 和模板
+- [ ] 新增实现符合开源核心 / 独立商业扩展边界，第三方来源与许可已保留；涉及许可时已核对 `LICENSE` / `NOTICE` 和打包副本
 
 <!-- 合入后核对 master push 的 CI 与 build-info/SHA256；PR 成功不等同于主线包成功。普通提交不创建 tag 或 Release；发版另建 Community 发版验收 Issue 并按 release-sop.md 执行。 -->

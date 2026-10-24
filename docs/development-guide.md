@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # 开发规范
@@ -11,6 +11,12 @@ last_updated: 2026-10-23
 本文收口分支、版本、文档格式和验证规则。历史细节见 [`archive/git-development.md`](archive/git-development.md) 与 [`archive/documentation-style.md`](archive/documentation-style.md)。
 
 日常操作按 [提交与交付 SOP](contribution-sop.md)；版本、构建与发版按 [版本与发布 SOP](release-sop.md)。代码代理使用仓库技能 [community-delivery](../.agents/skills/community-delivery/SKILL.md)，PR 使用仓库模板。修改流程时在同一 PR 同步受影响的入口、规范与模板，避免维护多套规则。
+
+## License And Extension Boundaries
+
+本仓库自有核心采用 Apache-2.0，当前 ICA 和基本结果导出属于核心；第三方内容保留原许可。完整范围、贡献条款和未来付费扩展规则统一见 [许可与扩展边界](../legal/LICENSING.md)。商业扩展放独立私有仓库，本仓库只接收开源核心和公开集成接口，不通过目录名或授权开关把已开源代码变成专有代码。
+
+新增依赖或资源核对来源和许可；修改许可时同步根目录 `LICENSE` / `NOTICE` 与 `legal/` 中的打包副本，并运行发布资产检查。整机激活向扩展授权的迁移尚未实施，不能因许可调整宣称免费安装包已完成。
 
 ## Branch Model
 

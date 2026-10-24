@@ -3,7 +3,7 @@ title: Community 版本与发布 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # Community 版本与发布 SOP
@@ -34,6 +34,10 @@ last_updated: 2026-10-23
 6. 核对旁边 `SHA256SUMS-*.txt` 和 `build-info-*.json`。保存缺陷时附上完整版本和提交 SHA。
 
 源码回归使用开发配置以避免激活弹窗；实际安装包另行使用 `BF_REQUIRE_LICENSE=ON` 和仓库公钥构建，并执行授权门禁 smoke。
+
+本仓库自有核心已采用 Apache-2.0；当前官方包的整机激活尚待迁移为免费核心与扩展授权，许可调整不代表该功能已完成。发布包应包含 `legal/LICENSE.txt`、`legal/NOTICE.txt`、`legal/LICENSING.md` 和第三方声明；前两份分别与源树根目录 `LICENSE`、`NOTICE` 一致，发布资产检查负责校验。许可与未来扩展交付边界见 [说明](../legal/LICENSING.md)。
+
+Qt 的 LGPL v3 与其引用的 GPL v3 完整正文位于 `legal/licenses/`，静态检查会拒绝缺失或被摘要替代的正文。发版前还需核对实际 Windows/Linux 包中的全部第三方许可副本、归属与对应源码获取信息；声明文件或静态检查通过不表示已完成该项验收。
 
 Artifacts 默认保留 30 天，过期可从同一代码提交重新构建（开发包重跑次数变化）。值得长期保留的试用版应走 beta Release。GitHub 当前仓库访问权限同样限制下载权限；本流程不自动公开仓库。
 

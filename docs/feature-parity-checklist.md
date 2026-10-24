@@ -3,7 +3,7 @@ title: 当前能力与待验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # 当前能力与待验收清单
@@ -38,8 +38,9 @@ last_updated: 2026-10-23
 | Windows 桌面与干净机 | Windows 10/11 安装、覆盖升级、卸载、高 DPI、真实负载和完整交互；runner smoke 不能关闭该项 |
 | Linux 桌面 | 实际交付的目标系统和驱动/媒体环境；现有归档不承诺所有发行版兼容 |
 | 正式授权兼容 | 正式公钥、旧版真实许可证、在线/离线流程在目标 Windows 安装态验收 |
+| 免费核心与扩展授权 | 开源许可已明确；官方包仍有整机激活。免费核心免付费授权、独立扩展集成及按功能权益尚待实现与验收，不因本次许可调整补勾 |
 | 组织代码签名 | stable 必须 Authenticode 签名且验证通过，不能以 unsigned 包替代 |
-| 实际分发依赖与法务 | 核对 Qt Multimedia/FFmpeg 等实际随包组件及许可，静态法务资产检查不替代二进制分发清单核验 |
+| 实际分发依赖与法务 | 已补齐 Qt LGPL/GPL 完整正文并校验完整性；仍须逐包核对 Qt Multimedia/FFmpeg、Python 冻结依赖的许可正文、归属及对应源码获取信息，静态检查不替代二进制分发清单核验 |
 | 首个实际 beta 草稿 | 选定交付版本、annotated tag 和验收 Issue，正向跑通独立 Release；普通 CI 成功不代表此项完成 |
 | 历史回归 partial | 标注连接次数与跨不同路径切文件的专用 smoke 仍需按历史收口记录独立核验，不因整理文档补勾 |
 

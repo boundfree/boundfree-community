@@ -11,6 +11,8 @@
 ## Repository Scope
 
 - 本仓库是 BoundFree EEG 新一代 C++/Qt6 原生上位机。
+- 本仓库自有核心采用 Apache-2.0，含现有 ICA 与基本结果导出。第三方内容保留原许可；许可范围、贡献和商业扩展边界见 `legal/LICENSING.md`。
+- 付费扩展源码与商业许可在独立私有仓库管理；本仓库只放开源核心和公开集成接口，不混入专有扩展代码。Pro 与授权服务端不因本仓库许可变化而开源。
 - `../archive/boundfree-eeg-upper-computer` 是旧 Python/PySide6 参考仓库，仅用于只读参考和黄金文件。
 - 除非任务明确要求，不要修改旧参考仓库。
 - 不要把旧参考仓库的未提交改动回滚、覆盖或迁入本仓库。
@@ -27,6 +29,7 @@
 | 分支、提交与交付 | `docs/development-guide.md`、`docs/contribution-sop.md` |
 | 安装包、版本流转与 Release | `docs/release-sop.md` |
 | 模块边界 / 本地环境 | `docs/architecture-design.md`、`docs/toolchain-wsl2.md` |
+| 开源许可 / 付费扩展归属 | `LICENSE`、`NOTICE`、`legal/LICENSING.md` |
 
 `docs/archive/` 统一保存旧计划、设计和报告。历史正文中的“当前”“下一步”、旧逐提交版本和子代理指令不适用于新任务；归档不表示待验收项已通过。
 
@@ -69,6 +72,7 @@
 - EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
 - 滤波和 ICA 使用自有 C++ 数值实现，频谱已采用 pocketfft。禁止引入 FFTW、KFR 等 GPL 风险依赖。
 - 授权校验保留在 C++ 原生侧，并兼容旧版密钥语义。
+- 官方包当前仍采用整机激活；免费核心免付费授权与扩展权益尚待单独实现验收，不因许可调整宣称已完成。
 - i18n 使用 Qt Linguist `.ts/.qm`，边车和后端只返回错误码与结构化参数。
 
 ## Implementation Rules
@@ -96,3 +100,4 @@
 - 不要提交构建产物、安装包、私钥、授权 keygen 私有材料或临时环境目录。
 - 不要覆盖已发布 tag。
 - 不要引入与闭源商业分发冲突的许可证依赖。
+- 不得对 Apache-2.0 核心附加禁止商用、修改或再分发的限制；第三方许可与归属不得被本项目许可覆盖。`legal/LICENSE.txt`、`legal/NOTICE.txt` 必须与根目录 `LICENSE`、`NOTICE` 一致。

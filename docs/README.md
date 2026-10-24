@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # 文档索引
@@ -21,6 +21,7 @@ last_updated: 2026-10-23
 | 更新交付版本、下载安装包或发布 Release | [release-sop.md](release-sop.md) |
 | 配置本地 WSL2 / Windows 构建与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 | 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
+| 确定开源许可、贡献与商业扩展归属 | [许可与扩展边界](../legal/LICENSING.md) |
 
 代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准；具体发布证据保存在该版本的验收 Issue，不能把旧报告里的包名当作最新下载入口。
 

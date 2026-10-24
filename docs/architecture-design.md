@@ -3,7 +3,7 @@ title: 当前架构与模块边界
 doc_type: architecture
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # 当前架构与模块边界
@@ -53,6 +53,10 @@ CMake 目标中，`bf_dsp` 是数值静态库，`bf_core` 汇集可复用控制/
 - 授权留在 Native，Windows 使用 CNG，Linux 使用 OpenSSL；机器标识采用旧版兼容的 MachineGuid SHA-256 前 32 位大写十六进制，MAC 不参与。
 - `license.dat` 与时间水位 `.last_run` 的校验/原子保存、在线恢复逻辑由授权模块维护。安装包保留 `BF_REQUIRE_LICENSE=ON`；授权签发私钥不进入客户端、仓库或构建环境。
 - 服务端独立维护；[旧在线激活设计](archive/design/online-activation-design.md) 仅供背景追溯，不能直接作为部署指令。当前客户端行为以 `native/src/license/` 和相应回归为准。
+
+## 开源核心与扩展边界
+
+本仓库自有实现（含当前 ICA）采用 Apache-2.0，第三方许可不变。未来商业扩展在独立私有仓库维护源码、商业许可、构建与产物，核心只提供公开且版本化的集成接口，并须能独立构建运行。当前没有已实现的商业插件接口或按功能授权系统；现有整机激活的迁移仍待独立实施。规则与贡献范围统一见 [许可与扩展边界](../legal/LICENSING.md)。
 
 ## 开发与交付入口
 
