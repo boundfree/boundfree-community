@@ -48,6 +48,12 @@
 - `bf_spike` 为保留的历史原型，不是 Community 当前发布承诺；自研硬件/BLE 闭环需另行确定范围。
 - 按交付阶段更新版本，日常提交由 Git 记录，CI 自动产生唯一构建标识。
 
+## Collaboration Platforms
+
+- Issue、PR、代码评审、发版验收和 Actions 统一在 GitHub `Vsonic12138/boundfree-eeg-native` 管理；不在 Gitee 新建或镜像 Issue/PR。
+- Gitee `BigYellow12138/boundfree-community` 是国内源码和 Release 镜像。每次发布后必须同步 tag、说明和国内安装包下载，核对同一源提交与原包 SHA256；仅推送 Git 不能视为 Release 已同步。
+- Gitee 当前公开。验收通过并发布后允许公开下载，官方包仍需激活；未验收候选包保持 GitHub 草稿，不提前在 Gitee 创建公开发行版。超限附件处理和同步步骤见发布 SOP。
+
 ## Branch And Version Rules
 
 - 日常开发基于 `master`。
@@ -72,7 +78,7 @@
 - EEG 数据形状为 `[n_channels, n_samples]`，单位为 `uV`。
 - 滤波和 ICA 使用自有 C++ 数值实现，频谱已采用 pocketfft。禁止引入 FFTW、KFR 等 GPL 风险依赖。
 - 授权校验保留在 C++ 原生侧，并兼容旧版密钥语义。
-- 首轮 Beta 保留现有整机激活，仅向已授权测试者定向交付官方包；免费核心免付费授权与扩展权益留待后续实现验收，不因许可调整宣称已完成。
+- 官方包保留现有整机激活，验收并发布后允许公开下载、使用仍需有效授权；免费核心免付费授权与扩展权益留待后续实现验收，不因许可调整宣称已完成。
 - i18n 使用 Qt Linguist `.ts/.qm`，边车和后端只返回错误码与结构化参数。
 
 ## Implementation Rules

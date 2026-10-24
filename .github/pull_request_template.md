@@ -18,4 +18,4 @@
 - [ ] 相关使用说明/契约已同步；若修改流程，已核对 SOP、skill、AGENTS 和模板
 - [ ] 新增实现符合开源核心 / 独立商业扩展边界，第三方来源与许可已保留；涉及许可时已核对 `LICENSE` / `NOTICE` 和打包副本
 
-<!-- 合入后核对 master push 的 CI 与 build-info/SHA256；PR 成功不等同于主线包成功。普通提交不创建 tag 或 Release；发版另建 Community 发版验收 Issue 并按 release-sop.md 执行。 -->
+<!-- 合入后核对 master push 的 CI 与 build-info/SHA256；PR 成功不等同于主线包成功。Issue/PR 统一在 GitHub；普通提交不创建 tag 或 Release。发版在 GitHub 建 Community 发版验收 Issue，发布后按 release-sop.md 同步 Gitee 说明和国内下载、核对原包 SHA256，并回填同一 Issue。 -->

@@ -1,6 +1,6 @@
 ---
 name: community-delivery
-description: 按 BoundFree Community 仓库规范完成开发修改的验证、Git 提交与 PR、交付阶段版本调整、GitHub Actions 构建排障和 Release 草稿准备。用于本仓库的开发交付任务，不适用于 Pro 或授权服务。
+description: 按 BoundFree Community 仓库规范完成开发修改的验证、Git 提交与 PR、交付阶段版本调整、GitHub Actions 构建排障、Release 草稿准备与 Gitee 发布同步。用于本仓库的开发交付任务，不适用于 Pro 或授权服务。
 ---
 
 # Community 开发交付
@@ -25,7 +25,8 @@ description: 按 BoundFree Community 仓库规范完成开发修改的验证、G
 
 ## 必须保留的边界
 
-- GitHub `origin` 承载 Actions；Gitee `gitee` 是代码副本。推送 Gitee 不会触发 GitHub 构建，同步不能强推或覆盖分叉历史。
+- Issue、PR、评审和验收统一在 GitHub `origin`；Gitee `gitee` 是国内源码与 Release 镜像，不另建任务和 PR。发布后按 SOP 同步相同 tag、说明及国内下载，核对还原原包 SHA256；源码推送不能代替 Release 同步，不强推或覆盖分叉历史。
+- 已发布官方包可公开下载，使用仍需激活；未验收草稿不提前公开到 Gitee。附件超限使用 SOP 的分卷准备工具，不重建原包或把私有 GitHub 地址当作国内下载。
 - 日常 CI 只生成内部 dev 包，不改写源码版本、不创建 tag 或 Release。失败排查和重跑按发布 SOP，不通过反复提交无关改动触发重建。
 - 用户明确要求发版时才准备 `community-vX.Y.Z[-beta.N]` annotated tag 与本仓库验收 Issue，运行手动 Release 工作流。技能本身不授权创建 tag、合并 PR 或发布 Release。
 - Release Action 仅生成草稿。对外发布须满足目标阶段验收且有任务授权；缺少验收或签名时报告具体阻塞，不把 dev 改成 stable 来演练。不能覆盖既有版本或移动 tag。
