@@ -273,11 +273,13 @@ class TestCoreLicensing:
             result = checker.check_legal()
             assert not result.ok and filename in result.detail
 
-    def test_windows_license_line_endings_pass(self, licensing_tree):
+    @pytest.mark.parametrize("line_ending", [b"\n", b"\r\n"], ids=["LF", "CRLF"])
+    def test_license_line_endings_pass(self, licensing_tree, line_ending):
         checker, root = licensing_tree
         for filename in ("LGPL-3.0.txt", "GPL-3.0.txt"):
             path = root / "legal/licenses" / filename
-            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+            normalized = path.read_text(encoding="utf-8").encode("utf-8")
+            path.write_bytes(normalized.replace(b"\n", line_ending))
         assert checker.check_legal().ok
 
 
