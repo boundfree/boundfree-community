@@ -12,6 +12,8 @@ last_updated: 2026-10-24
 
 | 要做什么 | 阅读入口 |
 | --- | --- |
+| 先弄清 GitHub/Gitee 的关系、权限和开发顺序 | [contribution-sop.md 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序) |
+| 区分自动构建、GitHub 草稿/发布与 Gitee 镜像 | [release-sop.md 第 0 节](release-sop.md#0-从开发包到双平台发布) |
 | 了解产品范围、现状和下一步 | [roadmap.md](roadmap.md) |
 | 使用浏览、导出和脑电/眼电分离 | [analysis-guide.md](analysis-guide.md) |
 | 理解模块和数据流 | [architecture-design.md](architecture-design.md) |

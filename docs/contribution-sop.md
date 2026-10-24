@@ -12,6 +12,45 @@ last_updated: 2026-10-24
 
 Issue、PR、代码评审和发版验收统一在 [GitHub](https://github.com/Vsonic12138/boundfree-eeg-native) 管理；Gitee 只同步源码和 Release，不在两个平台维护两套任务或评审记录。GitHub 当前访问权限不因本流程改变。
 
+## 0. 两个托管地址与协作顺序
+
+GitHub 与 Gitee 托管的是**同一个 Community 项目**，共用 `master`、版本文件、提交历史与 `community-v*` tag。GitHub 是研发与发布记录的来源，Gitee 是国内镜像；不是各自维护一套功能的两个开发仓库。本流程不适用于另一个产品 `boundfree-pro`。
+
+| 项目 | GitHub `origin` | Gitee `gitee` |
+| --- | --- | --- |
+| 仓库 | `Vsonic12138/boundfree-eeg-native` | `BigYellow12138/boundfree-community` |
+| 当前可见性 | 私有，需仓库访问权限 | 公开 |
+| Issue、PR、评审与验收 | 唯一协作入口 | 不新建、不复制，不做另一轮合并 |
+| 开发与集成 | 短分支 → PR → `master` | 同步 GitHub 已验证的主线，避免直接开发 |
+| 构建 | GitHub Actions 自动执行 | 不承担第二套构建 |
+| 发布 | 验收记录、原始构建、草稿与首次发布 | 同 tag、源提交和说明，提供国内下载镜像 |
+| 文档 | 随代码在 GitHub PR 中更新 | 随主线同步，不单独在线编辑 |
+
+**同步方向：GitHub → Gitee。** 只同步本次已验证的主线与已选发布 tag，不使用 `git push --mirror` 或强推；源码同步、tag 同步和 Release 同步是三个独立动作。Gitee 若出现独有提交，先停止推送，把差异带回 GitHub 审查整合；不要丢弃或覆盖它们。
+
+新成员先取得 GitHub 协作权限，再在其 [Issues](https://github.com/Vsonic12138/boundfree-eeg-native/issues) / [Pull requests](https://github.com/Vsonic12138/boundfree-eeg-native/pulls) 工作。未获权限时页面可能显示 404，应联系仓库维护者申请访问，不在 Gitee 建立替代任务库。本流程不自动公开 GitHub 或邀请协作者。
+
+新克隆可二选一；以下只用于新目录，已有工作区先检查远端，不重复添加或盲目改名：
+
+```bash
+# 直接从 GitHub 克隆：origin 自动指向研发主仓库。
+git clone https://github.com/Vsonic12138/boundfree-eeg-native.git boundfree-community
+cd boundfree-community
+git remote add gitee https://gitee.com/BigYellow12138/boundfree-community.git
+```
+
+```bash
+# 从国内镜像克隆：取得 GitHub 权限后补齐研发远端。
+git clone https://gitee.com/BigYellow12138/boundfree-community.git boundfree-community
+cd boundfree-community
+git remote rename origin gitee
+git remote add origin https://github.com/Vsonic12138/boundfree-eeg-native.git
+git fetch origin master
+git branch --set-upstream-to=origin/master master
+```
+
+日常交付：**GitHub Issue（需要时）→ 本地短分支与验证 → GitHub PR → PR CI → 合入 → 主线 CI 与产物核对 → 快进同步 Gitee 源码**。普通提交到此完成，不创建 tag 或 Release。一次发版另按发布 SOP 完成 GitHub 发布和 Gitee 镜像，并把结果写回同一个 GitHub 验收 Issue。
+
 ## 1. 开始修改
 
 先读根目录 [AGENTS.md](../AGENTS.md)，确认当前目录是 `boundfree-community`。工作空间根目录不是 Git 仓库；Pro 与授权服务不在本流程的改动范围内。
@@ -108,6 +147,8 @@ git ls-remote gitee refs/heads/master
 
 若历史分叉，保留双方提交并评审整合，不强推；无关任务不顺手同步。完成后记录本次提交/PR、主线 SHA、CI 链接、实际验证及限制，说明是否已同步。无需为了收尾再修改产品版本，也无需把每次 CI 结果写成新的源码提交。
 
+收尾时分别记录“源码同步：完成/未完成及原因”和“Release 同步：未发版不适用/完成/待补齐及原因”；不能用一个“已同步”代替两种状态。
+
 涉及发布的任务还必须完成发布 SOP 第 7 节的 Gitee Release 同步与下载验证，并把两边 URL、源 SHA 和校验结果记入同一个 GitHub 验收 Issue。源码同步成功不等于 Release 同步成功；日常未发版的提交不创建 Gitee Release。
 
 ## 6. 需要试用或正式发布时
@@ -117,6 +158,8 @@ git ls-remote gitee refs/heads/master
 ## 7. 仓库 skill 与维护约定
 
 仓库技能入口为 [.agents/skills/community-delivery/SKILL.md](../.agents/skills/community-delivery/SKILL.md)，随 Git 一起分发，不依赖开发者复制到个人目录。在支持仓库技能的代理中可用 `$community-delivery`；不支持时直接要求代理阅读该文件和根目录 `AGENTS.md`，人工开发者从本文开始。
+
+仓库简介属于平台设置，不会随 Git 推送同步。改动项目定位或平台分工时，维护者分别核对 GitHub 与 Gitee 的简介、链接及 README：GitHub 标明研发主仓库，Gitee 标明国内源码/Release 镜像并指向 GitHub Issue/PR。不要为同步文字改动可见性、协作者或分支保护。
 
 技能只引用操作文档，不维护另一份流程。修改分支、版本、提交或 Actions 行为时，在同一 PR 检查开发规范、本文、发布 SOP、skill、`AGENTS.md`、README 与 PR/Issue 模板；只更新实际受影响的内容。保留文档与实现的可追溯关系，不把旧报告当作当前规范。
 
