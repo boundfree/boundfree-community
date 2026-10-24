@@ -21,8 +21,11 @@ concurrency:
   cancel-in-progress: false
 jobs:
   preflight:
+    if: github.ref == 'refs/heads/master'
     permissions:
-      contents: read
+      # GitHub hides draft releases from tokens without push access.
+      # This job only runs from trusted master via workflow_dispatch.
+      contents: write
       issues: read
     runs-on: ubuntu-24.04
     outputs:

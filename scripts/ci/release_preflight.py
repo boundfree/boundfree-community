@@ -35,6 +35,10 @@ if 'pull_request' in issue:
     raise SystemExit('Acceptance must be an Issue, not a pull request')
 if data['release_channel'] == 'stable' and os.environ.get('ACCEPTED') != 'true':
     raise SystemExit('Stable acceptance must be explicitly confirmed')
+# A successful list request with a read-only token can silently omit drafts.
+access = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}'], text=True))
+if access.get('permissions', {}).get('push') is not True:
+    raise SystemExit('Release preflight requires repository push access to see draft releases')
 # The by-tag endpoint can return 404 for a draft. List all pages, including
 # drafts visible to the authenticated repository token, before building.
 check = subprocess.run(['gh', 'api', '--paginate', '--slurp',

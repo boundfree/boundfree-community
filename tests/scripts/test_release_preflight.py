@@ -25,6 +25,9 @@ def sandbox(tmp_path):
     gh.write_text('#!' + sys.executable + '\n' + '''import json, os, sys
 if '/issues/' in sys.argv[-1]:
     print('{"number": 2}')
+elif sys.argv[-1] == 'repos/owner/community':
+    mode = os.environ.get('FAKE_PUSH', 'true')
+    print(json.dumps({} if mode == 'missing' else {'permissions': {'push': mode == 'true'}}))
 elif (sys.argv[-1] == 'repos/owner/community/releases?per_page=100'
       and '--paginate' in sys.argv and '--slurp' in sys.argv):
     mode = os.environ.get('FAKE_RELEASE')
@@ -50,7 +53,7 @@ else:
 
 
 def run_gate(sandbox, version='0.2.2-beta.1', *, annotated=True, on_master=True,
-             tag=None, issue=None, accepted='false', release='absent', workflow_ref='refs/heads/master'):
+             tag=None, issue=None, accepted='false', release='absent', workflow_ref='refs/heads/master', push_access='true'):
     tmp, git = sandbox
     channel = 'beta' if '-beta' in version else 'stable'
     (tmp / 'version.json').write_text(json.dumps({'version': version, 'release_channel': channel}))
@@ -67,7 +70,7 @@ def run_gate(sandbox, version='0.2.2-beta.1', *, annotated=True, on_master=True,
     env = dict(os.environ, PATH=str(tmp / 'bin') + os.pathsep + os.environ['PATH'],
                RELEASE_TAG=name, GITHUB_REPOSITORY='owner/community', GITHUB_REF=workflow_ref,
                ACCEPTANCE_ISSUE=issue or 'https://github.com/owner/community/issues/2',
-               ACCEPTED=accepted, FAKE_RELEASE=release, GITHUB_OUTPUT=str(tmp / 'output'))
+               ACCEPTED=accepted, FAKE_RELEASE=release, FAKE_PUSH=push_access, GITHUB_OUTPUT=str(tmp / 'output'))
     result = subprocess.run([sys.executable, str(ROOT / 'scripts/ci/release_preflight.py')],
                             cwd=tmp, env=env, capture_output=True, text=True)
     return result, tmp / 'output', sha
@@ -103,6 +106,14 @@ def test_other_tags_do_not_block_new_release(sandbox):
     result, output, sha = run_gate(sandbox, release='unrelated')
     assert result.returncode == 0, result.stderr
     assert output.read_text() == f'sha={sha}\nchannel=beta\n'
+
+
+@pytest.mark.parametrize('push_access', ['false', 'missing'])
+def test_draft_invisible_credentials_fail_closed(sandbox, push_access):
+    result, output, _ = run_gate(sandbox, release='absent', push_access=push_access)
+    assert result.returncode != 0
+    assert 'push access to see draft releases' in result.stderr
+    assert not output.exists()
 
 
 def test_stable_requires_explicit_acceptance(sandbox):
