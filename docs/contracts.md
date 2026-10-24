@@ -8,7 +8,7 @@ last_updated: 2026-10-23
 
 # 基础契约
 
-本文集中定义 BoundFree EEG Native 的版本源、IPC envelope、错误码和 i18n 约束。M1-A 起新增代码必须遵循这些契约。
+本文集中定义 BoundFree EEG Native 的版本源、IPC envelope、错误码和 i18n 约束。版本号等 JSON 数值为协议示例，实际产品版本读取根目录 `version.json`。
 
 ## Version Source
 
@@ -31,10 +31,10 @@ last_updated: 2026-10-23
 | `schema_version` | `version.json` 自身结构版本，初始为 `1` |
 | `product_name` | 程序显示名和安装包显示名 |
 | `version` | 产品版本，遵循 SemVer |
-| `release_channel` | `dev`、`alpha`、`beta`、`rc`、`stable` |
+| `release_channel` | 日常 `dev`、`beta`、`stable`；`alpha/rc` 仅保留旧脚本兼容 |
 | `ipc_protocol_version` | 主程序与边车协议版本，独立于产品版本 |
 
-M1-A 需要消费该文件：
+运行时消费该文件：
 
 - `bf_app --version` 输出产品版本。
 - 主窗口显示产品版本。
@@ -173,11 +173,12 @@ i18n 采用 Qt6 Linguist `.ts/.qm` 双轨制：
 - `.ts` 仅为翻译源文件（开发期维护、静态检查、lrelease 输入），**不作为运行时资产**，不进入发布包。
 - `.qm` 是唯一运行时翻译资产，由 CMake `qt_add_lrelease` 在构建期从 `.ts` 编译，`cmake --install` 安装到 `i18n/`。运行时缺失 `.qm` 即失败，**不回退 `.ts`**。
 
-v1 stable 必达语言（stable 用户菜单暴露这三项）：
+正式用户菜单提供四种语言（此处 stable locale 是语言集合名称，不表示产品已发布 stable）：
 
 - `zh_CN`
 - `en_US`
 - `ja_JP`
+- `zh_TW`
 
 仅测试用、不进 stable 用户菜单、不进发布包但保留 `.ts` 源以供构建：
 
@@ -185,19 +186,18 @@ v1 stable 必达语言（stable 用户菜单暴露这三项）：
 
 以下 locale 保留 `.ts` 源文件用于架构扩展和 key 完整性检查，但不产出 `.qm`、不进发布包、不作为 stable 验收项：
 
-- `zh_TW`
 - `ko_KR`
 - `de_DE`
 - `fr_FR`
 - `es_ES`
 
-构建期仅对 `zh_CN`、`en_US`、`ja_JP`、`pseudo` 执行 lrelease 产出 `.qm`；其余 locale 不产出 `.qm`。
+构建期对 `zh_CN`、`en_US`、`ja_JP`、`zh_TW`、`pseudo` 执行 lrelease 产出 `.qm`；安装时仅包含四种正式语言，pseudo 留在构建目录测试。其余 locale 不产出 `.qm`。
 
 资源查找顺序（`.qm` 必须命中其一，缺失即失败）：
 
 1. `$BF_RESOURCE_ROOT/i18n/bf_app_<locale>.qm`
 2. `<应用可执行目录>/i18n/bf_app_<locale>.qm`（发布布局：stage 根即应用目录）
-3. `<repoRoot>/native/i18n/bf_app_<locale>.qm`（开发构建产物，与 CMake lrelease 输出一致）
+3. `<repoRoot>/native/i18n/bf_app_<locale>.qm`（保留的兼容候选路径；当前 CMake 输出到构建目录的 `i18n/`，通常由应用目录候选命中）
 4. `<repoRoot>/i18n/bf_app_<locale>.qm`（向后兼容布局）
 
 Qt 基础翻译（`qtbase_*.qm`）按同一顺序可用即安装，缺失不视为错误；发布包随附 `qtbase_zh_CN.qm`（强制）、`qtbase_ja.qm`（强制，Qt6 仅提供 language-only `qtbase_ja.qm`，发布重命名为 `qtbase_ja_JP.qm` 以匹配运行时按 `<locale>` 查找路径）与 `qtbase_en.qm`（按存在复制，en_US 运行通常无需 translator）。
@@ -228,7 +228,7 @@ Qt 基础翻译（`qtbase_*.qm`）按同一顺序可用即安装，缺失不视�
 
 ## Static Checks
 
-M1-A 需要建立静态检查，覆盖：
+现有静态检查覆盖：
 
 - 翻译 key 完整性。
 - 翻译占位符一致性。

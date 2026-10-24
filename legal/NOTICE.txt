@@ -1,0 +1,14 @@
+BoundFree Community (BoundFree EEG Native)
+Copyright (c) 2024-2026 BoundFree and contributors.
+
+BoundFree-authored software and documentation in this repository are licensed
+under the Apache License, Version 2.0. See LICENSE (legal/LICENSE.txt in binary
+distributions) for the full license and legal/LICENSING.md (LICENSING.md beside
+this notice in binary distributions) for scope and extension boundaries.
+
+Third-party components retain their original copyrights and licenses.
+See legal/THIRD_PARTY_NOTICES.md and legal/THIRD_PARTY_LICENSES.md (the
+THIRD_PARTY_*.md files beside this notice in binary distributions).
+
+The Apache License does not grant rights to BoundFree trademarks, product
+names or logos beyond the uses permitted by Section 6 of that license.

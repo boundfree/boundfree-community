@@ -418,7 +418,8 @@ def test_detect_development_reasons_marks_display_99_as_xvfb():
 
 
 def test_gpu_gate_report_documents_m2_4_runner_and_current_gate():
-    report = (ROOT / "docs" / "reports" / "m2-rendering-gpu-gate.md").read_text(encoding="utf-8")
+    # Keep checking the original acceptance evidence after documentation archival.
+    report = (ROOT / "docs" / "archive" / "reports" / "m2-rendering-gpu-gate.md").read_text(encoding="utf-8")
 
     assert "## M2-4 Runbook" in report
     assert "scripts/common/collect_m2_gpu_gate_evidence.py --run --acceptance-run" in report

@@ -3,90 +3,31 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # 文档索引
 
-本目录保存 BoundFree EEG Native 的当前核心文档和历史归档。日常开发只应优先阅读当前核心文档；`archive/` 下内容用于追溯旧计划和旧规范。
+日常只读本目录的当前文档。已完成的实施计划、逐次验收报告、旧设计和配图统一保存在 [archive/](archive/README.md)，用于追溯，不作为新的实施指令。
 
-当前 v1 stable 的上位边界来自 `../BoundFree_EEG_System_Requirements_Spec.md`：v1 先完成通用 EEG/LFP/电生理文件分析，自研硬件采集闭环进入 v1.1/v2。
-
-## 当前核心文档
-
-| 文档 | 类型 | 用途 |
-| --- | --- | --- |
-| [`roadmap.md`](roadmap.md) | 路线图 | v1 边界、当前阶段、M0-M8 路线和阶段门禁 |
-| [`plans/eeg-ui-recovery.md`](plans/eeg-ui-recovery.md) | 当前计划 | 旧版 UI 对齐、分析曲线与进度交互的分阶段修复 |
-| [`plans/m8-packaging-release.md`](plans/m8-packaging-release.md) | 当前计划 | M8 冻结边车、安装布局、系统收口与 Windows 发布门禁 |
-| [`contracts.md`](contracts.md) | 契约 | 版本源、IPC envelope、错误码、i18n 约束 |
-| [`release-sop.md`](release-sop.md) | 发布 SOP | 版本调整、自动打包、Artifacts、Release 草稿与验收 Issue |
-| [`development-guide.md`](development-guide.md) | 开发规范 | 分支、版本、文档格式和验证规则 |
-| [`contribution-sop.md`](contribution-sop.md) | 提交与交付 SOP | 开始修改、本地验证、提交、PR、主线包检查与 Gitee 同步 |
-| [`community-delivery`](../.agents/skills/community-delivery/SKILL.md) | 仓库技能 | 代理开发交付入口；引用操作 SOP，不重复维护规则 |
-| [`toolchain-wsl2.md`](toolchain-wsl2.md) | 工具链 | WSL2 Qt6 工具链路径和构建命令 |
-| [`architecture-design.md`](architecture-design.md) | 架构设计 | C++/Qt6 主程序与 Python 边车总体架构 |
-| [`feature-parity-checklist.md`](feature-parity-checklist.md) | 验收清单 | 新旧上位机功能对齐和黄金文件验收条目 |
-
-## 阶段验收记录
-
-| 文档 | 作用 |
+| 要做什么 | 阅读入口 |
 | --- | --- |
-| [`reports/community-release-automation.md`](reports/community-release-automation.md) | Community 云端构建与发布流程实跑结果及验收边界 |
-| [`reports/offline-eeg-separation.md`](reports/offline-eeg-separation.md) | 脑电眼电专用离线工作区、结果播放、双工作区导航、幅度预览与通道交互、输入格式、教学流程、回读导出及集成验收 |
-| [`reports/offline-eeg-numerical-provenance.md`](reports/offline-eeg-numerical-provenance.md) | 自有数值代码迁移清单、Pro 逐值对照、数值与控制器回归 |
-| [`reports/windows-build-entry-test-alignment.md`](reports/windows-build-entry-test-alignment.md) | Windows 打包入口命名参数转发断言修正与全量合并门禁 |
-| [`reports/waveform-data-modes.md`](reports/waveform-data-modes.md) | 原始/处理后波形与分析切换、独立导出来源和三格式数值回归 |
-| [`reports/eeg-ui-three-column-workspace.md`](reports/eeg-ui-three-column-workspace.md) | 三栏布局、统一信号预处理、文件入口与分析输入上下文 |
-| [`reports/windows-gui-subsystem.md`](reports/windows-gui-subsystem.md) | Windows 桌面程序使用 GUI 子系统启动，不额外打开终端 |
-| [`reports/eeg-ui-control-metrics.md`](reports/eeg-ui-control-metrics.md) | 同级控件等高居中、多语言参考菜单完整显示与缩放回归 |
-| [`reports/eeg-ui-analysis-refresh.md`](reports/eeg-ui-analysis-refresh.md) | 播放后台分析保留完整结果、批次更新与防闪烁回归 |
-| [`reports/eeg-ui-readable-details.md`](reports/eeg-ui-readable-details.md) | 多语言下拉完整显示、正常字号频段表格与无滚动详情 |
-| [`reports/eeg-ui-video-height.md`](reports/eeg-ui-video-height.md) | 视频首次展开高度与窗口增高时空间分配 |
-| [`reports/eeg-ui-stage6c-scrub-preview.md`](reports/eeg-ui-stage6c-scrub-preview.md) | 阶段 6C 波形随拖预览、请求合并与真实读片回归 |
-| [`reports/eeg-ui-stage6b-parameters.md`](reports/eeg-ui-stage6b-parameters.md) | 阶段 6B 参数标签页、单通道编辑与常用数值预设 |
-| [`reports/eeg-ui-stage6a-empty-controls.md`](reports/eeg-ui-stage6a-empty-controls.md) | 阶段 6A 空白页完整侧栏隐藏与数值箭头交互 |
-| [`reports/eeg-ui-stage5b-theme.md`](reports/eeg-ui-stage5b-theme.md) | 阶段 5B 旧版亮暗配色与已创建图元切换 |
-| [`reports/eeg-ui-stage5a-analysis.md`](reports/eeg-ui-stage5a-analysis.md) | 阶段 5A 图外属性、数值轴与分析状态回归 |
-| [`reports/eeg-ui-stage4b-record-form.md`](reports/eeg-ui-stage4b-record-form.md) | 阶段 4B 统一录制元数据表单与取消/校验回归 |
-| [`reports/eeg-ui-stage4a-channels.md`](reports/eeg-ui-stage4a-channels.md) | 阶段 4A 自动幅值、通道滚动与逐行带通 |
-| [`reports/eeg-ui-stage3-layout.md`](reports/eeg-ui-stage3-layout.md) | 阶段 3 固定区域、控件换行与布局回归 |
-| [`reports/eeg-ui-stage2b-playback.md`](reports/eeg-ui-stage2b-playback.md) | 阶段 2B 连续视窗、有界预取与真实CSV联合验证 |
-| [`reports/eeg-ui-stage2a-session.md`](reports/eeg-ui-stage2a-session.md) | 阶段 2A 读片会话复用、请求合并与错误恢复 |
-| [`reports/eeg-ui-stage1b-seek.md`](reports/eeg-ui-stage1b-seek.md) | 阶段 1B 拖动预览、单次定位与状态隔离回归 |
-| [`reports/eeg-ui-stage1a-spectrum.md`](reports/eeg-ui-stage1a-spectrum.md) | 阶段 1A 谱线缺失修复与曲线敏感回归 |
-| [`reports/m2-format-acceptance.md`](reports/m2-format-acceptance.md) | 已验收与未实现文件格式的证据 |
-| [`reports/m2-rendering-gpu-gate.md`](reports/m2-rendering-gpu-gate.md) | 真实 GPU/显示门禁记录 |
-| [`reports/m3-dsp-acceptance.md`](reports/m3-dsp-acceptance.md) | M3 DSP 黄金比对与静态浏览接入记录 |
-| [`reports/m4-spectral-acceptance.md`](reports/m4-spectral-acceptance.md) | M4 频谱算法、后台调度、渲染和黄金比对记录 |
-| [`reports/m5-playback-annotations-acceptance.md`](reports/m5-playback-annotations-acceptance.md) | M5 回放状态、事件标注、CSV 往返和 UI 文件流记录 |
-| [`reports/m6-video-sync-acceptance.md`](reports/m6-video-sync-acceptance.md) | M6 视频格式、同步状态、帧节流与主窗口文件流记录 |
-| [`reports/m7-record-export-acceptance.md`](reports/m7-record-export-acceptance.md) | M7 录制、背压、三格式导出与回读验收记录 |
-| [`reports/m8-packaging-release-acceptance.md`](reports/m8-packaging-release-acceptance.md) | M8 打包实现、Linux 可验证证据、Windows 自动化验收执行记录与未完成发布门禁 |
+| 了解产品范围、现状和下一步 | [roadmap.md](roadmap.md) |
+| 使用浏览、导出和脑电/眼电分离 | [analysis-guide.md](analysis-guide.md) |
+| 理解模块和数据流 | [architecture-design.md](architecture-design.md) |
+| 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
+| 查询分支、提交、版本和文档规则 | [development-guide.md](development-guide.md) |
+| 完成修改、提交、PR、主线构建和远端同步 | [contribution-sop.md](contribution-sop.md) |
+| 更新交付版本、下载安装包、授权测试 Beta 或发布 Release | [release-sop.md](release-sop.md) |
+| 配置本地 WSL2 / Windows 构建与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
+| 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
+| 确定开源许可、贡献与商业扩展归属 | [许可与扩展边界](../legal/LICENSING.md) |
 
-## 历史归档
-
-| 路径 | 用途 |
-| --- | --- |
-| [`archive/README.md`](archive/README.md) | 归档说明 |
-| [`archive/plans/`](archive/plans/) | M0-M8 旧里程碑计划 |
-| [`archive/git-development.md`](archive/git-development.md) | 旧 Git 开发与版本管理规范 |
-| [`archive/documentation-style.md`](archive/documentation-style.md) | 旧文档格式规范 |
-| [`superpowers/plans/`](superpowers/plans/) | 当前执行计划，不作为主规格入口 |
-
-## 文档状态
-
-| 状态 | 含义 |
-| --- | --- |
-| `draft` | 尚未确认，不能作为实施依据 |
-| `active` | 当前有效，后续开发应遵循 |
-| `approved` | 已评审确认的架构或决策 |
-| `completed` | 对应工作已完成，仅作为记录和复盘依据 |
-| `superseded` | 已被其他文档替代，保留用于追溯 |
+代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准；具体发布证据保存在该版本的验收 Issue，不能把旧报告里的包名当作最新下载入口。
 
 ## 维护规则
 
-- 当前阶段计划必须在实施前创建；已完成阶段计划更新为 `completed`，并以 `reports/` 中验收记录作为交付证据。
-- 已完成阶段的可交付结论以 `reports/` 中对应验收记录与测试结果为准。
-- 版本、IPC、错误码和 i18n 契约优先更新 [`contracts.md`](contracts.md)。
-- 交付阶段版本记录维护在根目录 `version.md`；分支、版本号更新时机、文档格式和验证规则优先更新 [`development-guide.md`](development-guide.md)。
+- 本目录描述当前状态和可复用流程；历史命令、测试计数和逐次交付记录进入 `archive/` 或相应 Issue。
+- 新增计划仅在确有未执行任务时创建 `plans/`；完成或被替代后及时归档，不预建空目录。不在当前索引列出逐次报告。
+- 归档前将仍有效的使用说明、约束和未验收项合并到上述当前文档；归档不表示验收通过。
+- 规则变更在同一 PR 核对规范、SOP、skill 和模板，保持一份操作真值；修改文档路径时同步检查链接和脚本/测试引用。

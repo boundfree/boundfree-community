@@ -3,7 +3,7 @@ title: Community 版本与发布 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # Community 版本与发布 SOP
@@ -34,6 +34,10 @@ last_updated: 2026-10-23
 6. 核对旁边 `SHA256SUMS-*.txt` 和 `build-info-*.json`。保存缺陷时附上完整版本和提交 SHA。
 
 源码回归使用开发配置以避免激活弹窗；实际安装包另行使用 `BF_REQUIRE_LICENSE=ON` 和仓库公钥构建，并执行授权门禁 smoke。
+
+本仓库自有核心已采用 Apache-2.0；当前官方包的整机激活尚待迁移为免费核心与扩展授权，许可调整不代表该功能已完成。发布包应包含 `legal/LICENSE.txt`、`legal/NOTICE.txt`、`legal/LICENSING.md` 和第三方声明；前两份分别与源树根目录 `LICENSE`、`NOTICE` 一致，发布资产检查负责校验。许可与未来扩展交付边界见 [说明](../legal/LICENSING.md)。
+
+Qt 的 LGPL v3 与其引用的 GPL v3 完整正文位于 `legal/licenses/`，静态检查会拒绝缺失或被摘要替代的正文。发版前还需核对实际 Windows/Linux 包中的全部第三方许可副本、归属与对应源码获取信息；声明文件或静态检查通过不表示已完成该项验收。
 
 Artifacts 默认保留 30 天，过期可从同一代码提交重新构建（开发包重跑次数变化）。值得长期保留的试用版应走 beta Release。GitHub 当前仓库访问权限同样限制下载权限；本流程不自动公开仓库。
 
@@ -82,6 +86,10 @@ git push origin refs/tags/community-v0.2.2-beta.1
 
 beta：明确试用范围与已知限制；关键打开/播放/分析/导出路径通过回归；至少在实际目标 Windows 或 Linux 桌面试运行。unsigned beta 可用于试用，必须在说明中明确签名状态。
 
+首轮 Beta 采用**保留整机激活、仅向已授权测试者定向交付官方安装包**的方案。`BF_REQUIRE_LICENSE=ON`、现有授权兼容与签名策略保持不变；免费核心免激活和扩展权益属于后续阶段，不作为本轮已经实现的能力。
+
+在发版验收 Issue 和 Release 说明中写明试用对象、受控下载位置、激活要求、签名状态及待验收项。核对测试者已有授权及下载访问权限；私有 GitHub Release 的下载仍受仓库权限控制，不能把链接本身当成下载授权，也不在本流程中自动邀请协作者或更改仓库可见性。Gitee 代码同步与安装包分发分开处理：公开仓库不上传本轮定向测试安装包，也不把私有 GitHub 链接描述成公众可下载地址。上述安排约束官方测试包的交付，不增加 Apache-2.0 源码限制。
+
 stable：完成承诺功能验收，无已知数据丢失、错误结果和高频崩溃；完成干净 Windows 10/11 安装、旧版升级、卸载、桌面操作、正式授权兼容与代表性科研文件验证；发布 Linux 时另需目标 Linux 桌面验收。把证据放入本次验收 Issue。runner 的命令行和安装测试不等同于完整干净机、真实 GPU、真实硬件或算法效果验收。
 
 正式 Windows 包继续强制 Authenticode 签名。配置仓库 Actions Secrets：
@@ -104,6 +112,6 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 
 ## 7. 首次接入的验证边界
 
-先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。当前结果见 `docs/reports/community-release-automation.md`。
+先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 [归档记录](archive/reports/community-release-automation.md)，流程验证及后续证据见 [Issue #2](https://github.com/Vsonic12138/boundfree-eeg-native/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
 
 参考：[GitHub 触发事件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)、[Artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data)、[SemVer](https://semver.org/)。

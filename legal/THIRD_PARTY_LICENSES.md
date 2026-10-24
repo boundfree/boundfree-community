@@ -1,8 +1,12 @@
 # Third-Party Licenses
 
-The full license texts for each bundled third-party component are reproduced
-here. If a license requires the verbatim text to accompany the binary, the
-same text is also placed under `legal/licenses/<component>.txt`.
+This file indexes third-party license terms and source references. It is not
+a complete inventory of every file in a frozen binary distribution. Complete
+texts explicitly listed below are preserved in `legal/licenses/`; additional
+upstream license files may be included in the sidecar's package metadata.
+Before publishing, verify the actual bundle includes all applicable notices,
+license texts and corresponding-source information. Links alone do not replace
+required license copies.
 
 ## Microsoft Visual C++ Redistributable (x64)
 
@@ -13,22 +17,30 @@ on [redistributing Visual C++ files](https://learn.microsoft.com/en-us/cpp/windo
 
 ## Qt6 — LGPL v3
 
-BoundFree EEG Native links Qt6 dynamically. Under the GNU LGPL v3, recipients
-of this binary distribution are entitled to the corresponding source of Qt6
-and the object files / combined-work notice required to relink against a
-modified Qt6.
+BoundFree EEG Native links Qt6 dynamically under the GNU LGPL v3. Recipients
+retain the applicable rights to modify and replace the Qt6 libraries. The
+release must satisfy LGPL v3's corresponding-source requirements and one of
+its Section 4(d) relinking mechanisms; dynamic linking does not by itself
+complete that verification.
 
   Qt is Copyright (C) The Qt Company Ltd and other contributors.
   Licensed under the GNU LGPL v3. The full text of the LGPL v3 is at
   https://www.gnu.org/licenses/lgpl-3.0.txt and is reproduced in
-  `licenses/LGPL-3.0.txt`.
+  `licenses/LGPL-3.0.txt`. LGPL v3 incorporates GPL v3; the accompanying GPL
+  text is preserved in `licenses/GPL-3.0.txt`. These verbatim files come from
+  Qt 6.8.2's upstream source tree:
+  https://github.com/qt/qtbase/blob/v6.8.2/LICENSES/LGPL-3.0-only.txt and
+  https://github.com/qt/qtbase/blob/v6.8.2/LICENSES/GPL-3.0-only.txt.
 
   The combined-works notice: BoundFree EEG Native ("bf_app") is a combined
   work that uses the dynamically-linked Qt6 libraries. The source of the
-  BoundFree proprietary host application is available from BoundFree under
-  the BoundFree-proprietary license. The Qt6 library source is available
-  from https://www.qt.io/download and under the LGPL v3 source-offer
-  obligations.
+  BoundFree-authored host application is licensed under Apache-2.0; see
+  LICENSE.txt and LICENSING.md. Qt6 retains its own LGPL v3 terms, including
+  the applicable source and relinking obligations. Qt's upstream source
+  references are at https://www.qt.io/download. Before distributing a package,
+  document access to the source corresponding to its exact Qt libraries and
+  verify the applicable relinking mechanism. This index is not a written
+  source offer or evidence that this verification has been completed.
 
 ## pocketfft (hdronly variant) — BSD-3-Clause
 

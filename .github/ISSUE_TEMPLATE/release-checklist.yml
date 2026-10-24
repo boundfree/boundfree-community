@@ -15,7 +15,7 @@ body:
   - type: textarea
     id: scope
     attributes:
-      label: 交付范围、变更与已知限制
+      label: 交付范围、试用对象与访问方式、变更和已知限制
     validations:
       required: true
   - type: textarea
@@ -36,3 +36,5 @@ body:
         - label: Linux 目标桌面与发布归档已验证（不交付 Linux 时在证据说明）
         - label: 正式版签名与授权兼容验证通过（beta 可明确说明未签名）
         - label: 已检查 Release 草稿、双平台产物及 SHA256，并补齐已知限制
+        - label: 已核对 Apache-2.0 LICENSE、NOTICE、许可边界和第三方声明随包分发，激活限制已如实说明
+        - label: 已确认试用对象、下载访问权限与激活条件；首轮 Beta 仅定向交付已授权测试者

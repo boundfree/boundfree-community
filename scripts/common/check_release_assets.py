@@ -8,8 +8,11 @@ This script parses (not merely greps) the packaging artifacts and asserts:
     matplotlib bundled, and ships version.json + contracts/error_codes.json.
   * installer/BoundFreeEEG.iss is Windows 10 x64, DisableDirPage=no, binds
     AppVersion to the injected define, and stages legal assets.
-  * Legal assets exist and do NOT declare unshipped dependencies
-    (PySide6/pyqtgraph/scipy/pandas/cryptography).
+  * Legal assets acknowledge shipped dependencies and do NOT declare
+    unshipped dependencies (PySide6/pyqtgraph/cryptography).
+  * Qt's LGPL v3 and accompanying GPL v3 texts match complete upstream copies.
+  * Apache-2.0 LICENSE and NOTICE match their packaged copies, and the
+    licensing/extension policy is present.
   * No private key material or keygen script is present in the tree.
 
 Exit code 0 = all checks pass; 1 = one or more failures. Run from the repo
@@ -19,6 +22,7 @@ root: ``python3 scripts/common/check_release_assets.py``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -49,6 +53,14 @@ REQUIRED_ACKNOWLEDGED_DEPS = (
     "Neo",
     "quantities",
 )
+
+# Verbatim license files from Qt's pinned v6.8.2 source tree:
+# https://github.com/qt/qtbase/tree/v6.8.2/LICENSES
+# Normalize line endings for Windows checkouts, but reject edited/truncated text.
+QT_LICENSE_SHA256 = {
+    "LGPL-3.0.txt": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+    "GPL-3.0.txt": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+}
 
 # Patterns that indicate private key material or keygen tooling. The public
 # license-signing key resource is allowed; private keys and key generators
@@ -291,6 +303,27 @@ def check_branding_assets() -> CheckResult:
 # Legal assets
 # ---------------------------------------------------------------------------
 
+def check_core_license() -> CheckResult:
+    name = "open core license and packaged notices synchronized"
+    required = ("LICENSE", "NOTICE", "legal/LICENSE.txt", "legal/NOTICE.txt", "legal/LICENSING.md")
+    missing = [path for path in required if not (REPO_ROOT / path).is_file()]
+    if missing:
+        return CheckResult(name, False, f"missing licensing files: {missing}")
+
+    failures: list[str] = []
+    for source, packaged in (("LICENSE", "legal/LICENSE.txt"), ("NOTICE", "legal/NOTICE.txt")):
+        if (REPO_ROOT / source).read_bytes() != (REPO_ROOT / packaged).read_bytes():
+            failures.append(f"{packaged} differs from {source}")
+    license_text = _read_text(REPO_ROOT / "LICENSE")
+    for marker in ("Apache License", "Version 2.0, January 2004", "3. Grant of Patent License.",
+                   "9. Accepting Warranty or Additional Liability.", "END OF TERMS AND CONDITIONS"):
+        if marker not in license_text:
+            failures.append(f"LICENSE missing Apache-2.0 section: {marker}")
+    if failures:
+        return CheckResult(name, False, "; ".join(failures))
+    return CheckResult(name, True, "Apache-2.0, NOTICE and extension policy included under legal/")
+
+
 def check_legal() -> CheckResult:
     name = "legal assets present and dependency-accurate"
     root = REPO_ROOT / "legal"
@@ -299,11 +332,20 @@ def check_legal() -> CheckResult:
     if missing:
         return CheckResult(name, False, f"missing legal files: {missing}")
     failures: list[str] = []
+    for filename, expected in QT_LICENSE_SHA256.items():
+        path = root / "licenses" / filename
+        if not path.is_file():
+            failures.append(f"missing complete Qt license: licenses/{filename}")
+        elif hashlib.sha256(_read_text(path).encode("utf-8")).hexdigest() != expected:
+            failures.append(f"licenses/{filename} differs from complete upstream license text")
     # Strip explicit "not bundled" disclaimer lines so that a legal file may
     # legitimately state it does NOT ship a component without that being
     # flagged as a false declaration. A line counts as negated if it mentions
     # a forbidden component AND carries any negation cue.
     all_text = "\n\n".join(_read_text(root / f) for f in required)
+    for obsolete in ("BoundFree-proprietary", "BoundFree proprietary host application"):
+        if obsolete in all_text:
+            failures.append(f"obsolete proprietary core declaration: {obsolete}")
     negation_cues = ("not bundle", "not ship", "does not", "not part", "not distributed", "are not", "were part of the legacy")
     negated_lines = set()
     for line in all_text.splitlines():
@@ -316,7 +358,7 @@ def check_legal() -> CheckResult:
         if re.search(rf"\b{re.escape(dep)}\b", decl_text):
             failures.append(f"legal asset declares unshipped dep '{dep}'")
     # Required (shipped, incl. transitive) deps MUST be acknowledged in both
-    # the notices table and the license texts.
+    # the notices table and the license index. This is not a binary license audit.
     notices = _read_text(root / "THIRD_PARTY_NOTICES.md")
     licenses = _read_text(root / "THIRD_PARTY_LICENSES.md")
     acknowledged_notices = [d for d in REQUIRED_ACKNOWLEDGED_DEPS if d.lower() in notices.lower()]
@@ -326,10 +368,10 @@ def check_legal() -> CheckResult:
     if missing_notices:
         failures.append(f"THIRD_PARTY_NOTICES.md missing acknowledgements: {sorted(missing_notices)}")
     if missing_licenses:
-        failures.append(f"THIRD_PARTY_LICENSES.md missing license texts: {sorted(missing_licenses)}")
+        failures.append(f"THIRD_PARTY_LICENSES.md missing license entries: {sorted(missing_licenses)}")
     if failures:
         return CheckResult(name, False, "; ".join(failures))
-    return CheckResult(name, True, f"acknowledges all {len(REQUIRED_ACKNOWLEDGED_DEPS)} shipped deps")
+    return CheckResult(name, True, f"acknowledges all {len(REQUIRED_ACKNOWLEDGED_DEPS)} shipped deps; complete Qt LGPL/GPL texts")
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +565,7 @@ CHECKS = (
     check_sidecar_spec,
     check_iss,
     check_branding_assets,
+    check_core_license,
     check_legal,
     check_no_private_keys,
     check_i18n_release,

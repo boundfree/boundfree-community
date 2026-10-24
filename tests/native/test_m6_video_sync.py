@@ -1,7 +1,7 @@
 """M6 视频同步的 smoke CLI 契约测试。
 
 被测对象: ``bf_app --smoke-m6-sync`` 与 ``bf_app --smoke-m6-video <path>``
-两个计划新增的 smoke 入口 (M6 计划 docs/plans/m6-video-sync.md)。底层被测代码
+两个计划新增的 smoke 入口 (M6 计划 docs/archive/plans/m6-video-sync.md)。底层被测代码
 为 ``native/src/controller/video_sync_state.*``, 由 ``native/src/app/main.cpp``
 暴露为 smoke 子命令。
 

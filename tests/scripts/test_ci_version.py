@@ -1,6 +1,8 @@
 """Release mistakes must fail before compilation or remote publication."""
 import importlib.util
+import json
 from pathlib import Path
+import re
 import sys
 import pytest
 
@@ -59,4 +61,11 @@ def test_delivery_cycle_updates_all_five_mirrors(tmp_path, monkeypatch):
         version_sync.set_version(value, None)
         version_sync.add_entry(value, 'chore', '测试交付阶段')
         assert version_sync.check_sync() == []
+        readme_json = re.search(r'```json\s*(.*?)```', version_sync.README.read_text(encoding='utf-8'), re.S)
+        assert readme_json, 'README must document the current version.json'
+        assert json.loads(readme_json.group(1)) == version_sync.read_version_json()
     assert version_sync.bump('minor') == '0.3.0-dev'
+    readme = version_sync.README.read_text(encoding='utf-8')
+    version_sync.README.write_text(readme.replace('"release_channel": "dev"',
+                                                '"release_channel": "beta"'), encoding='utf-8')
+    assert 'README release_channel JSON block mismatch' in version_sync.check_sync()

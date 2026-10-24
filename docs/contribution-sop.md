@@ -3,7 +3,7 @@ title: Community 提交与交付 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 ---
 
 # Community 提交与交付 SOP
@@ -31,6 +31,8 @@ git switch -c feature/your-change origin/master
 ## 2. 实现、文档与本地验证
 
 实现保持在本次任务范围内，接口与用户可见行为变化同步更新相关契约、使用说明和有意义的回归。普通提交不修改产品版本；需要切换 dev / beta.N / stable 时，按发布 SOP 使用版本同步工具。
+
+新增实现先按 [许可与扩展边界](../legal/LICENSING.md) 确定归属：Apache-2.0 核心和公开接口放本仓库，专有付费扩展放独立私有仓库。新增依赖/资源保留原始许可；涉及许可或打包声明时运行 `python3 scripts/common/check_release_assets.py`，核对 `LICENSE` / `NOTICE` 与随包副本一致。
 
 提交前必做：
 

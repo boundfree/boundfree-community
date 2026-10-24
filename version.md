@@ -1,6 +1,6 @@
 # BoundFree EEG Native Version
 
-当前版本：0.2.2-dev
+当前版本：0.2.2-beta.1
 
 版本真值：`version.json`
 
@@ -11,6 +11,23 @@
 - PATCH 用于已发布版本修复，MINOR 用于新阶段能力，MAJOR 用于重大不兼容边界。
 - IPC 协议版本独立维护。已公开发布的 tag 和安装包不覆盖。
 - 本规范之前的逐提交记录原样保留，后续操作见 `docs/release-sop.md`。
+
+---
+
+chore: 准备保留激活的授权测试者首轮 Beta
+
+版本：0.2.2-beta.1
+日期：2026-10-24
+
+作者：BigYellow12138 <1373912749@qq.com>
+
+类型：chore
+
+提交标题：
+chore: 准备保留激活的授权测试者首轮 Beta
+
+提交正文：
+无
 
 ---
 

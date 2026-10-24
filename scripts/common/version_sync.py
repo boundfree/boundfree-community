@@ -113,6 +113,8 @@ def bump(kind: str) -> str:
 def update_readme_version(version: str) -> None:
     text = README.read_text(encoding="utf-8")
     text = re.sub(r'"version": "[^"]+"', f'"version": "{version}"', text, count=1)
+    text = re.sub(r'"release_channel": "[^"]+"',
+                  f'"release_channel": "{default_channel(version)}"', text, count=1)
     text = re.sub(r"产品版本 `[^`]+`", f"产品版本 `{version}`", text, count=1)
     README.write_text(text, encoding="utf-8")
 
@@ -198,6 +200,8 @@ def check_sync() -> list[str]:
     readme = README.read_text(encoding="utf-8")
     if f'"version": "{version}"' not in readme:
         failures.append("README version JSON block mismatch")
+    if f'"release_channel": "{channel}"' not in readme:
+        failures.append("README release_channel JSON block mismatch")
     if f"产品版本 `{version}`" not in readme:
         failures.append("README status version mismatch")
     agents = AGENTS.read_text(encoding="utf-8")
