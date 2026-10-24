@@ -8,57 +8,37 @@ last_updated: 2026-10-24
 
 # Community 版本与发布 SOP
 
-本流程仅适用于本仓库。GitHub `Vsonic12138/boundfree-eeg-native` 统一管理 Issue、PR、代码评审、发版验收和 Actions；Gitee `BigYellow12138/boundfree-community` 是国内源码与 Release 镜像，不另建 Issue/PR。推送 Gitee 本身不会触发 GitHub Actions；合入 GitHub `master` 才会自动构建。两个远端的可见性独立，不因本流程改变。
-
-开始修改、暂存与提交、PR 审查、主线 CI 和 Gitee 同步按 [提交与交付 SOP](contribution-sop.md)。仓库代理入口为 [community-delivery skill](../.agents/skills/community-delivery/SKILL.md)，只引用本流程，不另维护一份发布规则。
+本文负责产品版本、安装包核验、GitHub Release 和 Gitee Release 镜像。研发协作、远端权限、PR、主线 CI 和 Gitee 源码同步统一按 [提交与交付 SOP](contribution-sop.md)，这里不再重复其操作。
 
 ## 0. 从开发包到双平台发布
 
-两个托管地址、访问权限、远端配置和单向源码同步的职责以 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序) 为准。这里的“两平台发布”指 GitHub/Gitee 这两个托管平台；Windows/Linux 是安装包的目标系统，不能混为一谈。
+发版顺序：**调整阶段版本（第 3 节）→ 经提交 SOP 合入并验证主线 → 选定源 SHA 创建 tag/草稿（第 4 节）→ 验收并 Publish（第 5 节）→ Gitee Release 镜像核验（第 7 节）**。
 
-| 触发 / 操作 | 自动还是人工 | 产物 / 完成条件 |
-| --- | --- | --- |
-| GitHub PR、`master` 更新 | 自动 `Community CI` | 编译、回归和内部 dev 安装包；不创建 tag/Release |
-| 源码同步到 Gitee | 维护者快进推送 | 两边 `master` 完整 SHA 一致；不会复制 Release 或触发 GitHub 构建 |
-| 选择 beta/stable、更新阶段版本 | 维护者在 GitHub PR 中完成 | 五处版本同步，PR 和主线 CI 成功，选定发布源 SHA |
-| 创建 annotated tag、运行 `Community Release` | 维护者选择，Action 构建 | 从 tag 精确源提交重建并验证，生成 GitHub 草稿；不自动 Publish |
-| 实机验收、检查包与发布草稿 | 维护者记录到 GitHub 验收 Issue 并 Publish | GitHub Release 已发布，版本/tag/源 SHA/原包 SHA256 明确 |
-| 同步 Gitee tag、说明和国内下载 | 维护者按第 7 节执行 | 同版本、同源 SHA，实际回下载还原原包 SHA256 一致；回填同一验收 Issue |
+维护者选版本、触发 `Community Release`；Action 从精确 tag 重建、测试并生成 GitHub 草稿。Publish 和 Gitee 镜像由维护者执行，目前没有自动镜像 Action。GitHub 已发布但 Gitee 附件未验证时，记录“Gitee 镜像待完成”；草稿阶段不要求勾选发布后的镜像验收。
 
-当前**只有构建和 GitHub 草稿生成由 Action 执行**；GitHub Publish、Gitee 源码/Release 同步仍由维护者执行，没有自动镜像 Action。完成 GitHub 发布但 Gitee 附件未上传或未验证时，状态应写“GitHub 已发布，Gitee 镜像待完成”，不能写“两边已发布”。
-
-先完成发布前的目标阶段验收，再 Publish；Gitee 实际上传与访客下载核验是发布后的收尾步骤，不循环要求草稿阶段已经完成。版本中的 `beta` 只说明交付阶段，不表示已完成实机验收或已公开。
+这里的双平台指 GitHub/Gitee；Windows/Linux 是安装包目标系统。
 
 ## 1. 只记住三个状态
 
-| 面向谁 | 仓库版本 | 安装包版本示例 | 是否自动发布 Release |
-| --- | --- | --- | --- |
-| 内部开发 | `0.2.2-dev` | `0.2.2-dev.158.1+g12345678` | 否 |
-| 小范围试用 | `0.2.2-beta.1` | `0.2.2-beta.1` | 否，维护者选择发版 |
-| 正式交付 | `0.2.2` | `0.2.2` | 否，维护者检查草稿后发布 |
+| 交付阶段 | 源码版本 | 安装包版本示例 |
+| --- | --- | --- |
+| 内部开发 | `0.2.2-dev` | `0.2.2-dev.158.1+g12345678` |
+| 小范围试用 | `0.2.2-beta.1` | `0.2.2-beta.1` |
+| 正式交付 | `0.2.2` | `0.2.2` |
 
 `158` 是 Community CI 的运行编号，`1` 是重跑次数，`12345678` 是提交 SHA 前八位。源码不被自动提交回写。普通 CI 一律输出内部 dev 包，即使版本准备 PR 中已填写 beta/stable；只有独立 Release Action 保留 beta/stable 身份并执行相应签名策略。完整 SHA、基础版本和本次运行编号在包内 `build-info.json`，Native、边车与安装器读取同一份生成的 `version.json`。运行编号是工作流标识，不是产品 PATCH，也不是跨工作流统一的发布计数。
 
-普通提交无需修改版本。已发布版本的 bug 修复用 PATCH；新阶段能力用 MINOR；重大不兼容变化评估 MAJOR。`1.0.0` 留给第一个完整、可持续交付产品。历史 `v3.*` tag 来自上游历史，不代表 Community 产品版本；本流程只识别 `community-v*`。
+`version.json` 是产品版本真值；`version.md` 记录阶段变化，普通提交由 Git 追溯，无需改版本。已发布版本修复用 PATCH，新阶段能力用 MINOR，重大不兼容变化评估 MAJOR；`0.x` 表示产品仍在成型，首个完整、可持续交付产品再考虑 `1.0.0`。`alpha/rc` 仅保留历史兼容，不作为默认流程。
 
-## 2. 日常开发与下载安装包
+产品版本各数值段不得超过 Windows FileVersion 的 65535；Win32 四段数值为基础版本加 `.0`，完整 SemVer 才标识安装包。`ipc_protocol_version` 独立维护，协议不兼容时另行评估。历史 `v3.*` tag 不代表 Community 产品版本；本流程只识别 `community-v*`。
 
-1. 从更新后的 `master` 切功能分支，提交后向 GitHub `master` 创建 PR。
-2. PR 自动运行 `Community CI`：编译 Windows/Linux、版本/i18n/资源检查、Python 与格式契约回归、ICA/导出/播放回归、冻结边车、打包与安装态 smoke。
-3. 合入 `master` 后再次自动构建该主线提交。**自动构建不会创建 Release，也不会推送 tag。**
-4. GitHub 仓库 → **Actions → Community CI → 成功的运行 → Artifacts**，下载 `BoundFreeEEG-Windows-x64` 或 `BoundFreeEEG-Linux-x64`，解压外层 Artifact ZIP。
-5. Windows 运行里面的 `BoundFreeEEG_Setup_*.exe`；Linux 解压 `.tar.gz` 后运行 `BoundFreeEEG/BoundFreeEEG.sh`。
-6. 核对旁边 `SHA256SUMS-*.txt` 和 `build-info-*.json`。保存缺陷时附上完整版本和提交 SHA。
+## 2. 安装包下载与核验
 
-源码回归使用开发配置以避免激活弹窗；实际安装包另行使用 `BF_REQUIRE_LICENSE=ON` 和仓库公钥构建，并执行授权门禁 smoke。
+内部包：GitHub **Actions → 对应成功运行 → Artifacts**，下载 `BoundFreeEEG-Windows-x64` 或 `BoundFreeEEG-Linux-x64`，解压外层 ZIP。Artifacts 默认保留 30 天，过期后的重建按提交 SOP 手动触发 CI。发布候选包则从该版本 GitHub Release 草稿/附件获取；长期保存的试用包应走 beta 发布。
 
-本仓库自有核心已采用 Apache-2.0；当前官方包的整机激活尚待迁移为免费核心与扩展授权，许可调整不代表该功能已完成。发布包应包含 `legal/LICENSE.txt`、`legal/NOTICE.txt`、`legal/LICENSING.md` 和第三方声明；前两份分别与源树根目录 `LICENSE`、`NOTICE` 一致，发布资产检查负责校验。许可与未来扩展交付边界见 [说明](../legal/LICENSING.md)。
+每次交付都核对：包旁 `SHA256SUMS-*.txt` 与实际文件一致，`build-info-*.json` 的完整源 SHA、运行 URL、版本及 release 标志对应目标构建，包内元数据一致。不能混用 PR、主线和独立 Release 的产物；缺陷记录附完整版本与 SHA。
 
-Qt 的 LGPL v3 与其引用的 GPL v3 完整正文位于 `legal/licenses/`，静态检查会拒绝缺失或被摘要替代的正文。发版前还需核对实际 Windows/Linux 包中的全部第三方许可副本、归属与对应源码获取信息；声明文件或静态检查通过不表示已完成该项验收。
-
-Artifacts 默认保留 30 天，过期可从同一代码提交重新构建（开发包重跑次数变化）。值得长期保留的试用版应走 beta Release。GitHub 当前仓库访问权限同样限制下载权限；本流程不自动公开仓库。
-
-手动重建：**Actions → Community CI → Run workflow**，选分支。按钮要求工作流已在默认分支存在；首次接入在 PR 上验证，合入后按钮才可正常使用。
+Windows 运行 `BoundFreeEEG_Setup_*.exe`；Linux 当前仅支持 **Ubuntu 24.04 x86_64**，解压 `.tar.gz` 后运行 `BoundFreeEEG/BoundFreeEEG.sh`，仍依赖目标桌面、驱动及系统服务，不承诺其他发行版或 AppImage 兼容。下载受仓库访问权限约束。
 
 ## 3. 调整交付阶段版本
 
@@ -78,12 +58,12 @@ python3 scripts/common/version_sync.py next minor --type chore --summary "开启
 python3 scripts/common/version_sync.py check
 ```
 
-同步工具更新 `version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss` 五处，检查 diff 后一起提交。不要手动只改 JSON。`ipc_protocol_version` 不随产品版本自动递增；边车 Python 包自身的 setuptools 版本属于内部实现，运行时产品版本仍以 `version.json` 为准。
+同步工具更新 `version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss` 五处，检查 diff 后按提交 SOP 一起交付，不手动只改 JSON。边车 setuptools 版本是内部实现，不作为产品版本。
 
 ## 4. 创建 beta / stable Release 草稿
 
 1. 在 **GitHub 本仓库 → Issues → New issue → Community 发版验收** 创建一次发版的验收记录，填入目标版本、变更范围、目标系统、验证结果和限制。
-2. 把版本准备 PR 合入 GitHub `master`，等待该提交的 CI 全部成功。确认这份源代码就是要交付的版本。
+2. 确认第 3 节的版本准备已按提交 SOP 完成交付，选定已通过主线 CI 的完整 SHA。
 3. 在该提交创建 annotated tag（以下以 beta 为例）：
 
 ```bash
@@ -94,20 +74,21 @@ git push origin refs/tags/community-v0.2.2-beta.1
 
 4. **Actions → Community Release → Run workflow**，从 `master` 执行，输入已有 tag 和本仓库验收 Issue 的完整 URL。stable 还需确认人工验收已完成。
 5. 工作流校验 annotated tag、tag 与 JSON 一致、提交属于 `master` 历史、Issue 属于本仓库且可读取、目标 Release 不存在。通过后重新构建该 tag 的源码、执行测试、安装态 smoke 并上传双平台产物。
-6. 两个平台都成功后，在 **Releases** 生成草稿。beta 带 prerelease 标记；stable 不带。检查包名、版本、SHA256、变更说明与验收 Issue，再由维护者点击 **Publish release**。
-7. GitHub 发布后，必须按第 7 节把同一 tag、说明和国内安装包下载同步到 Gitee，回下载校验后把两边 URL 与结果写回同一个 GitHub 验收 Issue。当前此步骤由维护者执行，现有 Action 仍只创建 GitHub 草稿；普通 Git 推送不会同步 Release。
+6. 双目标系统构建均成功后生成草稿，beta 带 prerelease 标记，stable 不带。按第 2 节核验包，并完成第 5 节验收后由维护者点击 **Publish release**；随后执行第 7 节。
 
 草稿页面 URL 可能含 `untagged-*`，产品 tag 以 Release 元数据中的 `tag_name` 为准。通过 API 编辑草稿说明时显式保留目标 `tag_name`、`draft=true` 和 prerelease 状态，编辑后再次核对；不要把草稿页面 URL 当作 Git tag。
 
-不得给 `dev` 创建 Release。tag 创建本身不会自动发布。手动 `Community CI` 也不会创建草稿。Release 构建从精确提交重建，不从另一个 CI 随意取包；草稿引用的是自己的构建运行与 SHA256。
+不得给 dev 创建 Release，也不把日常 CI 改称发布包。发布后的主线可继续开发，但已选 tag 固定在原始源 SHA，不随 `master` 移动。
 
 ## 5. 对外发布门槛
 
 beta：明确试用范围与已知限制；关键打开/播放/分析/导出路径通过回归；至少在实际目标 Windows 或 Linux 桌面试运行。unsigned beta 可用于试用，必须在说明中明确签名状态。
 
-官方安装包采用**验收并发布后允许公开下载、使用仍需有效授权激活**的方案。`BF_REQUIRE_LICENSE=ON`、现有授权兼容与签名策略保持不变；免费核心免激活和扩展权益属于后续阶段，不作为本轮已经实现的能力。
+官方安装包采用**验收发布后可公开下载、使用仍需有效授权激活**的方案，以 `BF_REQUIRE_LICENSE=ON` 和仓库公钥构建，并验证授权门禁；源码回归使用开发配置。免费核心免激活与扩展权益仍待实现，许可及扩展边界见 [LICENSING.md](../legal/LICENSING.md)。
 
-在发版验收 Issue 和两边 Release 说明中写明试用范围、国内下载步骤、激活要求、签名状态及已知限制。公开下载不等于授予软件激活权益，也不改变 Apache-2.0 源码权利。未验收候选包保持 GitHub 草稿，不提前在公开 Gitee 创建发行版。GitHub 当前私有，下载及 Issue/PR 仍需相应仓库访问权限；Gitee 国内下载必须实际可用，不能只放一个私有 GitHub 链接。本流程不自动邀请协作者或更改可见性。
+发版验收 Issue 和两边说明须写明范围、国内下载步骤、激活/签名状态及已知限制。公开下载不增加激活权益或限制 Apache-2.0 源码权利。未验收候选包保持 GitHub 草稿，不提前在 Gitee 公开。
+
+随包 `legal/LICENSE.txt` / `NOTICE.txt` 应与根目录 `LICENSE` / `NOTICE` 一致，并包含许可边界与第三方声明。Qt LGPL/GPL 完整正文位于 `legal/licenses/`；逐包核对全部实际依赖的许可正文、归属、对应源码获取与重链接事项，静态资产检查不能代替二进制分发核验。
 
 stable：完成承诺功能验收，无已知数据丢失、错误结果和高频崩溃；完成干净 Windows 10/11 安装、旧版升级、卸载、桌面操作、正式授权兼容与代表性科研文件验证；发布 Linux 时另需目标 Linux 桌面验收。把证据放入本次验收 Issue。runner 的命令行和安装测试不等同于完整干净机、真实 GPU、真实硬件或算法效果验收。
 
@@ -122,12 +103,10 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 
 ## 6. 失败、重跑与版本不可变
 
-- PR / master CI 失败：打开失败 step，修复后提交；可用 Re-run all jobs 排查临时网络问题并保持双平台尝试编号一致。测试报告在 `reports-*` Artifact。
-- 依赖或网络失败：可以重跑；开发包生成新的尝试编号，不覆盖旧包。依赖直接版本已固定，runner 镜像和传递依赖仍可能变化，完整可复现环境尚需锁定。
-- Release 构建失败且尚无草稿：若是环境问题，在同一 tag 上重跑；若需修改源码，创建新 beta.N 或新 PATCH，不移动 tag。
+- 日常 PR / master CI 的定位和重跑按 [提交 SOP 第 4 节](contribution-sop.md#4-检查-pr合入与主线包)。
+- Release 构建失败且尚无草稿：若是环境问题，在同一 tag 上重跑；若需修改源码，创建新 beta.N 或新 PATCH，不移动 tag。直接依赖版本已固定，但 runner 和传递依赖仍可能变化，不承诺逐字节可复现。
 - 已有草稿或已发布 Release：预检分页列出 Release 并按 tag 拦截，编译前拒绝覆盖。按 tag 查询可能对草稿返回 404，只读 token 的列表也可能隐藏草稿，不能据此判断该版本不存在。使用本工作流配置的凭据；接口失败时停止。改用新版本；不替换已经对外分发的同版本安装包。
-- 默认和构建任务使用只读 token；仅手动 Release 中的预检与草稿 job 有 `contents: write`。GitHub 要求 push 权限才返回草稿，因此预检需要该配置，脚本只读取数据、不写入仓库或 Release；预检 job 仅在 `master` 执行，其他分支跳过后续任务。配置回归约束此权限及分支范围，不使用仓库用户权限字段推断 GitHub 自动 token 的实际授权；最终以 runner 能枚举并拒绝已有草稿验收。PR 构建不会获得签名 secrets。
-- Windows 下载的是 Setup 安装包；Linux 当前为 **Ubuntu 24.04 x86_64** 归档，含 Qt、冻结边车和主要动态库，不承诺其他发行版或 AppImage 兼容。仍依赖目标桌面、驱动和系统服务。
+- 默认和构建任务使用只读 token；仅手动 Release 中的预检与草稿 job 有 `contents: write`。GitHub 要求 push 权限才返回草稿，因此预检需要该配置，脚本只读取数据、不写入仓库或 Release；预检 job 仅在 `master` 执行，其他分支跳过后续任务。配置回归约束此权限及分支范围，不使用仓库用户权限字段推断 GitHub 自动 token 的实际授权；最终以 runner 能枚举并拒绝已有草稿验收。
 
 ## 7. 同步 Gitee Release 与国内下载
 
@@ -156,7 +135,7 @@ python3 scripts/common/prepare_gitee_release.py \
 
 ### 7.2 同步 tag、说明与附件
 
-1. 按提交 SOP 同步已验证源码。确认目标 annotated tag 的对象 SHA 和 peeled commit 在两个远端相同；同步已有 tag，不能依赖 Gitee 自动在默认分支创建新 tag：
+1. 源码同步按 [提交 SOP 第 5 节](contribution-sop.md#5-同步-gitee-与收尾) 完成后，只在此同步发布 tag，核对两端 tag 对象和 peeled commit 相同；不让 Gitee 在默认分支自动创建替代 tag：
 
 ```bash
 git fetch origin master --tags
@@ -166,7 +145,7 @@ git ls-remote origin "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
 git ls-remote gitee "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
 ```
 
-2. 用 `ge release list --repo BigYellow12138/boundfree-community` 核对目标版本。任何认证/网络错误都停止；已存在时进入补齐核验，不盲目创建、删除或覆盖。发布说明保留同一变更范围、已知限制、激活与签名状态，增加下述国内还原步骤、每个平台原包 SHA256，以及 GitHub Issue/PR 入口。GitHub 仍私有时明确其访问条件。Gitee 公开下载的新安排取代早期候选包说明中的“仅定向交付”，不会改变随包 Apache-2.0 或第三方许可。
+2. 用 `ge release list --repo BigYellow12138/boundfree-community` 核对目标版本。任何认证/网络错误都停止；已存在时进入补齐核验，不盲目创建、删除或覆盖。发布说明保留同一变更范围、已知限制、激活与签名状态，增加下述国内还原步骤、每个平台原包 SHA256，以及 GitHub Issue/PR 入口。GitHub 仍私有时明确其访问条件。旧候选包若写“仅定向交付”，在本次发布说明中澄清当前安排；不改变原包许可或内容。
 3. 把核对完成的说明写入 `$COMMUNITY_MIRROR_DIR/gitee-notes.md`。该文件还应列出预期分卷数量，上传未完成期间标明“附件同步中”。确认 GitHub 已发布且材料齐全后创建 Gitee 发行版并上传：
 
 ```bash

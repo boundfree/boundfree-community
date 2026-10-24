@@ -20,7 +20,7 @@ last_updated: 2026-10-24
 
 ## Collaboration Platforms
 
-Issue、PR、评审、验收和构建统一在 GitHub 管理。Gitee 是国内源码与 Release 镜像，每次发布后同步相同 tag、版本说明和国内安装包下载，并核对原包 SHA256；不另建 Gitee Issue/PR。两边共用一条 Community 主线，职责、访问权限与远端配置统一见 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序)；普通提交只构建 dev 包。自动/人工步骤和两边发布完成条件见 [发布 SOP 第 0 节](release-sop.md#0-从开发包到双平台发布)。
+仓库关系、权限和远端配置统一见 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序)。
 
 ## Branch Model
 
@@ -28,33 +28,11 @@ Issue、PR、评审、验收和构建统一在 GitHub 管理。Gitee 是国内�
 
 ## Version Rules
 
-`version.json` 为唯一人工维护真值。采用 SemVer，默认只用三种状态：
-
-| 状态 | 仓库版本示例 | 用途 |
-| --- | --- | --- |
-| dev | `0.2.2-dev` | 内部开发；CI 临时生成 `0.2.2-dev.158.1+g12345678` |
-| beta | `0.2.2-beta.1` | 选定交付范围的小范围试用；继续修复后 `.2` |
-| stable | `0.2.2` | 已完成约定范围验收的正式版本 |
-
-普通功能开发、修复、测试、文档提交无需递增产品版本。`version.md` 从本规范起记录交付阶段，逐提交详情使用 Git；旧记录保留。PATCH 用于已发布版本的修复，MINOR 用于新的阶段能力，MAJOR 用于重大不兼容变化；`0.x` 表示产品仍在成型。首个完整、可持续交付版本考虑 `1.0.0`。`alpha/rc` 仅保留旧脚本兼容，不作为默认日常流程。
-
-版本变化使用同步工具，一次更新五处元数据并新增阶段记录：
-
-```bash
-python3 scripts/common/version_sync.py set 0.2.2-beta.1 --type chore --summary "准备首轮试用"
-python3 scripts/common/version_sync.py set 0.2.2 --type chore --summary "完成阶段验收并准备正式发布"
-python3 scripts/common/version_sync.py next patch --type chore --summary "开启下一修复版本"
-python3 scripts/common/version_sync.py next minor --type chore --summary "开启下一功能阶段"
-python3 scripts/common/version_sync.py check
-```
-
-切换版本的提交应包含全部同步文件；普通提交只需保证校验通过。IPC 版本独立维护，仅协议不兼容变化时评估递增。产品版本各段上限为 Windows FileVersion 的 65535；完整 SemVer 与构建编号显示在 AppVersion / `version.json`，Win32 四段数值保留基础版本加 `.0`，不作为包的唯一标识。
+产品版本、构建标识与更新命令统一在 [版本与发布 SOP 第 1–3 节](release-sop.md#1-只记住三个状态) 维护。
 
 ## Release Flow
 
-具体操作、门禁、下载位置和恢复方法见 [release-sop.md](release-sop.md)。`master` 每次推送和 PR 自动编译、回归并打包；产物存 GitHub Actions Artifacts，默认保留 30 天，不自动生成 Release。手动 Release Action 只接受 `community-vX.Y.Z[-beta.N]` annotated tag，重新测试并构建相应提交，然后生成草稿。公开发布由维护者检查后点击 Publish。
-
-Windows 正式版必须签名，并完成干净 Windows 10/11、升级/卸载、桌面和授权兼容验收。自动化 runner 上安装/运行/卸载是回归证据，不能替代上述人工验收。`scripts/windows/build_release.ps1` 保留正式版签名门禁；证书缺失时应失败。历史 tag 不覆盖，构建和 Release 失败后按 SOP 处理。
+发布步骤、签名与验收要求统一在 [版本与发布 SOP](release-sop.md) 维护。
 
 ## Documentation Rules
 
@@ -108,7 +86,6 @@ last_updated: 2026-07-06
 - subject 尽量控制在一行内；需要细节时写 body。
 - body 可选；用中文说明动机、影响范围或为何不做某事。多段用空行分隔。
 - 一次提交只做一类事；不要把无关改动混在同一提交。
-- 普通提交不递增产品版本；交付阶段变化时用同步脚本更新五处版本元数据和阶段记录。
 - 不写无信息量的 subject，例如 `更新`、`修复 bug`、`wip`、`update`。
 - type 保持英文小写；subject 与 body 使用中文。
 
@@ -150,47 +127,6 @@ test: 增加 M2 格式夹具与验收证据
 
 ## Verification Rules
 
-声称完成前必须运行对应验证命令并检查输出。
-
-文档变更至少运行：
-
-```bash
-git diff --check HEAD
-```
-
-JSON 变更至少运行：
-
-```bash
-python3 -m json.tool version.json
-```
-
-版本变更必须运行：
-
-```bash
-python3 scripts/common/version_sync.py check
-```
-
-C++/Qt6 工程变更应运行：
-
-```bash
-cmake --preset wsl2-qt6-conda
-cmake --build --preset wsl2-qt6-conda
-```
-
-以上命令从 `native/` 目录执行。
-
-当前 WSL2 开发环境使用稳定工具链入口 `/home/vsonic12138/workspace/BoundFree_Workspace/toolchains/qt6`。该路径指向实际 Qt6/conda 环境，避免在日常命令中直接依赖 conda 内部路径。
-
-M1-A 基础验证可运行：
-
-```bash
-scripts/wsl/verify_m1_foundation.sh
-```
-
-Python 边车变更应运行：
-
-```bash
-python -m pytest tests/sidecar
-```
+按 [提交 SOP 第 2 节](contribution-sop.md#2-实现文档与本地验证) 选择检查与执行命令。声明通过必须有对应输出；本地未运行的检查在 PR 记录原因和云端结果。
 
 性能结论必须记录环境、命令、样本和结果。不得把 WSL/Xvfb 软件渲染结果当成真实 GPU 验收。
