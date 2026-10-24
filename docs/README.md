@@ -12,20 +12,20 @@ last_updated: 2026-10-24
 
 | 要做什么 | 阅读入口 |
 | --- | --- |
-| 先弄清 GitHub/Gitee 的关系、权限和开发顺序 | [contribution-sop.md 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序) |
-| 区分自动构建、GitHub 草稿/发布与 Gitee 镜像 | [release-sop.md 第 0 节](release-sop.md#0-从开发包到双平台发布) |
 | 了解产品范围、现状和下一步 | [roadmap.md](roadmap.md) |
 | 使用浏览、导出和脑电/眼电分离 | [analysis-guide.md](analysis-guide.md) |
 | 理解模块和数据流 | [architecture-design.md](architecture-design.md) |
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
-| 查询分支、提交、版本和文档规则 | [development-guide.md](development-guide.md) |
-| 完成修改、提交、PR、主线构建和远端同步 | [contribution-sop.md](contribution-sop.md) |
-| 更新交付版本、准备 Beta、发布及同步 Gitee 国内下载 | [release-sop.md](release-sop.md) |
+| 查询分支、提交格式和文档约束 | [development-guide.md](development-guide.md) |
+| 仓库关系、权限、提交/PR、主线 CI 与 Gitee 源码同步 | [contribution-sop.md](contribution-sop.md) |
+| 版本规则/更新、安装包核验、Release 与 Gitee 国内下载 | [release-sop.md](release-sop.md) |
 | 配置本地 WSL2 / Windows 构建与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 | 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
 | 确定开源许可、贡献与商业扩展归属 | [许可与扩展边界](../legal/LICENSING.md) |
 
 代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准；具体发布证据保存在该版本的验收 Issue，不能把旧报告里的包名当作最新下载入口。
+
+同一规则只在所属文档展开：开发规范管约束，提交 SOP 管日常交付，发布 SOP 管版本和发布。README、代理入口和技能保留导航与关键约束；跨流程用链接交接，不复制整套步骤。
 
 ## 维护规则
 

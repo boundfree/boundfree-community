@@ -50,25 +50,14 @@
 
 ## Collaboration Platforms
 
-GitHub/Gitee 是同一 Community 项目的研发主仓库与国内镜像，共用代码/版本/tag；不是 Community 与 Pro 两个产品的对应关系。远端配置、同步方向与职责表见 [提交 SOP 第 0 节](docs/contribution-sop.md#0-两个托管地址与协作顺序)，构建/发布的自动与人工步骤见 [发布 SOP 第 0 节](docs/release-sop.md#0-从开发包到双平台发布)。
-
-- Issue、PR、代码评审、发版验收和 Actions 统一在 GitHub `Vsonic12138/boundfree-eeg-native` 管理；不在 Gitee 新建或镜像 Issue/PR。
-- Gitee `BigYellow12138/boundfree-community` 是国内源码和 Release 镜像。每次发布后必须同步 tag、说明和国内安装包下载，核对同一源提交与原包 SHA256；仅推送 Git 不能视为 Release 已同步。
-- Gitee 当前公开。验收通过并发布后允许公开下载，官方包仍需激活；未验收候选包保持 GitHub 草稿，不提前在 Gitee 创建公开发行版。超限附件处理和同步步骤见发布 SOP。
+GitHub 是同一 Community 项目的研发主仓库，统一管理 Issue/PR/验收；Gitee 是国内源码和 Release 镜像。权限、远端配置和源码同步以 [提交 SOP 第 0 节](docs/contribution-sop.md#0-两个托管地址与协作顺序) 为准，发布交接见 [发布 SOP](docs/release-sop.md)。
 
 ## Branch And Version Rules
 
-- 日常开发基于 `master`。
-- 功能开发从 `master` 切 `feature/*`、`fix/*`、`spike/*` 或 `docs/*`；当前阶段不绑定历史 `feature/m1-foundation` 分支。
-- 使用 `master` 加短功能分支；历史 `release` 分支仅供追溯，不再要求维护第二条发布线。
-- 已发布版本紧急修复从正式 tag 切 `hotfix/*`，修复同步回 `master` 后发布新版本。
-- `version.json` 是产品版本和 IPC 协议版本的单一真值来源。
-- 根目录 `version.md` 记录交付阶段变化，日常提交详情保留在 Git。
-- 需要切换交付阶段时运行 `python3 scripts/common/version_sync.py next ...` 或 `set ...`，同步 `version.json`、`version.md`、`README.md`、`AGENTS.md`、`installer/BoundFreeEEG.iss`。普通提交无需递增产品版本；提交前运行 `python3 scripts/common/version_sync.py check`。
-- 默认只使用 `dev`、`beta.N`、`stable`。CI 构建开发包时临时追加运行编号、重跑次数和提交 SHA，不回写仓库。
-- `master` 每次推送自动构建 Windows 安装包和 Ubuntu 24.04 归档；Release 只由人工触发并生成草稿，使用 `community-v*` annotated tag，禁止覆盖已发布版本。
-- 具体操作见 `docs/release-sop.md`；每次对外发版使用本仓库 Release checklist Issue 模板。
-- 产品版本和 `ipc_protocol_version` 必须分开维护。
+- 日常基于 `master` 使用短分支，具体分支规则见 [开发规范](docs/development-guide.md#branch-model)。
+- `version.json` 是产品版本真值，普通提交不涨版本；阶段变更按 [发布 SOP 第 3 节](docs/release-sop.md#3-调整交付阶段版本) 使用同步工具。提交前运行 `python3 scripts/common/version_sync.py check`。
+- 产品版本与 `ipc_protocol_version` 独立维护。
+- 普通 CI 只生成内部 dev 包；Release 使用 `community-v*` annotated tag 并先生成草稿。对外发布按发布 SOP 验收，不覆盖 tag 或同版本安装包。
 
 ## Technical Constraints
 

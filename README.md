@@ -11,9 +11,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 | GitHub · 研发主仓库 | [Vsonic12138/boundfree-eeg-native](https://github.com/Vsonic12138/boundfree-eeg-native)：Issue、PR、评审、验收、Actions 构建及发布来源 |
 | Gitee · 国内镜像 | [BigYellow12138/boundfree-community](https://gitee.com/BigYellow12138/boundfree-community)：同步已验证源码、发布 tag、版本说明和国内安装包下载 |
 
-代码只在 GitHub 经 PR 合入 `master`，验证后单向同步到 Gitee；不在 Gitee 另建 Issue/PR 或独立维护修改。GitHub 当前私有，访问代码、提交 Issue/PR 和下载其产物需要仓库权限；Gitee 当前公开，可浏览源码，已发布官方包允许公开下载但仍需激活。镜像安排不改变源码的 Apache-2.0 权利。
-
-日常开发按 [提交与交付 SOP](docs/contribution-sop.md)，发版按 [版本与发布 SOP](docs/release-sop.md)。两份 SOP 分别说明代码同步与 Release 同步，推送 Git 不能代替发布安装包。
+GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向同步规则统一见提交 SOP。
 
 ## 当前状态
 
@@ -39,7 +37,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 未来付费扩展在独立私有仓库维护源码与商业许可，通过公开接口集成，不把专有实现混入本仓库。范围与贡献规则见 [许可与扩展边界](legal/LICENSING.md)。本次仅落实许可：现有官方安装包的整机激活门禁仍待迁移，不能视作免费核心与扩展授权已实现。
 
-官方安装包保留现有整机激活；完成验收并发布后，允许公开下载，使用时仍需有效授权。GitHub 管理发布，Gitee 同步版本说明和国内安装包下载；未验收候选包保持草稿。免费核心免激活及扩展权益迁移留待后续阶段。该官方包交付安排不改变 Apache-2.0 对源码的授权。
+官方包仍需激活，免费核心与扩展权益迁移尚未实现；公开下载、签名和验收安排统一见 [发布 SOP 第 5 节](docs/release-sop.md#5-对外发布门槛)，不改变 Apache-2.0 源码权利。
 
 ## 使用与开发入口
 
@@ -54,13 +52,6 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 首次体验分离可点击“打开教学记录 → 开始分离”；教学记录是自有数学混合源，不是 EEGdenoiseNet。真实记录需要确认通道用途、检查成分并人工标记来源，零线可能表示该组尚无成分；操作与限制见分析说明。
 
-## 仓库与交付规则
 
-- `master` 加短期功能/修复/文档分支，通过 PR 集成；中文 Conventional Commits。
-- 普通提交不递增产品版本。交付阶段使用 dev / beta.N / stable，变更由 `version_sync.py` 同步五处元数据；IPC 版本独立维护。
-- 普通 CI 生成含运行编号、尝试次数和 SHA 的内部 dev 构建，不回写源码、不创建 tag 或 Release。Artifacts 保留 30 天。
-- 对外版本使用 `community-vX.Y.Z[-beta.N]` annotated tag，手动 Release Action 只生成草稿，再按验收和授权决定发布；不覆盖版本与 tag。
-- [GitHub](https://github.com/Vsonic12138/boundfree-eeg-native) 统一管理 Issue、PR、验收与 Actions；[Gitee](https://gitee.com/BigYellow12138/boundfree-community) 为国内源码与 Release 镜像，不另建 Issue/PR 流程。
-- 每次发布后同步两边的版本、tag、说明和安装包校验值。Gitee 超限附件使用分卷与还原脚本，具体下载和同步步骤见发布 SOP；推送源码本身不会同步 Release。
 
 目录：`native/` 原生程序，`sidecar/` 编解码边车，`tests/` 回归，`docs/` 当前文档，`docs/archive/` 历史计划/设计/验收。构建产物和本机配置不入库。
