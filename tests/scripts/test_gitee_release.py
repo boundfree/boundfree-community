@@ -136,7 +136,10 @@ def test_windows_restore_checks_before_installation(artifacts, tmp_path, problem
         package.write_bytes(b'keep user output')
     elif problem == 'existing_partial':
         partial.write_bytes(b'keep user partial')
-    result = subprocess.run(['cmd.exe', '/d', '/c', entry['restore']], cwd=folder, capture_output=True, text=True)
+    environment = os.environ.copy()
+    environment['PSModulePath'] = str(tmp_path / 'no optional PowerShell modules')
+    result = subprocess.run(['cmd.exe', '/d', '/c', entry['restore']], cwd=folder,
+                            env=environment, capture_output=True, text=True)
     assert (result.returncode == 0) == (problem == 'none'), result.stdout + result.stderr
     if problem == 'none':
         assert package.read_bytes() == (artifacts['Windows'] / entry['original']).read_bytes()

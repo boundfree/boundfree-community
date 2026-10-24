@@ -56,26 +56,30 @@ def windows_restore(package, sha, parts):
     # All interpolated filenames are derived from the strict version/name grammar.
     command = (
         "$ErrorActionPreference='Stop'; $created=$false; "
+        "function Hash([string]$path) { $file=[IO.File]::OpenRead($path); "
+        "$algorithm=[Security.Cryptography.SHA256]::Create(); "
+        "try { return [BitConverter]::ToString($algorithm.ComputeHash($file)).Replace('-','') } "
+        "finally { $algorithm.Dispose(); $file.Dispose() } }; "
         f"$parts=@({entries}); $output='{package}'; $tmp=$output+'.partial'; "
         "try { foreach ($p in $parts) { "
-        "if ((Get-Item -LiteralPath $p.name).Length -ne $p.size -or "
-        "(Get-FileHash -LiteralPath $p.name -Algorithm SHA256).Hash -ne $p.sha) "
+        "if (([IO.FileInfo]::new($p.name)).Length -ne $p.size -or "
+        "(Hash $p.name) -ne $p.sha) "
         "{ throw ('Part mismatch: '+$p.name) } }; "
-        "if (Test-Path -LiteralPath $output) { "
-        f"if ((Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash -eq '{sha}') "
-        "{ Write-Host ('Already verified: '+$output); exit 0 }; throw 'Existing output differs; move it before retrying' }; "
+        "if ([IO.File]::Exists($output)) { "
+        f"if ((Hash $output) -eq '{sha}') "
+        "{ [Console]::WriteLine('Already verified: '+$output); exit 0 }; throw 'Existing output differs; move it before retrying' }; "
         "$stream=[IO.File]::Open($tmp,[IO.FileMode]::CreateNew); $created=$true; "
         "try { foreach ($p in $parts) { $inputFile=[IO.File]::OpenRead($p.name); "
         "try { $inputFile.CopyTo($stream) } finally { $inputFile.Dispose() } } } finally { $stream.Dispose() }; "
-        f"if ((Get-FileHash -LiteralPath $tmp -Algorithm SHA256).Hash -ne '{sha}') {{ throw 'Restored package SHA256 mismatch' }}; "
-        "[IO.File]::Move($tmp,$output); Write-Host ('Verified: '+$output) "
-        "} catch { if ($created -and (Test-Path -LiteralPath $tmp)) { Remove-Item -LiteralPath $tmp }; "
+        f"if ((Hash $tmp) -ne '{sha}') {{ throw 'Restored package SHA256 mismatch' }}; "
+        "[IO.File]::Move($tmp,$output); [Console]::WriteLine('Verified: '+$output) "
+        "} catch { if ($created) { [IO.File]::Delete($tmp) }; "
         "[Console]::Error.WriteLine($_.Exception.Message); exit 1 }"
     )
     if len(command) > 7500:
         raise ValueError('Windows restore command exceeds cmd size limit; use fewer parts')
     return ('@echo off\r\nsetlocal\r\npushd "%~dp0" || exit /b 1\r\n'
-            f'powershell.exe -NoProfile -Command "{command}"\r\n'
+            f'"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -Command "{command}"\r\n'
             'set result=%errorlevel%\r\npopd\r\nexit /b %result%\r\n')
 
 
