@@ -26,7 +26,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 未来付费扩展在独立私有仓库维护源码与商业许可，通过公开接口集成，不把专有实现混入本仓库。范围与贡献规则见 [许可与扩展边界](legal/LICENSING.md)。本次仅落实许可：现有官方安装包的整机激活门禁仍待迁移，不能视作免费核心与扩展授权已实现。
 
-首轮 Beta 保留现有整机激活，仅向已授权测试者定向交付官方安装包；测试范围、下载权限和验收按发布 SOP 记录。免费核心免激活及扩展权益迁移留待后续阶段。该官方包交付安排不改变 Apache-2.0 对源码的授权。
+官方安装包保留现有整机激活；完成验收并发布后，允许公开下载，使用时仍需有效授权。GitHub 管理发布，Gitee 同步版本说明和国内安装包下载；未验收候选包保持草稿。免费核心免激活及扩展权益迁移留待后续阶段。该官方包交付安排不改变 Apache-2.0 对源码的授权。
 
 ## 使用与开发入口
 
@@ -47,6 +47,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 - 普通提交不递增产品版本。交付阶段使用 dev / beta.N / stable，变更由 `version_sync.py` 同步五处元数据；IPC 版本独立维护。
 - 普通 CI 生成含运行编号、尝试次数和 SHA 的内部 dev 构建，不回写源码、不创建 tag 或 Release。Artifacts 保留 30 天。
 - 对外版本使用 `community-vX.Y.Z[-beta.N]` annotated tag，手动 Release Action 只生成草稿，再按验收和授权决定发布；不覆盖版本与 tag。
-- GitHub `origin` 承载 Actions，Gitee `gitee` 保留代码副本；同步 Gitee 不会触发 GitHub 构建。
+- [GitHub](https://github.com/Vsonic12138/boundfree-eeg-native) 统一管理 Issue、PR、验收与 Actions；[Gitee](https://gitee.com/BigYellow12138/boundfree-community) 为国内源码与 Release 镜像，不另建 Issue/PR 流程。
+- 每次发布后同步两边的版本、tag、说明和安装包校验值。Gitee 超限附件使用分卷与还原脚本，具体下载和同步步骤见发布 SOP；推送源码本身不会同步 Release。
 
 目录：`native/` 原生程序，`sidecar/` 编解码边车，`tests/` 回归，`docs/` 当前文档，`docs/archive/` 历史计划/设计/验收。构建产物和本机配置不入库。

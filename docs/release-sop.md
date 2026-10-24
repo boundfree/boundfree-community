@@ -8,7 +8,7 @@ last_updated: 2026-10-24
 
 # Community 版本与发布 SOP
 
-本流程仅适用于本仓库。GitHub `Vsonic12138/boundfree-eeg-native` 承载 Actions；Gitee `BigYellow12138/boundfree-community` 可保留代码副本。推送 Gitee 本身不会触发 GitHub Actions；合入 GitHub `master` 才会自动构建。两个远端的可见性独立，不因本流程改变。
+本流程仅适用于本仓库。GitHub `Vsonic12138/boundfree-eeg-native` 统一管理 Issue、PR、代码评审、发版验收和 Actions；Gitee `BigYellow12138/boundfree-community` 是国内源码与 Release 镜像，不另建 Issue/PR。推送 Gitee 本身不会触发 GitHub Actions；合入 GitHub `master` 才会自动构建。两个远端的可见性独立，不因本流程改变。
 
 开始修改、暂存与提交、PR 审查、主线 CI 和 Gitee 同步按 [提交与交付 SOP](contribution-sop.md)。仓库代理入口为 [community-delivery skill](../.agents/skills/community-delivery/SKILL.md)，只引用本流程，不另维护一份发布规则。
 
@@ -78,7 +78,7 @@ git push origin refs/tags/community-v0.2.2-beta.1
 4. **Actions → Community Release → Run workflow**，从 `master` 执行，输入已有 tag 和本仓库验收 Issue 的完整 URL。stable 还需确认人工验收已完成。
 5. 工作流校验 annotated tag、tag 与 JSON 一致、提交属于 `master` 历史、Issue 属于本仓库且可读取、目标 Release 不存在。通过后重新构建该 tag 的源码、执行测试、安装态 smoke 并上传双平台产物。
 6. 两个平台都成功后，在 **Releases** 生成草稿。beta 带 prerelease 标记；stable 不带。检查包名、版本、SHA256、变更说明与验收 Issue，再由维护者点击 **Publish release**。
-7. 可按需把已验证代码和 tag 同步到 Gitee；本流程不自动创建 Gitee Release。
+7. GitHub 发布后，必须按第 7 节把同一 tag、说明和国内安装包下载同步到 Gitee，回下载校验后把两边 URL 与结果写回同一个 GitHub 验收 Issue。当前此步骤由维护者执行，现有 Action 仍只创建 GitHub 草稿；普通 Git 推送不会同步 Release。
 
 草稿页面 URL 可能含 `untagged-*`，产品 tag 以 Release 元数据中的 `tag_name` 为准。通过 API 编辑草稿说明时显式保留目标 `tag_name`、`draft=true` 和 prerelease 状态，编辑后再次核对；不要把草稿页面 URL 当作 Git tag。
 
@@ -88,9 +88,9 @@ git push origin refs/tags/community-v0.2.2-beta.1
 
 beta：明确试用范围与已知限制；关键打开/播放/分析/导出路径通过回归；至少在实际目标 Windows 或 Linux 桌面试运行。unsigned beta 可用于试用，必须在说明中明确签名状态。
 
-首轮 Beta 采用**保留整机激活、仅向已授权测试者定向交付官方安装包**的方案。`BF_REQUIRE_LICENSE=ON`、现有授权兼容与签名策略保持不变；免费核心免激活和扩展权益属于后续阶段，不作为本轮已经实现的能力。
+官方安装包采用**验收并发布后允许公开下载、使用仍需有效授权激活**的方案。`BF_REQUIRE_LICENSE=ON`、现有授权兼容与签名策略保持不变；免费核心免激活和扩展权益属于后续阶段，不作为本轮已经实现的能力。
 
-在发版验收 Issue 和 Release 说明中写明试用对象、受控下载位置、激活要求、签名状态及待验收项。核对测试者已有授权及下载访问权限；私有 GitHub Release 的下载仍受仓库权限控制，不能把链接本身当成下载授权，也不在本流程中自动邀请协作者或更改仓库可见性。Gitee 代码同步与安装包分发分开处理：公开仓库不上传本轮定向测试安装包，也不把私有 GitHub 链接描述成公众可下载地址。上述安排约束官方测试包的交付，不增加 Apache-2.0 源码限制。
+在发版验收 Issue 和两边 Release 说明中写明试用范围、国内下载步骤、激活要求、签名状态及已知限制。公开下载不等于授予软件激活权益，也不改变 Apache-2.0 源码权利。未验收候选包保持 GitHub 草稿，不提前在公开 Gitee 创建发行版。GitHub 当前私有，下载及 Issue/PR 仍需相应仓库访问权限；Gitee 国内下载必须实际可用，不能只放一个私有 GitHub 链接。本流程不自动邀请协作者或更改可见性。
 
 stable：完成承诺功能验收，无已知数据丢失、错误结果和高频崩溃；完成干净 Windows 10/11 安装、旧版升级、卸载、桌面操作、正式授权兼容与代表性科研文件验证；发布 Linux 时另需目标 Linux 桌面验收。把证据放入本次验收 Issue。runner 的命令行和安装测试不等同于完整干净机、真实 GPU、真实硬件或算法效果验收。
 
@@ -112,7 +112,72 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 - 默认和构建任务使用只读 token；仅手动 Release 中的预检与草稿 job 有 `contents: write`。GitHub 要求 push 权限才返回草稿，因此预检需要该配置，脚本只读取数据、不写入仓库或 Release；预检 job 仅在 `master` 执行，其他分支跳过后续任务。配置回归约束此权限及分支范围，不使用仓库用户权限字段推断 GitHub 自动 token 的实际授权；最终以 runner 能枚举并拒绝已有草稿验收。PR 构建不会获得签名 secrets。
 - Windows 下载的是 Setup 安装包；Linux 当前为 **Ubuntu 24.04 x86_64** 归档，含 Qt、冻结边车和主要动态库，不承诺其他发行版或 AppImage 兼容。仍依赖目标桌面、驱动和系统服务。
 
-## 7. 首次接入的验证边界
+## 7. 同步 Gitee Release 与国内下载
+
+GitHub 是发布与验收记录的来源，Gitee 是国内镜像；同一产品版本只对应同一个 annotated tag、源提交和原始安装包 SHA256。GitHub 草稿不触发 Gitee 发布。Gitee 创建发行版会对仓库访客可见，本流程不依赖 CLI 的 `--draft` 隐藏它。
+
+### 7.1 准备同一份安装包
+
+[Gitee 官方说明](https://help.gitee.com/repository/release/create)规定普通项目单个附件最多 100M、仓库附件总容量 1G（不同项目资质有不同额度）。当前 Windows/Linux 原包均超出普通单附件额度，默认使用 **90,000,000 字节分卷**，不另行编译、不修改安装器，也不需要对象存储。发布前核对仓库剩余附件容量；容量不足时停止并记录，不静默删除历史版本或退化成只有 GitHub 链接。
+
+维护者先确认该版本已通过目标阶段验收、GitHub Release 已发布，并检查发布说明。下面示例从仓库根目录执行，临时目录放在工作空间 `build/`，已有目录不覆盖：
+
+```bash
+COMMUNITY_TAG=community-v0.2.2-beta.1
+COMMUNITY_MIRROR_DIR=../build/community-gitee-beta1
+# 读取已发布的 Release 元数据；草稿、404 或接口错误时停止。
+gh api "repos/Vsonic12138/boundfree-eeg-native/releases/tags/$COMMUNITY_TAG"
+# 人工确认 tag_name、draft=false、published_at、版本和附件完整后继续。
+gh release download "$COMMUNITY_TAG" --repo Vsonic12138/boundfree-eeg-native \
+  --dir "$COMMUNITY_MIRROR_DIR/source"
+python3 scripts/common/prepare_gitee_release.py \
+  --windows "$COMMUNITY_MIRROR_DIR/source" --linux "$COMMUNITY_MIRROR_DIR/source" \
+  --output "$COMMUNITY_MIRROR_DIR/gitee"
+```
+
+准备工具验证两平台均为同一 Release 的 beta/stable 版本、源 SHA、tag、构建运行及原包/构建信息 SHA256；拒绝普通 CI dev 包、缺失校验、混用构建或覆盖输出目录。输出 `mirror-plan.json` 供维护者核对，以及 `Windows/`、`Linux/` 两组分卷、还原脚本、原始构建信息和校验文件。它只写本地文件，不创建 tag、Release 或远端附件；可在候选包阶段预演，预演成功不代表允许发布。
+
+### 7.2 同步 tag、说明与附件
+
+1. 按提交 SOP 同步已验证源码。确认目标 annotated tag 的对象 SHA 和 peeled commit 在两个远端相同；同步已有 tag，不能依赖 Gitee 自动在默认分支创建新 tag：
+
+```bash
+git fetch origin master --tags
+COMMUNITY_SHA=$(git rev-parse "$COMMUNITY_TAG^{commit}")
+git push gitee "refs/tags/$COMMUNITY_TAG:refs/tags/$COMMUNITY_TAG"
+git ls-remote origin "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
+git ls-remote gitee "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
+```
+
+2. 用 `ge release list --repo BigYellow12138/boundfree-community` 核对目标版本。任何认证/网络错误都停止；已存在时进入补齐核验，不盲目创建、删除或覆盖。发布说明保留同一变更范围、已知限制、激活与签名状态，增加下述国内还原步骤、每个平台原包 SHA256，以及 GitHub Issue/PR 入口。GitHub 仍私有时明确其访问条件。Gitee 公开下载的新安排取代早期候选包说明中的“仅定向交付”，不会改变随包 Apache-2.0 或第三方许可。
+3. 把核对完成的说明写入 `$COMMUNITY_MIRROR_DIR/gitee-notes.md`。该文件还应列出预期分卷数量，上传未完成期间标明“附件同步中”。确认 GitHub 已发布且材料齐全后创建 Gitee 发行版并上传：
+
+```bash
+# beta 示例；stable 时省略 --prerelease。
+ge release create "$COMMUNITY_TAG" --repo BigYellow12138/boundfree-community \
+  --target "$COMMUNITY_SHA" --title "Community ${COMMUNITY_TAG#community-v}" \
+  --prerelease --notes-file "$COMMUNITY_MIRROR_DIR/gitee-notes.md"
+ge release upload "$COMMUNITY_TAG" --repo BigYellow12138/boundfree-community \
+  "$COMMUNITY_MIRROR_DIR"/gitee/Windows/* "$COMMUNITY_MIRROR_DIR"/gitee/Linux/*
+```
+
+4. 使用新目录回下载实际 Gitee 附件，核对 `SHA256SUMS-Gitee-*.txt`，运行目标平台还原脚本，并核对还原原包 SHA256 与 GitHub 原始 `SHA256SUMS-*.txt` 一致。Windows/Linux 目标平台各自验证；只做本地字节拼接不能声称 Windows 脚本已运行。核对免维护者凭据的访客下载路径能正常到达 Gitee 附件（平台可能要求登录或验证码），不能用维护者下载成功代替公众下载检查。
+5. 在 Gitee 页面确认附件完整后去掉“附件同步中”，在 **同一个 GitHub 发版验收 Issue** 记录 GitHub/Gitee Release URL、tag 对象/源 SHA、原包与分卷校验和实际下载/还原结果。到此才称“两边 Release 已同步”。
+
+```bash
+ge release download "$COMMUNITY_TAG" --repo BigYellow12138/boundfree-community \
+  --dir "$COMMUNITY_MIRROR_DIR/download-check"
+```
+
+若上传中断，保留现有 Release 和已上传附件；根据 `mirror-plan.json` 及回下载校验只补传缺失文件，不用 `--clobber`。同名附件校验不符时停止并调查，不覆盖；包内容需改动时发布新 beta.N/PATCH。重试 Gitee 同步不重建 GitHub 原包，不新建第二份验收 Issue，也不影响日常 CI。
+
+### 7.3 给用户的国内下载说明
+
+- **Windows**：下载该版本的全部 `*.exe.partNNN`、`Restore-Windows.cmd`、`SHA256SUMS-Gitee-Windows.txt` 与原始 `SHA256SUMS-Windows.txt` / `build-info-Windows.json`，放在同一文件夹。在该文件夹打开命令提示符，运行 `Restore-Windows.cmd`；脚本使用系统 Windows PowerShell 校验每卷、还原并校验完整安装包，成功输出 `Verified` 后再运行生成的 `.exe`。不需要 Python 或第三方解压软件。
+- **Ubuntu 24.04**：下载全部 `*.tar.gz.partNNN` 及 Linux 的还原/校验/构建信息文件，放在同一文件夹，运行 `sh Restore-Linux.sh`；成功后按第 2 节解压原始归档。脚本依赖系统 `sh`、`sha256sum` 等基础命令。
+- 只下载 `.part001` 不能安装。缺卷、损坏、原包校验不符会停止；已有同名输出或 `.partial` 不被覆盖。先保留和检查已有文件再重试，不直接运行分卷，也不把分卷 SHA256 当作完整安装包 SHA256。
+
+## 8. 首次接入的验证边界
 
 先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 [归档记录](archive/reports/community-release-automation.md)，流程验证及后续证据见 [Issue #2](https://github.com/Vsonic12138/boundfree-eeg-native/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
 

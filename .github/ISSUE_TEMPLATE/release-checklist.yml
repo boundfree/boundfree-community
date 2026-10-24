@@ -4,7 +4,7 @@ title: "[发版] Community "
 body:
   - type: markdown
     attributes:
-      value: "先阅读 docs/release-sop.md。此 Issue 记录验收，不会自动触发构建或发布。"
+      value: "先阅读 docs/release-sop.md。Issue/PR 统一在 GitHub；此 Issue 记录验收与两边发布同步，不会自动触发构建或发布。"
   - type: input
     id: version
     attributes:
@@ -37,4 +37,5 @@ body:
         - label: 正式版签名与授权兼容验证通过（beta 可明确说明未签名）
         - label: 已检查 Release 草稿、双平台产物及 SHA256，并补齐已知限制
         - label: 已核对 Apache-2.0 LICENSE、NOTICE、许可边界和第三方声明随包分发，激活限制已如实说明
-        - label: 已确认试用对象、下载访问权限与激活条件；首轮 Beta 仅定向交付已授权测试者
+        - label: 已确认试用对象、下载访问权限与激活条件；发布后允许公开下载、使用仍需有效授权
+        - label: 发布后已同步 Gitee tag、版本说明和国内下载，回下载还原原包的 SHA256 一致（草稿阶段保持未勾选）

@@ -10,6 +10,8 @@ last_updated: 2026-10-24
 
 适用于本仓库的人工开发者与代码代理，从开始修改到合入后检查安装包。日常规则以 [开发规范](development-guide.md) 为准；版本操作、发版门槛、签名和失败恢复以 [版本与发布 SOP](release-sop.md) 为准。本文不授权自动合并、创建 tag 或对外发布；执行这些动作应符合任务授权和维护权限。
 
+Issue、PR、代码评审和发版验收统一在 [GitHub](https://github.com/Vsonic12138/boundfree-eeg-native) 管理；Gitee 只同步源码和 Release，不在两个平台维护两套任务或评审记录。GitHub 当前访问权限不因本流程改变。
+
 ## 1. 开始修改
 
 先读根目录 [AGENTS.md](../AGENTS.md)，确认当前目录是 `boundfree-community`。工作空间根目录不是 Git 仓库；Pro 与授权服务不在本流程的改动范围内。
@@ -51,7 +53,7 @@ git diff
 | C++ / Qt | 按开发规范执行 CMake configure/build，运行受影响的原生回归 |
 | Python 边车 | `python3 -m pytest tests/sidecar`，以及受影响的格式/IPC 契约回归 |
 | UI 文案 / 翻译 | `python3 scripts/common/check_i18n.py`，以及对应 UI 验证 |
-| 版本 / 发布脚本 / Actions | `python3 scripts/common/check_release_assets.py`、`python3 -m pytest tests/scripts/test_ci_version.py tests/scripts/test_release_preflight.py tests/scripts/test_m8_release_assets.py tests/scripts/test_windows_build_entry.py`；YAML 改动另跑 actionlint，并检查真实云端运行 |
+| 版本 / 发布脚本 / Actions | `python3 scripts/common/check_release_assets.py`、`python3 -m pytest tests/scripts/test_ci_version.py tests/scripts/test_release_preflight.py tests/scripts/test_gitee_release.py tests/scripts/test_m8_release_assets.py tests/scripts/test_windows_build_entry.py`；YAML 改动另跑 actionlint，并检查真实云端运行 |
 
 本地环境无法运行的检查，应在 PR 写明，并检查云端相应结果。不要把“待 CI 验证”写成“通过”；也不要为仅文档改动编造功能验收。CI 会独立执行 Windows/Linux 完整构建与各自回归。
 
@@ -87,7 +89,7 @@ gh run view <运行ID> --json headSha,event,status,conclusion,url,jobs
 
 ## 5. 同步 Gitee 与收尾
 
-需要同步代码副本时，先确认 GitHub 合入结果和 Gitee 当前主线：
+源码同步前，先确认 GitHub 合入结果和 Gitee 当前主线：
 
 ```bash
 git fetch origin master
@@ -106,9 +108,11 @@ git ls-remote gitee refs/heads/master
 
 若历史分叉，保留双方提交并评审整合，不强推；无关任务不顺手同步。完成后记录本次提交/PR、主线 SHA、CI 链接、实际验证及限制，说明是否已同步。无需为了收尾再修改产品版本，也无需把每次 CI 结果写成新的源码提交。
 
+涉及发布的任务还必须完成发布 SOP 第 7 节的 Gitee Release 同步与下载验证，并把两边 URL、源 SHA 和校验结果记入同一个 GitHub 验收 Issue。源码同步成功不等于 Release 同步成功；日常未发版的提交不创建 Gitee Release。
+
 ## 6. 需要试用或正式发布时
 
-转到 [版本与发布 SOP](release-sop.md) 第 3–6 节，使用本仓库 **Community 发版验收** Issue 模板记录证据。合入版本准备 PR、等待主线 CI、创建 annotated tag、手动执行 `Community Release`、检查草稿，再按授权决定是否 Publish。普通功能任务不能自动扩展为正式发版；纯演练不能绕过验收或稳定版签名门禁。
+转到 [版本与发布 SOP](release-sop.md) 第 3–7 节，使用本仓库 **Community 发版验收** Issue 模板记录证据。合入版本准备 PR、等待主线 CI、创建 annotated tag、手动执行 `Community Release`、检查草稿，再按授权决定是否 Publish。普通功能任务不能自动扩展为正式发版；纯演练不能绕过验收或稳定版签名门禁。
 
 ## 7. 仓库 skill 与维护约定
 

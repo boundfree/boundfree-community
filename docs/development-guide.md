@@ -18,6 +18,10 @@ last_updated: 2026-10-24
 
 新增依赖或资源核对来源和许可；修改许可时同步根目录 `LICENSE` / `NOTICE` 与 `legal/` 中的打包副本，并运行发布资产检查。整机激活向扩展授权的迁移尚未实施，不能因许可调整宣称免费安装包已完成。
 
+## Collaboration Platforms
+
+Issue、PR、评审、验收和构建统一在 GitHub 管理。Gitee 是国内源码与 Release 镜像，每次发布后同步相同 tag、版本说明和国内安装包下载，并核对原包 SHA256；不另建 Gitee Issue/PR。实际同步按两份 SOP 执行，普通提交只构建 dev 包。
+
 ## Branch Model
 
 `master` 是唯一日常集成主线；功能使用短期 `feature/*`、`fix/*`、`docs/*` 分支，通过 PR 合入。历史 `release` 分支不再作为发版要求。紧急修复可从已发布 tag 创建 `hotfix/*`，再同步回 `master`。正式 tag 必须位于 `master` 可达的提交上。
