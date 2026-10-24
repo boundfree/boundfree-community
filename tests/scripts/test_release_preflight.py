@@ -22,15 +22,28 @@ def sandbox(tmp_path):
     bins = tmp_path / 'bin'
     bins.mkdir()
     gh = bins / 'gh'
-    gh.write_text('#!' + sys.executable + '\n' + '''import os, sys
+    gh.write_text('#!' + sys.executable + '\n' + '''import json, os, sys
 if '/issues/' in sys.argv[-1]:
     print('{"number": 2}')
-elif os.environ.get('FAKE_RELEASE') == 'exists':
-    print('{"id": 1}')
-elif os.environ.get('FAKE_RELEASE') == 'error':
-    print('HTTP 500', file=sys.stderr); sys.exit(1)
+elif (sys.argv[-1] == 'repos/owner/community/releases?per_page=100'
+      and '--paginate' in sys.argv and '--slurp' in sys.argv):
+    mode = os.environ.get('FAKE_RELEASE')
+    tag = os.environ['RELEASE_TAG']
+    if mode in ('exists', 'draft'):
+        print(json.dumps([[{'tag_name': tag, 'draft': mode == 'draft'}]]))
+    elif mode == 'draft_later_page':
+        print(json.dumps([[{'tag_name': 'community-v0.1.0', 'draft': False}],
+                          [{'tag_name': tag, 'draft': True}]]))
+    elif mode == 'unrelated':
+        print(json.dumps([[{'tag_name': 'community-v0.1.0', 'draft': True}]]))
+    elif mode in ('error', 'not_found'):
+        print('HTTP 500' if mode == 'error' else 'HTTP 404', file=sys.stderr); sys.exit(1)
+    elif mode == 'invalid':
+        print('{"message": "unexpected response"}')
+    else:
+        print('[[]]')
 else:
-    print('HTTP 404', file=sys.stderr); sys.exit(1)
+    print('Unexpected GitHub CLI invocation', file=sys.stderr); sys.exit(1)
 ''')
     gh.chmod(0o755)
     return tmp_path, git
@@ -69,12 +82,27 @@ def test_beta_preflight_produces_exact_commit(sandbox):
     {'annotated': False}, {'on_master': False}, {'tag': 'community-v0.2.3-beta.1'},
     {'issue': 'https://github.com/another/community/issues/2'},
     {'version': '0.2.2'}, {'release': 'exists'}, {'release': 'error'},
+    {'release': 'not_found'}, {'release': 'invalid'},
     {'workflow_ref': 'refs/heads/feature/unreviewed'},
 ])
 def test_preflight_blocks_unsafe_release(sandbox, options):
     result, output, _ = run_gate(sandbox, **options)
     assert result.returncode != 0
     assert not output.exists()
+
+
+@pytest.mark.parametrize('release', ['draft', 'draft_later_page'])
+def test_existing_draft_blocks_before_build_output(sandbox, release):
+    result, output, _ = run_gate(sandbox, release=release)
+    assert result.returncode != 0
+    assert 'Release already exists' in result.stderr
+    assert not output.exists()
+
+
+def test_other_tags_do_not_block_new_release(sandbox):
+    result, output, sha = run_gate(sandbox, release='unrelated')
+    assert result.returncode == 0, result.stderr
+    assert output.read_text() == f'sha={sha}\nchannel=beta\n'
 
 
 def test_stable_requires_explicit_acceptance(sandbox):
