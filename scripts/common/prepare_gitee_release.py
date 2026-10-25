@@ -29,7 +29,7 @@ def inspect(folder, platform):
             or info.get('source_version') != version
             or info.get('tag') != 'community-v' + version
             or not re.fullmatch(r'[0-9a-f]{40}', info.get('git_commit', ''))
-            or not re.fullmatch(r'https://github.com/Vsonic12138/boundfree-eeg-native/actions/runs/[1-9]\d*',
+            or not re.fullmatch(r'https://github\.com/(?:boundfree/boundfree-community|Vsonic12138/boundfree-eeg-native)/actions/runs/[1-9]\d*',
                                 info.get('run_url', ''))):
         raise ValueError('Only exact beta/stable Release artifacts are accepted')
     package = (f'BoundFreeEEG_Setup_{version}.exe' if platform == 'Windows'

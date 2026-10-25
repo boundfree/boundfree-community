@@ -12,7 +12,7 @@
 
 ## 交付检查
 
-- [ ] 已按 [提交与交付 SOP](https://github.com/Vsonic12138/boundfree-eeg-native/blob/master/docs/contribution-sop.md) 检查 diff、暂存文件及提交范围
+- [ ] 已按 [提交与交付 SOP](https://github.com/boundfree/boundfree-community/blob/master/docs/contribution-sop.md) 检查 diff、暂存文件及提交范围
 - [ ] `version_sync.py check` 与 `git diff --check HEAD` 已通过，版本判断符合规范
 - [ ] 已执行与改动相关的验证，记录未验收项；最新 PR CI 结果已核对
 - [ ] 相关使用说明/契约已同步；若修改流程，已核对 SOP、skill、AGENTS 和模板

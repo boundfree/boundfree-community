@@ -3,7 +3,7 @@ title: 产品范围与当前路线
 doc_type: plan
 status: active
 owner: BoundFree
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 ---
 
 # 产品范围与当前路线
@@ -26,7 +26,7 @@ Community 主线面向 EEG/LFP 文件浏览与科研分析，使用 C++/Qt6 主�
 | 真实记录与算法评估 | 眼周记录、明确电极/参考配置、完整 EEGdenoiseNet 半合成基准；独立评估分离效果 |
 | 新手操作走查 | 至少三名无 ICA 经验用户完成导入、通道确认、成分检查与导出 |
 | 桌面与干净机验证 | Windows 10/11 干净机、升级/卸载、高 DPI、真实授权兼容；交付 Linux 时验证目标桌面 |
-| 首轮 beta 发布验收 | 已创建 Beta1 tag 并跑通独立构建/草稿，见 [Issue #5](https://github.com/Vsonic12138/boundfree-eeg-native/issues/5)；继续完成实机、真实授权与分发许可核验，发布后验证 Gitee 国内镜像 |
+| 首轮 beta 发布验收 | 已创建 Beta1 tag 并跑通独立构建/草稿，见 [Issue #5](https://github.com/boundfree/boundfree-community/issues/5)；继续完成实机、真实授权与分发许可核验，发布后验证 Gitee 国内镜像 |
 | stable 交付 | 完成本次承诺范围的验收与 Windows 组织代码签名，不绕过发布门禁 |
 
 CI 已在 Windows runner 验证安装、隔离开发搜索路径后运行与卸载，在 Ubuntu 24.04 验证归档解压后运行；这些证据不替代上表人工验收。版本、构建与发布操作统一见 [发布 SOP](release-sop.md)。
@@ -40,4 +40,4 @@ CI 已在 Windows runner 验证安装、隔离开发搜索路径后运行与卸�
 
 ## 历史依据
 
-M0–M8、UI 修复、早期产品分线与设计草案均在 [归档索引](archive/README.md)。历史 GPU 基线保留在 [M2 记录](archive/reports/m2-rendering-gpu-gate.md)，不能自动代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/Vsonic12138/boundfree-eeg-native/issues/2)，具体发版仍需独立验收 Issue。
+M0–M8、UI 修复、早期产品分线与设计草案均在 [归档索引](archive/README.md)。历史 GPU 基线保留在 [M2 记录](archive/reports/m2-rendering-gpu-gate.md)，不能自动代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。
