@@ -45,7 +45,7 @@ GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向�
 | --- | --- |
 | 下载或重建安装包、更新版本和发布 | [版本与发布 SOP](docs/release-sop.md) |
 | 浏览、导出、脑电/眼电分离 | [分析操作说明](docs/analysis-guide.md) |
-| 开始开发、提交、PR 与同步远端 | [提交与交付 SOP](docs/contribution-sop.md) |
+| 功能需求、建分支、PR 评审合入、同步与清理 | [提交与交付 SOP](docs/contribution-sop.md) |
 | 本地 WSL2 / Windows 构建 | [工具链说明](docs/toolchain-wsl2.md) |
 | 架构、契约、当前路线与验收边界 | [文档索引](docs/README.md) |
 | 代码代理 | [AGENTS.md](AGENTS.md) 与 [community-delivery skill](.agents/skills/community-delivery/SKILL.md)，支持 `$community-delivery` |

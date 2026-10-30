@@ -16,8 +16,8 @@ last_updated: 2026-10-25
 | 使用浏览、导出和脑电/眼电分离 | [analysis-guide.md](analysis-guide.md) |
 | 理解模块和数据流 | [architecture-design.md](architecture-design.md) |
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
-| 查询分支、提交格式和文档约束 | [development-guide.md](development-guide.md) |
-| 仓库关系、权限、提交/PR、主线 CI 与 Gitee 源码同步 | [contribution-sop.md](contribution-sop.md) |
+| 查询分支命名、评审合入规则、平台保护与提交格式 | [development-guide.md](development-guide.md) |
+| 从功能需求建分支、提交 PR、评审返修、合入、主线 CI、镜像同步与清理 | [contribution-sop.md](contribution-sop.md) |
 | 版本规则/更新、安装包核验、Release 与 Gitee 国内下载 | [release-sop.md](release-sop.md) |
 | 配置本地 WSL2 / Windows 构建与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 | 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |

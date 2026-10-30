@@ -42,7 +42,7 @@ Windows 运行 `BoundFreeEEG_Setup_*.exe`；Linux 当前仅支持 **Ubuntu 24.04
 
 ## 3. 调整交付阶段版本
 
-在功能分支上执行，示例仅表示操作方式，不表示当前版本已验收：
+在任务分支上执行，版本准备通常使用 `chore/*`，按 [分支规范](development-guide.md#branch-model) 经 PR 合入，不另建长期 `release` 分支。示例仅表示操作方式，不表示当前版本已验收：
 
 ```bash
 # 选择一个开发阶段给试用者

@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 ---
 
 # 开发规范
@@ -24,7 +24,49 @@ last_updated: 2026-10-24
 
 ## Branch Model
 
-`master` 是唯一日常集成主线；功能使用短期 `feature/*`、`fix/*`、`docs/*` 分支，通过 PR 合入。历史 `release` 分支不再作为发版要求。紧急修复可从已发布 tag 创建 `hotfix/*`，再同步回 `master`。正式 tag 必须位于 `master` 可达的提交上。
+### 主线与任务分支
+
+`master` 是唯一日常集成主线。所有源码、文档、skill、工作流和版本准备改动都在任务分支完成，经 GitHub PR 评审后合入；不在本地 `master` 开发，不直接向 GitHub `master` 推送开发提交，也不通过网页直接修改主线文件。Gitee `master` 仅按提交 SOP 快进镜像已验证的 GitHub 主线。默认不增加长期 `develop` 或 `release/*` 集成线；已有历史 `release` 分支仅保留追溯。
+
+一个可独立验收的任务对应一个短分支和一个 PR；需要多次提交、返修或更新主线时继续使用同一分支。合入或关闭后，新任务从最新 `origin/master` 新建分支，不复用旧分支。
+
+| 前缀 | 用途 | 示例 |
+| --- | --- | --- |
+| `feature/` | 新增功能 | `feature/123-channel-groups` |
+| `fix/` | 缺陷修复 | `fix/124-export-time-axis` |
+| `docs/` | 文档、SOP、skill | `docs/125-branch-management` |
+| `chore/` | 构建、CI、依赖、版本阶段准备 | `chore/prepare-beta2` |
+| `refactor/`、`perf/`、`test/` | 重构、性能、测试专项 | `test/126-edf-import` |
+| `spike/` | 有明确结论与退出条件的技术验证 | `spike/127-reader-capability` |
+| `hotfix/` | 已发布版本的紧急缺陷 | `hotfix/128-startup-crash` |
+
+分支使用小写英文、数字和连字符，采用 `<前缀>/<Issue编号>-<简短主题>`；没有独立 Issue 的小型文档或维护任务可省略编号。示例编号不代表已有任务。分支前缀与提交 type 分别描述任务和单次改动，`feature/*` 内可包含 `feat`、`fix`、`test` 等提交。
+
+默认从已更新的 `origin/master` 分出；发现当前分支属于另一个未合入 PR 时，先识别依赖，不能把它静默当作主线。确有依赖的任务可以使用堆叠 PR，但必须注明前置 PR 和实际基线，前置任务合入前不得合入后续任务；步骤见 [提交 SOP 第 1 节](contribution-sop.md#1-开始修改)。
+
+### 评审与合入
+
+新增功能先在 GitHub Issue 明确问题、范围和验收标准；小型文档/维护修改可直接在 PR 说明。完成实现后，作者自查 diff、验证证据和验收项，再申请评审。多人协作时至少由一名有仓库 Write 或更高权限的非作者评审确认；维护者负责最终合入。未解决的阻塞意见、失败或未完成的必要 CI、未合入的前置依赖都阻止合入。
+
+单人维护时仍使用 PR，由维护者对最新 head SHA 记录自审结论、验证证据与合入决定。GitHub 不允许作者 Approve 自己的 PR，因此不能虚构另一位审核者或把 AI 审查当成平台认可的他人批准；存在其他审查者时不以单人例外跳过其阻塞意见。已有任务授权可由代理继续执行，skill 本身不授予合入权限。
+
+默认使用 **Create a merge commit**，保留功能分支提交与 PR 合入边界，不默认 squash 或 rebase merge。合并提交标题使用中文 Conventional Commits，正文关联 PR。更新已共享分支时采用 merge `origin/master`；不为整理历史强推分支。若仓库实际规则不允许 merge commit，先由维护者统一规则，不能由代理临时改换合入方式。
+
+评审、必要 CI 和合入前核对都针对最新 head SHA 及当前主线。新增提交或更新基线后，重查受影响内容、评审意见与 CI；旧的批准和旧的绿色运行不自动代表新提交通过。`gh pr checks` 没有列出所需检查时，不能按“无失败”放行。
+
+### 合入后的生命周期
+
+合入后单独核对 `push / master` 的 CI 与包身份，通过后按提交 SOP 快进同步 Gitee。确认分支已合入、没有后续 PR 或其他工作目录依赖，才清理其远端和本地分支；不批量删除历史分支。合入后发现问题，在新的 `fix/*` 或 `hotfix/*` 分支修复，或经新 PR revert，不 reset/强推主线。
+
+`hotfix/*` 默认也从最新 `origin/master` 创建并走相同评审与 CI；从旧 tag 建分支只用于复现或准备补丁，修复须经 PR 回到主线后才能按当前发布流程交付。本项目尚未建立旧版本独立维护线，不能把包含后续功能的主线包声称为仅有补丁的旧版包。发版使用 `master` 可达提交上的不可变 annotated tag，详见 [发布 SOP](release-sop.md)。
+
+### 平台保护
+
+上述是仓库协作规则，平台强制执行依赖实际套餐和设置。2026-10-25 核对：组织为 GitHub Free、仓库私有、`master` 的 `protected=false`，Ruleset 查询返回套餐限制的 403；目前不能声称已强制阻止直推。
+
+具备平台能力后，由管理员在 **Settings → Rules / Branches** 配置 `master`：必须经 PR、两个平台的必要 CI 成功、分支与主线更新、审查对话解决、禁止强推和删除。Required status checks 选用实际成功 PR 中的检查名称。多人协作要求至少一次非作者批准，并使新增改动后的旧批准失效；单人维护时保留人工自审记录，不配置无人能够满足的他人批准人数。允许 merge commit 时不要同时要求 linear history。
+
+配置后核对规则是否实际生效、是否允许绕过及适用范围；不得为启用保护擅自改变仓库可见性或订阅。套餐能力见 [GitHub 分支保护说明](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)，评审限制见 [GitHub PR 批准说明](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/approving-a-pull-request-with-required-reviews)。
 
 ## Version Rules
 

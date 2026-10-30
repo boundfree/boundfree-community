@@ -26,7 +26,7 @@
 | 产品范围、优先事项与验收 | `docs/roadmap.md`、`docs/feature-parity-checklist.md` |
 | 使用浏览、导出与专用分离 | `docs/analysis-guide.md` |
 | 版本、IPC、错误码、i18n 契约 | `docs/contracts.md` |
-| 分支、提交与交付 | `docs/development-guide.md`、`docs/contribution-sop.md` |
+| 新功能、分支、PR 评审返修与合入 | `docs/development-guide.md`、`docs/contribution-sop.md` |
 | 安装包、版本流转与 Release | `docs/release-sop.md` |
 | 模块边界 / 本地环境 | `docs/architecture-design.md`、`docs/toolchain-wsl2.md` |
 | 开源许可 / 付费扩展归属 | `LICENSE`、`NOTICE`、`legal/LICENSING.md` |
@@ -54,7 +54,7 @@ GitHub 是同一 Community 项目的研发主仓库，统一管理 Issue/PR/验�
 
 ## Branch And Version Rules
 
-- 日常基于 `master` 使用短分支，具体分支规则见 [开发规范](docs/development-guide.md#branch-model)。
+- 任务分支、依赖 PR、评审方式、merge commit 和清理规则见 [开发规范](docs/development-guide.md#branch-model)，建分支到合入的命令按 [提交 SOP](docs/contribution-sop.md)；所有 GitHub 主线修改经 PR，不向 GitHub `master` 直推开发提交。
 - `version.json` 是产品版本真值，普通提交不涨版本；阶段变更按 [发布 SOP 第 3 节](docs/release-sop.md#3-调整交付阶段版本) 使用同步工具。提交前运行 `python3 scripts/common/version_sync.py check`。
 - 产品版本与 `ipc_protocol_version` 独立维护。
 - 普通 CI 只生成内部 dev 包；Release 使用 `community-v*` annotated tag 并先生成草稿。对外发布按发布 SOP 验收，不覆盖 tag 或同版本安装包。
