@@ -168,6 +168,44 @@ inline QString formatAxisNumber(const QLocale& locale, double value, int decimal
     return text;
 }
 
+struct WaveformAmplitudeTicks {
+    QString lower, upper, unit;
+};
+
+// Scale only the annotation, never signal values. A narrow ripple on a large
+// DC offset keeps its precision instead of rounding both limits to one label.
+inline WaveformAmplitudeTicks waveformAmplitudeTicks(const QLocale& locale, double low, double high,
+                                                      const QString& unit, bool compact) {
+    double divisor = 1.0;
+    int exponent = 0;
+    const double largest = std::max(std::abs(low), std::abs(high));
+    const double span = high - low;
+    if (compact && std::isfinite(largest) && largest > 0 && span >= largest * .001 &&
+        (largest >= 10000 || largest < .01)) {
+        exponent = std::clamp(3 * static_cast<int>(std::floor(std::log10(largest) / 3)), -36, 36);
+        divisor = std::pow(10., exponent);
+    }
+    WaveformAmplitudeTicks result;
+    result.unit = unit;
+    if (exponent) {
+        const QString digits = QStringLiteral("⁰¹²³⁴⁵⁶⁷⁸⁹");
+        QString superscript;
+        for (const auto c : QString::number(exponent))
+            superscript += c == '-' ? QStringLiteral("⁻") : QString(digits[c.digitValue()]);
+        result.unit += QStringLiteral(" ×10") + superscript;
+    }
+    int decimals = 1;
+    if (compact && span > 0 && std::isfinite(span))
+        decimals = std::clamp(static_cast<int>(std::ceil(-std::log10(span / divisor / 4))) + 1, 1, 8);
+    result.lower = formatAxisNumber(locale, low / divisor, decimals);
+    result.upper = formatAxisNumber(locale, high / divisor, decimals);
+    if (low != high && result.lower == result.upper) {
+        result.lower = locale.toString(low / divisor, 'g', 9);
+        result.upper = locale.toString(high / divisor, 'g', 9);
+    }
+    return result;
+}
+
 // 文字标签抽稀：kept 是已放置标签的中心 y，判断候选中心 y 是否满足最小间距。
 // 用于多通道密集排布时按行抽稀文字，避免标签互相压盖。
 inline bool labelFits(const QVector<double>& kept, double y, double minGap) {

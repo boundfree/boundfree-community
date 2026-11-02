@@ -23,6 +23,7 @@ struct SeparationSource {
     QStringList channelIds;
     QJsonObject metadata;
     bool teaching = false;
+    bool simulatorIca = false;
     double duration() const { return fs > 0.0 ? samples / fs : 0.0; }
 };
 struct SeparationSettings {
@@ -69,7 +70,7 @@ public:
     const std::vector<int>& labels() const { return labels_; }
     bool isConfirmed() const { return confirmed_; }
     QString exportedPath() const { return exportedPath_; }
-    void openSource(const QString& path, const QString& csvUnit = {});
+    void openSource(const QString& path, const QString& csvUnit = {}, bool preserveOnFailure = false);
     void openTeachingSource();
     void applyTeachingLabels();
     bool canApplyTeachingLabels() const;
@@ -93,6 +94,7 @@ signals:
     // Stable stage key, not a localized backend sentence.
     void progressChanged(const QString& stage);
     void failed(const bf::AppError& error);
+    void sourceReplacementFailed(const bf::AppError& error);
     void exported(const QString& path);
     void unitRequired(const QString& path);
 private:

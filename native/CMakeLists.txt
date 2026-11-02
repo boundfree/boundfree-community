@@ -132,6 +132,10 @@ set(BF_CORE_SOURCES
     src/license/online_activation_client.h
     src/render/minmax_decimator.cpp
     src/render/minmax_decimator.h
+    src/render/signal_processor.cpp
+    src/render/signal_processor.h
+    src/render/live_ica_projection.cpp
+    src/render/live_ica_projection.h
     src/render/waveform_slice.cpp
     src/render/waveform_slice.h
     src/ui/waveform_widget.cpp
@@ -146,6 +150,10 @@ add_library(bf_core STATIC ${BF_CORE_SOURCES})
 target_include_directories(bf_core PUBLIC src)
 target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(bf_core PUBLIC FluentQt::FluentQt Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
+add_executable(signal_window_test src/render/signal_window_test.cpp)
+target_link_libraries(signal_window_test PRIVATE bf_core)
+add_executable(live_ica_projection_test src/render/live_ica_projection_test.cpp)
+target_link_libraries(live_ica_projection_test PRIVATE bf_core)
 if(NOT WIN32)
     target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
 endif()

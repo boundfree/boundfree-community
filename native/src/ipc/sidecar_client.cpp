@@ -263,10 +263,12 @@ SidecarResponse SidecarClient::requestBinary(const QString& method, const QJsonO
     return exchange(method, params, outgoing, incoming != nullptr, incoming, timeoutMs);
 }
 
-SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
+SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs, const QString& captureStream) {
     SidecarOpenResult result;
     result.path = path;
-    const SidecarResponse response = request("open", {{"path", path}}, timeoutMs);
+    QJsonObject params{{"path", path}};
+    if (!captureStream.isEmpty()) params.insert("capture_stream", captureStream);
+    const SidecarResponse response = request("open", params, timeoutMs);
     if (!response.ok) {
         result.error = response.error;
         return result;
@@ -275,9 +277,13 @@ SidecarOpenResult SidecarClient::openFile(const QString& path, int timeoutMs) {
     result.handle = payload.value("handle").toString();
     result.fs = payload.value("fs").toDouble();
     result.nChannels = payload.value("n_channels").toInt();
-    result.nSamples = payload.value("n_samples").toInt();
+    result.nSamples = payload.value("n_samples").toInteger();
     result.duration = payload.value("duration").toDouble();
     result.format = payload.value("format").toString();
+    result.unit = payload.value("unit").toString(QStringLiteral("uV"));
+    for (const auto& value : payload.value("channel_units").toArray()) result.channelUnits.append(value.toString());
+    result.capture = payload.value("capture").toObject();
+    result.signalMetadata=payload.value("signal_metadata").toObject();
     for (const QJsonValue& value : payload.value("ch_names").toArray()) {
         result.chNames.push_back(value.toString());
     }
@@ -319,7 +325,7 @@ SidecarRecordOpenResult SidecarClient::recordOpen(
     const SidecarResponse response = request(
         "record_open",
         {{"fs", fs}, {"ch_names", QJsonArray::fromStringList(chNames)}, {"out_dir", outputDir},
-         {"meta", metadata}, {"formats", QJsonArray{"edf", "hdf5"}}, {"max_queue_chunks", maxQueueChunks}},
+         {"meta", metadata}, {"formats", metadata.value("signal_unit").toString("uV")=="uV" ? QJsonArray{"edf","hdf5"} : QJsonArray{"hdf5"}}, {"max_queue_chunks", maxQueueChunks}},
         timeoutMs);
     if (!response.ok) {
         result.error = response.error;
@@ -397,7 +403,7 @@ SidecarExportResult SidecarClient::exportSegment(
 
 SidecarExportResult SidecarClient::exportSamples(
     double fs, const QStringList& chNames, const std::vector<std::vector<float>>& data,
-    double t0, double t1, const QString& outputPath, const QVector<SidecarEvent>& events, int timeoutMs) {
+    double t0, double t1, const QString& outputPath, const QVector<SidecarEvent>& events, int timeoutMs, const QJsonObject& signalMetadata) {
     SidecarExportResult result;
     if (data.empty() || data.front().empty() || data.size() != static_cast<std::size_t>(chNames.size())) {
         result.error = invalidPayload("shape", "invalid export channel count");
@@ -424,12 +430,12 @@ SidecarExportResult SidecarClient::exportSamples(
             destination += sizeof(bits);
         }
     }
-    const SidecarResponse response = exchange(
-        "export_samples",
-        {{"fs", fs}, {"ch_names", QJsonArray::fromStringList(chNames)},
-         {"shape", QJsonArray{chNames.size(), nSamples}}, {"dtype", "float32-le"}, {"unit", "uV"},
-         {"t0", t0}, {"t1", t1}, {"path", outputPath}, {"markers", eventsToJson(events)}},
-        payload, false, nullptr, timeoutMs);
+    QJsonObject params{{"fs",fs},{"ch_names",QJsonArray::fromStringList(chNames)},
+        {"shape",QJsonArray{chNames.size(),nSamples}},{"dtype","float32-le"},{"unit","uV"},
+        {"t0",t0},{"t1",t1},{"path",outputPath},{"markers",eventsToJson(events)}};
+    for(const auto& name:{"unit","channel_units","sample_times","provenance"})
+        if(signalMetadata.contains(name))params.insert(name,signalMetadata.value(name));
+    const auto response=exchange("export_samples",params,payload,false,nullptr,timeoutMs);
     if (!response.ok) {
         result.error = response.error;
         return result;
@@ -440,6 +446,36 @@ SidecarExportResult SidecarClient::exportSamples(
     result.nSamples = response.result.value("n_samples").toInt();
     result.markerCount = response.result.value("marker_count").toInt();
     return result;
+}
+
+namespace {
+bool parseSliceCoordinates(const QJsonObject& payload, SidecarSliceResult& result) {
+    if (payload.contains("channel_units")) {
+        const auto units = payload.value("channel_units").toArray();
+        if (!payload.value("channel_units").isArray() || units.size() != result.nChannels) {
+            result.error = invalidPayload("channel_units", "expected one unit per channel"); return false;
+        }
+        for (const auto& unit : units) {
+            if (!unit.isString()) { result.error = invalidPayload("channel_units", "unit must be a string"); return false; }
+            result.channelUnits.append(unit.toString());
+        }
+    }
+    if (payload.contains("sample_times")) {
+        const auto times = payload.value("sample_times").toArray();
+        if (!payload.value("sample_times").isArray() || times.size() != result.nSamples) {
+            result.error = invalidPayload("sample_times", "expected one coordinate per sample"); return false;
+        }
+        double previous = -std::numeric_limits<double>::infinity();
+        for (const auto& time : times) {
+            const auto value = time.toDouble(std::numeric_limits<double>::quiet_NaN());
+            if (!time.isDouble() || !std::isfinite(value) || value < previous) {
+                result.error = invalidPayload("sample_times", "expected ordered finite coordinates"); return false;
+            }
+            result.sampleTimes.push_back(value); previous = value;
+        }
+    }
+    return true;
+}
 }
 
 SidecarSliceResult parseSliceBinaryPayload(const QJsonObject& payload, const QByteArray& bytes) {
@@ -471,6 +507,7 @@ SidecarSliceResult parseSliceBinaryPayload(const QJsonObject& payload, const QBy
             std::memcpy(&result.data[channel][sample], &bits, sizeof(bits));
         }
     }
+    if (!parseSliceCoordinates(payload, result)) return result;
     result.ok = true;
     return result;
 }
@@ -516,6 +553,7 @@ SidecarSliceResult parseSlicePayload(const QJsonObject& payload) {
         }
         result.data.push_back(std::move(row));
     }
+    if (!parseSliceCoordinates(payload, result)) return result;
     result.ok = true;
     return result;
 }

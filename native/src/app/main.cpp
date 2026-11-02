@@ -2378,7 +2378,7 @@ int main(int argc, char** argv) {
                 std::cerr << "smoke-m7-record-failed code=" << error.code.toStdString() << "\n";
                 app.quit();
             });
-            if (!controller.startFromFile(sourcePath, source.fs, source.chNames, source.duration, 0.0, outputDir, {{"animal_id", "smoke"}, {"exp_type", "file_replay"}, {"notes", "M7 smoke"}}, std::max(1, source.nSamples / 2), 2)) {
+            if (!controller.startFromFile(sourcePath, source.fs, source.chNames, source.duration, 0.0, outputDir, {{"animal_id", "smoke"}, {"exp_type", "file_replay"}, {"notes", "M7 smoke"}}, static_cast<int>(std::clamp<qint64>(source.nSamples / 2, 1, 1024)), 2)) {
                 std::cerr << "smoke-m7-record-failed code=start_rejected\n";
                 return 1;
             }

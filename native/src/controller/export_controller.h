@@ -4,6 +4,7 @@
 #include "core/version.h"
 #include "ipc/sidecar_client.h"
 #include "controller/processing_view_state.h"
+#include "render/waveform_slice.h"
 
 #include <QObject>
 #include <QString>
@@ -18,6 +19,9 @@ struct ExportProcessingOptions {
     // Include the displayed filter context so an export of that window matches its samples.
     double contextStart = -1.0;
     double contextEnd = 0.0;
+    QString streamKey;
+    bool causal = false;
+    bool applyProcessing = true;
 };
 
 class ExportController final : public QObject {
@@ -35,6 +39,7 @@ public:
         const QString& outputPath,
         const QVector<SidecarEvent>& events,
         const std::optional<ExportProcessingOptions>& processing = std::nullopt);
+    bool exportSignalAsync(const WaveformSlice&, const QString&, const QVector<SidecarEvent>&, const QJsonObject& provenance = {});
     bool isBusy() const { return worker_ != nullptr; }
 
 signals:

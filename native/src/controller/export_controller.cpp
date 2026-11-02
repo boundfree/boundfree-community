@@ -1,7 +1,9 @@
 #include "controller/export_controller.h"
 #include "render/waveform_slice.h"
+#include "render/signal_processor.h"
 
 #include <QFileInfo>
+#include <QJsonArray>
 
 #include <cmath>
 #include <algorithm>
@@ -18,6 +20,29 @@ ExportController::~ExportController() {
     if (worker_ != nullptr && worker_->isRunning()) {
         worker_->wait();
     }
+}
+
+bool ExportController::exportSignalAsync(const WaveformSlice& signal,const QString& path,const QVector<SidecarEvent>& events,const QJsonObject& provenance){
+    if(worker_ || signal.data.empty() || signal.displayOnly || path.isEmpty())return false;
+    const QFileInfo source(signal.sourceId),destination(path);
+    if(!signal.sourceId.isEmpty() && (source.absoluteFilePath()==destination.absoluteFilePath() ||
+       (source.exists() && destination.exists() && source.canonicalFilePath()==destination.canonicalFilePath())))return false;
+    QString captureRoot;
+    if(source.isDir())captureRoot=source.canonicalFilePath();
+    else if((source.fileName()=="signals.h5" || source.fileName()=="manifest.json") && QFileInfo(source.absolutePath()+"/manifest.json").isFile())captureRoot=source.absolutePath();
+    if(!captureRoot.isEmpty() && destination.absoluteFilePath().startsWith(captureRoot+"/"))return false;
+    const auto outcome=std::make_shared<SidecarExportResult>();const auto root=repoRoot_;const auto version=version_;
+    worker_=QThread::create([signal,path,events,provenance,outcome,root,version]{
+        SidecarClient sidecar(root);const auto hello=sidecar.startAndHello(version,30000);
+        if(!hello.ok){outcome->error=hello.error;return;}
+        QJsonArray times;if(!signal.sampleTimes.empty())for(double t:signal.sampleTimes.front())times.append(t);
+        QJsonObject meta{{"unit",signal.unit},{"channel_units",QJsonArray::fromStringList(signal.channelUnits)},
+            {"provenance",provenance}};
+        if(!times.isEmpty())meta.insert("sample_times",times);
+        *outcome=sidecar.exportSamples(signal.fs,signal.channelNames,signal.data,signal.t0,signal.t1,path,events,60000,meta);
+    });
+    connect(worker_,&QThread::finished,this,[this,outcome]{worker_=nullptr;if(outcome->ok)emit completed(*outcome);else emit failed(outcome->error);});
+    connect(worker_,&QThread::finished,worker_,&QObject::deleteLater);worker_->start();return true;
 }
 
 bool ExportController::exportAsync(
@@ -55,7 +80,7 @@ bool ExportController::exportAsync(
             if (!processing) {
                 result = sidecar.exportSegment(sourcePath, t0, t1, outputPath, events, 60000);
             } else {
-                const auto opened = sidecar.openFile(sourcePath, 30000);
+                const auto opened = sidecar.openFile(sourcePath, 30000, processing->streamKey);
                 if (!opened.ok) {
                     result.error = opened.error;
                 } else {
@@ -67,20 +92,14 @@ bool ExportController::exportAsync(
                     if (!slice.ok) {
                         result.error = slice.error;
                     } else {
-                        if (slice.unit != "uV") throw std::invalid_argument("processed export requires uV input");
-                        auto filtered = applyProcessingToSlice(waveformSliceFromSidecar(opened, slice), processing->state);
-                        // Reader slicing uses Python round (ties to even).
-                        const auto sampleIndex = [fs = slice.fs](double time) {
-                            return static_cast<qint64>(std::nearbyint(time * fs));
-                        };
-                        const auto first = sampleIndex(t0) - sampleIndex(contextStart);
-                        const auto count = sampleIndex(t1) - sampleIndex(t0);
-                        for (auto& channel : filtered.data) {
-                            if (first < 0 || count <= 0 || first + count > static_cast<qint64>(channel.size()))
-                                throw std::invalid_argument("export range does not contain valid samples");
-                            channel = std::vector<float>(channel.begin() + first, channel.begin() + first + count);
-                        }
-                        result = sidecar.exportSamples(slice.fs, filtered.channelNames, filtered.data, t0, t1, outputPath, events, 60000);
+                        auto raw=normalizedSignalWindow(waveformSliceFromSidecar(opened,slice));
+                        SignalProcessor processor;
+                        auto filtered=processing->applyProcessing?processor.process(raw,processing->state,processing->causal):raw;
+                        filtered=signalWindowRange(filtered,t0,t1);
+                        QJsonArray times;if(!filtered.sampleTimes.empty())for(double t:filtered.sampleTimes.front())times.append(t);
+                        QJsonObject metadata{{"unit",filtered.unit},{"channel_units",QJsonArray::fromStringList(filtered.channelUnits)}};
+                        if(!times.isEmpty())metadata.insert("sample_times",times);
+                        result=sidecar.exportSamples(filtered.fs,filtered.channelNames,filtered.data,t0,t1,outputPath,events,60000,metadata);
                     }
                 }
             }
