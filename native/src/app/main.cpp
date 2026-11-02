@@ -1,3 +1,7 @@
+#include "ui/unified_signal_smoke.h"
+#include <QFileDialog>
+#include "ui/live_ica_smoke.h"
+#include "ui/simulator_ica_smoke.h"
 #include "controller/file_open_controller.h"
 #include "controller/export_controller.h"
 #include "controller/export_data_modes_smoke.h"
@@ -19,6 +23,9 @@
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
+#include "ui/fluent_controls.h"
+#include "ui/device_waveform_smoke.h"
+#include "ui/capture_replay_smoke.h"
 #include "ui/empty_controls_smoke.h"
 #include "ui/scrub_file_smoke.h"
 #include "ui/analysis_text_smoke.h"
@@ -33,6 +40,7 @@
 #include <QApplication>
 #include <QScrollBar>
 #include <QMenuBar>
+#include <QMenu>
 #include <QStyleFactory>
 #include <QAction>
 #include <QDir>
@@ -252,12 +260,15 @@ int main(int argc, char** argv) {
             // Re-apply the archived light then dark theme and verify both.
             light->trigger();
             app.processEvents();
-            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#F0F0F0")
-                && window.palette().color(QPalette::WindowText) == QColor("#222222");
+            const auto lightColors = bf::surfaceColors();
+            const bool lightApplied = window.palette().color(QPalette::Window) == lightColors.bgCanvas
+                && window.palette().color(QPalette::WindowText) == lightColors.textPrimary;
             dark->trigger();
             app.processEvents();
-            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#181828")
-                && window.palette().color(QPalette::Highlight) == QColor("#9B4DA8");
+            const auto darkColors = bf::surfaceColors();
+            const bool darkApplied = window.palette().color(QPalette::Window) == darkColors.bgCanvas
+                && window.palette().color(QPalette::Highlight) == darkColors.accentDefault
+                && darkColors.bgCanvas != lightColors.bgCanvas;
             const bool emptyViewDisabled = !channels->isEnabled();
 
             bool hasIdleStatus = false;
@@ -734,12 +745,12 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-open-slice" && i + 3 < argc) {
             QCoreApplication app(argc, argv);
             bf::SidecarClient sidecar(repoRoot);
-            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version, 30000);
             if (!hello.ok) {
                 std::cerr << "smoke-open-slice-failed code=" << hello.error.code.toStdString() << "\n";
                 return 1;
             }
-            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
+            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]), 30000);
             if (!opened.ok) {
                 sidecar.stop();
                 std::cerr << "smoke-open-slice-failed " << formatErrorDetail(opened.error).toStdString() << "\n";
@@ -747,7 +758,7 @@ int main(int argc, char** argv) {
             }
             const double t0 = QString::fromLocal8Bit(argv[i + 2]).toDouble();
             const double t1 = QString::fromLocal8Bit(argv[i + 3]).toDouble();
-            const bf::SidecarSliceResult slice = sidecar.getSlice(opened.handle, t0, t1);
+            const bf::SidecarSliceResult slice = sidecar.getSlice(opened.handle, t0, t1, 30000);
             sidecar.stop();
             if (!slice.ok || slice.data.empty() || slice.data.front().empty()) {
                 std::cerr << "smoke-open-slice-failed code=" << slice.error.code.toStdString() << "\n";
@@ -1116,6 +1127,12 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-channel-parameters-ok amplitude=true filters=true identity=true bipolar=true\n";
             return 0;
         }
+        if (arg == "--smoke-ui-device-waveform") return bf::smokeDeviceWaveform(argc, argv, version, repoRoot);
+        if (arg == "--smoke-ui-unified-tools") return bf::smokeUnifiedSignalTools(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-live-ica") return bf::smokeLiveIca(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-simulator-ica") return bf::smokeSimulatorIca(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-capture-replay" && i + 1 < argc)
+            return bf::smokeCaptureReplay(argc, argv, version, repoRoot, QString::fromLocal8Bit(argv[i + 1]));
         if (arg == "--smoke-ui-workspace-navigation") {
             QApplication app(argc, argv);
             // This early smoke path never invokes licensing and isolates UI preferences.
@@ -1135,6 +1152,8 @@ int main(int argc, char** argv) {
             auto* stack = window.findChild<QStackedWidget*>("eegWorkspaceStack");
             auto* action = window.findChild<QAction*>("eegOpenSeparation");
             auto* controller = window.findChild<bf::EegSeparationController*>();
+            auto* fileOpen = window.findChild<QAction*>("openCurrentWorkspaceFile");
+            auto* teachingOpen = window.findChild<QAction*>("openTeachingRecording");
             const auto fail = [&](const QString& reason) {
                 std::cerr << "smoke-ui-workspace-navigation-failed " << reason.toStdString()
                           << " last_error=" << error.toStdString() << '\n';
@@ -1149,8 +1168,12 @@ int main(int argc, char** argv) {
                 return ready();
             };
             if (!navigation || !stack || !action || !controller || navigation->count() != 2
+                || stack->count() != 2
                 || navigation->currentIndex() != 0 || stack->currentIndex() != 0)
                 return fail("initial_controls");
+            if (!fileOpen || !teachingOpen || window.findChild<QWidget*>("separationAlternativeInput") ||
+                window.findChild<QPushButton*>("separationOpen") || window.findChild<QPushButton*>("separationOpenTeaching"))
+                return fail("file_menu_inputs");
             QObject::connect(controller, &bf::EegSeparationController::failed, &window,
                              [&](const bf::AppError& failure) { error = formatErrorDetail(failure); });
             bf::FileOpenResult browser;
@@ -1178,16 +1201,30 @@ int main(int argc, char** argv) {
             if (!action->isChecked() || stack->currentIndex() != 1
                 || browserPlay->text() != i18n.text("app.playback.play"))
                 return fail("enter_separation_pauses_browser");
+            if (!until([&] { return controller->state() == bf::EegSeparationController::State::Ready; }, 60000)
+                || controller->source().path == browser.session.path
+                || controller->source().metadata.value("signal_provenance").toObject()
+                       .value("source_id").toString() != browser.session.path
+                || controller->source().channels != browser.session.chNames)
+                return fail("inherit_browser_selection_snapshot");
+            // The verified teaching fixture remains an explicit advanced file input.
+            teachingOpen->trigger();
             if (!until([&] { return !controller->isBusy(); }, 60000)
-                || controller->state() != bf::EegSeparationController::State::Ready
-                || controller->source().path != browser.session.path)
-                return fail("inherit_browser_source");
+                || !controller->source().teaching)
+                return fail("teaching_file_input");
             controller->start();
+            if (fileOpen->isEnabled() || teachingOpen->isEnabled()) return fail("file_actions_enabled_during_fit");
             if (!until([&] { return !controller->isBusy(); }, 60000) || !controller->output())
                 return fail("teaching_fit");
             controller->applyTeachingLabels();
             controller->setConfirmed(true);
             const auto output = controller->output();
+            QTimer::singleShot(50, &window, [] {
+                if (auto* chooser = qobject_cast<QFileDialog*>(QApplication::activeModalWidget())) chooser->reject();
+            });
+            fileOpen->trigger();
+            if (controller->output() != output || !controller->isConfirmed() || !fileOpen->isEnabled())
+                return fail("file_menu_cancel_loses_analysis");
             const auto labels = controller->labels();
             const auto settings = controller->settings();
             auto* workspace = stack->widget(1);
@@ -1220,6 +1257,8 @@ int main(int argc, char** argv) {
                         || stack->currentIndex() != index || action->isChecked() != (index == 1)
                         || navigation->tabText(0) != i18n.text("app.separation.browser_workspace")
                         || navigation->tabText(1) != i18n.text("app.separation.separation_workspace")
+                        || fileOpen->text() != i18n.text("app.action.open")
+                        || teachingOpen->text() != i18n.text("app.separation.open_teaching")
                         || !navigation->rect().contains(navigation->tabRect(1))
                         || navigation->accessibleName() != i18n.text("app.separation.workspace_navigation")
                         || navigation->tabToolTip(0) != i18n.text("app.separation.browser_workspace_help"))
@@ -1234,6 +1273,15 @@ int main(int argc, char** argv) {
                         && !window.grab().save(QDir(screenshots).filePath(index == 1
                             ? "navigation-separation-zhCN.png" : "navigation-browser-zhCN.png")))
                         return fail("screenshot_write");
+                    if (locale == "zh_CN" && index == 1 && !screenshots.isEmpty()) {
+                        auto* menu = qobject_cast<QMenu*>(fileOpen->parent());
+                        if (!menu) return fail("file_menu_missing");
+                        menu->popup(window.mapToGlobal(QPoint(10, 50)));
+                        wait(300);
+                        const bool saved = menu->grab().save(QDir(screenshots).filePath("file-menu-zhCN.png"));
+                        menu->hide();
+                        if (!saved) return fail("file_menu_screenshot_write");
+                    }
                 }
             }
             action->trigger();
@@ -2500,8 +2548,12 @@ int main(int argc, char** argv) {
     bf::MainWindow window(version, &i18n, repoRoot);
     bf::SidecarClient sidecar(repoRoot);
     bf::FileOpenController fileController(repoRoot, version);
+    window.setCloseFileHandler([&]() { fileController.closeSession(); });
     window.setOpenFileHandler([&](const QString& path) {
         fileController.openInitialWindow(path);
+    });
+    window.setOpenCaptureHandler([&](const QString& path, const QString& stream) {
+        fileController.openInitialWindow(path, 10.0, stream);
     });
     window.setWindowRequestHandler([&](const QString& path, double t0, double windowSeconds) {
         fileController.openWindow(path, t0, windowSeconds);

@@ -90,10 +90,10 @@ jobs:
         run: python -m pytest tests -x -v -ra --ignore=tests/scripts/test_verify_script.py --timeout=360 --junitxml=release/test-results/all.xml
       - name: Python and contract regression tests (Windows)
         if: runner.os == 'Windows'
-        run: python -m pytest tests/scripts tests/sidecar tests/contracts tests/i18n tests/fixtures -x -v -ra --ignore=tests/scripts/test_verify_script.py --timeout=300 --junitxml=release/test-results/python.xml
+        run: python -m pytest tests/scripts tests/sidecar tests/contracts tests/i18n tests/fixtures tests/acquisition -x -v -ra --ignore=tests/scripts/test_verify_script.py --timeout=300 --junitxml=release/test-results/python.xml
       - name: Offline separation and export regressions (Windows)
         if: runner.os == 'Windows'
-        run: python -m pytest tests/native/test_offline_eeg_separation.py tests/native/test_waveform_export_modes.py tests/native/test_continuous_playback.py -x -v -ra --timeout=300 --junitxml=release/test-results/native.xml
+        run: python -m pytest tests/native/test_offline_eeg_separation.py tests/native/test_waveform_export_modes.py tests/native/test_continuous_playback.py tests/native/test_bfsp_native.py -x -v -ra --timeout=300 --junitxml=release/test-results/native.xml
       - name: Stamp transient build identity
         shell: bash
         env:
