@@ -1,0 +1,242 @@
+{
+  "document_version": "0.1-draft.1",
+  "wire_version": {
+    "major": 1,
+    "minor": 0
+  },
+  "status": "candidate",
+  "byte_order": "little",
+  "header_bytes": 24,
+  "trailer_bytes": 4,
+  "data_prefix_bytes": 48,
+  "max_payload": 1048576,
+  "max_json": 65536,
+  "max_hello_json": 4096,
+  "max_channels": 4096,
+  "max_streams": 64,
+  "messages": [
+    {
+      "name": "HELLO",
+      "id": 1,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/HELLO"
+    },
+    {
+      "name": "HELLO_ACK",
+      "id": 2,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/HELLO_ACK"
+    },
+    {
+      "name": "COMMAND",
+      "id": 3,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/COMMAND"
+    },
+    {
+      "name": "RESPONSE",
+      "id": 4,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/RESPONSE"
+    },
+    {
+      "name": "DESCRIPTOR",
+      "id": 5,
+      "encoding": "json",
+      "stream_id": "nonzero",
+      "schema_ref": "#/$defs/DESCRIPTOR"
+    },
+    {
+      "name": "DATA",
+      "id": 6,
+      "encoding": "binary",
+      "stream_id": "nonzero"
+    },
+    {
+      "name": "EVENT",
+      "id": 7,
+      "encoding": "json",
+      "stream_id": "any",
+      "schema_ref": "#/$defs/EVENT"
+    },
+    {
+      "name": "STATUS",
+      "id": 8,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/STATUS"
+    },
+    {
+      "name": "HEARTBEAT",
+      "id": 9,
+      "encoding": "json",
+      "stream_id": "zero",
+      "schema_ref": "#/$defs/HEARTBEAT"
+    },
+    {
+      "name": "STREAM_END",
+      "id": 10,
+      "encoding": "json",
+      "stream_id": "nonzero",
+      "schema_ref": "#/$defs/STREAM_END"
+    }
+  ],
+  "dtypes": [
+    {
+      "name": "int16",
+      "id": 1,
+      "bytes": 2
+    },
+    {
+      "name": "int24",
+      "id": 2,
+      "bytes": 3
+    },
+    {
+      "name": "int32",
+      "id": 3,
+      "bytes": 4
+    },
+    {
+      "name": "float32",
+      "id": 4,
+      "bytes": 4
+    },
+    {
+      "name": "float64",
+      "id": 5,
+      "bytes": 8
+    }
+  ],
+  "layout": {
+    "channel_major": 0
+  },
+  "time_flags": {
+    "timestamp_valid": 1,
+    "estimated": 2
+  },
+  "quality_flags": {
+    "clipping": 1,
+    "suspect": 2,
+    "preceding_unknown_gap": 4
+  },
+  "units": [
+    "V",
+    "mV",
+    "uV",
+    "A",
+    "mA",
+    "Pa",
+    "kPa",
+    "degC",
+    "1",
+    "count",
+    null
+  ],
+  "clock_sources": [
+    "hardware",
+    "host_monotonic",
+    "estimated"
+  ],
+  "clock_epochs": [
+    "boot_relative",
+    "session_relative"
+  ],
+  "features": [
+    "regular_samples.v1",
+    "events.v1"
+  ],
+  "methods": [
+    "device.get_info",
+    "device.get_status",
+    "config.validate",
+    "config.apply",
+    "capture.prepare",
+    "stream.accept",
+    "capture.start",
+    "capture.stop",
+    "capture.discard",
+    "time.sync",
+    "transport.bind_udp",
+    "device.disconnect"
+  ],
+  "required_capabilities": [
+    "can_configure",
+    "can_start_stop",
+    "supports_hardware_timestamps",
+    "supports_udp"
+  ],
+  "local_errors": [
+    "bfsp.invalid_frame",
+    "bfsp.invalid_payload",
+    "bfsp.version_mismatch",
+    "bfsp.limit_exceeded",
+    "bfsp.timeout",
+    "bfsp.faulted"
+  ],
+  "transport_profiles": [
+    "in_process",
+    "tcp",
+    "serial_usb_cdc",
+    "usb_bulk",
+    "ble_gatt",
+    "tcp_udp",
+    "adapter_host"
+  ],
+  "ble_gatt_candidate": {
+    "service": "22a90e10-112a-4a7c-9e82-73bff9f61300",
+    "control_rx": "22a90e10-112a-4a7c-9e82-73bff9f61301",
+    "control_tx": "22a90e10-112a-4a7c-9e82-73bff9f61302",
+    "data_tx": "22a90e10-112a-4a7c-9e82-73bff9f61303"
+  },
+  "command_params": {
+    "stream.accept": {
+      "schema_ref": "#/$defs/stream_accept_params",
+      "semantics": [
+        "streams is non-empty; stream_id must not repeat regardless of revision",
+        "session must match the complete prepared stream set and accept it atomically"
+      ]
+    },
+    "transport.bind_udp": {
+      "schema_ref": "#/$defs/udp_bind_params",
+      "semantics": [
+        "address and port designate the local receiving endpoint",
+        "the session verifies endpoint and peer authorization"
+      ]
+    },
+    "device.get_info": {
+      "schema_ref": "#/$defs/no_required_params",
+      "semantics": [
+        "no required fields; optional extensions allowed"
+      ]
+    },
+    "device.get_status": {
+      "schema_ref": "#/$defs/no_required_params",
+      "semantics": [
+        "no required fields; optional extensions allowed"
+      ]
+    },
+    "device.disconnect": {
+      "schema_ref": "#/$defs/no_required_params",
+      "semantics": [
+        "no required fields; optional extensions allowed"
+      ]
+    }
+  },
+  "event_contracts": {
+    "data.gap": {
+      "schema_ref": "#/$defs/EVENT",
+      "semantics": [
+        "nonzero header stream_id must match payload stream_id and descriptor_revision",
+        "sample_index and count are top-level u64 decimal strings or null",
+        "known count is positive; known start + count must not overflow u64",
+        "params contains reason and detection; start/count are not params",
+        "known interval is half-open [sample_index, sample_index+count)"
+      ]
+    }
+  }
+}

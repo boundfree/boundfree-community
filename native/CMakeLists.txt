@@ -158,6 +158,8 @@ endif()
 # everything shared comes from bf_core. Name and behavior are unchanged so the
 # existing test suite and M8 packaging pipeline keep working.
 # ---------------------------------------------------------------------------
+add_subdirectory(src/acquisition)
+
 add_executable(bf_app
     src/app/main.cpp
     src/controller/analysis_service.cpp
