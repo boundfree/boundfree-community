@@ -12,6 +12,7 @@ description: 按 BoundFree Community 规范完成新增功能或修复的分支�
 - 所有修改先读根目录 [AGENTS.md](../../../AGENTS.md) 和 [开发规范](../../../docs/development-guide.md)。
 - 需求与分支、验证提交、PR 评审返修、合入与清理，按 [提交与交付 SOP](../../../docs/contribution-sop.md) 执行；新增功能使用 [功能需求模板](../../../.github/ISSUE_TEMPLATE/feature-request.yml) 和 [PR 模板](../../../.github/pull_request_template.md)。
 - 涉及版本、安装包、Actions 或发版，再读 [版本与发布 SOP](../../../docs/release-sop.md)，以实际工作流和脚本核对执行结果。
+- 本地源码在 Linux/WSL 开发；Windows 编译副本仅从源码单向同步，不在副本修改或提交。同步清单、目录和副本冲突处理按 [工具链说明](../../../docs/toolchain-wsl2.md)，不能直接覆盖未归集的副本修改。
 - 流程文档是操作真值；本技能只提供路由和关键决策，不复制完整 SOP。发现文档与执行行为不一致时，核实后同步修正，不能静默绕过门禁。
 - 文档以 [当前索引](../../../docs/README.md) 为入口，`docs/archive/` 中的旧计划、版本规则与执行指令只作追溯；归档前把仍有效的约束和未验收项收口到当前文档。
 

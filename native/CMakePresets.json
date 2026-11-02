@@ -3,12 +3,11 @@
   "configurePresets": [
     {
       "name": "wsl2-qt6-conda",
-      "displayName": "WSL2 Qt6 conda toolchain",
+      "displayName": "WSL2 Community Qt baseline (Conda)",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build",
+      "binaryDir": "${sourceDir}/build-qt6-baseline",
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "${sourceDir}/../../toolchains/qt6",
-        "CMAKE_CXX_COMPILER": "${sourceDir}/../../toolchains/qt6/bin/x86_64-conda-linux-gnu-c++"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/wsl-qt6.cmake"
       }
     },
     {

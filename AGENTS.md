@@ -13,7 +13,7 @@
 - 本仓库是 BoundFree EEG 新一代 C++/Qt6 原生上位机。
 - 本仓库自有核心采用 Apache-2.0，含现有 ICA 与基本结果导出。第三方内容保留原许可；许可范围、贡献和商业扩展边界见 `legal/LICENSING.md`。
 - 付费扩展源码与商业许可在独立私有仓库管理；本仓库只放开源核心和公开集成接口，不混入专有扩展代码。Pro 与授权服务端不因本仓库许可变化而开源。
-- `../archive/boundfree-eeg-upper-computer` 是旧 Python/PySide6 参考仓库，仅用于只读参考和黄金文件。
+- 旧 Python/PySide6 参考仓库保存在跨仓库工作空间的 `archive/boundfree-eeg-upper-computer`（见工作空间 AGENTS.md），仅用于只读参考和黄金文件；不能假定它与当前检出目录相邻。
 - 除非任务明确要求，不要修改旧参考仓库。
 - 不要把旧参考仓库的未提交改动回滚、覆盖或迁入本仓库。
 
@@ -41,6 +41,8 @@
 - 流程规则变化时，在同一 PR 核对规范、SOP、技能和模板，只同步受影响的内容；不要复制另一套互相矛盾的流程。
 
 ## Development Stage
+
+- 本机日常开发源码位于 Linux 主目录 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，当前功能分支为 `feature/fluentqt-integration`；`.worktrees/community-ica` 仅为兼容入口。`F:\workspace\BoudFree\development\boundfree-community` 是从 Linux 单向同步的 Windows 编译副本，不在副本编辑、暂存或提交。副本清单 `.boundfree-windows-mirror.json` 与安全同步操作见 `docs/toolchain-wsl2.md`；不要用旧分支或旧保留工作树覆盖副本。
 
 - 当前版本为 `0.2.2-beta.1`。
 - 已有 EEG/LFP 浏览、处理、播放、标注、视频、录制/导出与专用脑电/眼电分离；当前重点是实际记录、用户走查和发布验收，具体范围与限制见路线及清单。

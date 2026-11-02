@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-25
+last_updated: 2026-11-02
 ---
 
 # 开发规范
@@ -23,6 +23,8 @@ last_updated: 2026-10-25
 仓库关系、权限和远端配置统一见 [提交 SOP 第 0 节](contribution-sop.md#0-两个托管地址与协作顺序)。
 
 ## Branch Model
+
+本地开发与构建副本分工见 [工具链说明](toolchain-wsl2.md)：Linux/WSL 维护源码和 Git 提交，Windows 副本只接收单向同步并编译。切换布局时先保全全部未提交改动；不能将旧副本直接视为源码覆盖当前候选。
 
 ### 主线与任务分支
 

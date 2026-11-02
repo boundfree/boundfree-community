@@ -41,6 +41,8 @@ GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向�
 
 ## 使用与开发入口
 
+本地采用 Linux/WSL 开发、Windows 副本编译的分工；Windows 副本从 Linux 单向同步。目录、环境与同步保护见 [工具链说明](docs/toolchain-wsl2.md)。
+
 | 任务 | 入口 |
 | --- | --- |
 | 下载或重建安装包、更新版本和发布 | [版本与发布 SOP](docs/release-sop.md) |

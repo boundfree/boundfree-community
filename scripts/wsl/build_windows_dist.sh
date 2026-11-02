@@ -155,7 +155,9 @@ if [[ "$SKIP_INSTALLER" == false && -f "$WIN_INSTALLER" ]]; then
   echo ""
   echo "==> [Step 3/3] Retrieving installer to WSL dist/..."
   mkdir -p "$WSL_DIST"
-  cp -f "$WIN_INSTALLER" "$WSL_DIST/$INSTALLER_NAME"
+  if [[ ! "$WIN_INSTALLER" -ef "$WSL_DIST/$INSTALLER_NAME" ]]; then
+    cp -f "$WIN_INSTALLER" "$WSL_DIST/$INSTALLER_NAME"
+  fi
 
   SIZE_BYTES=$(stat -c%s "$WSL_DIST/$INSTALLER_NAME" 2>/dev/null || stat -f%z "$WSL_DIST/$INSTALLER_NAME")
   SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE_BYTES/1048576}")

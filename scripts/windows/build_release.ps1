@@ -188,6 +188,14 @@ if ($Python -match '[\\/]' -and -not (Test-Path -LiteralPath $Python)) {
 }
 
 # Verify Python build dependencies before starting the expensive CMake/PyInstaller pipeline.
+$PythonPrefix = (& $Python -c "import sys; print(sys.prefix)").Trim()
+if ($LASTEXITCODE -ne 0) { throw "Unable to detect Python environment: $Python" }
+if (Test-Path -LiteralPath (Join-Path $PythonPrefix 'conda-meta')) {
+    # Match the selected interpreter's activation so PyInstaller can resolve
+    # Conda DLLs such as libffi used by _ctypes, rather than a global Python's DLLs.
+    $env:CONDA_PREFIX = $PythonPrefix
+    $env:PATH = "$PythonPrefix;$(Join-Path $PythonPrefix 'Scripts');$(Join-Path $PythonPrefix 'Library\bin');$env:PATH"
+}
 Invoke-Native $Python @("-c", "import PyInstaller, h5py, mne, neo, pyedflib; print('sidecar-build-dependencies-ok')")
 
 # License public key is mandatory: release builds must embed a release public

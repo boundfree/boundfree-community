@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FAST=0
+NATIVE_BUILD_DIR="${BF_NATIVE_BUILD_DIR:-$ROOT/native/build-qt6-baseline}"
+PYTHON="${BF_PYTHON_EXECUTABLE:-python3}"
 
 if [[ "${1:-}" == "--fast" ]]; then
   FAST=1
@@ -10,28 +12,28 @@ fi
 
 cd "$ROOT"
 
-python3 -m json.tool version.json >/dev/null
-python3 -m json.tool contracts/error_codes.json >/dev/null
-python3 scripts/common/check_i18n.py
+"$PYTHON" -m json.tool version.json >/dev/null
+"$PYTHON" -m json.tool contracts/error_codes.json >/dev/null
+"$PYTHON" scripts/common/check_i18n.py
 
 if [[ "$FAST" -eq 0 ]]; then
   (
     cd native
-    cmake --preset wsl2-qt6-conda
-    cmake --build --preset wsl2-qt6-conda
+    cmake --preset wsl2-qt6-conda -B "$NATIVE_BUILD_DIR"
+    cmake --build "$NATIVE_BUILD_DIR"
   )
 fi
 
-python3 -m pytest tests -q --ignore=tests/scripts
+"$PYTHON" -m pytest tests -q --ignore=tests/scripts
 
 if [[ "$FAST" -eq 0 ]]; then
-  native/build/bf_app --version
+  "$NATIVE_BUILD_DIR/bf_app" --version
   PYTHONPATH="$ROOT/sidecar${PYTHONPATH:+:$PYTHONPATH}" \
-    native/build/bf_app --smoke-sidecar
+    "$NATIVE_BUILD_DIR/bf_app" --smoke-sidecar
   for locale in zh_CN en_US pseudo; do
     QT_QPA_PLATFORM=offscreen \
       PYTHONPATH="$ROOT/sidecar${PYTHONPATH:+:$PYTHONPATH}" \
-      native/build/bf_app --smoke-ui --language "$locale"
+      "$NATIVE_BUILD_DIR/bf_app" --smoke-ui --language "$locale"
   done
 fi
 

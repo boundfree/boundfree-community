@@ -36,9 +36,15 @@ jobs:
           ref: ${{ inputs.source_ref }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Read toolchain baselines
+        id: toolchain-baseline
+        shell: bash
+        run: |
+          echo "qt=$(tr -d '\r\n' < config/qt-version.txt)" >> "$GITHUB_OUTPUT"
+          echo "python=$(tr -d '\r\n' < config/python-version.txt)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: '3.12'
+          python-version: ${{ steps.toolchain-baseline.outputs.python }}
           cache: pip
           cache-dependency-path: |
             scripts/ci/requirements.txt
@@ -51,7 +57,7 @@ jobs:
       - uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4
         with:
           setup-python: false
-          version: '6.8.2'
+          version: ${{ steps.toolchain-baseline.outputs.qt }}
           modules: qtmultimedia qtshadertools
           cache: true
       - name: Install Python build and test dependencies

@@ -3,7 +3,7 @@ title: Community 提交与交付 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-25
+last_updated: 2026-11-02
 ---
 
 # Community 提交与交付 SOP
@@ -54,6 +54,8 @@ git branch --set-upstream-to=origin/master master
 ## 1. 开始修改
 
 先读根目录 [AGENTS.md](../AGENTS.md)，确认当前目录是 `boundfree-community`。工作空间根目录不是 Git 仓库；Pro 与授权服务不在本流程的改动范围内。
+
+本机在 Linux/WSL 源码目录执行分支、修改和提交；Windows 编译副本不作为另一个开发分支。构建前按 [工具链说明](toolchain-wsl2.md) 单向同步，副本出现独有改动时先归集，不能跳过清单保护覆盖。
 
 ### 1.1 明确任务和权限
 
