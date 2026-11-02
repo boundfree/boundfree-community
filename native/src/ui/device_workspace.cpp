@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <cmath>
 #include <initializer_list>
+#include <iterator>
 #include <limits>
 
 namespace bf {
@@ -308,7 +309,7 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     });
     sharedWaveform_ = sharedWaveform != nullptr;
     traces_ = sharedWaveform ? sharedWaveform : new WaveformWidget(livePage_);
-    traces_->setViewInteractionsEnabled(!sharedWaveform);
+    if (!sharedWaveform_) traces_->setViewInteractionsEnabled(true);
     if (!sharedWaveform_) { traces_->setObjectName("deviceTraceView"); traces_->setMinimumSize(320,180); live->addWidget(traces_, 1); }
     recordStatus_ = new QLabel(livePage_); recordStatus_->setWordWrap(true); recordStatus_->setObjectName("deviceRecordStatus");
     auto* recordingNotice = new QWidget(livePage_);
@@ -478,31 +479,17 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     });
     connect(viewWindow_, &QComboBox::currentIndexChanged, this, [this] { refresh(true); });
     connect(viewChannel_, &QComboBox::currentIndexChanged, this, [this] { refresh(true); });
-    const auto viewingActive = [this] { return !sharedWaveform_ || liveViewActive_; };
-    connect(traces_, &WaveformWidget::pauseViewRequested, this, [this, viewingActive] { if (viewingActive()) freeze_->click(); });
-    connect(traces_, &WaveformWidget::timeZoomRequested, this, [this, viewingActive](int steps, double anchor) {
-        if (!viewingActive()) return;
-        const int index = std::clamp(viewWindow_->currentIndex() - steps, 0, viewWindow_->count() - 1);
-        if (index == viewWindow_->currentIndex()) return;
-        if (frozen_) {
-            const auto old = traces_->timeRange();
-            const auto full = acquisitionTraceTimeRange(frozenTraces_);
-            if (full) {
-                const double point = old.first + anchor * (old.second - old.first);
-                const double end = point + (1 - anchor) * viewWindow_->itemData(index).toDouble();
-                viewEndOffset_ = std::max(0., full->last - end);
-            }
-        }
-        viewWindow_->setCurrentIndex(index);
+    // Shared-renderer gestures belong to MainWindow; this panel owns only the
+    // live timeline. Standalone device windows dispatch their own gestures.
+    if (!sharedWaveform_) {
+        connect(traces_, &WaveformWidget::pauseViewRequested, this, &DeviceWorkspace::toggleViewPause);
+        connect(traces_, &WaveformWidget::timeZoomRequested, this, &DeviceWorkspace::zoomViewTime);
+        connect(traces_, &WaveformWidget::viewPanRequested, this, &DeviceWorkspace::panView);
+        connect(traces_, &WaveformWidget::resetViewRequested, this, &DeviceWorkspace::resetView);
+    }
+    connect(traces_, &WaveformWidget::amplitudeZoomChanged, this, [this] {
+        if (!sharedWaveform_ || liveViewActive_) refresh(true);
     });
-    connect(traces_, &WaveformWidget::viewPanRequested, this, [this, viewingActive](double seconds) {
-        if (!viewingActive() || !frozen_) return;
-        viewEndOffset_ += seconds; appliedViewChannel_ = -2; refresh(true);
-    });
-    connect(traces_, &WaveformWidget::amplitudeZoomChanged, this, [this, viewingActive](double zoom) {
-        if (viewingActive()) { liveAmplitudeZoom_ = zoom; refresh(true); }
-    });
-    connect(traces_, &WaveformWidget::resetViewRequested, this, [this, viewingActive] { if (viewingActive()) resetView_->click(); });
     connect(resetView_, &QPushButton::clicked, this, [this] {
         if (resetViewOverride && resetViewOverride()) { refresh(true); return; }
         const QSignalBlocker windowBlocker(viewWindow_), channelBlocker(viewChannel_);
@@ -528,7 +515,7 @@ QWidget* DeviceWorkspace::takeLiveControls() {
 }
 
 void DeviceWorkspace::setLiveViewActive(bool active) {
-    if (active && !liveViewActive_) {
+    if (!sharedWaveform_ && active && !liveViewActive_) {
         traces_->clearTimeRange(); traces_->setViewState(WaveformViewState{});
         appliedViewChannel_ = -2;
         traces_->setMarkers({}); traces_->setMarkerModeEnabled(false);
@@ -536,9 +523,10 @@ void DeviceWorkspace::setLiveViewActive(bool active) {
         traces_->setAutoScaleEnabled(true);
     }
     liveViewActive_ = active;
-    traces_->setViewInteractionsEnabled(active);
-    if (active) traces_->setAmplitudeZoom(liveAmplitudeZoom_);
-    traces_->setToolTip(active ? text("app.device.view_only_hint") : QString());
+    if (!sharedWaveform_) {
+        traces_->setViewInteractionsEnabled(active);
+        traces_->setToolTip(active ? text("app.device.view_only_hint") : QString());
+    }
     if (active) setViewTabOrder();
     if (active) updateWaveform();
     refresh(true);
@@ -604,7 +592,8 @@ void DeviceWorkspace::updateWaveform() {
 void DeviceWorkspace::completeConnection() {
     if (!autoStartPending_) return;
     autoStartPending_ = false; frozen_ = false; frozenTraces_.clear();
-    viewEndOffset_ = 0; liveAmplitudeZoom_ = 1; traces_->setAmplitudeZoom(1);
+    viewEndOffset_ = 0;
+    if (!sharedWaveform_) traces_->setAmplitudeZoom(1);
     liveAdvancedToggle_->setChecked(false);
     const auto generation = ++autoStartGeneration_;
     showLive();
@@ -619,9 +608,53 @@ void DeviceWorkspace::completeConnection() {
 }
 
 void DeviceWorkspace::setViewSeconds(double seconds) {
-    const int index=viewWindow_->findData(seconds);
-    if(index>=0)viewWindow_->setCurrentIndex(index);
+    if (!std::isfinite(seconds)) return;
+    seconds = std::clamp(seconds, .25, 10.);
+    int index = viewWindow_->findData(seconds);
+    if (index < 0) {
+        // The shared numeric editor accepts values between the live presets.
+        // Reuse one custom entry instead of silently ignoring those values.
+        index = viewWindow_->findData(true, Qt::UserRole + 1);
+        if (index < 0) { index = viewWindow_->count(); viewWindow_->addItem(QString()); }
+        const QSignalBlocker blocker(viewWindow_);
+        viewWindow_->setItemData(index, seconds);
+        viewWindow_->setItemData(index, true, Qt::UserRole + 1);
+        viewWindow_->setItemText(index, text("app.device.view_seconds", {{"seconds", i18n_->qlocale().toString(seconds, 'g', 3)}}));
+    }
+    viewWindow_->setCurrentIndex(index);
+    refresh(true);
 }
+
+void DeviceWorkspace::zoomViewTime(int steps, double anchor) {
+    const std::vector<double> presets{.25, .5, 1., 2., 5., 10.};
+    double seconds = viewWindow_->currentData().toDouble();
+    for (int i = 0; i < std::abs(steps); ++i) {
+        if (steps > 0) {
+            const auto it = std::lower_bound(presets.begin(), presets.end(), seconds);
+            seconds = it == presets.begin() ? presets.front() : *std::prev(it);
+        } else {
+            const auto it = std::upper_bound(presets.begin(), presets.end(), seconds);
+            seconds = it == presets.end() ? presets.back() : *it;
+        }
+    }
+    if (seconds == viewWindow_->currentData().toDouble()) return;
+    if (frozen_) {
+        const auto old = traces_->timeRange();
+        if (const auto full = acquisitionTraceTimeRange(frozenTraces_)) {
+            const double point = old.first + anchor * (old.second - old.first);
+            viewEndOffset_ = std::max(0., full->last - point - (1 - anchor) * seconds);
+        }
+    }
+    setViewSeconds(seconds);
+}
+
+void DeviceWorkspace::panView(double seconds) {
+    if (!frozen_) return;
+    viewEndOffset_ += seconds; appliedViewChannel_ = -2; refresh(true);
+}
+
+void DeviceWorkspace::toggleViewPause() { freeze_->click(); }
+void DeviceWorkspace::resetView() { resetView_->click(); }
 
 void DeviceWorkspace::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
@@ -1032,7 +1065,7 @@ void DeviceWorkspace::retranslateUi() {
     viewWindow_->setToolTip(viewHelp); viewChannel_->setToolTip(viewHelp); freeze_->setToolTip(viewHelp);
     resetView_->setText(text("app.device.view_reset")); resetView_->setToolTip(viewHelp);
     viewHelp_->setText(text("app.device.view_help")); viewHelp_->setAccessibleName(text("app.device.view_help")); viewHelp_->setToolTip(viewHelp);
-    if (!sharedWaveform_ || liveViewActive_) traces_->setToolTip(viewHelp);
+    if (!sharedWaveform_) traces_->setToolTip(viewHelp);
     openLogs_->setText(text("app.device.open_logs"));
     liveAdvancedToggle_->setText(text("app.device.live_advanced")); connectionAdvancedToggle_->setText(text("app.device.connection_advanced"));
     managerTitle_->setText(text("app.device.manager_title")); managerIntro_->setText(text("app.device.manager_intro"));
@@ -1085,8 +1118,10 @@ void DeviceWorkspace::retranslateUi() {
     unsupported_->setText(text("app.device.unsupported"));
     connect_->setAccessibleName(text("app.device.connection_accessible"));
     rate_->setAccessibleName(text("app.device.sample_rate"));
-    traces_->setAccessibleName(text("app.device.trace_accessible"));
-    traces_->setNumberLocale(i18n_->qlocale());
+    if (!sharedWaveform_) {
+        traces_->setAccessibleName(text("app.device.trace_accessible"));
+        traces_->setNumberLocale(i18n_->qlocale());
+    }
     scaleNotice_->setText(text("app.device.adaptive_scale") + " " + text("app.device.relative_time_notice"));
     rebuildRecent(); refreshConnectionPage();
     refresh(true);

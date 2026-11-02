@@ -56,6 +56,7 @@
 #include <QTime>
 #include <QStyle>
 #include <QToolBar>
+#include <QToolTip>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -132,6 +133,25 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
         combo->setMinimumContentsLength(6);
     }
     buildFixedWorkspace();
+    connect(waveformWidget_, &WaveformWidget::timeZoomRequested, this, [this](int steps, double anchor) {
+        if (deviceWaveformActive_) { deviceWorkspace_->zoomViewTime(steps, anchor); return; }
+        if (!hasCurrentFile_ || openingFile_ || playbackPanel_->isProgressSliderDown()) return;
+        const auto range = waveformWidget_->timeRange();
+        const double seconds = std::clamp(std::round((range.second - range.first) * std::pow(1.25, -steps) * 100) / 100,
+            timeWindowSpin_->minimum(), timeWindowSpin_->maximum());
+        if (std::abs(seconds - (range.second - range.first)) < 1e-9) return;
+        setFileViewport(range.first + anchor * (range.second - range.first - seconds), seconds);
+    });
+    connect(waveformWidget_, &WaveformWidget::viewPanRequested, this, [this](double seconds) {
+        if (deviceWaveformActive_) { deviceWorkspace_->panView(seconds); return; }
+        if (!hasCurrentFile_ || openingFile_ || playback_.isPlaying()) return;
+        setFileViewport(waveformWidget_->timeRange().first - seconds, viewState_.windowSeconds);
+    });
+    connect(waveformWidget_, &WaveformWidget::pauseViewRequested, this, [this] {
+        if (deviceWaveformActive_) deviceWorkspace_->toggleViewPause();
+        else if (hasCurrentFile_ && !openingFile_) togglePlayback();
+    });
+    connect(waveformWidget_, &WaveformWidget::resetViewRequested, this, &MainWindow::resetWaveformView);
     // Build all top-level menus consecutively after toolbar/dock layout is
     // complete. This keeps their mouse regions in one stable QMenuBar layout.
     buildFileMenu();
@@ -563,8 +583,8 @@ void MainWindow::buildFixedWorkspace() {
     deviceWorkspace_->signalViewRequested=[this](double start,double end,bool frozen,int channel,double seconds){refreshLiveSignal(start,end,frozen,channel,seconds);};
     connect(acquisitionController_,&AcquisitionController::signalWindowReady,this,[this](const WaveformSlice& raw,const WaveformSlice& processed){
         if(!deviceWaveformActive_ || liveFrozen_)return;
-        const bool changed=liveRawSignal_.sourceId!=raw.sourceId || liveRawSignal_.streamId!=raw.streamId || liveRawSignal_.channelNames!=raw.channelNames || liveRawSignal_.channelIds!=raw.channelIds;
-        if(changed){invalidateAnalysis();liveStreamKey_=raw.streamId;processingState_.clearAllChannelBandpass();
+        const bool changed=liveRawSignal_.sourceId!=raw.sourceId || liveRawSignal_.streamId!=raw.streamId || liveRawSignal_.channelNames!=raw.channelNames || liveRawSignal_.channelIds!=raw.channelIds || liveRawSignal_.channelUnits!=raw.channelUnits || liveRawSignal_.fs!=raw.fs;
+        if(changed){invalidateAnalysis();liveStreamKey_=raw.streamId;processingState_.clearAllChannelBandpass();resetBrowserChannelSelections();
             const auto markerSource=raw.sourceId+"/"+raw.streamId;
             if(liveMarkerSource_!=markerSource){liveMarkerSource_=markerSource;markerStore_.replaceFromEvents({});}
         }
@@ -608,20 +628,38 @@ void MainWindow::buildFixedWorkspace() {
     workspaceLayout->addWidget(workspaceStack_, 1);
     workspaceLayout->addWidget(deviceLiveControls_);
     deviceWorkspace_->viewControlsOverride = [this]() -> std::optional<DeviceWorkspace::ViewControls> {
-        if (workspaceStack_->currentIndex() != 1) return std::nullopt;
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_)
+                return DeviceWorkspace::ViewControls{!playback_.isPlaying(), !openingFile_,
+                    i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"),
+                    i18n_->text(playback_.isPlaying() ? "app.status.mode.playback" : "app.device.view_paused"),
+                    i18n_->text("app.browser.view_hint"), true};
+            return std::nullopt;
+        }
         return DeviceWorkspace::ViewControls{separationWorkspace_->viewPaused(), separationWorkspace_->viewControlsAvailable(),
             separationWorkspace_->viewPauseText(), separationWorkspace_->viewStatusText(), separationWorkspace_->viewHint(), false};
     };
     deviceWorkspace_->pauseViewOverride = [this] {
-        if (workspaceStack_->currentIndex() != 1) return false;
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) { togglePlayback(); return true; }
+            return false;
+        }
         separationWorkspace_->toggleViewPause(); return true;
     };
     deviceWorkspace_->resetViewOverride = [this] {
-        if (workspaceStack_->currentIndex() != 1) return false;
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) { resetWaveformView(); return true; }
+            return false;
+        }
         separationWorkspace_->resetView(); return true;
     };
     deviceWorkspace_->viewHelpOverride = [this] {
-        if (workspaceStack_->currentIndex() != 1) return false;
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) {
+                QToolTip::showText(QCursor::pos(), i18n_->text("app.browser.view_hint"), waveformWidget_); return true;
+            }
+            return false;
+        }
         separationWorkspace_->showPlotHelp(); return true;
     };
     setCentralWidget(workspaceRoot);
@@ -671,6 +709,7 @@ void MainWindow::switchWorkspace(int index) {
         separationWorkspace_->pausePreview();
     }
     workspaceStack_->setCurrentIndex(index);
+    refreshWaveformInteractions();
     deviceWorkspace_->setLiveViewActive(deviceWaveformActive_ && index == 0);
     {
         const QSignalBlocker navigationBlocker(workspaceNavigation_);
@@ -1092,11 +1131,12 @@ void MainWindow::buildBrowserControls() {
         if (refreshingBrowserControls_) {
             return;
         }
-        viewState_.setWindowSeconds(value);
-        if(deviceWaveformActive_)deviceWorkspace_->setViewSeconds(value);
-        applyBrowserStateToWaveform();
-        if (!deviceWaveformActive_ && hasCurrentFile_ && windowRequestHandler_) {
-            requestWindow(playback_.position());
+        if (!deviceWaveformActive_ && hasCurrentFile_) {
+            setFileViewport(playback_.position(), value);
+        } else {
+            viewState_.setWindowSeconds(value);
+            if(deviceWaveformActive_)deviceWorkspace_->setViewSeconds(value);
+            applyBrowserStateToWaveform();
         }
     });
     connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
@@ -1133,8 +1173,9 @@ void MainWindow::buildPlaybackControls() {
         }
     });
     markerModeAction_ = browserToolbar_->addAction(QString());
+    markerModeAction_->setObjectName("eegMarkerMode");
     markerModeAction_->setCheckable(true);
-    connect(markerModeAction_, &QAction::toggled, this, [this](bool enabled) { waveformWidget_->setMarkerModeEnabled(enabled); });
+    connect(markerModeAction_, &QAction::toggled, this, [this](bool) { refreshWaveformInteractions(); });
 }
 
 void MainWindow::buildRecordControls() {
@@ -1954,6 +1995,7 @@ void MainWindow::advancePlayback() {
 }
 
 void MainWindow::refreshPlaybackControls() {
+    refreshWaveformInteractions();
     if (playAction_ == nullptr) {
         return;
     }
@@ -2137,6 +2179,58 @@ void MainWindow::refreshSignalTools() {
     if (toggleAnalysisAction_) toggleAnalysisAction_->setEnabled(signal);
     if (recordAction_) recordAction_->setEnabled(signal);
     if (exportSegmentAction_) exportSegmentAction_->setEnabled(signal && !exportRunning_);
+    refreshWaveformInteractions();
+}
+
+void MainWindow::refreshWaveformInteractions() {
+    // Rendering preferences and gesture availability belong to the shared
+    // browser. Source adapters supply ranges and execute navigation only.
+    const bool ready = (deviceWaveformActive_ || hasCurrentFile_) && !openingFile_;
+    waveformWidget_->setViewInteractionsEnabled(ready);
+    waveformWidget_->setAutoScaleEnabled(autoAmplitudeCheck_->isChecked());
+    const bool marking = markerModeAction_ && markerModeAction_->isChecked();
+    waveformWidget_->setMarkerModeEnabled(marking);
+    waveformWidget_->setViewPanningEnabled(ready && !marking &&
+        (deviceWaveformActive_ ? liveFrozen_ : !playback_.isPlaying()));
+    waveformWidget_->setAccessibleName(i18n_->text("app.separation.browser_workspace"));
+    waveformWidget_->setNumberLocale(i18n_->qlocale());
+    waveformWidget_->setToolTip(ready ? i18n_->text(deviceWaveformActive_ ? "app.device.view_only_hint" : "app.browser.view_hint") : QString());
+}
+
+void MainWindow::setFileViewport(double start, double seconds) {
+    if (deviceWaveformActive_ || !hasCurrentFile_ || openingFile_) return;
+    {
+        const QSignalBlocker blocker(timeWindowSpin_);
+        timeWindowSpin_->setValue(seconds);
+        viewState_.setWindowSeconds(timeWindowSpin_->value());
+    }
+    playback_.seek(viewportStart(start));
+    playbackElapsed_.restart();
+    playbackViewportActive_ = true;
+    applyBrowserStateToWaveform();
+    if (windowRequestHandler_ && (!cacheCoversPosition(playback_.position()) || windowRequestPending_ || playbackPrefetchPending_))
+        requestWindow(playback_.position(), true);
+    else requestCurrentAnalysis();
+    refreshPlaybackControls();
+    syncVideoToPlayback();
+}
+
+void MainWindow::resetWaveformView() {
+    if (deviceWaveformActive_) { deviceWorkspace_->resetView(); return; }
+    if (!hasCurrentFile_ || openingFile_) return;
+    waveformWidget_->setAmplitudeZoom(1);
+    setFileViewport(waveformWidget_->timeRange().first, 10.);
+}
+
+void MainWindow::resetBrowserChannelSelections() {
+    viewState_.firstVisibleChannel = 0;
+    viewState_.hiddenChannels.clear();
+    for (auto* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        const QSignalBlocker blocker(combo);
+        combo->setCurrentIndex(0);
+    }
+    const QSignalBlocker blocker(coherenceBCombo_);
+    if (coherenceBCombo_->count() > 1) coherenceBCombo_->setCurrentIndex(1);
 }
 
 void MainWindow::chooseVideo() {
@@ -2218,11 +2312,11 @@ void MainWindow::requestScrubPreview() {
     windowRequestHandler_(currentFile_.session.path, viewportStart(scrubPreviewPosition_), viewState_.windowSeconds);
 }
 
-void MainWindow::requestWindow(double t0) {
+void MainWindow::requestWindow(double t0, bool keepViewport) {
     if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_) return;
     scrubPreviewTimer_.stop();
     scrubRequestPending_ = false;
-    if (!playback_.isPlaying()) playbackViewportActive_ = false;
+    if (!playback_.isPlaying()) playbackViewportActive_ = keepViewport;
     playback_.seek(t0);
     playbackElapsed_.restart();
     playbackPrefetchPending_ = false;
@@ -2548,7 +2642,7 @@ void MainWindow::showFileOpenLoading(const QString& path) {
         viewState_ = WaveformViewState{};
         markerStore_.replaceFromEvents({});
         waveformWidget_->setSlice({}); waveformWidget_->clearTimeRange();
-        waveformWidget_->setAutoScaleEnabled(true); waveformWidget_->setAmplitudeZoom(1);
+        waveformWidget_->setAmplitudeZoom(1);
         const QSignalBlocker block(processingModeCombo_); processingModeCombo_->setCurrentIndex(0);
         centralStack_->setCurrentWidget(emptyPage_);
         emptyStateKey_ = "app.main.empty_state"; emptyStateParams_ = {};
@@ -2642,6 +2736,8 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         // Overrides belong to this file's output-channel identities, not a
         // coincidentally matching index in the next file (or sample rate).
         if (isCaptureReplay()) viewState_.setWindowSeconds(2.0);
+        waveformWidget_->setAmplitudeZoom(1);
+        resetBrowserChannelSelections();
         processingState_.clearAllChannelBandpass();
         if (channelBandpassControls_ != nullptr) channelBandpassControls_->refresh({}, 0.0, processingState_);
     }
@@ -2889,9 +2985,9 @@ bool MainWindow::hasActiveSignal() const {return deviceWaveformActive_?!liveRawS
 const WaveformSlice& MainWindow::activeSignal() const {return deviceWaveformActive_?(waveformProcessed_?liveProcessedSignal_:liveRawSignal_):currentFile_.waveform;}
 const WaveformSlice& MainWindow::activeRawSignal() const {return deviceWaveformActive_?liveRawSignal_:rawWaveform_;}
 void MainWindow::refreshLiveSignal(double start,double end,bool frozen,int channel,double seconds){
+    if(!deviceWaveformActive_)return;
     viewState_.setWindowSeconds(seconds);
     {const QSignalBlocker block(timeWindowSpin_);timeWindowSpin_->setValue(seconds);}
-    if(!deviceWaveformActive_)return;
     const bool redraw=liveFrozen_!=frozen || liveRange_!=std::make_pair(start,end) || liveChannel_!=channel;
     liveFrozen_=frozen;liveRange_={start,end};liveChannel_=channel;
     if(redraw && frozen){displayLiveSignal();requestCurrentAnalysis();}
@@ -2907,7 +3003,7 @@ void MainWindow::displayLiveSignal(){
     waveformWidget_->setMarkers(markerStore_.markers());waveformWidget_->setMarkerModeEnabled(markerModeAction_->isChecked());
     const double end=std::min(liveRange_.second,activeSignal().t1);
     waveformWidget_->setTimeRange(std::max(activeSignal().t0,end-viewState_.windowSeconds),end);
-    waveformWidget_->setViewPanningEnabled(liveFrozen_);
+    refreshWaveformInteractions();
     waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"),i18n_->text(activeSignal().unit=="uV"?"app.analysis.amplitude":"app.device.signal_amplitude"));
 }
 QString MainWindow::analysisUnitLabel(AnalysisKind kind,const QString& unit,bool db) const {

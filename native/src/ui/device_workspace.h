@@ -41,6 +41,10 @@ public:
     std::function<void(double,double,bool,int,double)> signalViewRequested;
     std::function<QStringList()> signalChannelNames;
     void setViewSeconds(double);
+    void zoomViewTime(int steps, double anchor);
+    void panView(double seconds);
+    void toggleViewPause();
+    void resetView();
     std::function<void()> connectionsRequested;
     std::function<void(const QString&)> captureOpenRequested;
     struct ViewControls {
@@ -109,7 +113,6 @@ private:
     QStringList viewChannelNames_;
     int appliedViewChannel_ = -2;
     double viewEndOffset_ = 0;
-    double liveAmplitudeZoom_ = 1;
     QLineEdit *host_, *expectedIdentity_;
     QSpinBox* port_;
     QStackedWidget* pages_;

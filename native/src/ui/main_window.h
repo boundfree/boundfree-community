@@ -142,6 +142,10 @@ private:
     void chooseCapture();
     bool isCaptureReplay() const;
     void refreshSignalTools();
+    void refreshWaveformInteractions();
+    void resetWaveformView();
+    void resetBrowserChannelSelections();
+    void setFileViewport(double start, double seconds);
     void chooseVideo();
     void buildVideoDock();
     void buildRecordControls();
@@ -149,7 +153,7 @@ private:
     void exportSegment();
     void syncVideoToPlayback();
     void updatePlaybackDuration();
-    void requestWindow(double t0);
+    void requestWindow(double t0, bool keepViewport = false);
     void cancelScrubPreview();
     void previewScrubPosition(double position);
     void requestScrubPreview();

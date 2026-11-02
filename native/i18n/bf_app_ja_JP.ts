@@ -2349,5 +2349,9 @@ IC を選んで下の波形とスペクトルを確認します。参照との�
     <message><source>app.separation.axis_amplitude</source><translation>振幅 ({unit})</translation></message>
     <message><source>app.separation.axis_psd</source><translation>PSD (a.u.²/Hz)</translation></message>
     <message><source>app.separation.component_plot_controls</source><translation>Ctrl＋ホイール：時間軸を拡大縮小。Shift＋ホイール：IC振幅を拡大縮小。ドラッグ：移動。ダブルクリックまたは0：リセット。a.u.は任意単位。</translation></message>
+    <message><source>app.browser.view_hint</source><translation>表示のみを変更し、元のサンプルやエクスポートデータは変更しません。
+Ctrl＋ホイール：ポインターを中心に時間軸を拡大・縮小。Shift＋ホイール：振幅を拡大・縮小。ホイール：チャンネルをスクロール。
+波形をクリック後、スペース：再生／一時停止。＋／－：時間軸の拡大・縮小。0またはダブルクリック：10秒表示・振幅1倍に戻す。
+再生を一時停止し、注釈モードがオフの場合、ドラッグまたは左右キーでファイルを移動できます。</translation></message>
   </context>
 </TS>

@@ -202,8 +202,9 @@ void WaveformWidget::setCursorTime(double time) {
 }
 
 void WaveformWidget::setMarkerModeEnabled(bool enabled) {
+    if (markerModeEnabled_ == enabled) return;
     markerModeEnabled_ = enabled;
-    setCursor(markerModeEnabled_ ? Qt::CrossCursor : Qt::ArrowCursor);
+    setCursor(markerModeEnabled_ ? Qt::CrossCursor : viewPanning_ ? Qt::OpenHandCursor : Qt::ArrowCursor);
 }
 void WaveformWidget::setDarkTheme(bool dark) {
     darkTheme_ = dark;

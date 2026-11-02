@@ -2349,5 +2349,9 @@ The built-in separation example includes teaching labels. The simulator supports
     <message><source>app.separation.axis_amplitude</source><translation>Amplitude ({unit})</translation></message>
     <message><source>app.separation.axis_psd</source><translation>PSD (a.u.²/Hz)</translation></message>
     <message><source>app.separation.component_plot_controls</source><translation>Ctrl+wheel: zoom time. Shift+wheel: zoom IC amplitude. Drag: pan. Double-click or 0: reset. a.u. denotes arbitrary units.</translation></message>
+    <message><source>app.browser.view_hint</source><translation>Nur Anzeige; Originalsamples und exportierte Daten bleiben unverändert.
+Strg+Mausrad: Zeit um den Zeiger zoomen. Umschalt+Mausrad: Amplitude zoomen. Mausrad: Kanäle scrollen.
+Nach Klick auf die Wellenform: Leertaste: Wiedergabe/Pause; +/−: Zeit zoomen; 0 oder Doppelklick: 10-Sekunden-Fenster und Amplitude 1× wiederherstellen.
+Bei pausierter Wiedergabe und ausgeschaltetem Anmerkungsmodus mit Ziehen oder Links/Rechts durch die Datei navigieren.</translation></message>
   </context>
 </TS>

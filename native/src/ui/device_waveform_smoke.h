@@ -143,6 +143,11 @@ inline int smokeDeviceWaveform(int argc, char** argv, const VersionInfo& version
     wheel(Qt::ShiftModifier);
     if (std::abs(waveform->amplitudeZoom() - 1.25) > 1e-9 || waveform->cachedDisplayModel().data != pausedData)
         return fail("shift_wheel_display_gain_preserves_data");
+    auto* sharedSeconds = window.findChild<QDoubleSpinBox*>("eegWindowSeconds");
+    sharedSeconds->setValue(.75);
+    if (viewWindow->currentData().toDouble() != .75 ||
+        std::abs(waveform->timeRange().second - waveform->timeRange().first - .75) > 1e-6)
+        return fail("shared_custom_window_matches_live_range");
     wheel(Qt::ControlModifier);
     if (viewWindow->currentData().toDouble() != .5) return fail("paused_time_zoom");
     const auto beforePan = waveform->timeRange();

@@ -2349,5 +2349,9 @@ IC 表示独立成分，幅度采用任意单位。
     <message><source>app.separation.axis_amplitude</source><translation>幅值 ({unit})</translation></message>
     <message><source>app.separation.axis_psd</source><translation>PSD (a.u.²/Hz)</translation></message>
     <message><source>app.separation.component_plot_controls</source><translation>Ctrl＋滚轮：缩放时间；Shift＋滚轮：缩放 IC 幅值；拖动：平移；双击或 0：重置。a.u. 表示任意单位。</translation></message>
+    <message><source>app.browser.view_hint</source><translation>仅调整显示，不改变原始样本和导出数据。
+Ctrl＋滚轮：围绕指针缩放时间；Shift＋滚轮：缩放幅值；普通滚轮：滚动通道。
+点击波形后，空格：播放／暂停；＋／－：时间缩放；0 或双击：恢复10秒窗口和1倍幅值。
+暂停播放且未开启标注时，可拖动或用左右方向键浏览文件。</translation></message>
   </context>
 </TS>

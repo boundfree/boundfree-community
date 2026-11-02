@@ -2,12 +2,17 @@
 
 #include "ui/main_window.h"
 #include "ui/export_segment_dialog.h"
+#include "ui/plot_style.h"
 #include <QApplication>
 #include <QDir>
 #include <QEventLoop>
 #include <QPushButton>
 #include <QStyleOptionComboBox>
 #include <QTimer>
+#include <QWheelEvent>
+#include <QKeyEvent>
+#include <QToolButton>
+#include <QToolTip>
 #include <cmath>
 #include <iostream>
 
@@ -98,6 +103,115 @@ inline int smokeWaveformDataModes(int argc, char** argv, const bf::VersionInfo& 
             dialog.hide();
         }
     }
-    std::cout << "waveform-data-modes-ok raw=true processed=true channels=true settings=true dialog=true\n";
+    // Drive the actual shared browser, not just the renderer's signal output.
+    auto* seconds = window.findChild<QDoubleSpinBox*>("eegWindowSeconds");
+    auto* automatic = window.findChild<QCheckBox*>("eegAutoAmplitude");
+    bf::DeviceWorkspace* device = nullptr;
+    for (auto* child : window.findChildren<QWidget*>())
+        if (auto* panel = dynamic_cast<bf::DeviceWorkspace*>(child)) { device = panel; break; }
+    auto* play = window.findChild<QAction*>("filePlaybackAction");
+    if (!seconds || !automatic || !device || !play) return fail("browser_controls");
+    const auto wheel = [&](Qt::KeyboardModifiers modifiers, int delta = 120, bool pixels = false) {
+        auto area = bf::plot::plotArea(*waveform, bf::plot::kWaveformMargins);
+        auto* scrollbar = waveform->findChild<QScrollBar*>("eegWaveformChannelScroll");
+        if (scrollbar && scrollbar->maximum() > 0) area.setRight(area.right() - scrollbar->sizeHint().width());
+        const QPointF point(area.left() + area.width() * .4, area.center().y());
+        QWheelEvent event(point, waveform->mapToGlobal(point.toPoint()), pixels ? QPoint(0, delta) : QPoint(),
+            pixels ? QPoint() : QPoint(0, delta), Qt::NoButton, modifiers, Qt::NoScrollPhase, false);
+        QApplication::sendEvent(waveform, &event);
+    };
+    const auto key = [&](int code) {
+        QKeyEvent event(QEvent::KeyPress, code, Qt::NoModifier);
+        QApplication::sendEvent(waveform, &event);
+    };
+    mode->setCurrentIndex(0);
+    window.setBrowserWindowSecondsForBrowser(8);
+    const auto scientificData = waveform->cachedDisplayModel().data;
+    auto range = waveform->timeRange();
+    wheel(Qt::ControlModifier);
+    auto zoomed = waveform->timeRange();
+    if (std::abs(seconds->value() - 6.4) > 1e-9 ||
+        std::abs(zoomed.first - (range.first + .4 * (8 - 6.4))) > .02 ||
+        std::abs(zoomed.second - zoomed.first - 6.4) > 1e-9) {
+        std::cerr << "file zoom before=" << range.first << ',' << range.second << " after=" << zoomed.first << ',' << zoomed.second
+            << " seconds=" << seconds->value() << '\n';
+        return fail("file_pointer_time_zoom");
+    }
+    wheel(Qt::ShiftModifier);
+    if (waveform->amplitudeZoom() != 1.25 || waveform->cachedDisplayModel().data != scientificData)
+        return fail("file_display_zoom_changes_samples");
+    auto* scroll = waveform->findChild<QScrollBar*>("eegWaveformChannelScroll");
+    wheel(Qt::NoModifier, -120);
+    if (!scroll || (scroll->maximum() > 0 && scroll->value() == 0) || waveform->timeRange() != zoomed ||
+        waveform->amplitudeZoom() != 1.25) return fail("file_channel_scroll");
+    automatic->setChecked(false);
+    device->setLiveViewActive(false); // An idle device panel cannot disable file gestures or reset display preferences.
+    window.retranslateUi();
+    wheel(Qt::ShiftModifier, 1, true);
+    if (waveform->amplitudeZoom() != 1.5625 || waveform->autoScaleEnabled() || automatic->isChecked() ||
+        waveform->toolTip() != i18n.text("app.browser.view_hint")) return fail("shared_preferences_ownership");
+    key(Qt::Key_Right);
+    if (waveform->timeRange().first <= zoomed.first) return fail("file_keyboard_pan");
+    auto* marking = window.findChild<QAction*>("eegMarkerMode");
+    if (!marking || waveform->cursor().shape() != Qt::OpenHandCursor) return fail("file_pan_cursor");
+    marking->setChecked(true);
+    const auto markerRange = waveform->timeRange();
+    key(Qt::Key_Right);
+    if (waveform->timeRange() != markerRange || waveform->cursor().shape() != Qt::CrossCursor)
+        return fail("file_marker_mode_disables_pan");
+    marking->setChecked(false);
+    key(Qt::Key_0);
+    if (seconds->value() != 10 || waveform->amplitudeZoom() != 1 || waveform->autoScaleEnabled())
+        return fail("file_reset_preserves_scale_mode");
+    key(Qt::Key_Space);
+    if (play->text() != i18n.text("app.playback.pause")) return fail("file_space_starts_playback");
+    key(Qt::Key_Space);
+    if (play->text() != i18n.text("app.playback.play")) return fail("file_space_pauses_playback");
+    auto* footerPause = window.findChild<QPushButton*>("deviceFreeze");
+    auto* footerReset = window.findChild<QPushButton*>("deviceResetView");
+    auto* footerHelp = window.findChild<QToolButton*>("deviceViewHelp");
+    if (!footerPause || !footerReset || !footerHelp) return fail("shared_footer_controls");
+    footerPause->click();
+    if (play->text() != i18n.text("app.playback.pause")) return fail("file_footer_playback");
+    footerPause->click();
+    if (play->text() != i18n.text("app.playback.play")) return fail("file_footer_pause");
+    wheel(Qt::ShiftModifier);
+    footerReset->click();
+    if (waveform->amplitudeZoom() != 1 || seconds->value() != 10) return fail("file_footer_reset");
+    footerHelp->click();
+    if (QToolTip::text() != i18n.text("app.browser.view_hint")) return fail("file_footer_help");
+    QToolTip::hideText();
+    // Zooming outside the loaded cache requests full samples and keeps the
+    // latest anchored viewport when the asynchronous reader completes.
+    auto longer = input;
+    longer.session.path = "zoom-window.csv";
+    longer.session.duration = 100;
+    longer.session.nSamples = 25000;
+    window.setChannelVisibleForBrowser(1, false);
+    window.setFirstVisibleChannelForBrowser(2);
+    window.showFileOpenResult(input);
+    if (waveform->cachedDisplayModel().channelNames != QStringList{"C"}) return fail("same_source_keeps_channels");
+    window.showFileOpenResult(longer);
+    if (waveform->cachedDisplayModel().channelNames != input.session.chNames) return fail("new_source_resets_channels");
+    int reads = 0;
+    double requestedStart = -1, requestedSeconds = -1;
+    window.setWindowRequestHandler([&](const QString&, double start, double length) {
+        ++reads; requestedStart = start; requestedSeconds = length;
+    });
+    wheel(Qt::ControlModifier, -120);
+    wheel(Qt::ControlModifier, -120);
+    if (reads != 2 || requestedSeconds != 12.5 || requestedStart != 0) return fail("file_zoom_reads_latest_window");
+    longer.waveform.t0 = requestedStart;
+    longer.waveform.t1 = requestedStart + requestedSeconds;
+    longer.waveform.data.assign(3, std::vector<float>(3125, 2));
+    window.showFileOpenResult(longer);
+    if (waveform->timeRange() != std::make_pair(0., 12.5) || seconds->value() != 12.5 ||
+        waveform->cachedDisplayModel().data[0].size() != 3125) return fail("file_zoom_async_result");
+    window.setBrowserWindowSecondsForBrowser(.25);
+    const auto minimumRange = waveform->timeRange();
+    wheel(Qt::ControlModifier);
+    if (waveform->timeRange() != minimumRange || seconds->value() != .25) return fail("file_zoom_minimum");
+    window.setWindowRequestHandler({});
+    std::cout << "waveform-data-modes-ok raw=true processed=true channels=true settings=true dialog=true file_zoom=true shared_preferences=true async_zoom=true\n";
     return 0;
 }

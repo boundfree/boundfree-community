@@ -2349,5 +2349,9 @@ The built-in separation example includes teaching labels. The simulator supports
     <message><source>app.separation.axis_amplitude</source><translation>Amplitude ({unit})</translation></message>
     <message><source>app.separation.axis_psd</source><translation>PSD (a.u.²/Hz)</translation></message>
     <message><source>app.separation.component_plot_controls</source><translation>Ctrl+wheel: zoom time. Shift+wheel: zoom IC amplitude. Drag: pan. Double-click or 0: reset. a.u. denotes arbitrary units.</translation></message>
+    <message><source>app.browser.view_hint</source><translation>표시만 조정하며 원본 샘플과 내보내기 데이터는 변경하지 않습니다.
+Ctrl+휠: 포인터 중심 시간 확대/축소. Shift+휠: 진폭 확대/축소. 휠: 채널 스크롤.
+파형 클릭 후 Space: 재생/일시 정지; +/−: 시간 확대/축소; 0 또는 두 번 클릭: 10초 창과 진폭 1배 복원.
+재생이 일시 정지되고 주석 모드가 꺼져 있으면 드래그 또는 좌우 키로 파일을 탐색합니다.</translation></message>
   </context>
 </TS>
