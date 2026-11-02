@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+include(cmake/FluentQt.cmake)
+
 set(BF_BRANDING_QRC "${CMAKE_CURRENT_SOURCE_DIR}/resources/branding.qrc")
 set(BF_WINDOWS_APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/boundfree_app.rc")
 
@@ -143,7 +145,7 @@ set(BF_CORE_SOURCES
 add_library(bf_core STATIC ${BF_CORE_SOURCES})
 target_include_directories(bf_core PUBLIC src)
 target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
+target_link_libraries(bf_core PUBLIC FluentQt::FluentQt Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
 if(NOT WIN32)
     target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
 endif()

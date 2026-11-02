@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #include "ui/collapsible_panel.h"
 
 #include <QVBoxLayout>
@@ -6,26 +7,27 @@ namespace bf {
 
 CollapsiblePanel::CollapsiblePanel(const QString& title, QWidget* parent)
     : QWidget(parent) {
+    fluent::initializeResources();
     auto* outer = new QVBoxLayout(this);
     outer->setContentsMargins(0, 0, 0, 0);
     outer->setSpacing(0);
-
-    headerButton_ = new QToolButton(this);
-    headerButton_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    headerButton_->setText(title);
-    headerButton_->setArrowType(Qt::DownArrow);
-    headerButton_->setCheckable(false);
-    headerButton_->setAutoRaise(true);
-    outer->addWidget(headerButton_);
-
+    expander_ = new fluent::layout::Expander(this);
+    expander_->setHeaderText(title);
+    expander_->headerButton()->setAccessibleName(title);
+    expander_->setAnimationEnabled(false); // Numeric/analysis controls resize atomically.
+    expander_->setBorderVisible(false);
     content_ = new QWidget(this);
     contentLayout_ = new QVBoxLayout(content_);
     contentLayout_->setContentsMargins(0, 0, 0, 0);
-    contentLayout_->setSpacing(0);
-    outer->addWidget(content_);
-
-    connect(headerButton_, &QToolButton::clicked, this, &CollapsiblePanel::onHeaderClicked);
-
+    contentLayout_->setSpacing(6);
+    expander_->setContentWidget(content_, fluent::WidgetOwnership::Owned);
+    outer->addWidget(expander_, 0, Qt::AlignTop);
+    connect(expander_, &fluent::layout::Expander::expandedChanged, this, [this](bool expanded) {
+        if (expanded_ == expanded) return;
+        expanded_ = expanded;
+        content_->setVisible(expanded);
+        emit toggled(expanded);
+    });
     setExpanded(true);
 }
 
@@ -59,37 +61,37 @@ void CollapsiblePanel::addWidget(QWidget* w) {
 
 void CollapsiblePanel::setExpanded(bool expanded) {
     expanded_ = expanded;
-    if (content_ != nullptr) {
-        content_->setVisible(expanded);
-    }
-    if (headerButton_ != nullptr) {
-        headerButton_->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
-    }
+    content_->setVisible(expanded);
+    if (headerVisible_) expander_->setExpandedAnimated(expanded, false);
+    else content_->setVisible(expanded);
 }
 
 void CollapsiblePanel::setHeaderVisible(bool visible) {
-    headerButton_->setVisible(visible);
-    if (!visible) setExpanded(true);
-}
-
-bool CollapsiblePanel::isExpanded() const {
-    return expanded_;
-}
-
-void CollapsiblePanel::setTitle(const QString& title) {
-    if (headerButton_ != nullptr) {
-        headerButton_->setText(title);
+    if (headerVisible_ == visible) return;
+    headerVisible_ = visible;
+    auto* outer = static_cast<QVBoxLayout*>(layout());
+    if (!visible) {
+        expander_->takeContentWidget();
+        // Expander forces Fixed for its clipping animation. A headerless tab
+        // must give that space back to its scroll area/table.
+        content_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        outer->addWidget(content_, 1);
+        expander_->hide();
+        setExpanded(true);
+    } else {
+        outer->removeWidget(content_);
+        expander_->setContentWidget(content_, fluent::WidgetOwnership::Owned);
+        expander_->show();
+        setExpanded(expanded_);
     }
 }
-
-QString CollapsiblePanel::title() const {
-    return headerButton_ != nullptr ? headerButton_->text() : QString();
+bool CollapsiblePanel::isExpanded() const { return expanded_; }
+void CollapsiblePanel::setTitle(const QString& title) {
+    expander_->setHeaderText(title);
+    expander_->headerButton()->setAccessibleName(title);
 }
+QString CollapsiblePanel::title() const { return expander_->headerText(); }
+QAbstractButton* CollapsiblePanel::headerButton() const { return expander_->headerButton(); }
+void CollapsiblePanel::onHeaderClicked() { expander_->toggleExpanded(); }
 
-void CollapsiblePanel::onHeaderClicked() {
-    const bool expanded = !isExpanded();
-    setExpanded(expanded);
-    emit toggled(expanded);
-}
-
-}  // namespace bf
+} // namespace bf

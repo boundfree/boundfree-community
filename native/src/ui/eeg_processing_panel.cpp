@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #include "ui/eeg_processing_panel.h"
 
 #include "ui/control_bar.h"
@@ -11,7 +12,7 @@ namespace bf {
 EegProcessingPanel::EegProcessingPanel(QObject* parent)
     : QObject(parent) {
     referenceLabel_ = new QLabel;
-    referenceCombo_ = new QComboBox;
+    referenceCombo_ = new ChoiceBox;
     referenceCombo_->setObjectName("eegReferenceMode");
     // Items receive their translated text after the toolbar is assembled.
     // Recompute on every item/locale change rather than caching the empty
@@ -22,13 +23,13 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Car));
     referenceCombo_->addItem(QString(), static_cast<int>(dsp::ReferenceMode::Bipolar));
 
-    notchEnableCheck_ = new QCheckBox;
-    notchHarmonicsCheck_ = new QCheckBox;
+    notchEnableCheck_ = new CheckOption;
+    notchHarmonicsCheck_ = new CheckOption;
     notchHarmonicsSpin_ = new QSpinBox;
     notchHarmonicsSpin_->setRange(2, 20);
     notchHarmonicsSpin_->setMinimumWidth(80);
 
-    bandpassEnableCheck_ = new QCheckBox;
+    bandpassEnableCheck_ = new CheckOption;
     bandpassLowSpin_ = new QDoubleSpinBox;
     bandpassLowSpin_->setRange(0.1, 400.0);
     bandpassLowSpin_->setDecimals(1);
@@ -40,9 +41,9 @@ EegProcessingPanel::EegProcessingPanel(QObject* parent)
     bandpassHighSpin_->setSuffix(" Hz");
     bandpassHighSpin_->setMinimumWidth(120);
 
-    applyToSelectedButton_ = new QPushButton;
+    applyToSelectedButton_ = new ActionButton;
     applyToSelectedButton_->setObjectName("eegApplyBandpassToSelected");
-    clearPerChannelButton_ = new QPushButton;
+    clearPerChannelButton_ = new ActionButton;
     clearPerChannelButton_->setObjectName("eegClearChannelBandpass");
 }
 
@@ -94,7 +95,7 @@ QWidget* EegProcessingPanel::buildWidget(const ProcessingViewState& state, QWidg
         auto* row = new QWidget(notch);
         auto* layout = new QHBoxLayout(row);
         layout->setContentsMargins(12, 0, 0, 0); layout->setSpacing(6);
-        auto* chk = new QCheckBox(row);
+        auto* chk = new CheckOption(row);
         auto* spin = new QDoubleSpinBox(row);
         chk->setObjectName(QString("eegNotchBandEnabled_%1").arg(index));
         spin->setObjectName(QString("eegNotchFrequency_%1").arg(index));
