@@ -29,3 +29,12 @@ class CsvSchemaError(RuntimeError):
         self.code = code
         self.params = params or {}
         super().__init__(code)
+
+
+class CaptureReaderError(RuntimeError):
+    """A capture directory cannot be replayed; never modifies its files."""
+
+    def __init__(self, code: str, params: dict[str, object] | None = None) -> None:
+        self.code = code
+        self.params = params or {}
+        super().__init__(code)

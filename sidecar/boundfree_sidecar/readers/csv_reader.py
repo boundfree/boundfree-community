@@ -1,5 +1,6 @@
 import csv
 import math
+import json
 from pathlib import Path
 
 from .base import FileMetadata, Reader, SliceData
@@ -77,13 +78,25 @@ class CsvReader(Reader):
 
         fs = 1.0 / (second_time - first_time) if second_time is not None else 1.0
         duration = n_samples / fs
+        self.channel_units = None; unit="uV"; self.source_metadata=None
+        metadata_path=self.path.with_suffix(self.path.suffix+".meta.json")
+        if metadata_path.is_file():
+            with metadata_path.open("rb") as f: payload=f.read(1024*1024+1)
+            if len(payload)>1024*1024:raise ValueError("CSV signal metadata exceeds 1 MiB")
+            metadata=json.loads(payload.decode("utf-8"))
+            if metadata.get("schema")!="boundfree.signal-export.v1":raise ValueError("unsupported CSV signal metadata")
+            unit=metadata.get("unit");self.channel_units=metadata.get("channel_units");self.source_metadata=metadata.get("provenance")
+            if not isinstance(unit,str) or not unit or not isinstance(self.channel_units,list) or len(self.channel_units)!=len(ch_names) or any(not isinstance(u,str) or not u for u in self.channel_units):
+                raise ValueError("invalid CSV signal units")
         self._metadata = FileMetadata(
             fs=fs,
             n_channels=len(ch_names),
             n_samples=n_samples,
             duration=duration,
             ch_names=ch_names,
-            unit="uV",
+            unit=unit,
+            channel_units=self.channel_units,
+            source_metadata=self.source_metadata,
             format_name=self.format_name,
             events=self._load_events(),
         )
@@ -110,4 +123,5 @@ class CsvReader(Reader):
             fs=meta.fs,
             unit="uV",
             data=data,
+            channel_units=self.channel_units,
         )

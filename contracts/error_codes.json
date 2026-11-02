@@ -80,6 +80,84 @@
       "description": "CSV continuous signal data contains no samples."
     },
     {
+      "code": "signal.invalid_filter_parameters",
+      "params": [],
+      "retryable": false,
+      "description": "Filter cutoffs must fit the current sampling rate."
+    },
+    {
+      "code": "signal.no_samples",
+      "params": [],
+      "retryable": false,
+      "description": "Signal window capability or validity check failed."
+    },
+    {
+      "code": "signal.window_too_large",
+      "params": [],
+      "retryable": false,
+      "description": "Signal window capability or validity check failed."
+    },
+    {
+      "code": "signal.incompatible_units",
+      "params": [],
+      "retryable": false,
+      "description": "Signal window capability or validity check failed."
+    },
+    {
+      "code": "signal.invalid_window",
+      "params": [],
+      "retryable": false,
+      "description": "Signal window capability or validity check failed."
+    },
+    {
+      "code": "signal.insufficient_continuous_data",
+      "params": [],
+      "retryable": false,
+      "description": "Signal window capability or validity check failed."
+    },
+    {
+      "code": "reader.capture_invalid",
+      "params": ["reason"],
+      "retryable": false,
+      "description": "The capture recording cannot be read.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
+      "code": "reader.capture_incomplete",
+      "params": [],
+      "retryable": false,
+      "description": "Stop the recording before opening it for replay.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
+      "code": "reader.capture_missing_manifest",
+      "params": [],
+      "retryable": false,
+      "description": "The companion capture manifest is missing.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
+      "code": "reader.capture_empty",
+      "params": [],
+      "retryable": false,
+      "description": "The recording contains no replayable samples.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
+      "code": "reader.capture_corrupt_block",
+      "params": ["sample_index"],
+      "retryable": false,
+      "description": "A recorded sample block failed checksum verification.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
+      "code": "reader.capture_slice_too_large",
+      "params": [],
+      "retryable": false,
+      "description": "Choose a shorter playback window.",
+      "_note": "path is an additional wire-only diagnostic; params lists user-facing placeholders."
+    },
+    {
       "code": "reader.open_failed",
       "params": ["path", "reason"],
       "retryable": false,
@@ -266,7 +344,6 @@
       "retryable": false,
       "description": "Segment export failed."
     },
-
     {
       "code": "analysis.invalid_request",
       "params": ["field", "reason"],
@@ -333,7 +410,6 @@
       "retryable": false,
       "description": "Offline export destination already exists and cannot be replaced."
     },
-
     {
       "code": "analysis.invalid_range",
       "params": [],
@@ -388,12 +464,348 @@
       "retryable": false,
       "description": "Selected amplifier contains excessive raw ADC rail samples."
     },
-
     {
       "code": "internal.unexpected",
       "params": ["operation"],
       "retryable": false,
       "description": "Unexpected internal error."
+    },
+    {
+      "code": "bfsp.invalid_frame",
+      "params": [],
+      "retryable": false,
+      "description": "Device frames are damaged or discontinuous."
+    },
+    {
+      "code": "protocol.invalid_frame",
+      "params": [],
+      "retryable": false,
+      "description": "Device frames are damaged or discontinuous."
+    },
+    {
+      "code": "protocol.sequence_gap",
+      "params": [],
+      "retryable": false,
+      "description": "Device frames are damaged or discontinuous."
+    },
+    {
+      "code": "bfsp.invalid_payload",
+      "params": [],
+      "retryable": false,
+      "description": "The device message does not match the protocol."
+    },
+    {
+      "code": "protocol.invalid_payload",
+      "params": [],
+      "retryable": false,
+      "description": "The device message does not match the protocol."
+    },
+    {
+      "code": "bfsp.version_mismatch",
+      "params": [],
+      "retryable": false,
+      "description": "The device protocol version is incompatible. Check both versions."
+    },
+    {
+      "code": "bfsp.limit_exceeded",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "protocol.limit_exceeded",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "capability.limit",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "acquisition.consumer_limit",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "acquisition.stream_limit",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "buffer.budget_exhausted",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "capture.backlog_overflow",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "recorder.queue_full",
+      "params": [],
+      "retryable": false,
+      "description": "The configuration or buffer exceeds available capacity. Reduce the load and retry."
+    },
+    {
+      "code": "bfsp.timeout",
+      "params": [],
+      "retryable": false,
+      "description": "The device response timed out. Check the operation state."
+    },
+    {
+      "code": "request.timeout",
+      "params": [],
+      "retryable": false,
+      "description": "The device response timed out. Check the operation state."
+    },
+    {
+      "code": "bfsp.faulted",
+      "params": [],
+      "retryable": false,
+      "description": "The device protocol connection stopped. Reconnect the device."
+    },
+    {
+      "code": "capability.unsupported",
+      "params": [],
+      "retryable": false,
+      "description": "This feature is unavailable for this device or environment."
+    },
+    {
+      "code": "capture.unavailable",
+      "params": [],
+      "retryable": false,
+      "description": "This feature is unavailable for this device or environment."
+    },
+    {
+      "code": "device.busy",
+      "params": [],
+      "retryable": false,
+      "description": "The device is busy. Wait for its state to be confirmed."
+    },
+    {
+      "code": "device.invalid_state",
+      "params": [],
+      "retryable": false,
+      "description": "The device is busy. Wait for its state to be confirmed."
+    },
+    {
+      "code": "device.config_partial",
+      "params": [],
+      "retryable": false,
+      "description": "The device configuration was only partly applied. Reconnect and read the actual configuration."
+    },
+    {
+      "code": "device.config_conflict",
+      "params": [],
+      "retryable": false,
+      "description": "The device configuration changed or is unsupported. Read and apply it again."
+    },
+    {
+      "code": "acquisition.invalid_configuration",
+      "params": [],
+      "retryable": false,
+      "description": "The device configuration changed or is unsupported. Read and apply it again."
+    },
+    {
+      "code": "device.invalid_endpoint",
+      "params": [],
+      "retryable": false,
+      "description": "The connection address or port is invalid. Check the connection settings."
+    },
+    {
+      "code": "device.disconnected",
+      "params": [],
+      "retryable": false,
+      "description": "The device disconnected. Check the device and reconnect."
+    },
+    {
+      "code": "device.identity_mismatch",
+      "params": [],
+      "retryable": false,
+      "description": "The device data belongs to a different acquisition session."
+    },
+    {
+      "code": "acquisition.stale_block",
+      "params": [],
+      "retryable": false,
+      "description": "The device data belongs to a different acquisition session."
+    },
+    {
+      "code": "acquisition.stale_capture",
+      "params": [],
+      "retryable": false,
+      "description": "The device data belongs to a different acquisition session."
+    },
+    {
+      "code": "acquisition.stale_stream",
+      "params": [],
+      "retryable": false,
+      "description": "The device data belongs to a different acquisition session."
+    },
+    {
+      "code": "acquisition.budget_mismatch",
+      "params": [],
+      "retryable": false,
+      "description": "The device data belongs to a different acquisition session."
+    },
+    {
+      "code": "acquisition.invalid_block",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.invalid_capture",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.invalid_descriptor",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.invalid_gap",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.overlap",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.counter_exhausted",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "buffer.allocation_failed",
+      "params": [],
+      "retryable": false,
+      "description": "The acquisition data or descriptor is invalid. Check the device configuration."
+    },
+    {
+      "code": "acquisition.data_gap",
+      "params": [],
+      "retryable": false,
+      "description": "Acquisition has a data gap. The missing interval is retained in the results."
+    },
+    {
+      "code": "acquisition.stream_end_missing",
+      "params": [],
+      "retryable": false,
+      "description": "Acquisition has a data gap. The missing interval is retained in the results."
+    },
+    {
+      "code": "acquisition.no_data",
+      "params": [],
+      "retryable": false,
+      "description": "The device started but no valid data arrived. Check its state."
+    },
+    {
+      "code": "clock.discontinuity",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.frequency_changed",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.invalid_parameters",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.negative_rtt",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.out_of_order",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.out_of_range",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "clock.overflow",
+      "params": [],
+      "retryable": false,
+      "description": "The device time or synchronization measurement is discontinuous. Check the clock."
+    },
+    {
+      "code": "capture.session_not_found",
+      "params": [],
+      "retryable": false,
+      "description": "The recording session is no longer valid. Start a new recording."
+    },
+    {
+      "code": "capture.disk_full",
+      "params": [],
+      "retryable": false,
+      "description": "The disk is full and recording stopped. Check the data already saved."
+    },
+    {
+      "code": "capture.writer_failed",
+      "params": [],
+      "retryable": false,
+      "description": "Recording failed to write. Check the output directory and saved data."
+    },
+    {
+      "code": "request.conflict",
+      "params": [],
+      "retryable": false,
+      "description": "The operation ID conflicts with an existing request. Check the device state."
+    },
+    {
+      "code": "device.rt_bci_http",
+      "params": [],
+      "retryable": false,
+      "description": "An RT-BCI device request failed. Check its power, Wi-Fi connection and address."
+    },
+    {
+      "code": "device.rt_bci_incompatible",
+      "params": [],
+      "retryable": false,
+      "description": "The target response is not a compatible RT-BCI device. Check the address and device."
+    },
+    {
+      "code": "device.rt_bci_callback",
+      "params": [],
+      "retryable": false,
+      "description": "The RT-BCI data connection could not be established. Check the local address and listening port."
+    },
+    {
+      "code": "device.rt_bci_invalid_data",
+      "params": [],
+      "retryable": false,
+      "description": "The RT-BCI data stream is invalid or did not finish as expected. Check the device and reconnect."
     }
-  ]
+  ],
+  "_note": "The params list specifies required localization placeholders. Device acquisition errors may carry additional diagnostic fields; their default UI messages do not interpolate those details."
 }

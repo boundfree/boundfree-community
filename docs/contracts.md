@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-23
+last_updated: 2026-10-31
 ---
 
 # 基础契约
@@ -94,7 +94,7 @@ last_updated: 2026-10-23
 - `params` 只放结构化数据，不放用户可见完整句子。
 - `ok=false` 时必须包含 `error.code`。
 - `trace_id` 用于日志和售后定位，UI 默认不把它当正文文案。
-- EEG payload 使用小端连续 C-order `float32`，形状为 `[n_channels, n_samples]`，单位为 `uV`。
+- 浏览 payload 使用小端连续 C-order `float32`，形状为 `[n_channels, n_samples]`；旧响应缺省单位为 `uV`，扩展响应携带实际 `unit/channel_units`。
 - `get_slice` 成功时先返回 JSON 元数据帧，再返回一个二进制数据帧。
 - `record_write` 先发送 JSON 参数帧，再发送一个二进制数据帧。
 
@@ -111,9 +111,9 @@ M7 `export_segment`：请求包含 `src/t0/t1/path/markers`；标注筛选源区
 
 `export_samples`：Native 处理后的片段写入接口，先发送 JSON 参数，再发送一个二进制数据帧。
 
-- 参数为 `path/fs/ch_names/shape/dtype/unit/t0/t1/markers`；`dtype="float32-le"`、`unit="uV"`，payload 为通道优先的连续小端 float32。
+- 参数为 `path/fs/ch_names/shape/dtype/unit/t0/t1/markers`；`dtype="float32-le"`、`unit` 为实际单位（旧调用默认 `uV`），payload 为通道优先的连续小端 float32。
 - `shape` 为两个正整数，第一维必须与 `ch_names` 长度一致，payload 字节数必须为两维乘积的 4 倍；元数据与 payload 不匹配返回 `ipc.invalid_frame`。
-- `fs` 必须为有限正数，样本必须为有限值，时间范围满足 `0 <= t0 < t1`。格式与 `export_segment` 一致，支持 EDF/HDF5/CSV。
+- `fs` 必须为有限正数，CSV/EDF 样本必须有限；HDF5 支持 NaN 缺口及显式时间，时间范围满足 `0 <= t0 < t1`。格式与 `export_segment` 一致，支持 EDF/HDF5/CSV。
 - `t0/t1/markers` 使用源文件时间坐标，写入时按同样规则筛选标注并减去 `t0`。成功响应与 `export_segment` 相同。
 - Native 承担重参考、陷波及逐通道带通，边车只编码收到的样本，不重复实施 DSP。通道名使用处理后的输出名称；显隐、幅度缩放和绘图抽稀不进入导出数据。
 - 该接口为增量新增方法，既有 envelope、帧格式及 `export_segment` 行为保持兼容，`ipc_protocol_version` 保持 `1`。处理后导出要求主程序与边车一同更新。
@@ -369,3 +369,44 @@ Native 数值流程增量错误码（全部无参数、不可重试）：
 `analysis.flat_channel`、`analysis.low_rank`、`analysis.not_converged`、
 `analysis.non_finite`、`analysis.cancelled`。重建误差使用已有
 `analysis.reconstruction_failed {error_uV}`。
+
+
+## 采集目录的只读文件回放
+
+`open` 可读取已 finalized 的 `boundfree.capture.v1` 目录、其 `manifest.json` 或 `signals.h5`，普通 HDF5 的根 `eeg[C,N]` 读取契约保持兼容。可选 `capture_stream` 为 `<session_uuid>/<stream_id>`，缺省选首个非空流；每次仅打开一个流，不能将跨时钟流合并为统一 EEG。
+
+`open.result` 对采集记录附加 `channel_units` 和 `capture`。后者含 schema、status、stream_key、streams（key/name/fs/channels/samples）、original_dtype、record_start_sample_index（十进制字符串）、gap_records、unknown_gap、clock_source、simulated、sample_index_source、time_basis 和 read_only。单位由每个通道标定给出，混合单位时聚合 unit 为 mixed。duration 是末块相对录制起点的样本时间跨度，可大于 n_samples/fs；n_samples 仍为实际存储样本数。
+
+`get_slice.result` 可附加 `channel_units` 和公共 `sample_times`（秒，长度等于 payload 单通道点数、有限非递减），Native 将其展开到各通道。已知块间样本序号缺口使用 NaN 断线与显式坐标；未知位置事件仅保留元数据，不能合成补零或精确丢样。大整数样本原点先做整数差，再转换相对时间，避免超过 2⁵³ 后起点丢精度。
+
+显示数据依旧经现有 float32 EEG IPC；源文件保留原始类型，不进行文件转换或写回。Native 捕获回放进入共享处理/分析/导出，单位随通道传递，不将 count 当作 µV。`capture.read_only` 只表示禁止修改原始记录，不作为禁用工具的依据。旧文件响应不增加这些可选字段，IPC 版本不变。错误码见 contracts/error_codes.json 的 reader.capture_*。
+
+## 共享信号窗口与派生数据（增量字段）
+
+`open.result.signal_metadata` 可携带来源信息，Native 合并为 `WaveformSlice.metadata`；capture 仍使用既有 `capture` 元数据。共享窗口携带 `channelIds/sourceId/streamId/simulated`、逐通道单位、采样率与可选显式 `sample_times`，数值为 float32 浏览投影。V/mV 投影归一到 uV，其他单位不变；原始 typed 存储独立。绘图包络标记 `displayOnly`，处理器拒绝将包络当作等间隔信号。
+
+`export_samples` 增量接受 `channel_units`（长度匹配通道）、`sample_times`（长度匹配样本）和 `provenance` 对象。HDF5 保存 `eeg`、可选 `sample_times` 和单位/来源属性；时间按选区起点重基准。CSV 单独保存 `<path>.meta.json` 的单位与来源，读取器有界读取此元数据；无配套文件仍按旧 uV 默认处理。`record_open.meta` 也可携带 `signal_unit/channel_units/provenance`，不改变旧 float32 写入帧。
+
+分析请求携带 `unit/sourceId/streamId/sourceContext`，计算使用完整连续片段，显示功率/PSD 按实际单位的平方标注。混合单位参考、无效滤波参数、无有效连续片段或超预算分别返回 `signal.*` 条件错误，来源类型不参与工具禁用。连续因果与窗口零相位为不同执行模式，不承诺跨模式数值相同；相同输入与模式跨来源结果应一致。
+
+浏览选区分离快照使用同一 HDF5 派生接口，保留来源、模拟标记和原始选区坐标；其输入精度为 float32 投影。专用分离原文件读取的 float64 能力、指纹和导出验证保持原契约。相同非电压单位的 count/1/degC/A/mA/Pa/kPa 可进入通用分离计算，结果保留原单位；混合单位被拒绝，工具不会将其改名为 uV。
+
+## ICA 输入快照
+
+`AcquisitionController::requestRawSignalWindow(requestId, stream, seconds)` 从当前捕获上下文异步读取完整原始窗口，独立于浏览处理状态、因果滤波器状态和录制订阅。原样返回请求编号，窗口包含采样率、逐通道单位/身份、来源、流、模拟属性、样本时间与缺口；显式指定不存在的流返回错误，不回退至其他流。返回前检查捕获 ID 与 generation；上层在快照写入完成后再次检查设备来源，浏览换源用请求代际丢弃过期结果。
+
+ICA 输入适配从共同窗口中选择至少 5 秒的最长共同连续片段（等长选较新），保留原始单位；禁止绘图包络或跨缺口插值进入拟合。设备历史上限仍为 10 秒/32 MiB，文件已加载窗口最多取 120 秒。兼容单位与低采样率条件不因来源改变。
+
+快照通过现有 `export_samples` 写为临时 HDF5，再进入 `analysis_source_open/read`、C++ 分离和既有 float64 八文件导出流程；IPC 版本保持 1。`source.signal_provenance` 包含 `source_id/source_name/stream_id/channel_ids/channel_units/simulated/source_start_seconds/source_end_seconds/input_precision/signal_metadata`，其中 `input_precision=float32_projection` 明确输入精度。快照局部时间从 0 开始，来源时间按声明采样率，不能解释为硬件同步证明。原文件专用 float64 入口保持独立。
+
+## 设备固定模型连续 ICA
+
+`LiveIcaController` 独立请求设备完整原始窗口，不复用浏览暂停缓存或处理后信号。启动要求人工确认现有模型、同一个 `capture_id/generation`、相同流、通道身份/顺序/单位和采样率；设备与建模输出同为250或500Hz，`notch_hz=0`。因此建模和连续应用均不做输出重采样或陷波，不把离线零相位结果与实时因果滤波混用。拟合副本上的既有1Hz高通不改变实际投影输入。
+
+解混列先按 `observation_channel_ids` 匹配模型 `source.channel_ids`（分析文件内部列ID），再映射到 `source.signal_provenance.channel_ids`（原设备ID）；禁止按通道名称或字面相等的文件/设备ID猜测。完整来源和布局校验通过后，以固定 `sources=W*(raw-mean)` 计算成分，按当前人工标签投影 `group=A_group*sources_group`，残差使 `raw=mean+各组+residual`。矩阵、均值、建模数组和来源指纹不被连续帧改写，标签更新不重新拟合。
+
+每次最多10秒窗口，在后台保留一个当前请求/投影任务，约200ms调度，处理较慢时不排队累积旧窗口。断流、重连/配置代际变化、来源/布局不符或样本坐标超过2.5秒不再前进时结束连续显示；请求编号与代际拒绝停止后的迟到帧。缺口保留NaN，绘图断线，频谱只取最长连续区间，不填零或跨缺口处理。实际单位和输入float32投影精度保持不变；图中输入副本减去建模均值以便比较零均值贡献，原始数据与录制不变。
+
+连续帧只更新显示，不进入原始录制，不覆盖离线八文件导出。停止显示恢复原建模结果；连续结果整段导出、跨会话模型持久化和自动自适应拟合尚未实现。IPC协议、边车文件契约与产品版本均保持不变。
+
+重复取样只有在来源 ID、流、原通道身份/单位及采样率全部一致时恢复用途与输出率/陷波设置；新输入始终清除结果、标签、确认和旧导出状态。失败取样不覆盖旧输入，临时快照不作为长期项目存储。

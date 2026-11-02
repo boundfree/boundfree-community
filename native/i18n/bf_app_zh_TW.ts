@@ -23,6 +23,10 @@
       <translation>檢視</translation>
     </message>
     <message>
+      <source>app.menu.device</source>
+      <translation>裝置</translation>
+    </message>
+    <message>
       <source>app.menu.theme</source>
       <translation>主題</translation>
     </message>
@@ -64,7 +68,7 @@
     </message>
     <message>
       <source>app.action.open</source>
-      <translation>開啟檔案</translation>
+      <translation>開啟資料檔案…</translation>
     </message>
     <message>
       <source>app.action.quit</source>
@@ -72,11 +76,11 @@
     </message>
     <message>
       <source>app.dialog.open_title</source>
-      <translation>開啟 EEG 檔案</translation>
+      <translation>開啟資料檔案</translation>
     </message>
     <message>
       <source>app.dialog.open_filter</source>
-      <translation>EEG 檔案 (*.csv *.h5 *.hdf5 *.edf *.bdf *.vhdr *.set *.fif);;所有檔案 (*)</translation>
+      <translation>EEG 檔案 (*.csv *.h5 *.hdf5 manifest.json *.edf *.bdf *.vhdr *.set *.fif);;所有檔案 (*)</translation>
     </message>
     <message>
       <source>app.browser.previous</source>
@@ -631,8 +635,28 @@
       <translation>依目前處理設定匯出，保留處理後的通道名稱；不受通道顯隱和顯示幅度影響。</translation>
     </message>
     <message>
+      <source>app.separation.help</source>
+      <translation>使用說明與擷取資訊</translation>
+    </message>
+    <message>
+      <source>app.separation.rerun</source>
+      <translation>重新分離</translation>
+    </message>
+    <message>
+      <source>app.separation.rerun_help</source>
+      <translation>重新計算目前區間，取代現有結果和人工標記。</translation>
+    </message>
+    <message>
+      <source>app.separation.example_help</source>
+      <translation>套用範例分類，結果支援復原。</translation>
+    </message>
+    <message>
+      <source>app.separation.next_export</source>
+      <translation>已確認，可匯出或重新分離。</translation>
+    </message>
+    <message>
       <source>app.separation.title</source>
-      <translation>腦電 / 眼電分離</translation>
+      <translation>腦電 / 眼電 / 肌電分離</translation>
     </message>
     <message>
       <source>app.separation.subtitle</source>
@@ -644,11 +668,11 @@
     </message>
     <message>
       <source>app.separation.open</source>
-      <translation>開啟分析記錄…</translation>
+      <translation>開啟資料檔案…</translation>
     </message>
     <message>
       <source>app.separation.no_source</source>
-      <translation>先選擇一份記錄，原始檔案會保留。</translation>
+      <translation>未開啟記錄</translation>
     </message>
     <message>
       <source>app.separation.source_summary</source>
@@ -701,11 +725,11 @@
     </message>
     <message>
       <source>app.separation.bulk</source>
-      <translation>套用至這 {count} 個通道</translation>
+      <translation>套用用途</translation>
     </message>
     <message>
       <source>app.separation.advanced</source>
-      <translation>更多參數 · 預設 500 Hz / 陷波關閉</translation>
+      <translation>取樣率與陷波</translation>
     </message>
     <message>
       <source>app.separation.notch_off</source>
@@ -721,7 +745,7 @@
     </message>
     <message>
       <source>app.separation.preview_title</source>
-      <translation>分組預覽 · 同步時間軸</translation>
+      <translation>分組波形</translation>
     </message>
     <message>
       <source>app.separation.amplitude_mode</source>
@@ -745,11 +769,11 @@
     </message>
     <message>
       <source>app.separation.amplitude_help_individual</source>
-      <translation>每組單獨適配幅度，便於查看小波形；各組高度不能用於比較幅度。</translation>
+      <translation>各組獨立縮放，波形高度不可直接比較。</translation>
     </message>
     <message>
       <source>app.separation.peak_to_peak</source>
-      <translation>目前視窗峰峰值 {value} µV</translation>
+      <translation>峰對峰值 {value} µV</translation>
     </message>
     <message>
       <source>app.separation.small_wave</source>
@@ -761,11 +785,11 @@
     </message>
     <message>
       <source>app.separation.splitter_help</source>
-      <translation>左右拖曳調整區域寬度；也可聚焦後按左右方向鍵</translation>
+      <translation>拖曳分隔線調整區域大小；聚焦後可使用對應方向鍵</translation>
     </message>
     <message>
       <source>app.separation.bulk_selection</source>
-      <translation>已選 {count} 個通道 · 批次設定用途</translation>
+      <translation>已選 {count} 個通道</translation>
     </message>
     <message>
       <source>app.separation.bulk_role</source>
@@ -817,7 +841,7 @@
     </message>
     <message>
       <source>app.separation.separation_workspace</source>
-      <translation>腦電 / 眼電分離</translation>
+      <translation>腦電 / 眼電 / 肌電分離</translation>
     </message>
     <message>
       <source>app.separation.workspace_navigation</source>
@@ -825,7 +849,7 @@
     </message>
     <message>
       <source>app.separation.browser_workspace_help</source>
-      <translation>切換至波形與頻譜頁面，保留本次分離結果。僅在分離工作區開啟的記錄不會自動載入瀏覽頁面。</translation>
+      <translation>切換至波形與頻譜頁面，保留分離結果。瀏覽記錄透過檔案選單載入。</translation>
     </message>
     <message>
       <source>app.separation.zoom_factor</source>
@@ -841,7 +865,7 @@
     </message>
     <message>
       <source>app.separation.evidence_title</source>
-      <translation>判斷來源 · 可保留未確定</translation>
+      <translation>成分檢查</translation>
     </message>
     <message>
       <source>app.separation.component</source>
@@ -877,23 +901,23 @@
     </message>
     <message>
       <source>app.separation.clues</source>
-      <translation>線索，不是準確率
+      <translation>參考指標
 眼電參考相關：{eye}
 肌電參考相關：{muscle}
-高頻功率占比：{high}%
-請結合波形、頻譜和記錄背景判斷。無線索不代表沒有偽跡。</translation>
+高頻功率佔比：{high}%
+結合波形、頻譜與實驗記錄評估。</translation>
     </message>
     <message>
       <source>app.separation.source_caption</source>
-      <translation>成分幅度為任意單位；成分編號會隨輸入變化。改變判斷立即更新預覽，不會重新計算。</translation>
+      <translation>成分採用任意單位。編號隨模型變化，分類即時更新預覽。</translation>
     </message>
     <message>
       <source>app.separation.confirmed</source>
-      <translation>我已檢查，可保留未確定</translation>
+      <translation>已檢查成分</translation>
     </message>
     <message>
       <source>app.separation.confirmation_help</source>
-      <translation>無需把每個成分都分類。修改判斷後需要重新確認。</translation>
+      <translation>確認後啟用匯出。修改分類後需重新確認。</translation>
     </message>
     <message>
       <source>app.separation.cancel</source>
@@ -909,7 +933,7 @@
     </message>
     <message>
       <source>app.separation.export</source>
-      <translation>確認並匯出…</translation>
+      <translation>匯出結果…</translation>
     </message>
     <message>
       <source>app.separation.next_busy</source>
@@ -917,11 +941,11 @@
     </message>
     <message>
       <source>app.separation.next_open</source>
-      <translation>第 1 步：開啟記錄，確認分析區間和通道用途。</translation>
+      <translation>開啟記錄，或先試用教學記錄。</translation>
     </message>
     <message>
       <source>app.separation.next_roles</source>
-      <translation>下一步：確認所有通道用途。可多選後批次設定。</translation>
+      <translation>請確認通道用途，至少選擇兩路參與分離。</translation>
     </message>
     <message>
       <source>app.separation.next_range</source>
@@ -929,11 +953,11 @@
     </message>
     <message>
       <source>app.separation.next_start</source>
-      <translation>輸入已確認。點選「開始分離」，完成後逐個檢查成分。</translation>
+      <translation>已就緒，可以開始分離。</translation>
     </message>
     <message>
       <source>app.separation.next_review</source>
-      <translation>下一步：選擇成分並判斷來源。不確定就保留「未確定」，檢查後勾選確認。</translation>
+      <translation>檢查成分後勾選「已檢查成分」，即可匯出。</translation>
     </message>
     <message>
       <source>app.separation.progress_inspecting</source>
@@ -953,11 +977,11 @@
     </message>
     <message>
       <source>app.separation.setup_notice</source>
-      <translation>分析設定獨立於普通瀏覽。修改輸入會使上次結果失效。原始記錄不會被修改。</translation>
+      <translation>分析設定獨立儲存。修改輸入將清除既有結果。來源檔案維持唯讀。</translation>
     </message>
     <message>
       <source>app.separation.review_notice</source>
-      <translation>初始成分全部為「未確定」，訊號仍保留在該組。分組結果是人工判斷，不代表生理來源已被證實。</translation>
+      <translation>初始分類為「未確定」。各組結果由人工分類產生，來源有待實驗驗證。</translation>
     </message>
     <message>
       <source>app.separation.exported</source>
@@ -981,11 +1005,11 @@
     </message>
     <message>
       <source>app.separation.no_result</source>
-      <translation>完成分離後在這裡檢視真實訊號。</translation>
+      <translation>分離後顯示波形</translation>
     </message>
     <message>
       <source>app.separation.empty_group</source>
-      <translation>還沒有歸入這組的成分</translation>
+      <translation>暫無成分</translation>
     </message>
     <message>
       <source>app.separation.export_title</source>
@@ -993,7 +1017,7 @@
     </message>
     <message>
       <source>app.separation.export_notice</source>
-      <translation>將匯出 7 份 CSV 與 1 份 JSON。均值與重建參數儲存在 JSON，未確定成分會保留。請選擇一個尚不存在的新資料夾名稱，儲存完成後一次發佈。</translation>
+      <translation>匯出 7 份 CSV 和分析清單；請選擇新資料夾，不覆寫既有結果。</translation>
     </message>
     <message>
       <source>app.separation.choose_export</source>
@@ -1111,15 +1135,15 @@ path: {path}</translation>
     </message>
     <message>
       <source>app.separation.open_teaching</source>
-      <translation>開啟教學記錄</translation>
+      <translation>載入內建分離範例</translation>
     </message>
     <message>
       <source>app.separation.example_labels</source>
-      <translation>載入本教學記錄的範例標記</translation>
+      <translation>套用教學標記</translation>
     </message>
     <message>
       <source>app.separation.teaching_notice</source>
-      <translation>教學記錄由已知源人工混合合成，用於學習操作；不代表真實記錄的分離效果。範例標記僅限本記錄。</translation>
+      <translation>合成教學資料，僅供練習。</translation>
     </message>
     <message>
       <source>app.separation.unknown</source>
@@ -1154,7 +1178,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.separation.unit_required</source>
-      <translation>這份 CSV 未宣告物理單位。請選擇採集時的實際單位，不確定時請取消並核對資料來源。取消後不會開啟記錄。</translation>
+      <translation>CSV 缺少物理單位。選擇採集單位後繼續；單位未知時需核對資料來源。</translation>
     </message>
     <message>
       <source>app.separation.next_rate</source>
@@ -1166,7 +1190,1164 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.separation.evidence_details</source>
-      <translation>參考線索與數值（不代表準確率）</translation>
+      <translation>參考線索與說明</translation>
     </message>
+    <message>
+      <source>app.capture.open</source>
+      <translation>開啟裝置錄製資料夾…</translation>
+    </message>
+    <message>
+      <source>app.capture.view_recording</source>
+      <translation>查看錄製</translation>
+    </message>
+    <message>
+      <source>app.capture.stream</source>
+      <translation>資料流</translation>
+    </message>
+    <message>
+      <source>app.capture.stream_description</source>
+      <translation>{name} · {rate} Hz · {channels} 通道</translation>
+    </message>
+    <message>
+      <source>app.capture.summary</source>
+      <translation>採集記錄回放 · {state} · 缺口記錄 {gaps}</translation>
+    </message>
+    <message>
+      <source>app.capture.complete</source>
+      <translation>已完整儲存</translation>
+    </message>
+    <message>
+      <source>app.capture.partial</source>
+      <translation>含未確認邊界或缺口</translation>
+    </message>
+    <message>
+      <source>app.capture.read_only_hint</source>
+      <translation>目前依記錄中的單位回放原始資料，並保留缺口資訊；暫不支援直接處理或轉換匯出。</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_invalid</source>
+      <translation>採集記錄無法讀取：{reason}</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_incomplete</source>
+      <translation>錄製尚未結束，請先停止錄製再開啟。</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_missing_manifest</source>
+      <translation>缺少配套的 manifest.json，請選擇完整的採集記錄目錄。</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_empty</source>
+      <translation>這份錄製沒有可回放的樣本。</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_corrupt_block</source>
+      <translation>錄製資料校驗失敗，樣本位置：{sample_index}。</translation>
+    </message>
+    <message>
+      <source>error.reader.capture_slice_too_large</source>
+      <translation>回放視窗過大，請縮短時間窗後重試。</translation>
+    </message>
+    <message>
+      <source>app.device.title</source>
+      <translation>裝置擷取</translation>
+    </message>
+    <message>
+      <source>app.device.device_heading</source>
+      <translation>裝置</translation>
+    </message>
+    <message>
+      <source>app.device.settings</source>
+      <translation>擷取設定</translation>
+    </message>
+    <message>
+      <source>app.device.sample_rate</source>
+      <translation>取樣率</translation>
+    </message>
+    <message>
+      <source>app.device.apply</source>
+      <translation>套用設定</translation>
+    </message>
+    <message>
+      <source>app.device.unsupported</source>
+      <translation>USB 和藍牙裝置適配暫不可用。</translation>
+    </message>
+    <message>
+      <source>app.device.connection_accessible</source>
+      <translation>連接或中斷裝置</translation>
+    </message>
+    <message>
+      <source>app.device.trace_accessible</source>
+      <translation>即時訊號波形</translation>
+    </message>
+    <message>
+      <source>app.device.choose_directory</source>
+      <translation>選擇錄製儲存位置</translation>
+    </message>
+    <message>
+      <source>app.device.simulator_connected</source>
+      <translation>模擬裝置 · 已連接</translation>
+    </message>
+    <message>
+      <source>app.device.simulator_disconnected</source>
+      <translation>試用模擬裝置</translation>
+    </message>
+    <message>
+      <source>app.device.connecting</source>
+      <translation>正在處理…</translation>
+    </message>
+    <message>
+      <source>app.device.disconnect</source>
+      <translation>中斷連接</translation>
+    </message>
+    <message>
+      <source>app.device.connect_simulator</source>
+      <translation>連接模擬裝置</translation>
+    </message>
+    <message>
+      <source>app.device.stop_before_disconnect</source>
+      <translation>請先停止擷取和錄製。</translation>
+    </message>
+    <message>
+      <source>app.device.settings_unapplied</source>
+      <translation>設定已修改，請先套用。</translation>
+    </message>
+    <message>
+      <source>app.device.simulated_notice</source>
+      <translation>模擬資料，採用估計時間基準。</translation>
+    </message>
+    <message>
+      <source>app.device.stopping</source>
+      <translation>正在停止…</translation>
+    </message>
+    <message>
+      <source>app.device.cancel_start</source>
+      <translation>取消啟動</translation>
+    </message>
+    <message>
+      <source>app.device.stop_and_save</source>
+      <translation>停止擷取並儲存</translation>
+    </message>
+    <message>
+      <source>app.device.stop</source>
+      <translation>停止擷取</translation>
+    </message>
+    <message>
+      <source>app.device.start</source>
+      <translation>開始擷取</translation>
+    </message>
+    <message>
+      <source>app.device.connect_first</source>
+      <translation>請先連接裝置。</translation>
+    </message>
+    <message>
+      <source>app.device.finalizing</source>
+      <translation>正在儲存…</translation>
+    </message>
+    <message>
+      <source>app.device.cancel_record</source>
+      <translation>取消錄製準備</translation>
+    </message>
+    <message>
+      <source>app.device.stop_record</source>
+      <translation>停止錄製</translation>
+    </message>
+    <message>
+      <source>app.device.start_record</source>
+      <translation>開始錄製</translation>
+    </message>
+    <message>
+      <source>app.device.start_first</source>
+      <translation>請先開始擷取。</translation>
+    </message>
+    <message>
+      <source>app.device.status_disconnected</source>
+      <translation>未連接</translation>
+    </message>
+    <message>
+      <source>app.device.status_starting</source>
+      <translation>正在啟動擷取</translation>
+    </message>
+    <message>
+      <source>app.device.status_streaming</source>
+      <translation>擷取中 · 模擬資料</translation>
+    </message>
+    <message>
+      <source>app.device.status_stopping</source>
+      <translation>正在停止擷取</translation>
+    </message>
+    <message>
+      <source>app.device.status_idle</source>
+      <translation>已連接 · 閒置</translation>
+    </message>
+    <message>
+      <source>app.device.status_faulted</source>
+      <translation>擷取已中斷</translation>
+    </message>
+    <message>
+      <source>app.device.gaps</source>
+      <translation>缺失樣本：{count}</translation>
+    </message>
+    <message>
+      <source>app.device.gaps_unknown</source>
+      <translation>缺失樣本：{count}；部分缺口長度未知</translation>
+    </message>
+    <message>
+      <source>app.device.signal_summary</source>
+      <translation>{rate} Hz · {samples} 個樣本 · {gaps}</translation>
+    </message>
+    <message>
+      <source>app.device.record_off</source>
+      <translation>尚未錄製</translation>
+    </message>
+    <message>
+      <source>app.device.record_opening</source>
+      <translation>正在準備錄製…</translation>
+    </message>
+    <message>
+      <source>app.device.record_active</source>
+      <translation>正在錄製 · 已寫入 {samples} 個樣本 · {path}</translation>
+    </message>
+    <message>
+      <source>app.device.record_finalizing</source>
+      <translation>正在儲存已接收的資料…</translation>
+    </message>
+    <message>
+      <source>app.device.record_saved</source>
+      <translation>錄製已儲存 · {path}</translation>
+    </message>
+    <message>
+      <source>app.device.record_partial</source>
+      <translation>錄製已結束，資料不完整 · {path}</translation>
+    </message>
+    <message>
+      <source>app.device.record_failed</source>
+      <translation>錄製因錯誤停止 · {path}</translation>
+    </message>
+    <message>
+      <source>app.device.return_live</source>
+      <translation>回到即時</translation>
+    </message>
+    <message>
+      <source>app.device.freeze</source>
+      <translation>暫停檢視</translation>
+    </message>
+    <message>
+      <source>app.device.frozen_notice</source>
+      <translation>畫面已暫停 · 採集繼續</translation>
+    </message>
+    <message>
+      <source>app.device.live_notice</source>
+      <translation>即時跟隨</translation>
+    </message>
+    <message>
+      <source>app.device.global_warning</source>
+      <translation>裝置警告 · 返回</translation>
+    </message>
+    <message>
+      <source>app.device.global_recording</source>
+      <translation>正在錄製 · 返回</translation>
+    </message>
+    <message>
+      <source>app.device.global_active</source>
+      <translation>擷取中 · 返回</translation>
+    </message>
+    <message>
+      <source>app.device.exit_title</source>
+      <translation>裝置任務進行中</translation>
+    </message>
+    <message>
+      <source>app.device.exit_confirm</source>
+      <translation>結束裝置操作並儲存已接收的錄製資料後退出？</translation>
+    </message>
+    <message>
+      <source>app.device.exit_failed_title</source>
+      <translation>未能停止並儲存</translation>
+    </message>
+    <message>
+      <source>app.device.exit_failed</source>
+      <translation>裝置操作或錄製未正常結束。已儲存的資料會保留，仍要退出？</translation>
+    </message>
+    <message>
+      <source>app.device.error_detail</source>
+      <translation>操作失敗，請檢查裝置或儲存位置後重試。診斷代碼：{code}</translation>
+    </message>
+    <message>
+      <source>app.device.unknown_unit</source>
+      <translation>單位未知</translation>
+    </message>
+    <message>
+      <source>app.device.adaptive_scale</source>
+      <translation>各通道獨立自動縮放，波形高度不可直接比較。</translation>
+    </message>
+    <message>
+      <source>app.device.channel_limit</source>
+      <translation>顯示前 {shown} 個通道，共 {total} 個。</translation>
+    </message>
+    <message>
+      <source>app.device.record_empty</source>
+      <translation>錄製已結束，未錄入樣本 · {path}</translation>
+    </message>
+    <message>
+      <source>app.device.global_saving</source>
+      <translation>正在儲存 · 返回</translation>
+    </message>
+    <message>
+      <source>app.device.source</source>
+      <translation>來源</translation>
+    </message>
+    <message>
+      <source>app.device.source_simulator</source>
+      <translation>本機模擬裝置</translation>
+    </message>
+    <message>
+      <source>app.device.source_tcp</source>
+      <translation>BFSP TCP</translation>
+    </message>
+    <message>
+      <source>app.device.host</source>
+      <translation>主機名稱或 IP 位址</translation>
+    </message>
+    <message>
+      <source>app.device.port</source>
+      <translation>連接埠</translation>
+    </message>
+    <message>
+      <source>app.device.expected_identity</source>
+      <translation>預期裝置識別碼（選填）</translation>
+    </message>
+    <message>
+      <source>app.device.tcp_plaintext</source>
+      <translation>TCP 未加密，請在可信網路中使用。</translation>
+    </message>
+    <message>
+      <source>app.device.tcp_connected</source>
+      <translation>TCP 已連接 · {device}</translation>
+    </message>
+    <message>
+      <source>app.device.tcp_disconnected</source>
+      <translation>BFSP 裝置或閘道</translation>
+    </message>
+    <message>
+      <source>app.device.cancel_connection</source>
+      <translation>取消連接</translation>
+    </message>
+    <message>
+      <source>app.device.connect_tcp</source>
+      <translation>連接 TCP</translation>
+    </message>
+    <message>
+      <source>app.device.tcp_settings_notice</source>
+      <translation>TCP 裝置參數由裝置決定，目前無法在此修改。</translation>
+    </message>
+    <message>
+      <source>app.device.status_connecting</source>
+      <translation>正在連接</translation>
+    </message>
+    <message>
+      <source>app.device.status_streaming_tcp</source>
+      <translation>擷取中 · TCP</translation>
+    </message>
+    <message>
+      <source>app.device.tcp_settings_available</source>
+      <translation>所選取樣率將由裝置驗證。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.invalid_frame</source>
+      <translation>裝置資料框損壞或不連續。</translation>
+    </message>
+    <message>
+      <source>error.protocol.invalid_frame</source>
+      <translation>裝置資料框損壞或不連續。</translation>
+    </message>
+    <message>
+      <source>error.protocol.sequence_gap</source>
+      <translation>裝置資料框損壞或不連續。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.invalid_payload</source>
+      <translation>裝置訊息不符合目前協定。</translation>
+    </message>
+    <message>
+      <source>error.protocol.invalid_payload</source>
+      <translation>裝置訊息不符合目前協定。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.version_mismatch</source>
+      <translation>裝置協定版本不相容，請檢查兩端版本。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.limit_exceeded</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.protocol.limit_exceeded</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.capability.limit</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.consumer_limit</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.stream_limit</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.buffer.budget_exhausted</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.capture.backlog_overflow</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.recorder.queue_full</source>
+      <translation>擷取設定或緩衝超出可用容量，請降低負載後重試。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.timeout</source>
+      <translation>裝置回應逾時，正在確認操作狀態。</translation>
+    </message>
+    <message>
+      <source>error.request.timeout</source>
+      <translation>裝置回應逾時，正在確認操作狀態。</translation>
+    </message>
+    <message>
+      <source>error.bfsp.faulted</source>
+      <translation>裝置協定連線已停止，請重新連線。</translation>
+    </message>
+    <message>
+      <source>error.capability.unsupported</source>
+      <translation>目前裝置或執行環境不支援此功能。</translation>
+    </message>
+    <message>
+      <source>error.capture.unavailable</source>
+      <translation>目前裝置或執行環境不支援此功能。</translation>
+    </message>
+    <message>
+      <source>error.device.busy</source>
+      <translation>裝置正在處理其他操作，請等候狀態確認。</translation>
+    </message>
+    <message>
+      <source>error.device.invalid_state</source>
+      <translation>裝置正在處理其他操作，請等候狀態確認。</translation>
+    </message>
+    <message>
+      <source>error.device.config_conflict</source>
+      <translation>裝置設定已變更或不受支援，請重新讀取並套用設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.invalid_configuration</source>
+      <translation>裝置設定已變更或不受支援，請重新讀取並套用設定。</translation>
+    </message>
+    <message>
+      <source>error.device.invalid_endpoint</source>
+      <translation>連線位址或連接埠無效，請檢查連線設定。</translation>
+    </message>
+    <message>
+      <source>error.device.disconnected</source>
+      <translation>裝置連線已中斷，請檢查裝置後重新連線。</translation>
+    </message>
+    <message>
+      <source>error.device.identity_mismatch</source>
+      <translation>裝置資料與目前擷取工作階段不一致。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.stale_block</source>
+      <translation>裝置資料與目前擷取工作階段不一致。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.stale_capture</source>
+      <translation>裝置資料與目前擷取工作階段不一致。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.stale_stream</source>
+      <translation>裝置資料與目前擷取工作階段不一致。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.budget_mismatch</source>
+      <translation>裝置資料與目前擷取工作階段不一致。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.invalid_block</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.invalid_capture</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.invalid_descriptor</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.invalid_gap</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.overlap</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.counter_exhausted</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.buffer.allocation_failed</source>
+      <translation>擷取資料或描述無效，請檢查裝置設定。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.data_gap</source>
+      <translation>擷取存在資料缺口，結果中將保留遺失記錄。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.stream_end_missing</source>
+      <translation>擷取存在資料缺口，結果中將保留遺失記錄。</translation>
+    </message>
+    <message>
+      <source>error.acquisition.no_data</source>
+      <translation>裝置已啟動但尚未收到有效資料，請檢查裝置狀態。</translation>
+    </message>
+    <message>
+      <source>error.clock.discontinuity</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.frequency_changed</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.invalid_parameters</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.negative_rtt</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.out_of_order</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.out_of_range</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.clock.overflow</source>
+      <translation>裝置時間或同步量測不連續，請重新確認時鐘。</translation>
+    </message>
+    <message>
+      <source>error.capture.session_not_found</source>
+      <translation>錄製工作階段已失效，請重新開始錄製。</translation>
+    </message>
+    <message>
+      <source>error.capture.disk_full</source>
+      <translation>磁碟空間不足，錄製已停止；請檢查已儲存的資料。</translation>
+    </message>
+    <message>
+      <source>error.capture.writer_failed</source>
+      <translation>錄製寫入失敗，請檢查輸出目錄和已儲存的資料。</translation>
+    </message>
+    <message>
+      <source>error.request.conflict</source>
+      <translation>操作編號與現有請求衝突，請確認裝置狀態。</translation>
+    </message>
+    <message>
+      <source>app.device.relative_time_notice</source>
+      <translation>時間軸為相對樣本時間，不表示各串流已同步。</translation>
+    </message>
+    <message>
+      <source>app.device.signal_summary_multiple</source>
+      <translation>多條訊號串流 · 累計 {samples} 個樣本 · {gaps}</translation>
+    </message>
+    <message>
+      <source>error.device.config_partial</source>
+      <translation>裝置設定僅部分生效，請重新連線並讀取實際設定。</translation>
+    </message>
+    <message>
+      <source>app.device.stop_before_configure</source>
+      <translation>修改設定前，請先停止擷取。</translation>
+    </message>
+    <message>
+      <source>app.device.list_title</source>
+      <translation>裝置總覽</translation>
+    </message>
+    <message>
+      <source>app.device.list_intro</source>
+      <translation>新增連線，或重新連接已儲存的裝置。</translation>
+    </message>
+    <message>
+      <source>app.device.add_device</source>
+      <translation>新增裝置</translation>
+    </message>
+    <message>
+      <source>app.device.rt_description</source>
+      <translation>8 或 16 通道 · Wi-Fi 熱點連線</translation>
+    </message>
+    <message>
+      <source>app.device.select_connect</source>
+      <translation>設定連線</translation>
+    </message>
+    <message>
+      <source>app.device.use_simulator</source>
+      <translation>使用模擬裝置</translation>
+    </message>
+    <message>
+      <source>app.device.use_tcp</source>
+      <translation>BFSP TCP（進階）</translation>
+    </message>
+    <message>
+      <source>app.device.view_current</source>
+      <translation>查看目前擷取</translation>
+    </message>
+    <message>
+      <source>app.device.recent_heading</source>
+      <translation>已儲存的裝置</translation>
+    </message>
+    <message>
+      <source>app.device.recent_empty</source>
+      <translation>尚未儲存裝置。RT-BCI 成功連線後，會在此儲存連線設定，方便下次使用。</translation>
+    </message>
+    <message>
+      <source>app.device.recent_detail</source>
+      <translation>RT-BCI · Wi-Fi · {channels} 通道 · 上次驗證 {date} · 未即時偵測</translation>
+    </message>
+    <message>
+      <source>app.device.reconnect</source>
+      <translation>重新連線</translation>
+    </message>
+    <message>
+      <source>app.device.back_to_list</source>
+      <translation>返回裝置總覽</translation>
+    </message>
+    <message>
+      <source>app.device.profile_invalid</source>
+      <translation>部分儲存的裝置紀錄無效或不受支援，已略過。</translation>
+    </message>
+    <message>
+      <source>app.device.profile_unavailable</source>
+      <translation>無法讀取或儲存裝置設定，原有檔案已保留。</translation>
+    </message>
+    <message>
+      <source>app.device.switch_blocked</source>
+      <translation>切換裝置或 Wi-Fi 前，請先停止擷取並完成錄製。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_title</source>
+      <translation>連線 RT-BCI</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_open_settings</source>
+      <translation>開啟 Wi-Fi 設定</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_retry</source>
+      <translation>重試偵測</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_advanced</source>
+      <translation>進階設定</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_name</source>
+      <translation>裝置名稱</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_channels</source>
+      <translation>通道數</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_choose_channels</source>
+      <translation>請選擇 8 或 16 通道</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_host</source>
+      <translation>裝置位址</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_http_port</source>
+      <translation>裝置 HTTP 連接埠</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_listen_port</source>
+      <translation>電腦資料監聽連接埠</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_local</source>
+      <translation>供裝置回連的電腦位址</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_auto</source>
+      <translation>自動</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_gain</source>
+      <translation>宣告的增益</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_raw_count</source>
+      <translation>原始計數（未確認）</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_reference</source>
+      <translation>宣告的參考電壓</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_response</source>
+      <translation>裝置有回應</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_probing</source>
+      <translation>正在偵測裝置…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_waiting</source>
+      <translation>尚未偵測到裝置</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_response_detail</source>
+      <translation>裝置已回應，確認通道數後即可連線。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_hotspot_help</source>
+      <translation>請在系統 Wi-Fi 設定中連接裝置熱點（例如 OpenBCI-RYTY）。返回後自動偵測，無須網際網路。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_route_detected</source>
+      <translation>偵測到的本機路由：{address}</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_raw_gain</source>
+      <translation>增益尚未確認，將以原始計數顯示及錄製。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_declared_gain</source>
+      <translation>增益與參考電壓由使用者宣告，未經硬體驗證。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_settings_failed</source>
+      <translation>無法開啟系統 Wi-Fi 設定，請手動在系統設定中連接裝置熱點。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_connect</source>
+      <translation>連線並查看波形</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_connected</source>
+      <translation>RT-BCI · 已連線</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_disconnected</source>
+      <translation>RT-BCI · 未連線</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_config_unverified</source>
+      <translation>裝置設定尚未驗證；所選參數為請求值。</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_requested</source>
+      <translation>請求參數：{channels} 通道 · {rate} Hz</translation>
+    </message>
+    <message>
+      <source>app.device.status_streaming_wifi</source>
+      <translation>正在擷取 RT-BCI 資料</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_probing</source>
+      <translation>正在偵測裝置…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_stopping</source>
+      <translation>正在停止裝置先前的資料流…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_listening</source>
+      <translation>正在開啟資料監聽…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_waiting</source>
+      <translation>正在等待裝置資料連線…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_configuring</source>
+      <translation>正在套用請求參數…</translation>
+    </message>
+    <message>
+      <source>app.device.wifi_phase_ready</source>
+      <translation>裝置已就緒</translation>
+    </message>
+    <message>
+      <source>app.device.rt_name</source>
+      <translation>RT-BCI</translation>
+    </message>
+    <message>
+      <source>error.device.rt_bci_http</source>
+      <translation>裝置請求失敗。請檢查電源、Wi-Fi 與裝置位址後重試。</translation>
+    </message>
+    <message>
+      <source>error.device.rt_bci_incompatible</source>
+      <translation>回應不是相容的 RT-BCI 裝置。請檢查位址與裝置。</translation>
+    </message>
+    <message>
+      <source>error.device.rt_bci_callback</source>
+      <translation>無法建立裝置資料連線，請檢查本機位址和監聽連接埠。</translation>
+    </message>
+    <message>
+      <source>error.device.rt_bci_invalid_data</source>
+      <translation>裝置資料流無效或未如預期結束，請檢查裝置並重新連線。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_title</source>
+      <translation>裝置管理中心</translation>
+    </message>
+    <message>
+      <source>app.device.manager_intro</source>
+      <translation>連線後自動顯示裝置波形。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_navigation</source>
+      <translation>連線管理</translation>
+    </message>
+    <message>
+      <source>app.device.manager_single</source>
+      <translation>目前支援單台裝置連線。已儲存的裝置需重新偵測。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_overview</source>
+      <translation>裝置總覽</translation>
+    </message>
+    <message>
+      <source>app.device.manager_current</source>
+      <translation>目前裝置：{device}</translation>
+    </message>
+    <message>
+      <source>app.device.manager_no_connection</source>
+      <translation>選擇裝置進行連線。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_tcp_title</source>
+      <translation>BFSP TCP 連線</translation>
+    </message>
+    <message>
+      <source>app.device.manager_tcp_intro</source>
+      <translation>填寫支援 BFSP 協定的裝置位址。RT-BCI 請使用左側專用入口。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_simulator_intro</source>
+      <translation>無需硬體即可體驗連線、即時波形與原始資料錄製。此入口產生模擬訊號。</translation>
+    </message>
+    <message>
+      <source>app.device.manager_wifi_network</source>
+      <translation>1 · 連接裝置熱點</translation>
+    </message>
+    <message>
+      <source>app.device.manager_wifi_parameters</source>
+      <translation>2 · 確認擷取參數</translation>
+    </message>
+    <message>
+      <source>app.device.next_network</source>
+      <translation>連接裝置熱點後，將自動偵測裝置回應。</translation>
+    </message>
+    <message>
+      <source>app.device.next_channels</source>
+      <translation>請選擇裝置的通道數。</translation>
+    </message>
+    <message>
+      <source>app.device.next_connect</source>
+      <translation>連線後自動顯示波形；錄製需另外開始。</translation>
+    </message>
+    <message>
+      <source>app.device.remove_profile</source>
+      <translation>移除</translation>
+    </message>
+    <message>
+      <source>app.device.remove_profile_help</source>
+      <translation>僅移除此儲存記錄，目前連線與擷取繼續。</translation>
+    </message>
+    <message>
+      <source>app.device.connections</source>
+      <translation>連接裝置</translation>
+    </message>
+    <message>
+      <source>app.device.file_waveform</source>
+      <translation>檔案波形</translation>
+    </message>
+    <message>
+      <source>app.device.signal_amplitude</source>
+      <translation>幅值（各通道單位）</translation>
+    </message>
+    <message>
+      <source>app.device.view_help</source>
+      <translation>操作說明</translation>
+    </message>
+    <message>
+      <source>app.device.view_window</source>
+      <translation>時間窗</translation>
+    </message>
+    <message>
+      <source>app.device.view_seconds</source>
+      <translation>{seconds} 秒</translation>
+    </message>
+    <message>
+      <source>app.device.view_channels</source>
+      <translation>顯示通道</translation>
+    </message>
+    <message>
+      <source>app.device.view_all_channels</source>
+      <translation>全部通道</translation>
+    </message>
+    <message>
+      <source>app.device.view_only_hint</source>
+      <translation>僅調整顯示，不改變原始樣本和錄製。
+Ctrl＋滾輪：時間縮放；Shift＋滾輪：幅值縮放；一般滾輪：捲動通道。
+點擊波形後，空格：暫停／回到即時；＋／－：時間縮放；0 或按兩下：重設檢視。
+暫停後可拖曳，或用左右方向鍵查看快取中的局部資料。</translation>
+    </message>
+    <message>
+      <source>app.device.view_paused</source>
+      <translation>畫面已暫停</translation>
+    </message>
+    <message>
+      <source>app.device.view_waiting</source>
+      <translation>等待設備資料</translation>
+    </message>
+    <message>
+      <source>app.device.view_stopped</source>
+      <translation>採集已停止 · 保留最後波形</translation>
+    </message>
+    <message>
+      <source>app.device.view_reset</source>
+      <translation>重設檢視</translation>
+    </message>
+    <message>
+      <source>app.device.view_gain</source>
+      <translation>縱向 ×{gain}</translation>
+    </message>
+    <message>
+      <source>app.device.live_advanced</source>
+      <translation>採集設定</translation>
+    </message>
+    <message>
+      <source>app.device.connection_advanced</source>
+      <translation>進階連線方式</translation>
+    </message>
+    <message>
+      <source>app.device.status_streaming_live</source>
+      <translation>正在接收裝置訊號</translation>
+    </message>
+    <message>
+      <source>app.device.status_connection_failed</source>
+      <translation>連線失敗</translation>
+    </message>
+    <message>
+      <source>app.device.status_start_failed</source>
+      <translation>啟動擷取失敗</translation>
+    </message>
+    <message>
+      <source>app.device.copy_diagnostics</source>
+      <translation>複製診斷資訊</translation>
+    </message>
+    <message>
+      <source>app.device.request_detail</source>
+      <translation>{method} {path}：{result}</translation>
+    </message>
+    <message>
+      <source>app.device.request_timeout</source>
+      <translation>請求逾時</translation>
+    </message>
+    <message>
+      <source>app.device.request_rejected</source>
+      <translation>裝置拒絕請求</translation>
+    </message>
+    <message>
+      <source>app.device.request_transport</source>
+      <translation>網路連線失敗</translation>
+    </message>
+    <message>
+      <source>app.device.callback_detail</source>
+      <translation>裝置需要回連本機 {address}:{port}。請允許此測試版應用程式通過 Windows 防火牆接收入站連線，並檢查所選網路介面。</translation>
+    </message>
+    <message>
+      <source>app.device.channel_conflict_detail</source>
+      <translation>目前選擇 {requested} 通道，模組回報 {reported} 通道。請核對通道選擇。</translation>
+    </message>
+    <message>
+      <source>app.device.response_detail</source>
+      <translation>裝置拒絕原因：{detail}</translation>
+    </message>
+    <message>
+      <source>app.device.open_logs</source>
+      <translation>開啟日誌</translation>
+    </message>
+    <message>
+      <source>app.device.logs_unavailable</source>
+      <translation>無法開啟擷取日誌位置：{path}</translation>
+    </message>
+    <message><source>app.signal.offline_mode</source><translation>視窗零相位</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>連續因果</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>處理執行方式</translation></message>
+    <message><source>app.signal.live_tools</source><translation>即時訊號 · 使用完整樣本處理與分析</translation></message>
+    <message><source>app.signal.shared_tools</source><translation>處理、顯示與分析使用同一訊號視窗，原始錄製獨立保存。</translation></message>
+    <message><source>app.signal.continuous_segment</source><translation>目前使用視窗內最長的有效連續片段。</translation></message>
+    <message><source>app.signal.amplitude_unit</source><translation>振幅 ({unit})</translation></message>
+    <message><source>app.signal.power_unit</source><translation>頻帶功率 ({unit}²)</translation></message>
+    <message><source>app.signal.psd_unit</source><translation>功率譜密度 ({unit}²/Hz)</translation></message>
+    <message><source>app.signal.db_unit</source><translation>功率譜密度 (dB re 1 {unit}²/Hz)</translation></message>
+    <message><source>error.signal.no_samples</source><translation>等待有效樣本。</translation></message>
+    <message><source>error.signal.window_too_large</source><translation>此視窗資料量過大，請縮短時間窗或減少通道。</translation></message>
+    <message><source>error.signal.incompatible_units</source><translation>重參考需要單位相容的通道；請切換原始參考或選擇相同單位的資料流。</translation></message>
+    <message><source>error.signal.invalid_window</source><translation>訊號視窗無效，無法作為完整樣本處理。</translation></message>
+    <message><source>error.signal.insufficient_continuous_data</source><translation>有效連續樣本不足，請擴大時間窗或選擇其他片段。</translation></message>
+    <message><source>app.signal.separate_selection</source><translation>分離目前片段</translation></message>
+    <message><source>app.separation.selection_source</source><translation>目前訊號選區</translation></message>
+    <message><source>app.separation.selection_hint</source><translation>目前選區的獨立分析快照，原始資料保持不變。</translation></message>
+    <message><source>app.signal.window</source><translation>{format} | {t0}-{t1} 秒 | +/-{amplitude} {unit} | {n_visible} 個可見通道</translation></message>
+    <message><source>app.signal.color_range</source><translation>{min}–{max} dB re 1 {unit}²/Hz</translation></message>
+    <message><source>error.signal.invalid_filter_parameters</source><translation>濾波頻率須為正數且低於目前取樣率的一半，帶通低頻還須小於高頻。</translation></message>
+    <message><source>app.separation.device_snapshot</source><translation>取得裝置片段</translation></message>
+    <message><source>app.separation.device_snapshot_help</source><translation>取得所選資料流最近最多 10 秒的連續原始資料，至少需要 5 秒。新片段取代舊結果與標記；同一資料流保留通道用途。擷取與錄製繼續。</translation></message>
+    <message><source>app.separation.connect_device</source><translation>連接裝置…</translation></message>
+    <message><source>app.separation.device_stream</source><translation>裝置資料流</translation></message>
+    <message><source>app.separation.device_available</source><translation>可取樣裝置：{device}</translation></message>
+    <message><source>app.separation.device_unavailable</source><translation>裝置連線統一於選單列「裝置」中管理。</translation></message>
+    <message><source>app.separation.progress_snapshot</source><translation>正在取得分析片段…</translation></message>
+    <message><source>app.separation.simulated_source</source><translation>模擬：{device}</translation></message>
+    <message><source>app.separation.snapshot_interval</source><translation>來源區間 {start}–{end} 秒 · {unit} · float32 輸入快照</translation></message>
+    <message><source>app.separation.next_choose_input</source><translation>開啟檔案，或取得裝置片段。</translation></message>
+      <message><source>app.separation.live_start</source><translation>開始連續 ICA</translation></message>
+    <message><source>app.separation.live_stop</source><translation>停止連續顯示</translation></message>
+    <message><source>app.separation.live_help</source><translation>將已檢查的固定 ICA 模型套用到新訊號。使用同一裝置的 250 或 500 Hz 原始訊號，建模輸出率須與裝置一致，陷波關閉。</translation></message>
+    <message><source>app.separation.live_connect</source><translation>連接裝置後，取得片段建立 ICA 模型。</translation></message>
+    <message><source>app.separation.live_prepare</source><translation>取得裝置片段 → 設定觀測通道 → 開始分離。</translation></message>
+    <message><source>app.separation.live_incompatible</source><translation>請用目前裝置重新建模：裝置與輸出均為 250 或 500 Hz，取樣率一致，陷波關閉。</translation></message>
+    <message><source>app.separation.live_review</source><translation>檢查並標記成分，勾選「已檢查成分」，再開始連續顯示。</translation></message>
+    <message><source>app.separation.live_ready</source><translation>模型已就緒，可連續顯示新訊號。</translation></message>
+    <message><source>app.separation.live_running</source><translation>連續顯示中 · 更新至 {seconds} s · 固定模型</translation></message>
+    <message><source>app.separation.live_gaps</source><translation>連續顯示中 · 更新至 {seconds} s · 缺口處斷開</translation></message>
+    <message><source>app.separation.live_collecting</source><translation>等待連續訊號：{seconds} / 5.0 s；擷取和錄製繼續，可取消。</translation></message>
+    <message><source>app.separation.live_scores</source><translation>連續波形使用固定模型；停止連續顯示後可查看建模片段的評分與線索。</translation></message>
+    <message><source>app.separation.all_observations</source><translation>全部設為觀測通道</translation></message>
+    <message><source>app.separation.all_observations_help</source><translation>僅在這些通道都是有效混合訊號時使用；不良通道和參考通道請個別調整。</translation></message>
+    <message><source>app.separation.live_analysis_trace</source><translation>輸入（減建模均值）</translation></message>
+    <message><source>app.separation.live_spectrum</source><translation>目前連續片段功率譜 · 任意單位²/Hz</translation></message>
+    <message><source>app.separation.workflow_step_1</source><translation>1. 準備訊號</translation></message>
+    <message><source>app.separation.workflow_step_2</source><translation>2. 建立模型</translation></message>
+    <message><source>app.separation.workflow_step_3</source><translation>3. 檢查成分</translation></message>
+    <message><source>app.separation.workflow_step_4</source><translation>4. 查看結果</translation></message>
+    <message><source>app.separation.prepare_calibration</source><translation>取得建模片段</translation></message>
+    <message><source>app.separation.retake_calibration</source><translation>重新取得建模片段</translation></message>
+    <message><source>app.separation.fit_model</source><translation>建立分離模型</translation></message>
+    <message><source>app.separation.workflow_empty</source><translation>從「裝置」連接裝置，或從「檔案」開啟資料檔案、載入內建分離範例。</translation></message>
+    <message><source>app.separation.workflow_prepare</source><translation>使用已連接裝置的訊號，取得至少 5 秒連續資料進行建模。</translation></message>
+    <message><source>app.separation.workflow_wait</source><translation>正在準備建模訊號，擷取和原始錄製繼續。</translation></message>
+    <message><source>app.separation.workflow_review</source><translation>檢查右側成分，標記腦電、眼電、肌電或未確定，再勾選「已檢查成分」。</translation></message>
+    <message><source>app.separation.workflow_live</source><translation>檢查已完成：可開始連續 ICA 查看新訊號，或匯出建模片段。</translation></message>
+    <message><source>app.separation.workflow_fit</source><translation>通道與區間已就緒，點選「建立分離模型」。</translation></message>
+    <message><source>app.separation.active_input</source><translation>目前分析輸入</translation></message>
+    <message><source>app.separation.help_open</source><translation>使用說明</translation></message>
+    <message><source>app.separation.role_help_open</source><translation>通道用途說明</translation></message>
+    <message><source>app.separation.metadata_open</source><translation>擷取資訊…</translation></message>
+    <message><source>app.separation.shortcuts_open</source><translation>快捷操作</translation></message>
+    <message><source>app.separation.help_close</source><translation>關閉</translation></message>
+    <message><source>app.separation.help_title</source><translation>分離操作說明與擷取資訊</translation></message>
+    <message><source>app.separation.help_tab_0</source><translation>操作步驟</translation></message>
+    <message><source>app.separation.help_tab_1</source><translation>通道用途</translation></message>
+    <message><source>app.separation.help_tab_2</source><translation>波形操作</translation></message>
+    <message><source>app.separation.help_tab_3</source><translation>擷取資訊</translation></message>
+    <message><source>app.separation.guide_steps</source><translation>1. 準備訊號
+透過「裝置」連接採集裝置，或從「檔案」載入資料。指定通道用途，至少兩路參與分離。
+
+2. 建立模型
+設定分析區間，開始分離。內建範例可使用預設參數。
+
+3. 檢查成分
+結合波形、頻譜與參考線索，為各 IC 分類。
+
+4. 查看結果
+勾選「已檢查成分」，確認分組並啟用匯出。裝置連續處理需點選「開始連續 ICA」。
+
+連續模式要求裝置與模型取樣率一致（250/500 Hz），陷波關閉。</translation></message>
+    <message><source>app.separation.roles_intro</source><translation>至少選擇兩路通道參與分離。參考通道用於輔助分類。</translation></message>
+    <message><source>app.separation.view_shortcuts</source><translation>波形取得焦點後，快捷鍵生效。
+
+Ctrl＋滾輪：圍繞滑鼠位置縮放時間軸
+Shift＋滾輪：縮放幅值
+＋／－：縮放時間軸
+↑／↓：縮放幅值
+←／→ 或左鍵拖曳：平移離線或已暫停的視窗
+0 或按兩下：恢復 10 秒視窗、1 倍幅值
+空白鍵：播放／暫停離線結果，暫停／繼續連續查看
+
+連續查看跟隨最新訊號。暫停時保留目前畫面，採集、處理與原始錄製繼續；恢復後返回最新影格。分析區間在左側設定。</translation></message>
+    <message><source>app.separation.window_value</source><translation>{seconds} 秒</translation></message>
+    <message><source>app.separation.acquisition_summary</source><translation>目前輸入：{source}
+取樣率：{rate} Hz
+通道數：{channels}
+時長：{seconds} 秒
+單位：{unit}</translation></message>
+    <message><source>app.separation.role_help_0</source><translation>指定通道用途後可開始分離。</translation></message>
+    <message><source>app.separation.role_help_1</source><translation>用於 ICA 擬合的觀測通道，可包含腦電、眼電與肌電混合訊號。</translation></message>
+    <message><source>app.separation.role_help_2</source><translation>眼部活動參考，用於輔助識別眼電成分，獨立於 ICA 擬合。</translation></message>
+    <message><source>app.separation.role_help_3</source><translation>肌肉活動參考，用於輔助識別肌電成分，獨立於 ICA 擬合。</translation></message>
+    <message><source>app.separation.role_help_4</source><translation>本次分析忽略該通道，適用於斷線、飽和或接觸不良的通道。</translation></message>
+    <message><source>app.separation.view_hint</source><translation>Ctrl＋滾輪縮放時間，Shift＋滾輪縮放幅值。完整快捷鍵見「使用說明 → 波形操作」。</translation></message>
+    <message><source>app.separation.view_pause</source><translation>暫停查看</translation></message>
+    <message><source>app.separation.view_resume</source><translation>繼續查看</translation></message>
+    <message><source>app.separation.view_wait</source><translation>分離結果尚未就緒</translation></message>
+    <message><source>app.separation.view_frozen</source><translation>連續 ICA · 已暫停查看（{seconds} 秒）</translation></message>
+    <message><source>app.separation.view_offline_playing</source><translation>離線分離結果 · 播放中</translation></message>
+    <message><source>app.separation.view_offline_paused</source><translation>離線分離結果 · 已暫停</translation></message>
+    <message><source>app.separation.help_tab_4</source><translation>成分檢查</translation></message>
+    <message><source>app.separation.review_hint</source><translation>選擇 IC 查看波形，透過單選項設定分類。</translation></message>
+    <message><source>app.separation.review_empty</source><translation>建立模型後可檢查和分類 IC 成分。</translation></message>
+    <message><source>app.separation.review_confirm_hint</source><translation>勾選確認，進入第 4 步。支援保留未確定成分。</translation></message>
+    <message><source>app.separation.review_steps</source><translation>成分檢查
+IC 表示獨立成分，幅度採用任意單位。
+選擇 IC，查看下方波形與頻譜。參考相關性和高頻佔比可輔助判斷。</translation></message>
+    <message><source>app.separation.group_help_0</source><translation>經人工檢查的腦電候選成分。</translation></message>
+    <message><source>app.separation.group_help_1</source><translation>與眼部活動或眼電參考相關的成分。</translation></message>
+    <message><source>app.separation.group_help_2</source><translation>與肌肉活動或肌電參考相關的成分。</translation></message>
+    <message><source>app.separation.group_help_3</source><translation>來源暫未確定，訊號保留在未確定組。</translation></message>
+    <message><source>app.separation.review_finish</source><translation>分組結果
+分類後，中間波形同步更新。空組顯示「暫無成分」。「查看通道」切換投影的觀測通道。「撤銷上次判斷」恢復上一分類。
+
+結果確認
+勾選「已檢查成分」，進入第 4 步並啟用匯出。修改分類後需重新確認。各組標籤反映人工判斷，來源仍需結合實驗驗證。
+
+連續處理
+裝置模型滿足條件時可啟動連續 ICA。匯出範圍為建模片段。
+
+練習資料
+內建分離範例支援教學標記。模擬裝置用於流程驗證。</translation></message>
+    <message><source>app.separation.component_classification</source><translation>IC {component} 的人工分類</translation></message>
+    <message><source>app.separation.component_trace_selected</source><translation>IC {component} · 任意單位</translation></message>
+    <message><source>app.device.simulator_profile</source><translation>模擬訊號</translation></message>
+    <message><source>app.device.simulator_ica</source><translation>ICA 混合訊號</translation></message>
+    <message><source>app.device.simulator_periodic</source><translation>週期波形</translation></message>
+    <message><source>app.device.simulator_ica_hint</source><translation>三路混合訊號，配有眼電與肌電參考通道。</translation></message>
+    <message><source>app.device.simulator_periodic_hint</source><translation>四路週期波形，用於採集與頻譜測試。</translation></message>
+    <message><source>app.separation.simulator_notice</source><translation>ICA 合成訊號：三路混合、眼電參考、肌電參考。</translation></message>
+    <message><source>app.separation.selected_component</source><translation>IC {component} / {count}</translation></message>
+    <message><source>app.separation.select_component</source><translation>選擇 IC</translation></message>
+    <message><source>app.separation.previous_component</source><translation>上一個</translation></message>
+    <message><source>app.separation.next_component</source><translation>下一個</translation></message>
+    <message><source>app.separation.input_channel_trace</source><translation>分析輸入 · {channel} · {unit} · 含均值</translation></message>
+    <message><source>app.separation.live_input_channel_trace</source><translation>輸入（減建模均值）· {channel} · {unit}</translation></message>
+    <message><source>app.separation.group_channel_trace</source><translation>{group} · {channel} · {components} · {unit}</translation></message>
+    <message><source>app.separation.component_view_0</source><translation>IC 波形</translation></message>
+    <message><source>app.separation.component_view_1</source><translation>頻譜</translation></message>
+    <message><source>app.separation.component_view_2</source><translation>參考指標</translation></message>
+    <message><source>app.separation.undo_compact</source><translation>復原判斷</translation></message>
+    <message><source>app.separation.example_labels_compact</source><translation>套用範例標記</translation></message>
+    <message><source>app.separation.component_contribution</source><translation>{components} 貢獻</translation></message>
+    <message><source>app.separation.axis_time</source><translation>時間 (s)</translation></message>
+    <message><source>app.separation.axis_frequency</source><translation>頻率 (Hz)</translation></message>
+    <message><source>app.separation.axis_amplitude</source><translation>幅值 ({unit})</translation></message>
+    <message><source>app.separation.axis_psd</source><translation>PSD (a.u.²/Hz)</translation></message>
+    <message><source>app.separation.component_plot_controls</source><translation>Ctrl＋滾輪：縮放時間；Shift＋滾輪：縮放 IC 幅值；拖曳：平移；按兩下或 0：重設。a.u. 表示任意單位。</translation></message>
   </context>
 </TS>
