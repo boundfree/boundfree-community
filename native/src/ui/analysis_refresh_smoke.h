@@ -113,7 +113,7 @@ inline int smokeAnalysisRefresh(int argc, char** argv, const bf::VersionInfo& ve
     // even though a newer time window is already being calculated.
     if (!i18n.loadLocale("zh_CN", &error)) return fail("hold_locale_load");
     const QString translatedInitialContext = i18n.text("app.analysis.context", {
-        {"channel", "alpha"}, {"start", i18n.formatNumber(0, 2)}, {"end", i18n.formatNumber(30, 2)},
+        {"channel", "alpha"}, {"start", i18n.formatNumber(0, 2)}, {"end", i18n.formatNumber(10, 2)},
     });
     if (state() != "ready" || generation() != heldGeneration || captured != 1
         || status->text() != i18n.text("app.analysis.ready") + "\n" + translatedInitialContext

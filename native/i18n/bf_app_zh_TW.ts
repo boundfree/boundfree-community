@@ -2187,9 +2187,11 @@ Ctrl＋滾輪：時間縮放；Shift＋滾輪：幅值縮放；一般滾輪：�
       <source>app.device.logs_unavailable</source>
       <translation>無法開啟擷取日誌位置：{path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>視窗零相位</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>連續因果</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>處理執行方式</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>片段濾波</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>連續濾波</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>濾波方式</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>適合查看檔案：對目前片段做零相位濾波，片段兩端可能受影響。</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>適合即時擷取：以因果方式連續處理新樣本，濾波可能造成時間偏移。</translation></message>
     <message><source>app.signal.live_tools</source><translation>即時訊號 · 使用完整樣本處理與分析</translation></message>
     <message><source>app.signal.shared_tools</source><translation>處理、顯示與分析使用同一訊號視窗，原始錄製獨立保存。</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>目前使用視窗內最長的有效連續片段。</translation></message>
@@ -2353,5 +2355,8 @@ IC 表示獨立成分，幅度採用任意單位。
 Ctrl＋滾輪：圍繞指標縮放時間；Shift＋滾輪：縮放幅值；一般滾輪：捲動通道。
 點擊波形後，空白鍵：播放／暫停；＋／－：時間縮放；0 或雙擊：恢復10秒視窗和1倍幅值。
 暫停播放且未開啟標註時，可拖曳或用左右方向鍵瀏覽檔案。</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>錯誤：{message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>請選擇 2–32 路參與分離的觀測通道；參考通道不計入觀測數量。</translation></message>
   </context>
 </TS>

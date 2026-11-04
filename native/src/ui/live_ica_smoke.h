@@ -106,6 +106,11 @@ inline int smokeLiveIca(int argc, char** argv, const VersionInfo& version, const
     window.findChild<QCheckBox*>("separationConfirmed")->setChecked(true);
     if (!until([&] { return toggle->isEnabled(); })) return fail("reviewed_model_unavailable");
     if (workspace->property("workflowStep").toInt() != 4) return fail("result_workflow_step");
+    auto* rolesTable = window.findChild<QTableWidget*>("separationChannels");
+    rolesTable->setRangeSelected(QTableWidgetSelectionRange(0, 0, 1, 1), true);
+    auto* bulkRole = window.findChild<QComboBox*>("separationBulkRole");
+    auto* applyRole = window.findChild<QPushButton*>("separationApplyRole");
+    if (!bulkRole->isEnabled() || !applyRole->isEnabled()) return fail("bulk_role_setup");
     acquisition->startRecording(temp.path());
     if (!until([&] { return acquisition->snapshot().recording.state == CaptureRecordState::Recording; })) return fail("recording_start");
     int frames = 0; std::shared_ptr<const LiveIcaFrame> latest;
@@ -113,6 +118,10 @@ inline int smokeLiveIca(int argc, char** argv, const VersionInfo& version, const
     const auto sampleCount = acquisition->snapshot().samples;
     toggle->click();
     if (!until([&] { return frames >= 3; })) { std::cerr << error.toStdString() << '\n'; return fail("live_frames"); }
+    const auto lockedRoles = separation->settings().roles;
+    applyRole->click();
+    if (bulkRole->isEnabled() || applyRole->isEnabled() || separation->settings().roles != lockedRoles || !live->isActive())
+        return fail("live_bulk_roles_can_change_model_input");
     std::cout << "LIVE_ICA_STAGE live_frames\n" << std::flush;
     auto* grouped = window.findChild<QWidget*>("separationGroupTraces");
     const int beforeView = frames;

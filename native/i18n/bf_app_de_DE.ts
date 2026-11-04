@@ -2187,9 +2187,11 @@ While paused, drag or use Left/Right to inspect the cached window.</translation>
       <source>app.device.logs_unavailable</source>
       <translation>Could not open acquisition log location: {path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>Window: zero phase</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>Continuous: causal</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>Processing execution mode</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>Abschnittsfilterung</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>Kontinuierliche Filterung</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>Filtermethode</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>Zur Dateiansicht: Der aktuelle Abschnitt wird ohne Phasenverschiebung gefiltert. An den Rändern können Artefakte auftreten.</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>Für die Live-Erfassung: Neue Messwerte werden kontinuierlich kausal gefiltert. Die zeitliche Lage des Signals kann sich verschieben.</translation></message>
     <message><source>app.signal.live_tools</source><translation>Live signal · processing and analysis use full samples</translation></message>
     <message><source>app.signal.shared_tools</source><translation>Processing, display and analysis share the signal window. Raw recording remains independent.</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>Using the longest valid continuous segment in this window.</translation></message>
@@ -2353,5 +2355,8 @@ The built-in separation example includes teaching labels. The simulator supports
 Strg+Mausrad: Zeit um den Zeiger zoomen. Umschalt+Mausrad: Amplitude zoomen. Mausrad: Kanäle scrollen.
 Nach Klick auf die Wellenform: Leertaste: Wiedergabe/Pause; +/−: Zeit zoomen; 0 oder Doppelklick: 10-Sekunden-Fenster und Amplitude 1× wiederherstellen.
 Bei pausierter Wiedergabe und ausgeschaltetem Anmerkungsmodus mit Ziehen oder Links/Rechts durch die Datei navigieren.</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>Fehler: {message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>Hinweis: {message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>Wählen Sie 2–32 Beobachtungskanäle für die Trennung. Referenzkanäle zählen nicht als Beobachtungen.</translation></message>
   </context>
 </TS>

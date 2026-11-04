@@ -2187,9 +2187,11 @@ While paused, drag or use Left/Right to inspect the cached window.</translation>
       <source>app.device.logs_unavailable</source>
       <translation>Could not open acquisition log location: {path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>Window: zero phase</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>Continuous: causal</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>Processing execution mode</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>Filtrado por segmentos</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>Filtrado continuo</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>Método de filtrado</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>Para revisar archivos: se filtra el segmento actual sin desfase. Los extremos pueden verse afectados.</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>Para adquisición en directo: los nuevos datos se filtran de forma causal y continua, lo que puede desplazar la señal en el tiempo.</translation></message>
     <message><source>app.signal.live_tools</source><translation>Live signal · processing and analysis use full samples</translation></message>
     <message><source>app.signal.shared_tools</source><translation>Processing, display and analysis share the signal window. Raw recording remains independent.</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>Using the longest valid continuous segment in this window.</translation></message>
@@ -2353,5 +2355,8 @@ The built-in separation example includes teaching labels. The simulator supports
 Ctrl+rueda: ampliar el tiempo alrededor del puntero. Mayús+rueda: ampliar la amplitud. Rueda: desplazar canales.
 Tras pulsar la onda, Espacio: reproducir/pausar; +/−: ampliar el tiempo; 0 o doble clic: ventana de 10 segundos y amplitud 1×.
 En pausa y con las anotaciones desactivadas, arrastre o use Izquierda/Derecha para recorrer el archivo.</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>Error: {message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>Atención: {message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>Seleccione entre 2 y 32 canales de observación para la separación. Los canales de referencia no cuentan como observaciones.</translation></message>
   </context>
 </TS>

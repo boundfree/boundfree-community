@@ -2187,9 +2187,11 @@ Ctrl＋滚轮：时间缩放；Shift＋滚轮：幅值缩放；普通滚轮：�
       <source>app.device.logs_unavailable</source>
       <translation>无法打开采集日志位置：{path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>窗口零相位</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>连续因果</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>处理执行方式</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>片段滤波</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>连续滤波</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>滤波方式</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>适合查看文件：对当前片段做零相位滤波，片段两端可能受影响。</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>适合实时采集：以因果方式连续处理新样本，滤波可能造成时间偏移。</translation></message>
     <message><source>app.signal.live_tools</source><translation>实时信号 · 使用完整样本处理和分析</translation></message>
     <message><source>app.signal.shared_tools</source><translation>处理、显示和分析使用同一信号视窗，原始录制独立保存。</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>当前使用视窗内最长的有效连续片段。</translation></message>
@@ -2353,5 +2355,8 @@ IC 表示独立成分，幅度采用任意单位。
 Ctrl＋滚轮：围绕指针缩放时间；Shift＋滚轮：缩放幅值；普通滚轮：滚动通道。
 点击波形后，空格：播放／暂停；＋／－：时间缩放；0 或双击：恢复10秒窗口和1倍幅值。
 暂停播放且未开启标注时，可拖动或用左右方向键浏览文件。</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>错误：{message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>请选择 2–32 路参与分离的观测通道；参考通道不计入观测数量。</translation></message>
   </context>
 </TS>

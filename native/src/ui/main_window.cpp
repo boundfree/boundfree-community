@@ -437,6 +437,22 @@ void MainWindow::buildFixedWorkspace() {
     executionLabel->setObjectName("signalExecutionLabel");
     executionLabel->setBuddy(processingModeCombo_);
     signalOptionsForm->addRow(executionLabel, processingModeCombo_);
+    auto* filteringHint = new QLabel(signalOptions);
+    filteringHint->setObjectName("signalFilteringHint");
+    filteringHint->setTextFormat(Qt::PlainText);
+    filteringHint->setWordWrap(true);
+    filteringHint->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    signalOptionsForm->addRow(filteringHint);
+    const auto updateFilteringHint = [this, filteringHint] {
+        const auto text = i18n_->text(processingModeCombo_->currentIndex() == 1
+            ? "app.signal.causal_mode_hint" : "app.signal.offline_mode_hint");
+        filteringHint->setText(text);
+        processingModeCombo_->setToolTip(text);
+        processingModeCombo_->setAccessibleDescription(text);
+    };
+    connect(processingModeCombo_, &QComboBox::currentIndexChanged, filteringHint, updateFilteringHint);
+    connect(i18n_, &I18nService::languageChanged, filteringHint, updateFilteringHint);
+    updateFilteringHint();
     advancedSignal->addWidget(signalOptions);
     advancedSignal->setExpanded(false);
     filterPanel_->addWidget(advancedSignal);
@@ -456,9 +472,10 @@ void MainWindow::buildFixedWorkspace() {
     workspace->addWidget(signalPage);
     workspace->addWidget(analysisSplit);
     workspace->setStretchFactor(0, 0);
-    workspace->setStretchFactor(1, 3);
-    workspace->setStretchFactor(2, 2);
-    workspace->setSizes({260, 600, 400});
+    // Keep side tools compact and give additional desktop width to the signal.
+    workspace->setStretchFactor(1, 1);
+    workspace->setStretchFactor(2, 0);
+    workspace->setSizes({240, 760, 320});
     compactSignalTabs_=new QTabWidget(workspace);compactSignalTabs_->setObjectName("signalCompactTools");
     compactSignalTabs_->setDocumentMode(true);compactSignalTabs_->setMinimumSize(240,180);compactSignalTabs_->hide();
     layout->addWidget(workspace, 1);
@@ -681,7 +698,7 @@ void MainWindow::updateSignalWorkspaceLayout(){
         while(compactSignalTabs_->count())compactSignalTabs_->removeTab(0);
         signalWorkspaceSplitter_->insertWidget(1,signalPage_);signalWorkspaceSplitter_->insertWidget(2,signalAnalysisPane_);
         compactSignalTabs_->hide();signalPage_->show();signalAnalysisPane_->setVisible(hasActiveSignal());
-        signalWorkspaceSplitter_->setSizes({240,600,400});
+        signalWorkspaceSplitter_->setSizes({240,760,320});
     }
 }
 
@@ -2760,8 +2777,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     parameterTabs_->show();
     playbackBar_->show();
     if (!sameSession) {
-        playbackViewportActive_ = false;
-        waveformWidget_->clearTimeRange();
+        // The initial reader window is a cache, not the visible time span.
+        // In particular capture replay loads 10 s but defaults to a 2 s view.
+        playbackViewportActive_ = true;
         const QSignalBlocker blocker(playbackPanel_->progressSlider());
         playbackPanel_->progressSlider()->setSliderDown(false);
         playback_.pause();
@@ -3044,11 +3062,11 @@ void MainWindow::applyProcessingAndDisplay() {
     catch(const std::exception& e){statusBar()->showMessage(i18n_->text(QString("error.%1").arg(QString::fromUtf8(e.what()))),5000);return;}
     waveformWidget_->setSlice(currentFile_.waveform);
     refreshAnalysisControls();
-    requestCurrentAnalysis();
     rebuildChannelControls();
     viewState_.firstVisibleChannel = std::clamp(viewState_.firstVisibleChannel, 0, std::max(0, channelCount() - 1));
     refreshBrowserControls();
     applyBrowserStateToWaveform();
+    requestCurrentAnalysis();
 }
 
 void MainWindow::setProcessingViewStateForBrowser(const ProcessingViewState& state) {

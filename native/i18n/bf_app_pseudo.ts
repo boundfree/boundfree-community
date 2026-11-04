@@ -2186,9 +2186,11 @@ While paused, drag or use Left/Right to inspect the cached window.⟧</translati
       <source>app.device.logs_unavailable</source>
       <translation>⟦Could not open acquisition log location: {path}⟧</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>Window: zero phase</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>Continuous: causal</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>Processing execution mode</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>[!! Segment filtering ~~~ !!]</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>[!! Continuous filtering ~~~ !!]</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>[!! Filtering method ~~~ !!]</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>[!! For reviewing files: zero-phase filtering processes the current segment; its edges may be affected. ~~~ !!]</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>[!! For live acquisition: causal filtering processes new samples continuously and may shift signal timing. ~~~ !!]</translation></message>
     <message><source>app.signal.live_tools</source><translation>Live signal · processing and analysis use full samples</translation></message>
     <message><source>app.signal.shared_tools</source><translation>Processing, display and analysis share the signal window. Raw recording remains independent.</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>Using the longest valid continuous segment in this window.</translation></message>
@@ -2352,5 +2354,8 @@ The built-in separation example includes teaching labels. The simulator supports
 Ctrl+wheel: zoom time around the pointer. Shift+wheel: zoom amplitude. Wheel: scroll channels.
 Click the waveform, then Space: play/pause; +/−: zoom time; 0 or double-click: restore a 10-second window and 1× amplitude.
 When playback is paused and annotation mode is off, drag or use Left/Right to browse the file.］</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>［Error: {message}］</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>［Warning: {message}］</translation></message>
+    <message><source>app.separation.next_observations</source><translation>［Select 2–32 observation channels for separation. Reference channels do not count as observations.］</translation></message>
   </context>
 </TS>

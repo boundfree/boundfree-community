@@ -91,6 +91,11 @@ inline int smokeWaveformDataModes(int argc, char** argv, const bf::VersionInfo& 
     const QString directory = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
     if (!directory.isEmpty()) {
         QDir().mkpath(directory);
+        window.findChild<QTabWidget*>("eegParameterTabs")->setCurrentIndex(1);
+        window.findChild<bf::CollapsiblePanel*>("signalAdvancedProcessing")->setExpanded(true);
+        settle();
+        window.findChild<QScrollArea*>("eegProcessingScroll")->ensureWidgetVisible(
+            window.findChild<QLabel*>("signalFilteringHint"));
         for (bool dark : {false, true}) {
             for (auto* action : window.findChildren<QAction*>())
                 if (action->text() == i18n.text(dark ? "app.theme.dark" : "app.theme.light")) action->trigger();
@@ -193,6 +198,7 @@ inline int smokeWaveformDataModes(int argc, char** argv, const bf::VersionInfo& 
     if (waveform->cachedDisplayModel().channelNames != QStringList{"C"}) return fail("same_source_keeps_channels");
     window.showFileOpenResult(longer);
     if (waveform->cachedDisplayModel().channelNames != input.session.chNames) return fail("new_source_resets_channels");
+    window.setBrowserWindowSecondsForBrowser(8);
     int reads = 0;
     double requestedStart = -1, requestedSeconds = -1;
     window.setWindowRequestHandler([&](const QString&, double start, double length) {

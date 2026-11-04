@@ -57,7 +57,8 @@ inline int smokeCaptureReplay(int argc, char** argv, const VersionInfo& version,
     auto* record = window.findChild<QAction*>("fileRecordAction");
     auto* exportAction = window.findChild<QAction*>("fileExportAction");
     auto* play = window.findChild<QAction*>("filePlaybackAction");
-    if (!wave || !mode || !streams || !summary || !bar || !position || !record || !exportAction || !play ||
+    auto* seconds = window.findChild<QDoubleSpinBox*>("eegWindowSeconds");
+    if (!wave || !mode || !streams || !summary || !bar || !position || !record || !exportAction || !play || !seconds ||
         !bar->isVisible() || !mode->isEnabled() || mode->currentIndex() != 1 || !record->isEnabled() || !exportAction->isEnabled() ||
         !automatic->isEnabled() || !window.findChild<QDoubleSpinBox*>("eegManualAmplitude")->isVisible()) return fail("shared_controls");
     const auto& display = wave->cachedDisplayModel();
@@ -72,6 +73,46 @@ inline int smokeCaptureReplay(int argc, char** argv, const VersionInfo& version,
     if (latest.session.format != "BoundFree Capture" || latest.session.capture.isEmpty() ||
         wave->cachedDisplayModel().channelUnits != latest.initialSlice.channelUnits ||
         wave->cachedDisplayModel().sampleTimes.empty() || !equal) return fail("raw_units_and_coordinates");
+    const auto initialRange = wave->timeRange();
+    if (seconds->value() != 2 || initialRange != std::make_pair(0., std::min(2., latest.session.duration)))
+        return fail("initial_view_uses_cache_length_instead_of_selected_window");
+    auto* analysisStatus = window.findChild<QLabel*>("eegAnalysisStatus_0");
+    const auto analysisMatchesView = [&] {
+        const auto range = wave->timeRange();
+        return analysisStatus && analysisStatus->property("analysisState") == "ready" &&
+            analysisStatus->text().contains(i18n.text("app.analysis.context", {
+                {"channel", latest.session.chNames.value(0)},
+                {"start", i18n.formatNumber(range.first, 2)}, {"end", i18n.formatNumber(range.second, 2)}}));
+    };
+    if (!until(analysisMatchesView)) return fail("initial_analysis_does_not_match_visible_window");
+    const auto screenshotDir = qEnvironmentVariable("BF_LAYOUT_SCREENSHOT_DIR");
+    automatic->setChecked(true);
+    parameters->setCurrentIndex(1);
+    window.resize(1870, 1000); wait(30);
+    auto* columns = window.findChild<QSplitter*>("eegWorkspaceSplitter");
+    if (!columns || columns->sizes().size() < 3 ||
+        columns->sizes()[1] < columns->sizes()[2] * 2) return fail("default_waveform_width");
+    if (!screenshotDir.isEmpty()) {
+        QDir().mkpath(screenshotDir);
+        if (!window.grab().save(QDir(screenshotDir).filePath("capture-initial-2s.png"))) return fail("initial_view_screenshot");
+    }
+    const int beforeZoom = loaded;
+    seconds->setValue(.25); wait(30);
+    if (wave->timeRange() != std::make_pair(0., std::min(.25, latest.session.duration)) || loaded != beforeZoom ||
+        wave->cachedDisplayModel().data.size() != latest.initialSlice.data.size() ||
+        wave->cachedDisplayModel().data[0].size() != latest.initialSlice.data[0].size())
+        return fail("zoom_does_not_reuse_original_cached_samples");
+    if (!until(analysisMatchesView)) return fail("zoom_analysis_does_not_match_visible_window");
+    if (!screenshotDir.isEmpty() && !window.grab().save(QDir(screenshotDir).filePath("capture-zoom-0.25s.png")))
+        return fail("zoomed_view_screenshot");
+    const auto defaultWidths = columns->sizes();
+    columns->setSizes({280, 900, 500}); wait(30);
+    if (columns->sizes() == defaultWidths) return fail("manual_splitter_resize");
+    const auto customWidths = columns->sizes();
+    seconds->setValue(2);
+    automatic->setChecked(false);
+    wait(30);
+    if (columns->sizes() != customWidths) return fail("redraw_resets_custom_widths");
     if (streams->count() > 1) {
         const auto expected = streams->itemData(1).toString(); const auto before = loaded;
         streams->setCurrentIndex(1);
@@ -114,7 +155,7 @@ inline int smokeCaptureReplay(int argc, char** argv, const VersionInfo& version,
     if (!until([&] { return loaded > before; }) || !latest.session.capture.isEmpty() || bar->isVisible() ||
         !mode->isEnabled() || mode->currentIndex() != 1 || !record->isEnabled() || !exportAction->isEnabled() ||
         !automatic->isEnabled() || automatic->isChecked()) return fail("ordinary_file_restores_processing_and_scale");
-    std::cout << "CAPTURE_REPLAY_SMOKE PASS raw=true units=true shared_tools=true seek=true playback=true stream_selection=true ordinary_file_restored=true locales=4 compact=true\n";
+    std::cout << "CAPTURE_REPLAY_SMOKE PASS raw=true units=true shared_tools=true initial_view=true cached_zoom=true waveform_width=true seek=true playback=true stream_selection=true ordinary_file_restored=true locales=4 compact=true\n";
     return 0;
 }
 }

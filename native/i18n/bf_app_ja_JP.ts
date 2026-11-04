@@ -2187,9 +2187,11 @@ Ctrl＋ホイール：時間軸の拡大縮小。Shift＋ホイール：振幅�
       <source>app.device.logs_unavailable</source>
       <translation>収集ログの場所を開けません：{path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>区間・ゼロ位相</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>連続・因果</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>処理方式</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>区間フィルター</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>連続フィルター</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>フィルター方式</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>ファイルの確認向け：現在の区間をゼロ位相でフィルター処理します。区間の両端は影響を受ける場合があります。</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>リアルタイム収録向け：新しいサンプルを因果フィルターで連続処理します。波形の時間位置がずれる場合があります。</translation></message>
     <message><source>app.signal.live_tools</source><translation>ライブ信号・完全なサンプルで処理と解析</translation></message>
     <message><source>app.signal.shared_tools</source><translation>処理・表示・解析は共通の信号区間を使用し、元データの記録は独立します。</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>表示区間内で最長の有効な連続区間を使用しています。</translation></message>
@@ -2353,5 +2355,8 @@ IC を選んで下の波形とスペクトルを確認します。参照との�
 Ctrl＋ホイール：ポインターを中心に時間軸を拡大・縮小。Shift＋ホイール：振幅を拡大・縮小。ホイール：チャンネルをスクロール。
 波形をクリック後、スペース：再生／一時停止。＋／－：時間軸の拡大・縮小。0またはダブルクリック：10秒表示・振幅1倍に戻す。
 再生を一時停止し、注釈モードがオフの場合、ドラッグまたは左右キーでファイルを移動できます。</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>エラー：{message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>分離に使用する観測チャンネルを2～32個選択してください。参照チャンネルは観測数に含まれません。</translation></message>
   </context>
 </TS>
