@@ -16,7 +16,7 @@ last_updated: 2026-11-04
 
 Community 的共同 Qt 基线是 **6.8.2**，唯一版本配置为 `config/qt-version.txt`，CMake 默认精确校验，Windows/Linux CI 从同一文件读取版本。Windows 使用 MSVC 2022，WSL 使用 Conda GCC；统一 Qt 版本不表示二进制、媒体后端或系统依赖完全相同。
 
-本机 WSL 是 Ubuntu 22.04，使用独立 Conda 环境，Qt/Python 前缀为 `/mnt/boudfree-dev/qt/6.8.2`，包含匹配的 Qt Multimedia、FFmpeg 7 LGPL 构建与 Python 3.12.12。Python 基线由 `config/python-version.txt` 管理，CI 同时读取 Qt/Python 两个版本文件。可按环境定义重建：
+本机 WSL 是 Ubuntu 22.04，使用独立 Conda 环境，Qt/Python 前缀为 `/mnt/boudfree-dev/qt/6.8.2`，包含匹配的 Qt Multimedia、FFmpeg 7 LGPL 构建与 Python 3.12.12。Python 基线由 `config/python-version.txt` 管理，CI 同时读取 Qt/Python 两个版本文件；托管机器不一定提供每个安全补丁版的安装包（如 Windows 无 3.12.12），CI 按该文件的主次版本（3.12）安装，本机 Conda 环境保持精确版本。可按环境定义重建：
 
 ```bash
 conda env create -f config/qt-wsl-environment.yml

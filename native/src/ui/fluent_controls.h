@@ -115,7 +115,7 @@ inline QString nativeFluentStyle() {
         QTabBar::tab { background: transparent; color: %7; border: none; border-bottom: 3px solid transparent; padding: 9px 12px; }
         QTabBar::tab:hover { background: %6; border-radius: 4px; }
         QTabBar::tab:selected { color: %3; border-bottom: 3px solid %5; }
-        QSpinBox, QDoubleSpinBox { background: %2; color: %3; border: 1px solid %4; border-bottom: 1px solid %7; border-radius: 4px; padding: 4px 28px 4px 8px; min-height: 22px; }
+        QSpinBox, QDoubleSpinBox { background: %2; color: %3; border: 1px solid %4; border-bottom: 1px solid %7; border-radius: 4px; padding: 4px 28px 4px 8px; min-height: 22px; max-height: 22px; }
         QSpinBox:focus, QDoubleSpinBox:focus { border-bottom: 2px solid %5; }
         QSpinBox:disabled, QDoubleSpinBox:disabled { color: %7; background: %1; }
         QAbstractSpinBox QLineEdit { background: transparent; border: none; padding: 0; selection-background-color: %5; }
