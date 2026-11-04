@@ -29,8 +29,7 @@ class I18nService : public QObject {
 
 public:
     // 稳定用户菜单暴露 zh_CN/en_US/ja_JP/zh_TW；pseudo 仅测试用，通过 loadLocale 显式加载。
-    // de_DE/fr_FR/es_ES/ko_KR 的 .ts 源文件保留翻译但暂不纳入 stable，不出 .qm、不进菜单。
-    // 未来激活新 locale 只需：① 加入 kStableLocales ② CMake BF_I18N_LOCALES + install ③ 更新相关测试与注释。
+    // 未来激活新 locale 只需：① 新增 .ts ② 加入 kStableLocales ③ CMake BF_I18N_LOCALES + install ④ 更新相关测试与注释。
     static const QStringList kStableLocales;
     // QSettings 兜底常量（当 QCoreApplication 未设置组织/应用名时使用）。
     static constexpr const char* kSettingsOrganization = "BoundFree";
