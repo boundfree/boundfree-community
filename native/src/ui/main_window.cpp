@@ -889,23 +889,7 @@ void MainWindow::buildThemeMenu() {
 void MainWindow::applyTheme(bool dark) {
     fluent::FluentElement::setTheme(dark ? fluent::FluentElement::Dark : fluent::FluentElement::Light);
     darkTheme_ = dark;
-    const auto colors = surfaceColors();
-    QPalette palette;
-    palette.setColor(QPalette::Window, colors.bgCanvas);
-    palette.setColor(QPalette::Base, colors.controlDefault);
-    palette.setColor(QPalette::AlternateBase, colors.bgLayer);
-    palette.setColor(QPalette::Button, colors.controlDefault);
-    for (auto role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText}) {
-        palette.setColor(role, colors.textPrimary);
-        palette.setColor(QPalette::Disabled, role, colors.textDisabled);
-    }
-    palette.setColor(QPalette::PlaceholderText, colors.textSecondary);
-    palette.setColor(QPalette::Highlight, colors.accentDefault);
-    palette.setColor(QPalette::HighlightedText, colors.textOnAccent);
-    palette.setColor(QPalette::Link, colors.accentDefault);
-    palette.setColor(QPalette::ToolTipBase, colors.bgLayer);
-    palette.setColor(QPalette::ToolTipText, colors.textPrimary);
-    palette.setColor(QPalette::Mid, colors.strokeDefault);
+    const QPalette palette = fluentPalette();
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
         // Palette propagation is enough. Forcing autoFillBackground on every

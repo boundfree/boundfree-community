@@ -100,11 +100,24 @@ int main(int argc, char** argv) {
 
     // setContentLayout: replace default layout with a custom one.
     auto* customLayout = new QVBoxLayout;
+    customLayout->setContentsMargins(14, 12, 14, 12);
+    customLayout->setSpacing(8);
     auto* customChild = new QLabel(QStringLiteral("custom"));
-    customLayout->addWidget(customChild);
+    customLayout->addWidget(customChild, 0, Qt::AlignRight);
+    auto* nestedLayout = new QHBoxLayout;
+    auto* nestedChild = new QLabel(QStringLiteral("nested"));
+    nestedLayout->addWidget(nestedChild);
+    nestedLayout->addStretch();
+    customLayout->addLayout(nestedLayout);
     panel.setContentLayout(customLayout);
     panel.setExpanded(true);
     check(customChild->isVisible(), "child in setContentLayout visible after expand");
+    check(nestedChild->isVisible(), "nested layout and spacer survive transfer");
+    auto* installed = customChild->parentWidget()->layout();
+    check(installed->contentsMargins() == QMargins(14, 12, 14, 12) && installed->spacing() == 8,
+          "custom content margins and spacing preserved");
+    check(installed->itemAt(installed->indexOf(customChild))->alignment() == Qt::AlignRight,
+          "custom widget alignment preserved");
     panel.setExpanded(false);
     check(!customChild->isVisible(), "child in setContentLayout hidden after collapse");
 

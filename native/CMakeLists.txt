@@ -381,7 +381,7 @@ add_executable(activation_dialog_test
 )
 target_include_directories(activation_dialog_test PRIVATE src)
 target_compile_definitions(activation_dialog_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(activation_dialog_test PRIVATE bf_core Qt6::Widgets Qt6::Network)
+target_link_libraries(activation_dialog_test PRIVATE bf_core FluentQt::FluentQt Qt6::Widgets Qt6::Network)
 add_dependencies(activation_dialog_test bf_i18n_qm)
 
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)

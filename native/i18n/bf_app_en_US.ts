@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>The system clock is earlier than the last successful use recorded for this device. Please calibrate the date and time. If the problem persists, re-activate online or contact the supplier. Last seen: {last_seen_utc}; current: {current_utc}.</translation>
+      <translation>The computer clock is earlier than last time. Correct the time and reopen the app. Last used: {last_seen_utc}; current time: {current_utc}.</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>The local license time protection state is missing. Please re-activate online or contact the supplier.</translation>
+      <translation>The local license record has a problem. Connect to automatically retrieve your license again, or contact your administrator if you cannot connect.</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>The local license time protection state is corrupted or may have been tampered with. Please re-activate online or contact the supplier.</translation>
+      <translation>The local license record has a problem. Connect to automatically retrieve your license again, or contact your administrator if you cannot connect.</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>The local license time protection state could not be updated. Check the write permission of the user data directory and try again.</translation>
+      <translation>Cannot save the license. Check that your user folder is writable.</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>The local license file could not be saved. Check the write permission of the user data directory and try again.</translation>
+      <translation>Cannot save the license. Check that your user folder is writable.</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -468,50 +468,39 @@
     <message><source>app.spike.export.no_result</source><translation>No spike result to export</translation></message>
     <message><source>app.spike.export.completed</source><translation>Exported {rows} spike events to {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike export failed: {reason}</translation></message>
-    <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>Your license is no longer active on the server. Please re-activate.</translation></message>
+    <message><source>app.activation.title</source><translation>Activate BoundFree EEG</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>Your administrator disabled this license. Activate again to continue.</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
     <message><source>app.activation.copy</source><translation>Copy</translation></message>
-    <message><source>app.activation.copied</source><translation>Copied to clipboard</translation></message>
-    <message><source>app.activation.online_section</source><translation>Online Activation</translation></message>
-    <message><source>app.activation.online_hint</source><translation>Choose an online authorization method.</translation></message>
-    <message><source>app.activation.request</source><translation>Request Online Authorization</translation></message>
-    <message><source>app.activation.request_hint</source><translation>Submit this machine ID and wait for administrator approval</translation></message>
-    <message><source>app.activation.invite_code</source><translation>Activate with Invite Code</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>Enter the invite code issued by your administrator. An internet connection is required.</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code (format: BF-XXXX-YYYY)</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>Use an Invite Code</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>Enter invite code</translation></message>
-    <message><source>app.activation.offline_section</source><translation>No internet connection? Use an offline license</translation></message>
-    <message><source>app.activation.offline_description</source><translation>An offline license is provided by an administrator or the offline issuance tool. It is not an invite code and is usually a longer license text.</translation></message>
-    <message><source>app.activation.offline_license_label</source><translation>Offline License</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>Paste offline license text here...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>Verify and Activate</translation></message>
-    <message><source>app.activation.activated</source><translation>Activation successful! Entering main interface.</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>Waiting for administrator approval… (auto-refresh every 30 seconds). Your request is submitted, so an invite code is unavailable. Contact the administrator to change method.</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>Network unavailable. Please check your connection or use offline license key.</translation></message>
-    <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>
-    <message><source>app.activation.activating</source><translation>Activating...</translation></message>
-    <message><source>app.activation.verifying</source><translation>Verifying license key...</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>Pending Approval</translation></message>
-    <message><source>app.activation.status_active</source><translation>Active</translation></message>
-    <message><source>app.activation.status_expired</source><translation>Expired</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>Revoked</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>Invalid license key. Please check and try again.</translation></message>
-    <message><source>app.activation.save_failed</source><translation>License key is valid but cannot be saved. Check disk permissions.</translation></message>
-    <message><source>app.activation.error_detail</source><translation>The server rejected the activation request (error code: {code}).</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>This device is bound to another license. Ask the administrator to release its prior device binding before activating again.</translation></message>
-    <message><source>app.activation.request_failed</source><translation>Activation request failed. Please try again later or use an offline license key.</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>This device already has a record (status: {status}). Contact the administrator if you need to re-activate.</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>The invite code is invalid or malformed. Please check and try again.</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>This invite code has been revoked. Ask the administrator for a new one.</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>This invite code has already been used by another device. Ask the administrator for a new one.</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>The server could not sign the license. Contact the administrator.</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>The machine ID is invalid. Contact the administrator.</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>Too many activation requests. Please try again in {retry_after} seconds.</translation></message>
+    <message><source>app.activation.copied</source><translation>Copied</translation></message>
+    <message><source>app.activation.request</source><translation>Request license</translation></message>
+    <message><source>app.activation.org_name</source><translation>Organization or contact (optional)</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>The app activates automatically after administrator approval.</translation></message>
+    <message><source>app.activation.offline_section</source><translation>No connection? Use an offline license</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>Offline license</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>Paste the license from your administrator</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>Activate</translation></message>
+    <message><source>app.activation.activated</source><translation>Activated. Your license is valid until {expires_at}.</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>Request sent. Waiting for administrator approval. The app activates automatically once approved, and you can close it and check again next time you open it.</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>Check now</translation></message>
+    <message><source>app.activation.retry</source><translation>Retry</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>Cannot reach the license server. Check your connection and retry, or use an offline license.</translation></message>
+    <message><source>app.activation.registering</source><translation>Submitting request…</translation></message>
+    <message><source>app.activation.activating</source><translation>Activating…</translation></message>
+    <message><source>app.activation.checking</source><translation>Checking license status…</translation></message>
+    <message><source>app.activation.status_expired</source><translation>Your license has expired. Ask your administrator to renew it, then select Check now.</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>Your administrator disabled your license. Contact them with any questions.</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>Your request was rejected. Contact your administrator with any questions.</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>Invalid license. Make sure you copied the entire text.</translation></message>
+    <message><source>app.activation.local_expired</source><translation>This license expired on {expires_at}.</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>This license belongs to another computer and cannot be used here.</translation></message>
+    <message><source>app.activation.empty_license</source><translation>Paste your license first.</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>Cannot read this computer’s machine ID, so activation is unavailable. Contact your administrator.</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>This computer is linked to another license. Contact your administrator.</translation></message>
+    <message><source>app.activation.request_failed</source><translation>The request failed. Try again later.</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>The server cannot issue a license right now. Contact your administrator.</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>This computer’s machine ID is invalid. Contact your administrator.</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>Too many attempts. Try again in {retry_after} seconds.</translation></message>
     <message><source>app.browser.auto_amplitude</source><translation>Auto amplitude</translation></message>
     <message><source>app.processing.per_channel</source><translation>Per-channel bandpass</translation></message>
     <message><source>app.processing.inherit</source><translation>Inherit global</translation></message>

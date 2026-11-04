@@ -87,23 +87,16 @@ bool OnlineActivationClient::shouldRetryViaFallback(QNetworkReply* reply, int st
            (statusCode >= 500 && statusCode < 600);
 }
 
-void OnlineActivationClient::registerDevice(const QString& machineId, const QString& clientVersion) {
+void OnlineActivationClient::registerDevice(const QString& machineId, const QString& clientVersion,
+                                            const QString& hostname, const QString& os,
+                                            const QString& orgName) {
     const QString path = QStringLiteral("/api/v1/register");
-    const QJsonObject body = {{"machine_id", machineId}, {"client_version", clientVersion}};
+    const QJsonObject body = {{"machine_id", machineId}, {"client_version", clientVersion},
+                              {"hostname", hostname.left(128)}, {"os", os.left(64)},
+                              {"org_name", orgName.left(128)}};
     QNetworkReply* reply = postJson(path, body);
     connect(reply, &QNetworkReply::finished, this, [this, reply, path, body] {
         handleRegisterResponse(reply, path, body, false);
-    });
-}
-
-void OnlineActivationClient::activateWithCode(const QString& machineId, const QString& inviteCode,
-                                              const QString& clientVersion) {
-    const QString path = QStringLiteral("/api/v1/activate");
-    const QJsonObject body = {{"machine_id", machineId}, {"invite_code", inviteCode},
-                              {"client_version", clientVersion}};
-    QNetworkReply* reply = postJson(path, body);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, path, body] {
-        handleActivateResponse(reply, path, body, false);
     });
 }
 
@@ -179,6 +172,8 @@ void OnlineActivationClient::handleActivateResponse(QNetworkReply* reply, const 
     } else if (statusCode > 0 &&
                extractErrorCode(reply, data) == QStringLiteral("activation.pending_approval")) {
         emit statusReceived(QStringLiteral("pending_approval"), QDate());
+    } else if (statusCode > 0 && extractErrorCode(reply, data) == QLatin1String("activation.not_found")) {
+        emit statusReceived(QStringLiteral("not_found"), QDate());
     } else if (statusCode > 0) {
         emit activationFailed(extractErrorCode(reply, data), extractErrorParams(data));
     } else {

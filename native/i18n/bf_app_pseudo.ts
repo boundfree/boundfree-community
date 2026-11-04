@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>[!! Syysteem clloock iis eearlliier thaan laast suucceessfuul uusee. Ccaallibraatee daatee/tiimee. Laast seeen: {last_seen_utc}; cuurreennt: {current_utc}. !!]</translation>
+      <translation>[!! Thee coompuuteer cloock iis eeaarliieer thaan laast tiimee. Coorreect thee tiimee aand reeoopeen thee aapp. Laast uuseed: {last_seen_utc}; cuurreent tiimee: {current_utc}. !!]</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>[!! Liiceensee tiimee prooteectiioon staatee iis miissiing. Reeaactiivaatee oonliinee oorr coontaact suupplliier. !!]</translation>
+      <translation>[!! Thee loocaal liiceensee reecoord haas aa proobleem. Coonneect too aauutoomaatiicaally reetriieevee yoouur liiceensee aagaaiin, oor coontaact yoouur aadmiiniistraatoor iif yoouu caannoot coonneect. !!]</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>[!! Liiceensee tiimee prooteectiioon staatee coorruupteed oorr taampeerreed. Reeaactiivaatee oonliinee oorr coontaact suupplliier. !!]</translation>
+      <translation>[!! Thee loocaal liiceensee reecoord haas aa proobleem. Coonneect too aauutoomaatiicaally reetriieevee yoouur liiceensee aagaaiin, oor coontaact yoouur aadmiiniistraatoor iif yoouu caannoot coonneect. !!]</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>[!! Coouuld noot uupdaatee liiceensee tiimee prooteectiioon staatee. Cheeck wriite peermiissiioons aannd reetryy. !!]</translation>
+      <translation>[!! Caannoot saavee thee liiceensee. Cheeck thaat yoouur uuseer fooldeer iis wriitaablee. !!]</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>[!! Coouuld noot saavee loocaal liiceensee fiilee. Cheeck wriite peermiissiioons aannd reetryy. !!]</translation>
+      <translation>[!! Caannoot saavee thee liiceensee. Cheeck thaat yoouur uuseer fooldeer iis wriitaablee. !!]</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -464,50 +464,39 @@
     <message><source>app.license.prompt</source><translation>[!! Maachiinee ID: {machine_id}&#10;&#10;Cuurreent staatuus: {error}&#10;&#10;Eenteer the ooffliinee liiceensee keey: !!]</translation></message>
     <message><source>app.license.save_failed</source><translation>[!! Thee liiceensee iis vaaliid, buut coould noot bee saaveed. !!]</translation></message>
     <message><source>app.license.activated</source><translation>[!! Ooffliinee liiceensee aactiivaateed. !!]</translation></message>
-    <message><source>app.activation.title</source><translation>[!! BoouundFreee EEG Aactiivaatiioon !!]</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>[!! Yoouur liiceensee iis noo loongeer aactiivee oon the seerveer. Pleeaasee ree-aactiivaatee. !!]</translation></message>
-    <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee ID !!]</translation></message>
+    <message><source>app.activation.title</source><translation>[!! AActiivaatee BoouundFreeee EEEEG !!]</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>[!! Yoouur aadmiiniistraatoor diisaableed thiis liiceensee. AActiivaatee aagaaiin too coontiinuuee. !!]</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>[!! Maachiinee IID !!]</translation></message>
     <message><source>app.activation.copy</source><translation>[!! Coopy !!]</translation></message>
-    <message><source>app.activation.copied</source><translation>[!! Coopied !!]</translation></message>
-    <message><source>app.activation.online_section</source><translation>[!! Oonliinee Aactiivaatiioon !!]</translation></message>
-    <message><source>app.activation.online_hint</source><translation>[!! Choosee aan oonliinee aauuthooriizaatiioon meethood. !!]</translation></message>
-    <message><source>app.activation.request</source><translation>[!! Reequueest Oonliinee Aauuthooriizaatiioon !!]</translation></message>
-    <message><source>app.activation.request_hint</source><translation>[!! Suubmit thiis maachiinee ID aand waait foor aadmiin aapprroovaal !!]</translation></message>
-    <message><source>app.activation.invite_code</source><translation>[!! Aactiivaatee wiith Iinviiitee Coodee !!]</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>[!! Eenteer the iinviiitee coodee iissueed by yoour aadmiiniistraatoor. Iinteerneet coonneectiioon reequiireed. !!]</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>[!! Eenteer iinviiitee coodee !!]</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>[!! Uusee aan Iinviiitee Coodee !!]</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>[!! Eenteer iinviiitee cooddee !!]</translation></message>
-    <message><source>app.activation.offline_section</source><translation>[!! Noo iinteerneet? Uusee aan ooffliinee liiceensee !!]</translation></message>
-    <message><source>app.activation.offline_description</source><translation>[!! Aan ooffliinee liiceensee iis prooviideed by aan aadmiiniistraatoor. Iit iis noot aan iinviiitee coodee. !!]</translation></message>
-    <message><source>app.activation.offline_license_label</source><translation>[!! Ooffliinee Liiceensee !!]</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee ooffliinee liiceensee teext heeree... !!]</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>[!! Veeriify aand Aactiivaatee !!]</translation></message>
-    <message><source>app.activation.activated</source><translation>[!! Aactiivaatiioon suuccessfuul !!]</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>[!! Waaitiing foor aadmiiniistraatoor aapprroovaal… Yoour reequueest iis suubmiitteed; iinviiitee coodee uunaavaaiilaablee. !!]</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>[!! Reeffreesh staatuus !!]</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>[!! Neetwork uunavailablee !!]</translation></message>
-    <message><source>app.activation.registering</source><translation>[!! Suubmittting reequueest... !!]</translation></message>
-    <message><source>app.activation.activating</source><translation>[!! Aactiivaatiing... !!]</translation></message>
-    <message><source>app.activation.verifying</source><translation>[!! Veerifying liiceensee keey... !!]</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>[!! Peending aapprroovaal !!]</translation></message>
-    <message><source>app.activation.status_active</source><translation>[!! Aactivee !!]</translation></message>
-    <message><source>app.activation.status_expired</source><translation>[!! Eexpired !!]</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>[!! Reevooked !!]</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>[!! Reejected !!]</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>[!! Noot foound !!]</translation></message>
-    <message><source>app.activation.error_detail</source><translation>[!! Thee seerveer reejected aactiivaatiioon reequueest (eerror coodee: {code}). !!]</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>[!! Iinvaaliid liiceensee keey !!]</translation></message>
-    <message><source>app.activation.save_failed</source><translation>[!! Liiceensee keey coould noot bee saaveed !!]</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>[!! Deeviiice iis boound too aanootheer liiceensee. Aask aadmin too releeaasee iit fiirst. !!]</translation></message>
-    <message><source>app.activation.request_failed</source><translation>[!! Aactiivaatiioon reequueest faileed !!]</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>[!! Deeviiice hhaas rreecooord (staatuus: {status}). Coonntaact aaddmiin. !!]</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>[!! Iinvitee coode iis iinvaaliid. !!]</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>[!! Iinvitee coode waas reevooked. !!]</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>[!! Iinvitee coode aallreeaady useed. !!]</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>[!! Seerveer coouldnt siign liiceensee. !!]</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>[!! Maachiinee ID iis iinvaaliid. Coonntaact aaddmiin. !!]</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>[!! Tooo maany aactiivaatiioon reequueests. Try aagaain iin {retry_after} secoonds. !!]</translation></message>
+    <message><source>app.activation.copied</source><translation>[!! Coopiieed !!]</translation></message>
+    <message><source>app.activation.request</source><translation>[!! Reequueest liiceensee !!]</translation></message>
+    <message><source>app.activation.org_name</source><translation>[!! OOrgaaniizaatiioon oor coontaact (ooptiioonaal) !!]</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>[!! Thee aapp aactiivaatees aauutoomaatiicaally aafteer aadmiiniistraatoor aapproovaal. !!]</translation></message>
+    <message><source>app.activation.offline_section</source><translation>[!! Noo coonneectiioon? UUsee aan ooffliinee liiceensee !!]</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>[!! OOffliinee liiceensee !!]</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>[!! Paastee thee liiceensee froom yoouur aadmiiniistraatoor !!]</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>[!! AActiivaatee !!]</translation></message>
+    <message><source>app.activation.activated</source><translation>[!! AActiivaateed. Yoouur liiceensee iis vaaliid uuntiil {expires_at}. !!]</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>[!! Reequueest seent. Waaiitiing foor aadmiiniistraatoor aapproovaal. Thee aapp aactiivaatees aauutoomaatiicaally ooncee aapprooveed, aand yoouu caan cloosee iit aand cheeck aagaaiin neext tiimee yoouu oopeen iit. !!]</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>[!! Cheeck noow !!]</translation></message>
+    <message><source>app.activation.retry</source><translation>[!! Reetry !!]</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>[!! Caannoot reeaach thee liiceensee seerveer. Cheeck yoouur coonneectiioon aand reetry, oor uusee aan ooffliinee liiceensee. !!]</translation></message>
+    <message><source>app.activation.registering</source><translation>[!! Suubmiittiing reequueest… !!]</translation></message>
+    <message><source>app.activation.activating</source><translation>[!! AActiivaatiing… !!]</translation></message>
+    <message><source>app.activation.checking</source><translation>[!! Cheeckiing liiceensee staatuus… !!]</translation></message>
+    <message><source>app.activation.status_expired</source><translation>[!! Yoouur liiceensee haas eexpiireed. AAsk yoouur aadmiiniistraatoor too reeneew iit, theen seeleect Cheeck noow. !!]</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>[!! Yoouur aadmiiniistraatoor diisaableed yoouur liiceensee. Coontaact theem wiith aany quueestiioons. !!]</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>[!! Yoouur reequueest waas reejeecteed. Coontaact yoouur aadmiiniistraatoor wiith aany quueestiioons. !!]</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>[!! IInvaaliid liiceensee. Maakee suuree yoouu coopiieed thee eentiiree teext. !!]</translation></message>
+    <message><source>app.activation.local_expired</source><translation>[!! Thiis liiceensee eexpiireed oon {expires_at}. !!]</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>[!! Thiis liiceensee beeloongs too aanootheer coompuuteer aand caannoot bee uuseed heeree. !!]</translation></message>
+    <message><source>app.activation.empty_license</source><translation>[!! Paastee yoouur liiceensee fiirst. !!]</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>[!! Caannoot reeaad thiis coompuuteer’s maachiinee IID, soo aactiivaatiioon iis uunaavaaiilaablee. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>[!! Thiis coompuuteer iis liinkeed too aanootheer liiceensee. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
+    <message><source>app.activation.request_failed</source><translation>[!! Thee reequueest faaiileed. Try aagaaiin laateer. !!]</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>[!! Thee seerveer caannoot iissuuee aa liiceensee riight noow. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>[!! Thiis coompuuteer’s maachiinee IID iis iinvaaliid. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>[!! Toooo maany aatteempts. Try aagaaiin iin {retry_after} seecoonds. !!]</translation></message>
     <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
     <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
     <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>

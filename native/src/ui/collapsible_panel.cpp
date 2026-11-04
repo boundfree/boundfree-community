@@ -35,19 +35,17 @@ void CollapsiblePanel::setContentLayout(QLayout* layout) {
     if (content_ == nullptr || layout == nullptr) {
         return;
     }
-    // Move every item from the caller's layout into the persistent content
-    // layout, then delete the now-empty caller layout. This avoids the
-    // "widget already has a layout" warning and keeps a single stable layout
-    // on the content widget across the panel's lifetime.
+    contentLayout_->setContentsMargins(layout->contentsMargins());
+    contentLayout_->setSpacing(layout->spacing());
     while (auto* item = layout->takeAt(0)) {
         if (auto* w = item->widget()) {
-            contentLayout_->addWidget(w);
+            contentLayout_->addWidget(w, 0, item->alignment());
+            delete item;
         } else if (auto* sub = item->layout()) {
             contentLayout_->addLayout(sub);
-        } else if (auto* sp = item->spacerItem()) {
-            contentLayout_->addItem(sp);
+        } else {
+            contentLayout_->addItem(item);
         }
-        delete item;
     }
     delete layout;
 }
