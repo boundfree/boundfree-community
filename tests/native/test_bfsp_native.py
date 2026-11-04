@@ -50,6 +50,14 @@ def test_bfsp_tcp_interoperability(case):
     assert "BFSP_TCP_CLIENT_TEST PASS" in result.stdout, result.stdout
 
 
+def windows_qt_environment(env):
+    """Windows offscreen runs need the system font directory, and Qt logs to stderr only when forced."""
+    if os.name == "nt":
+        env.setdefault("QT_QPA_FONTDIR", str(Path(os.environ["SystemRoot"]) / "Fonts"))
+        env.setdefault("QT_FORCE_STDERR_LOGGING", "1")
+    return env
+
+
 def run_process_tree(command, env, timeout):
     """Run a test binary; on timeout kill it with any simulator children and report its output.
 
@@ -77,6 +85,7 @@ def test_acquisition_raw_recording(name):
     env = os.environ.copy()
     env.setdefault("BF_PYTHON_EXECUTABLE", sys.executable)
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    windows_qt_environment(env)
     returncode, stdout, stderr = run_process_tree([str(native_binary(name)), str(ROOT)], env, timeout=240)
     assert returncode == 0, f"{stdout}\n{stderr}"
     assert "PASS" in stdout + stderr, stdout + stderr
@@ -86,9 +95,7 @@ def test_unified_device_waveform():
     env = os.environ.copy()
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
     env.setdefault("BF_PYTHON_EXECUTABLE", sys.executable)
-    if os.name == "nt":
-        env.setdefault("QT_QPA_FONTDIR", str(Path(os.environ["SystemRoot"]) / "Fonts"))
-        env.setdefault("QT_FORCE_STDERR_LOGGING", "1")
+    windows_qt_environment(env)
     result = subprocess.run([str(native_binary("bf_app")), "--smoke-ui-device-waveform"],
                             cwd=ROOT, env=env, capture_output=True, text=True, timeout=90)
     assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
@@ -100,6 +107,7 @@ def test_common_signal_processing_analysis_and_independent_raw_recording():
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
     env.setdefault("BF_PYTHON_EXECUTABLE", sys.executable)
     env["BF_SIDECAR_EXECUTABLE"] = ""
+    windows_qt_environment(env)
     result = subprocess.run([str(native_binary("bf_app")), "--smoke-ui-unified-tools"],
                             cwd=ROOT, env=env, capture_output=True, text=True,
                             encoding="utf-8", errors="replace", timeout=180)
@@ -112,6 +120,7 @@ def test_continuous_device_ica_with_fixed_reviewed_model():
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
     env.setdefault("BF_PYTHON_EXECUTABLE", sys.executable)
     env["BF_SIDECAR_EXECUTABLE"] = ""
+    windows_qt_environment(env)
     result = subprocess.run([str(native_binary("bf_app")), "--smoke-ui-live-ica"],
                             cwd=ROOT, env=env, capture_output=True, text=True,
                             encoding="utf-8", errors="replace", timeout=180)
