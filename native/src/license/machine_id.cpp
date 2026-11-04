@@ -100,7 +100,11 @@ QString readPrimaryMacAddressWin() {
 #else  // Non-Windows (Linux/WSL2 dev)
 
 QString readMachineGuidPosix() {
-    return QProcessEnvironment::systemEnvironment().value("BF_MOCK_MACHINE_GUID");
+    if (qEnvironmentVariableIsSet("BF_MOCK_MACHINE_GUID")) {
+        return qEnvironmentVariable("BF_MOCK_MACHINE_GUID").trimmed();
+    }
+    return readMachineGuidFromFiles({QStringLiteral("/etc/machine-id"),
+                                     QStringLiteral("/var/lib/dbus/machine-id")});
 }
 
 QString readPrimaryMacAddressPosix() {
@@ -132,7 +136,23 @@ QString readPrimaryMacAddressPosix() {
 }  // namespace
 
 QString machineIdCanonical(const QString& machineGuid) {
+    if (machineGuid.trimmed().isEmpty()) {
+        return {};
+    }
     return QString::fromLatin1(canonicalDigest(machineGuid));
+}
+
+QString readMachineGuidFromFiles(const QStringList& paths) {
+    for (const QString& path : paths) {
+        QFile file(path);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            const QString guid = QString::fromUtf8(file.readAll()).trimmed();
+            if (!guid.isEmpty()) {
+                return guid;
+            }
+        }
+    }
+    return {};
 }
 
 QString machineIdCanonicalFromFormatted(const QString& formattedMachineId) {
