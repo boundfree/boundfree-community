@@ -83,13 +83,12 @@
 #ifdef BF_REQUIRE_LICENSE
 namespace {
 
-bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
+bool ensureOfflineLicense(bf::LicenseManager& manager, const bf::VersionInfo& version,
+                          bf::I18nService& i18n, bool smokeGate, bool& checkOnline) {
     // Automated smoke gate verifies the gate path without waiting for online network or interactive dialogs.
     if (smokeGate) {
         return false;
     }
-
-    bf::LicenseManager manager(version.version, repoRoot);
 
     // Level 1: check saved license.dat exactly once (no network, instant).
     // The result — including structured clock-watermark failures — is kept
@@ -97,22 +96,12 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
     // in the status bar instead of being lost.
     const bf::LicenseResult startupCheck = manager.checkSavedLicense();
     if (startupCheck.ok()) {
-        // Legacy keys are offline-compatible: do not let an absent or stale
-        // server record invalidate a locally verified offline authorization.
-        if (!bf::ActivationDialog::requiresOnlineStatusCheck(startupCheck)) {
-            return true;
-        }
-        // Server-managed keys retain remote revocation checks and fail open on
-        // a network error or timeout.
-        if (bf::ActivationDialog::checkAndHandleRevocation(
-                &manager, version, const_cast<bf::I18nService*>(&i18n))) {
-            return true;
-        }
+        checkOnline = bf::ActivationDialog::requiresOnlineStatusCheck(startupCheck);
+        return true;
     }
 
     {
-        bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n),
-                                 startupCheck);
+        bf::ActivationDialog dlg(&manager, version, &i18n, startupCheck);
         if (dlg.exec() == QDialog::Accepted) {
             return true;
         }
@@ -2605,7 +2594,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 #ifdef BF_REQUIRE_LICENSE
-    if (!ensureOfflineLicense(version, repoRoot, i18n, parser.isSet(smokeLicenseGateOpt))) {
+    bf::LicenseManager licenseManager(version.version, repoRoot);
+    bool checkOnlineLicense = false;
+    if (!ensureOfflineLicense(licenseManager, version, i18n, parser.isSet(smokeLicenseGateOpt),
+                              checkOnlineLicense)) {
         if (parser.isSet(smokeLicenseGateOpt)) {
             std::cout << "smoke-license-gate-ok\n";
         }
@@ -2656,6 +2648,13 @@ int main(int argc, char** argv) {
         }
     });
     window.show();
+#ifdef BF_REQUIRE_LICENSE
+    if (checkOnlineLicense) {
+        QTimer::singleShot(0, &window, [&] {
+            bf::ActivationDialog::checkAndHandleRevocation(&licenseManager, version, &i18n, &window);
+        });
+    }
+#endif
     window.setSidecarConnecting();
 
     QTimer::singleShot(0, &window, [&]() {

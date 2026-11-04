@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>目前系統時間早於此裝置上一次成功使用的記錄，請校準日期時間；若問題仍持續，可線上重新啟用或聯絡供應商。上次使用時間：{last_seen_utc}；目前時間：{current_utc}。</translation>
+      <translation>電腦時間早於上次使用時間。請調整系統時間後重新開啟軟體。上次使用：{last_seen_utc}，目前時間：{current_utc}。</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>本機授權時間保護狀態缺失，請線上重新啟用或聯絡供應商。</translation>
+      <translation>本機授權紀錄異常。連線後會自動重新取得授權，無法連線請聯絡管理員。</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>本機授權時間保護狀態損毀或疑似遭到竄改，請線上重新啟用或聯絡供應商。</translation>
+      <translation>本機授權紀錄異常。連線後會自動重新取得授權，無法連線請聯絡管理員。</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>無法更新本機授權時間保護狀態，請檢查使用者資料目錄的寫入權限後重試。</translation>
+      <translation>無法儲存授權，請檢查使用者目錄是否可寫入。</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>無法儲存本機授權檔案，請檢查使用者資料目錄的寫入權限後重試。</translation>
+      <translation>無法儲存授權，請檢查使用者目錄是否可寫入。</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -469,50 +469,39 @@
     <message><source>app.spike.export.no_result</source><translation>無可匯出的 Spike 結果</translation></message>
     <message><source>app.spike.export.completed</source><translation>已匯出 {rows} 個 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 匯出失敗：{reason}</translation></message>
-    <message><source>app.activation.title</source><translation>BoundFree EEG 啟用</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>授權已被註銷或撤銷，請重新啟用。</translation></message>
+    <message><source>app.activation.title</source><translation>啟用 BoundFree EEG</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>本機授權已被管理員停用，請重新啟用以繼續使用。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本機機器碼</translation></message>
     <message><source>app.activation.copy</source><translation>複製</translation></message>
-    <message><source>app.activation.copied</source><translation>已複製到剪貼簿</translation></message>
-    <message><source>app.activation.online_section</source><translation>線上啟用</translation></message>
-    <message><source>app.activation.online_hint</source><translation>請選擇一種線上授權方式。</translation></message>
-    <message><source>app.activation.request</source><translation>申請線上授權</translation></message>
-    <message><source>app.activation.request_hint</source><translation>提交本機機器碼後等待管理員審批</translation></message>
-    <message><source>app.activation.invite_code</source><translation>輸入邀請碼並啟用</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>輸入管理員發放的邀請碼，需要網路連線。</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>請輸入邀請碼（格式：BF-XXXX-YYYY）</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>使用邀請碼</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>輸入邀請碼</translation></message>
+    <message><source>app.activation.copied</source><translation>已複製</translation></message>
+    <message><source>app.activation.request</source><translation>申請授權</translation></message>
+    <message><source>app.activation.org_name</source><translation>單位或聯絡人（選填）</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>管理員核准後自動啟用。</translation></message>
     <message><source>app.activation.offline_section</source><translation>無法連線？使用離線授權</translation></message>
-    <message><source>app.activation.offline_description</source><translation>離線授權由管理員或離線簽發工具提供。它不是邀請碼，通常是一段較長的授權文字。</translation></message>
     <message><source>app.activation.offline_license_label</source><translation>離線授權</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>在此貼上離線授權文字...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>驗證並啟用</translation></message>
-    <message><source>app.activation.activated</source><translation>啟用成功！即將進入主介面。</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>等待管理員審批中…（每 30 秒自動重新整理）。申請已提交，不能改用邀請碼；如需更換方式請聯絡管理員。</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>重新整理狀態</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>網路無法使用，請檢查網路連線或使用離線啟用碼</translation></message>
-    <message><source>app.activation.registering</source><translation>正在提交申請...</translation></message>
-    <message><source>app.activation.activating</source><translation>正在啟用...</translation></message>
-    <message><source>app.activation.verifying</source><translation>正在驗證啟用碼...</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>等待審批</translation></message>
-    <message><source>app.activation.status_active</source><translation>已啟用</translation></message>
-    <message><source>app.activation.status_expired</source><translation>已過期</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>已撤銷</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>未找到啟用記錄</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>啟用碼無效，請檢查後重試</translation></message>
-    <message><source>app.activation.save_failed</source><translation>啟用碼有效但無法儲存，請檢查磁碟權限</translation></message>
-    <message><source>app.activation.error_detail</source><translation>伺服器拒絕啟用請求（錯誤代碼：{code}）。</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>已拒絕</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>此裝置已綁定其他授權，請聯絡管理員釋放原裝置綁定後再重新啟用</translation></message>
-    <message><source>app.activation.request_failed</source><translation>啟用請求失敗，請稍後重試或使用離線啟用碼</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>該裝置已有啟用記錄（狀態：{status}），如需重新啟用請聯絡管理員</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>邀請碼無效或格式錯誤，請檢查後重試</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>該邀請碼已被撤銷，請聯絡管理員取得新邀請碼</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>該邀請碼已被其他裝置使用，請聯絡管理員取得新邀請碼</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>伺服器簽發啟用碼失敗，請聯絡管理員</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>本機機器碼格式無效，請聯絡管理員。</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>啟用請求過於頻繁，請在 {retry_after} 秒後重試。</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>貼上管理員提供的授權</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>啟用</translation></message>
+    <message><source>app.activation.activated</source><translation>啟用成功，授權有效期限至 {expires_at}。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>申請已提交，等待管理員核准。核准後自動啟用，也可先關閉軟體，下次開啟時會自動檢查。</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>立即檢查</translation></message>
+    <message><source>app.activation.retry</source><translation>重試</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>無法連接授權伺服器。請檢查網路後重試，或使用離線授權。</translation></message>
+    <message><source>app.activation.registering</source><translation>正在提交申請…</translation></message>
+    <message><source>app.activation.activating</source><translation>正在啟用…</translation></message>
+    <message><source>app.activation.checking</source><translation>正在檢查授權狀態…</translation></message>
+    <message><source>app.activation.status_expired</source><translation>授權已到期。請聯絡管理員續期，之後按「立即檢查」。</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>授權已被管理員停用。如有疑問請聯絡管理員。</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>申請未通過。如有疑問請聯絡管理員。</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>授權無效，請確認已完整複製。</translation></message>
+    <message><source>app.activation.local_expired</source><translation>本機授權已於 {expires_at} 到期。</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>此授權屬於另一台電腦，無法在本機使用。</translation></message>
+    <message><source>app.activation.empty_license</source><translation>請先貼上授權文字。</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>讀取不到本機機器碼，無法啟用。請聯絡管理員。</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>本機已綁定其他授權，請聯絡管理員。</translation></message>
+    <message><source>app.activation.request_failed</source><translation>請求失敗，請稍後重試。</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>伺服器暫時無法簽發授權，請聯絡管理員。</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>本機機器碼無效，請聯絡管理員。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>請求過於頻繁，請在 {retry_after} 秒後重試。</translation></message>
     <message><source>app.browser.auto_amplitude</source><translation>自動振幅</translation></message>
     <message><source>app.processing.per_channel</source><translation>逐通道帶通</translation></message>
     <message><source>app.processing.inherit</source><translation>繼承全域</translation></message>

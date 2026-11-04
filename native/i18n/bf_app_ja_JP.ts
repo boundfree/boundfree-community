@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>システム時計がこのデバイスの最終成功使用記録より早い時刻になっています。日付と時刻を調整してください。問題が続く場合は、オンラインで再アクティベートするか、販売元にご連絡ください。最終使用時刻：{last_seen_utc}；現在時刻：{current_utc}。</translation>
+      <translation>コンピューターの時刻が前回より早くなっています。時刻を修正し、アプリを再起動してください。前回：{last_seen_utc}、現在：{current_utc}。</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>本機のライセンス時間保護状態がありません。オンラインで再アクティベートするか、販売元にご連絡ください。</translation>
+      <translation>このコンピューターのライセンス記録に問題があります。接続すると自動的にライセンスを再取得しますが、接続できない場合は管理者に連絡してください。</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>本機のライセンス時間保護状態が破損しているか、改ざんされた可能性があります。オンラインで再アクティベートするか、販売元にご連絡ください。</translation>
+      <translation>このコンピューターのライセンス記録に問題があります。接続すると自動的にライセンスを再取得しますが、接続できない場合は管理者に連絡してください。</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>本機のライセンス時間保護状態を更新できませんでした。ユーザーデータディレクトリの書き込み権限を確認して、もう一度お試しください。</translation>
+      <translation>ライセンスを保存できません。ユーザーフォルダーの書き込み権限を確認してください。</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>本機のライセンスファイルを保存できませんでした。ユーザーデータディレクトリの書き込み権限を確認して、もう一度お試しください。</translation>
+      <translation>ライセンスを保存できません。ユーザーフォルダーの書き込み権限を確認してください。</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -469,50 +469,39 @@
     <message><source>app.spike.export.no_result</source><translation>エクスポートする Spike 結果がありません</translation></message>
     <message><source>app.spike.export.completed</source><translation>{rows} 件の Spike イベントを {path} にエクスポートしました</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike のエクスポートに失敗しました：{reason}</translation></message>
-    <message><source>app.activation.title</source><translation>BoundFree EEG アクティベーション</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>ライセンスはサーバー上で無効になりました。再アクティベートしてください。</translation></message>
-    <message><source>app.activation.machine_id_label</source><translation>マシン ID</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG を有効化</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>管理者がライセンスを停止しました。続行するには再度有効化してください。</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>このコンピューターの識別コード</translation></message>
     <message><source>app.activation.copy</source><translation>コピー</translation></message>
-    <message><source>app.activation.copied</source><translation>クリップボードにコピーしました</translation></message>
-    <message><source>app.activation.online_section</source><translation>オンラインアクティベーション</translation></message>
-    <message><source>app.activation.online_hint</source><translation>オンラインの認証方法を選択してください。</translation></message>
-    <message><source>app.activation.request</source><translation>オンライン認証を申請</translation></message>
-    <message><source>app.activation.request_hint</source><translation>このマシン ID を送信し、管理者の承認をお待ちください</translation></message>
-    <message><source>app.activation.invite_code</source><translation>招待コードでアクティベート</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>管理者から発行された招待コードを入力してください。インターネット接続が必要です。</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>招待コードを入力してください（形式：BF-XXXX-YYYY）</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>招待コードを使用</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>招待コードを入力</translation></message>
-    <message><source>app.activation.offline_section</source><translation>インターネットに接続できませんか？オフラインライセンスを使用</translation></message>
-    <message><source>app.activation.offline_description</source><translation>オフラインライセンスは管理者またはオフライン発行ツールから提供されます。招待コードではなく、通常は長いライセンス文です。</translation></message>
+    <message><source>app.activation.copied</source><translation>コピー済み</translation></message>
+    <message><source>app.activation.request</source><translation>ライセンスを申請</translation></message>
+    <message><source>app.activation.org_name</source><translation>所属または連絡先（任意）</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>管理者の承認後、自動的に有効化されます。</translation></message>
+    <message><source>app.activation.offline_section</source><translation>接続できない場合はオフラインライセンスを使用</translation></message>
     <message><source>app.activation.offline_license_label</source><translation>オフラインライセンス</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>オフラインライセンス文をここに貼り付け...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>検証してアクティベート</translation></message>
-    <message><source>app.activation.activated</source><translation>アクティベーション成功！メイン画面に入ります。</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>管理者の承認待ち…（30秒ごとに自動更新）。申請は送信済みのため、招待コードは使用できません。方法を変更する場合は管理者にお問い合わせください。</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>ステータスを更新</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>ネットワークに接続できません。接続を確認するか、オフラインライセンスキーを使用してください。</translation></message>
-    <message><source>app.activation.registering</source><translation>申請を送信中...</translation></message>
-    <message><source>app.activation.activating</source><translation>アクティベート中...</translation></message>
-    <message><source>app.activation.verifying</source><translation>ライセンスキーを検証中...</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>承認待ち</translation></message>
-    <message><source>app.activation.status_active</source><translation>アクティブ</translation></message>
-    <message><source>app.activation.status_expired</source><translation>期限切れ</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>失効</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>見つかりません</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>ライセンスキーが無効です。確認してもう一度お試しください。</translation></message>
-    <message><source>app.activation.save_failed</source><translation>ライセンスキーは有効ですが保存できません。ディスクの権限を確認してください。</translation></message>
-    <message><source>app.activation.error_detail</source><translation>サーバーがアクティベーション要求を拒否しました（エラーコード：{code}）。</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>拒否されました</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>このデバイスは別のライセンスに紐付いています。再度アクティベートする前に、管理者に以前のデバイス紐付けの解除を依頼してください。</translation></message>
-    <message><source>app.activation.request_failed</source><translation>アクティベーション要求に失敗しました。後でもう一度試すか、オフラインライセンスキーを使用してください。</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>このデバイスにはすでにレコードがあります（ステータス：{status}）。再度アクティベートする必要がある場合は管理者にお問い合わせください。</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>招待コードが無効または形式が正しくありません。確認してもう一度お試しください。</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>この招待コードは失効しています。管理者に新しいコードを依頼してください。</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>この招待コードはすでに別のデバイスで使用されています。管理者に新しいコードを依頼してください。</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>サーバーがライセンスに署名できませんでした。管理者にお問い合わせください。</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>マシン ID の形式が無効です。管理者にお問い合わせください。</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>アクティベーション要求が多すぎます。{retry_after} 秒後にもう一度お試しください。</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>管理者から提供されたライセンスを貼り付け</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>有効化</translation></message>
+    <message><source>app.activation.activated</source><translation>ライセンスを有効化しました。有効期限は {expires_at} です。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>申請を送信し、管理者の承認を待っています。承認後は自動で有効化され、アプリを閉じても次回起動時に確認します。</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>今すぐ確認</translation></message>
+    <message><source>app.activation.retry</source><translation>再試行</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>ライセンスサーバーに接続できません。接続を確認して再試行するか、オフラインライセンスを使用してください。</translation></message>
+    <message><source>app.activation.registering</source><translation>申請を送信しています…</translation></message>
+    <message><source>app.activation.activating</source><translation>有効化しています…</translation></message>
+    <message><source>app.activation.checking</source><translation>ライセンスの状態を確認しています…</translation></message>
+    <message><source>app.activation.status_expired</source><translation>ライセンスの期限が切れました。管理者に更新を依頼し、更新後に「今すぐ確認」を押してください。</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>管理者がライセンスを停止しました。ご不明な点は管理者にお問い合わせください。</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>申請は却下されました。ご不明な点は管理者にお問い合わせください。</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>ライセンスが無効です。全文をコピーしたか確認してください。</translation></message>
+    <message><source>app.activation.local_expired</source><translation>このライセンスは {expires_at} に期限が切れました。</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>このライセンスは別のコンピューター用で、このコンピューターでは使えません。</translation></message>
+    <message><source>app.activation.empty_license</source><translation>先にライセンスを貼り付けてください。</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>このコンピューターの識別コードを読み取れないため、有効化できません。管理者に連絡してください。</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>このコンピューターは別のライセンスに関連付けられています。管理者に連絡してください。</translation></message>
+    <message><source>app.activation.request_failed</source><translation>リクエストに失敗しました。しばらくしてから再試行してください。</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>サーバーで現在ライセンスを発行できません。管理者に連絡してください。</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>このコンピューターの識別コードが無効です。管理者に連絡してください。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>リクエストが多すぎます。{retry_after} 秒後に再試行してください。</translation></message>
     <message><source>app.browser.auto_amplitude</source><translation>振幅自動</translation></message>
     <message><source>app.processing.per_channel</source><translation>チャンネル別バンドパス</translation></message>
     <message><source>app.processing.inherit</source><translation>全体設定を継承</translation></message>

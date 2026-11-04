@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>시스템 시간이 이 기기에 기록된 마지막 성공 사용 시각보다 빠릅니다. 날짜와 시간을 교정해 주세요. 문제가 지속되면 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요. 마지막 사용: {last_seen_utc}, 현재: {current_utc}.</translation>
+      <translation>컴퓨터 시간이 마지막 사용 때보다 이전입니다. 시간을 바로잡고 앱을 다시 여세요. 마지막 사용: {last_seen_utc}, 현재: {current_utc}.</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>로컬 라이선스 시간 보호 상태가 없습니다. 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요.</translation>
+      <translation>로컬 라이선스 기록에 문제가 있습니다. 연결하여 자동으로 다시 받거나 관리자에게 문의하세요.</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>로컬 라이선스 시간 보호 상태가 손상되었거나 변조되었을 수 있습니다. 온라인으로 다시 활성화하거나 공급업체에 문의해 주세요.</translation>
+      <translation>로컬 라이선스 기록에 문제가 있습니다. 연결하여 자동으로 다시 받거나 관리자에게 문의하세요.</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>로컬 라이선스 시간 보호 상태를 업데이트할 수 없습니다. 사용자 데이터 디렉터리의 쓰기 권한을 확인한 후 다시 시도해 주세요.</translation>
+      <translation>라이선스를 저장할 수 없습니다. 사용자 폴더에 쓰기 권한이 있는지 확인하세요.</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>로컬 라이선스 파일을 저장할 수 없습니다. 사용자 데이터 디렉터리의 쓰기 권한을 확인한 후 다시 시도해 주세요.</translation>
+      <translation>라이선스를 저장할 수 없습니다. 사용자 폴더에 쓰기 권한이 있는지 확인하세요.</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -464,50 +464,39 @@
     <message><source>app.license.prompt</source><translation>app.license.prompt {machine_id} {error}</translation></message>
     <message><source>app.license.save_failed</source><translation>app.license.save_failed</translation></message>
     <message><source>app.license.activated</source><translation>app.license.activated</translation></message>
-    <message><source>app.activation.title</source><translation>BoundFree EEG Activation</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>라이선스가 서버에서 더 이상 활성 상태가 아닙니다. 다시 활성화해 주세요.</translation></message>
-    <message><source>app.activation.machine_id_label</source><translation>Machine ID</translation></message>
-    <message><source>app.activation.copy</source><translation>Copy</translation></message>
-    <message><source>app.activation.copied</source><translation>Copied</translation></message>
-    <message><source>app.activation.online_section</source><translation>Online Activation</translation></message>
-    <message><source>app.activation.online_hint</source><translation>Choose an online authorization method.</translation></message>
-    <message><source>app.activation.request</source><translation>Request Online Authorization</translation></message>
-    <message><source>app.activation.request_hint</source><translation>Submit this machine ID and wait for administrator approval</translation></message>
-    <message><source>app.activation.invite_code</source><translation>Activate with Invite Code</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>Enter the invite code issued by your administrator. An internet connection is required.</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>Enter invite code</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>Use an Invite Code</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>Enter invite code</translation></message>
-    <message><source>app.activation.offline_section</source><translation>No internet connection? Use an offline license</translation></message>
-    <message><source>app.activation.offline_description</source><translation>An offline license is provided by an administrator. It is not an invite code.</translation></message>
-    <message><source>app.activation.offline_license_label</source><translation>Offline License</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>Paste offline license text here...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>Verify and Activate</translation></message>
-    <message><source>app.activation.activated</source><translation>Activation successful</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>Waiting for administrator approval. Your request is submitted; invite code unavailable.</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>Refresh Status</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>Network unavailable</translation></message>
-    <message><source>app.activation.registering</source><translation>Submitting request...</translation></message>
-    <message><source>app.activation.activating</source><translation>Activating...</translation></message>
-    <message><source>app.activation.verifying</source><translation>Verifying license key...</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>Pending Approval</translation></message>
-    <message><source>app.activation.status_active</source><translation>Active</translation></message>
-    <message><source>app.activation.status_expired</source><translation>Expired</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>Revoked</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>Rejected</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>Not Found</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>Invalid license key. Please check and try again.</translation></message>
-    <message><source>app.activation.error_detail</source><translation>The server rejected the activation request (error code: {code}).</translation></message>
-    <message><source>app.activation.save_failed</source><translation>License key could not be saved</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>This device is bound to another license. Ask the administrator to release its prior device binding before activating again.</translation></message>
-    <message><source>app.activation.request_failed</source><translation>Activation request failed</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>This device already has a record (status: {status}). Contact the administrator if you need to re-activate.</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>The invite code is invalid or malformed. Please check and try again.</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>This invite code has been revoked. Ask the administrator for a new one.</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>This invite code has already been used by another device. Ask the administrator for a new one.</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>The server could not sign the license. Contact the administrator.</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>The machine ID is invalid. Contact the administrator.</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>Too many activation requests. Please try again in {retry_after} seconds.</translation></message>
+    <message><source>app.activation.title</source><translation>BoundFree EEG 활성화</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>라이선스가 중지되었습니다. 계속하려면 다시 활성화하세요.</translation></message>
+    <message><source>app.activation.machine_id_label</source><translation>이 컴퓨터의 기기 코드</translation></message>
+    <message><source>app.activation.copy</source><translation>복사</translation></message>
+    <message><source>app.activation.copied</source><translation>복사됨</translation></message>
+    <message><source>app.activation.request</source><translation>라이선스 신청</translation></message>
+    <message><source>app.activation.org_name</source><translation>소속 또는 연락처 (선택)</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>관리자 승인 후 자동으로 활성화됩니다.</translation></message>
+    <message><source>app.activation.offline_section</source><translation>연결할 수 없나요? 오프라인 라이선스 사용</translation></message>
+    <message><source>app.activation.offline_license_label</source><translation>오프라인 라이선스</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>관리자가 제공한 라이선스 텍스트를 붙여넣으세요</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>활성화</translation></message>
+    <message><source>app.activation.activated</source><translation>활성화되었습니다. 라이선스는 {expires_at}까지 유효합니다.</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>신청이 제출되어 승인을 기다리고 있습니다. 승인 후 자동으로 활성화되며 다음 실행 시에도 확인합니다.</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>지금 확인</translation></message>
+    <message><source>app.activation.retry</source><translation>다시 시도</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>라이선스 서버에 연결할 수 없습니다. 연결을 확인하고 다시 시도하거나 오프라인 라이선스를 사용하세요.</translation></message>
+    <message><source>app.activation.registering</source><translation>신청을 제출하는 중…</translation></message>
+    <message><source>app.activation.activating</source><translation>활성화하는 중…</translation></message>
+    <message><source>app.activation.checking</source><translation>라이선스 상태 확인 중…</translation></message>
+    <message><source>app.activation.status_expired</source><translation>라이선스가 만료되었습니다. 관리자에게 갱신을 요청하고 갱신 후 지금 확인을 누르세요.</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>관리자가 라이선스를 중지했습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>신청이 거절되었습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>라이선스 텍스트가 올바르지 않습니다. 전체를 복사해 다시 시도하세요.</translation></message>
+    <message><source>app.activation.local_expired</source><translation>이 라이선스는 {expires_at}에 만료되었습니다.</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>이 라이선스는 다른 컴퓨터용입니다.</translation></message>
+    <message><source>app.activation.empty_license</source><translation>먼저 라이선스 텍스트를 붙여넣으세요.</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>기기 코드를 읽을 수 없습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>이 컴퓨터는 다른 라이선스에 연결되어 있습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.request_failed</source><translation>요청에 실패했습니다. 다시 시도하거나 오프라인 라이선스를 사용하세요.</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>라이선스를 발급할 수 없습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>기기 코드가 올바르지 않습니다. 관리자에게 문의하세요.</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>요청이 너무 많습니다. {retry_after}초 후 다시 시도하세요.</translation></message>
 
     <message><source>app.spike.export.action</source><translation>Spike 결과 내보내기...</translation></message>
     <message><source>app.spike.export.no_result</source><translation>내보낼 Spike 결과가 없습니다</translation></message>

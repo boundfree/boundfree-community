@@ -1,6 +1,8 @@
 #include "license/online_activation_client.h"
 
 #include <QCoreApplication>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QList>
 #include <QNetworkAccessManager>
 #include <QTcpServer>
@@ -24,15 +26,28 @@ public:
         QObject::connect(&server_, &QTcpServer::newConnection, parent, [this] {
             QTcpSocket* socket = server_.nextPendingConnection();
             QObject::connect(socket, &QTcpSocket::readyRead, socket, [this, socket] {
-                const QByteArray request = socket->readAll();
+                QByteArray request = socket->property("request").toByteArray() + socket->readAll();
                 const int lineEnd = request.indexOf("\r\n");
-                if (lineEnd < 0 || responses_.isEmpty()) {
+                const int headerEnd = request.indexOf("\r\n\r\n");
+                if (lineEnd < 0 || headerEnd < 0 || responses_.isEmpty()) {
+                    socket->setProperty("request", request);
+                    return;
+                }
+                int contentLength = 0;
+                for (const QByteArray& line : request.left(headerEnd).split('\n')) {
+                    if (line.toLower().startsWith("content-length:")) contentLength = line.mid(15).trimmed().toInt();
+                }
+                if (request.size() < headerEnd + 4 + contentLength) {
+                    socket->setProperty("request", request);
                     return;
                 }
                 const QList<QByteArray> requestLine = request.left(lineEnd).split(' ');
                 const Response response = responses_.takeFirst();
                 if (requestLine.size() < 2 || requestLine[1] != response.expectedPath) {
                     valid_ = false;
+                }
+                if (requestLine.size() >= 2 && requestLine[1] == "/api/v1/register") {
+                    registrationBody_ = QJsonDocument::fromJson(request.mid(headerEnd + 4, contentLength)).object();
                 }
                 const QByteArray statusText = response.statusCode == 200 ? "OK"
                     : response.statusCode == 202 ? "Accepted" : "Conflict";
@@ -50,11 +65,13 @@ public:
     quint16 port() const { return server_.serverPort(); }
     void enqueue(Response response) { responses_.append(std::move(response)); }
     bool valid() const { return valid_ && responses_.isEmpty(); }
+    QJsonObject registrationBody() const { return registrationBody_; }
 
 private:
     QTcpServer server_;
     QList<Response> responses_;
     bool valid_ = true;
+    QJsonObject registrationBody_;
 };
 
 }  // namespace
@@ -139,10 +156,17 @@ int main(int argc, char** argv) {
                      [&](const QString&) { unexpectedFailure = true; app.quit(); });
 
     QTimer::singleShot(5000, &app, [&] { unexpectedFailure = true; app.quit(); });
-    client.registerDevice(QStringLiteral("00112233445566778899AABBCCDDEEFF"), QStringLiteral("0.1.50-dev"));
+    client.registerDevice(QStringLiteral("00112233445566778899AABBCCDDEEFF"), QStringLiteral("0.1.50-dev"),
+                          QString(140, 'h'), QString(70, 'o'), QString(140, 'n'));
     app.exec();
 
-    const bool passed = registrationRecovered && pendingReceived && rejectedReceived &&
+    const QJsonObject body = server.registrationBody();
+    const bool passed = body.value("machine_id").toString() == QStringLiteral("00112233445566778899AABBCCDDEEFF") &&
+                        body.value("client_version").toString() == QStringLiteral("0.1.50-dev") &&
+                        body.value("hostname").toString() == QString(128, 'h') &&
+                        body.value("os").toString() == QString(64, 'o') &&
+                        body.value("org_name").toString() == QString(128, 'n') &&
+                        !body.contains("invite_code") && registrationRecovered && pendingReceived && rejectedReceived &&
                         notFoundReceived && activationSucceeded && rateLimitReceived &&
                         !unexpectedFailure && server.valid();
     std::cout << (passed ? "online-activation-client-test: PASS\n"

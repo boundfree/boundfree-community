@@ -299,23 +299,23 @@
     </message>
     <message>
       <source>error.license.clock_rollback</source>
-      <translation>当前系统时间早于此设备上一次成功使用的记录，请校准日期时间；若问题仍持续，可在线重新激活或联系供应商。上次使用时间：{last_seen_utc}；当前时间：{current_utc}。</translation>
+      <translation>电脑时间比上次使用时更早。请把系统时间调准后重新打开软件。上次使用：{last_seen_utc}，当前时间：{current_utc}。</translation>
     </message>
     <message>
       <source>error.license.clock_state_missing</source>
-      <translation>本机授权时间保护状态缺失，请在线重新激活或联系供应商。</translation>
+      <translation>本机授权记录异常。联网后会自动重新获取授权；无法联网请联系管理员。</translation>
     </message>
     <message>
       <source>error.license.clock_state_corrupted</source>
-      <translation>本机授权时间保护状态损坏或疑似被篡改，请在线重新激活或联系供应商。</translation>
+      <translation>本机授权记录异常。联网后会自动重新获取授权；无法联网请联系管理员。</translation>
     </message>
     <message>
       <source>error.license.clock_state_write_failed</source>
-      <translation>无法更新本机授权时间保护状态，请检查用户数据目录的写权限后重试。</translation>
+      <translation>无法保存授权，请检查用户目录是否可写。</translation>
     </message>
     <message>
       <source>error.license.save_failed</source>
-      <translation>无法保存本机授权文件，请检查用户数据目录的写权限后重试。</translation>
+      <translation>无法保存授权，请检查用户目录是否可写。</translation>
     </message>
     <message>
       <source>error.internal.unexpected</source>
@@ -469,50 +469,39 @@
     <message><source>app.spike.export.no_result</source><translation>无可导出的 Spike 结果</translation></message>
     <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
     <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
-    <message><source>app.activation.title</source><translation>BoundFree EEG 激活</translation></message>
-    <message><source>app.activation.revoked_on_server</source><translation>授权已被注销或吊销，请重新激活。</translation></message>
+    <message><source>app.activation.title</source><translation>激活 BoundFree EEG</translation></message>
+    <message><source>app.activation.revoked_on_server</source><translation>本机授权已被管理员停用，需要重新激活才能继续使用。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>
     <message><source>app.activation.copy</source><translation>复制</translation></message>
-    <message><source>app.activation.copied</source><translation>已复制到剪贴板</translation></message>
-    <message><source>app.activation.online_section</source><translation>在线激活</translation></message>
-    <message><source>app.activation.online_hint</source><translation>请选择一种在线授权方式。</translation></message>
-    <message><source>app.activation.request</source><translation>申请在线授权</translation></message>
-    <message><source>app.activation.request_hint</source><translation>提交本机机器码后等待管理员审批</translation></message>
-    <message><source>app.activation.invite_code</source><translation>输入邀请码并激活</translation></message>
-    <message><source>app.activation.invite_code_hint</source><translation>输入管理员发放的邀请码，需要联网。</translation></message>
-    <message><source>app.activation.invite_code_prompt</source><translation>请输入邀请码（格式：BF-XXXX-YYYY）</translation></message>
-    <message><source>app.activation.invite_code_section</source><translation>使用邀请码</translation></message>
-    <message><source>app.activation.invite_code_placeholder</source><translation>输入邀请码</translation></message>
+    <message><source>app.activation.copied</source><translation>已复制</translation></message>
+    <message><source>app.activation.request</source><translation>申请授权</translation></message>
+    <message><source>app.activation.org_name</source><translation>单位或联系人（选填）</translation></message>
+    <message><source>app.activation.approval_hint</source><translation>管理员审批通过后自动激活。</translation></message>
     <message><source>app.activation.offline_section</source><translation>无法联网？使用离线许可证</translation></message>
-    <message><source>app.activation.offline_description</source><translation>离线许可证由管理员或离线签发工具提供。它不是邀请码，通常是一段较长的许可证文本。</translation></message>
     <message><source>app.activation.offline_license_label</source><translation>离线许可证</translation></message>
-    <message><source>app.activation.paste_placeholder</source><translation>在此粘贴离线许可证文本...</translation></message>
-    <message><source>app.activation.activate_btn</source><translation>验证并激活</translation></message>
-    <message><source>app.activation.activated</source><translation>激活成功！即将进入主界面。</translation></message>
-    <message><source>app.activation.status_waiting</source><translation>等待管理员审批中…（每 30 秒自动刷新）。申请已提交，不能改用邀请码；如需更换方式请联系管理员。</translation></message>
-    <message><source>app.activation.status_refresh</source><translation>刷新状态</translation></message>
-    <message><source>app.activation.network_unavailable</source><translation>网络不可用，请检查网络连接或使用离线激活码</translation></message>
-    <message><source>app.activation.registering</source><translation>正在提交申请...</translation></message>
-    <message><source>app.activation.activating</source><translation>正在激活...</translation></message>
-    <message><source>app.activation.verifying</source><translation>正在验证激活码...</translation></message>
-    <message><source>app.activation.status_pending_approval</source><translation>等待审批</translation></message>
-    <message><source>app.activation.status_active</source><translation>已激活</translation></message>
-    <message><source>app.activation.status_expired</source><translation>已过期</translation></message>
-    <message><source>app.activation.status_revoked</source><translation>已吊销</translation></message>
-    <message><source>app.activation.status_not_found</source><translation>未找到激活记录</translation></message>
-    <message><source>app.activation.invalid_key</source><translation>激活码无效，请检查后重试</translation></message>
-    <message><source>app.activation.save_failed</source><translation>激活码有效但无法保存，请检查磁盘权限</translation></message>
-    <message><source>app.activation.error_detail</source><translation>服务器拒绝了激活请求（错误代码：{code}）</translation></message>
-    <message><source>app.activation.status_rejected</source><translation>已拒绝</translation></message>
-    <message><source>app.activation.status_machine_already_bound</source><translation>该设备已绑定其他许可证，请联系管理员释放原设备绑定后重新激活</translation></message>
-    <message><source>app.activation.request_failed</source><translation>激活请求失败，请稍后重试或使用离线激活码</translation></message>
-    <message><source>app.activation.error_already_exists</source><translation>该设备已有激活记录（状态：{status}），如需重新激活请联系管理员</translation></message>
-    <message><source>app.activation.error_invalid_invite_code</source><translation>邀请码无效或格式错误，请检查后重试</translation></message>
-    <message><source>app.activation.error_invite_revoked</source><translation>该邀请码已被吊销，请联系管理员获取新邀请码</translation></message>
-    <message><source>app.activation.error_invite_already_used</source><translation>该邀请码已被其他设备使用，请联系管理员获取新邀请码</translation></message>
-    <message><source>app.activation.error_signing_failed</source><translation>服务器签发激活码失败，请联系管理员</translation></message>
-    <message><source>app.activation.error_invalid_machine_id</source><translation>本机机器码格式无效，请联系管理员。</translation></message>
-    <message><source>app.activation.error_rate_limited</source><translation>激活请求过于频繁，请在 {retry_after} 秒后重试。</translation></message>
+    <message><source>app.activation.paste_placeholder</source><translation>粘贴管理员提供的许可证</translation></message>
+    <message><source>app.activation.activate_btn</source><translation>激活</translation></message>
+    <message><source>app.activation.activated</source><translation>激活成功，授权有效期至 {expires_at}。</translation></message>
+    <message><source>app.activation.status_waiting</source><translation>已提交申请，等待管理员审批。通过后会自动激活，也可以先关闭软件，下次打开时自动检查。</translation></message>
+    <message><source>app.activation.status_refresh</source><translation>立即检查</translation></message>
+    <message><source>app.activation.retry</source><translation>重试</translation></message>
+    <message><source>app.activation.network_unavailable</source><translation>连不上授权服务器。请检查网络后重试，或使用离线许可证。</translation></message>
+    <message><source>app.activation.registering</source><translation>正在提交申请…</translation></message>
+    <message><source>app.activation.activating</source><translation>正在激活…</translation></message>
+    <message><source>app.activation.checking</source><translation>正在检查授权状态…</translation></message>
+    <message><source>app.activation.status_expired</source><translation>授权已到期。请联系管理员续期，续期后点击“立即检查”。</translation></message>
+    <message><source>app.activation.status_revoked</source><translation>授权已被管理员停用。如有疑问请联系管理员。</translation></message>
+    <message><source>app.activation.status_rejected</source><translation>申请未通过。如有疑问请联系管理员。</translation></message>
+    <message><source>app.activation.invalid_key</source><translation>许可证无效，请确认已完整复制。</translation></message>
+    <message><source>app.activation.local_expired</source><translation>本机授权已于 {expires_at} 到期。</translation></message>
+    <message><source>app.activation.wrong_machine</source><translation>这份许可证属于另一台电脑，不能在本机使用。</translation></message>
+    <message><source>app.activation.empty_license</source><translation>请先粘贴许可证。</translation></message>
+    <message><source>app.activation.machine_id_unavailable</source><translation>读取不到本机机器码，无法激活。请联系管理员。</translation></message>
+    <message><source>app.activation.status_machine_already_bound</source><translation>本机已绑定其他授权，请联系管理员处理。</translation></message>
+    <message><source>app.activation.request_failed</source><translation>请求没有成功，请稍后重试。</translation></message>
+    <message><source>app.activation.error_signing_failed</source><translation>服务器暂时无法签发授权，请联系管理员。</translation></message>
+    <message><source>app.activation.error_invalid_machine_id</source><translation>本机机器码无效，请联系管理员。</translation></message>
+    <message><source>app.activation.error_rate_limited</source><translation>操作太频繁，请 {retry_after} 秒后再试。</translation></message>
     <message><source>app.browser.auto_amplitude</source><translation>自动幅值</translation></message>
     <message><source>app.processing.per_channel</source><translation>逐通道带通</translation></message>
     <message><source>app.processing.inherit</source><translation>继承全局</translation></message>
