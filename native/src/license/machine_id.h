@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 namespace bf {
 
@@ -31,7 +32,7 @@ QString machineIdCanonicalFromFormatted(const QString& formattedMachineId);
 //
 // readMachineGuid():
 //   Windows: HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid (REG_SZ).
-//   Non-Windows: BF_MOCK_MACHINE_GUID env var (development only), else empty.
+//   Non-Windows: BF_MOCK_MACHINE_GUID override, then the system machine-id files.
 //
 // readPrimaryMacAddress() [diagnostics only — NOT part of the machine id]:
 //   Windows: first operational non-loopback adapter hardware address
@@ -47,6 +48,7 @@ QString machineIdCanonicalFromFormatted(const QString& formattedMachineId);
 // callers decide how to report the resulting license status. They never surface
 // user-visible localized text.
 QString readMachineGuid();
+QString readMachineGuidFromFiles(const QStringList& paths);
 QString readPrimaryMacAddress();
 QString currentMachineId();
 
