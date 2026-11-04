@@ -24,6 +24,12 @@ using namespace bf::acquisition;
 
 namespace {
 
+QElapsedTimer& testClock()
+{
+    static QElapsedTimer clock = [] { QElapsedTimer timer; timer.start(); return timer; }();
+    return clock;
+}
+
 // The TCP receive profile is 16 streams; the protocol permits up to 64.
 constexpr int ReceiveProfileMaxStreams = 16;
 
@@ -236,7 +242,13 @@ asyncio.run(main())
             process.waitForReadyRead(100);
             output += process.readAllStandardOutput();
             const auto match = QRegularExpression("127\\.0\\.0\\.1', (\\d+)").match(QString::fromUtf8(output));
-            if (match.hasMatch()) { port = match.captured(1).toUShort(); return port != 0; }
+            if (match.hasMatch()) {
+                port = match.captured(1).toUShort();
+                // Progress trace: shows which simulator stage is slow if CI times out.
+                std::printf("simulator ready port=%u elapsed=%lldms\n", unsigned(port), testClock().elapsed());
+                std::fflush(stdout);
+                return port != 0;
+            }
         }
         qWarning() << "Simulator startup:" << output << process.readAllStandardError();
         return false;
@@ -244,8 +256,14 @@ asyncio.run(main())
     ~Simulator()
     {
         if (process.state() != QProcess::NotRunning) {
+#ifdef Q_OS_WIN
+            // terminate() posts WM_CLOSE, which console Python ignores; avoid a 3 s wait per simulator.
+            process.kill();
+#else
             process.terminate();
-            if (!process.waitForFinished(3000)) { process.kill(); process.waitForFinished(); }
+            if (!process.waitForFinished(3000)) process.kill();
+#endif
+            process.waitForFinished(3000);
         }
     }
     quint16 port = 0;
@@ -272,6 +290,7 @@ bool isIdle(const AcquisitionTcpSource& source)
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
+    testClock();
     QTemporaryDir logDirectory; qputenv("BF_ACQUISITION_LOG_DIRECTORY", logDirectory.path().toUtf8());
     QString root = qEnvironmentVariable("BF_REPO_ROOT");
 #ifdef BF_REPO_ROOT

@@ -50,15 +50,36 @@ def test_bfsp_tcp_interoperability(case):
     assert "BFSP_TCP_CLIENT_TEST PASS" in result.stdout, result.stdout
 
 
+def run_process_tree(command, env, timeout):
+    """Run a test binary; on timeout kill it with any simulator children and report its output.
+
+    subprocess.run(timeout=...) only kills the direct child. On Windows a surviving
+    simulator keeps the output pipes open, so collecting output would block indefinitely.
+    """
+    flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+    process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, encoding="utf-8", errors="replace", creationflags=flags,
+                               start_new_session=os.name != "nt")
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)], capture_output=True)
+        else:
+            os.killpg(process.pid, 9)
+        stdout, stderr = process.communicate(timeout=30)
+        pytest.fail(f"{command[0]} timed out after {timeout} s\n{stdout}\n{stderr}")
+    return process.returncode, stdout, stderr
+
+
 @pytest.mark.parametrize("name", ["acquisition_tcp_source_test", "acquisition_ui_test", "capture_recorder_test", "acquisition_diagnostic_log_test"])
 def test_acquisition_raw_recording(name):
     env = os.environ.copy()
     env.setdefault("BF_PYTHON_EXECUTABLE", sys.executable)
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
-    result = subprocess.run([str(native_binary(name)), str(ROOT)],
-                            cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
-    assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
-    assert "PASS" in result.stdout + result.stderr, result.stdout + result.stderr
+    returncode, stdout, stderr = run_process_tree([str(native_binary(name)), str(ROOT)], env, timeout=240)
+    assert returncode == 0, f"{stdout}\n{stderr}"
+    assert "PASS" in stdout + stderr, stdout + stderr
 
 
 def test_unified_device_waveform():
