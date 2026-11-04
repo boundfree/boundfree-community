@@ -3,12 +3,12 @@ title: Fluent-Qt 组件接入
 doc_type: architecture
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-04
 ---
 
 # Fluent-Qt 组件接入
 
-开发分支 `feature/fluentqt-integration` 继承设备、统一信号工作台及 ICA 候选工作，Qt 基线继续由 `config/qt-version.txt` 管理。组件接入保留现有三栏与参数，以及波形、频谱、时频、设备接收、原始录制和 ICA 的数据链路。ICA 流程操作位置按下述固定操作区统一。
+Fluent-Qt 接入已随设备、统一信号工作台及 ICA 候选工作合入主线，Qt 基线继续由 `config/qt-version.txt` 管理。组件接入保留现有三栏与参数，以及波形、频谱、时频、设备接收、原始录制和 ICA 的数据链路。ICA 流程操作位置按下述固定操作区统一。
 
 `native/cmake/FluentQt.cmake` 通过 FetchContent 固定 Fluent-Qt 提交 `766e13c83599e8ca58f83e7c4917c66ae73aa559`，链接 `FluentQt::FluentQt` 静态核心，Qt 仍动态链接。首次配置需要下载该提交；离线或本机依赖可通过 `FETCHCONTENT_SOURCE_DIR_BF_FLUENTQT` 指定该提交的源码目录。升级时需重新核对 API、许可资源并回归双平台，不跟随 main 自动更新。
 
