@@ -3,7 +3,7 @@ title: Community 版本与发布 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 ---
 
 # Community 版本与发布 SOP
@@ -122,14 +122,16 @@ GitHub 是发布与验收记录的来源，Gitee 是国内镜像；同一产品�
 COMMUNITY_TAG=community-v0.2.2-beta.1
 COMMUNITY_MIRROR_DIR=../build/community-gitee-beta1
 # 读取已发布的 Release 元数据；草稿、404 或接口错误时停止。
-gh api "repos/Vsonic12138/boundfree-eeg-native/releases/tags/$COMMUNITY_TAG"
+gh api "repos/boundfree/boundfree-community/releases/tags/$COMMUNITY_TAG"
 # 人工确认 tag_name、draft=false、published_at、版本和附件完整后继续。
-gh release download "$COMMUNITY_TAG" --repo Vsonic12138/boundfree-eeg-native \
+gh release download "$COMMUNITY_TAG" --repo boundfree/boundfree-community \
   --dir "$COMMUNITY_MIRROR_DIR/source"
 python3 scripts/common/prepare_gitee_release.py \
   --windows "$COMMUNITY_MIRROR_DIR/source" --linux "$COMMUNITY_MIRROR_DIR/source" \
   --output "$COMMUNITY_MIRROR_DIR/gitee"
 ```
+
+迁入组织后的构建运行地址使用 `boundfree/boundfree-community`；旧候选包内不可变的 `Vsonic12138/boundfree-eeg-native` 运行地址仍被准备工具接受，不重写历史构建信息或附件。
 
 准备工具验证两平台均为同一 Release 的 beta/stable 版本、源 SHA、tag、构建运行及原包/构建信息 SHA256；拒绝普通 CI dev 包、缺失校验、混用构建或覆盖输出目录。输出 `mirror-plan.json` 供维护者核对，以及 `Windows/`、`Linux/` 两组分卷、还原脚本、原始构建信息和校验文件。它只写本地文件，不创建 tag、Release 或远端附件；可在候选包阶段预演，预演成功不代表允许发布。
 
@@ -175,6 +177,6 @@ ge release download "$COMMUNITY_TAG" --repo BigYellow12138/boundfree-community \
 
 ## 8. 首次接入的验证边界
 
-先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 [归档记录](archive/reports/community-release-automation.md)，流程验证及后续证据见 [Issue #2](https://github.com/Vsonic12138/boundfree-eeg-native/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
+先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 [归档记录](archive/reports/community-release-automation.md)，流程验证及后续证据见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
 
 参考：[GitHub 触发事件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)、[Artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data)、[SemVer](https://semver.org/)。

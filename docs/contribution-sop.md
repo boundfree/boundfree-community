@@ -3,7 +3,7 @@ title: Community 提交与交付 SOP
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 ---
 
 # Community 提交与交付 SOP
@@ -16,7 +16,7 @@ GitHub 与 Gitee 托管的是**同一个 Community 项目**，共用 `master`、
 
 | 项目 | GitHub `origin` | Gitee `gitee` |
 | --- | --- | --- |
-| 仓库 | `Vsonic12138/boundfree-eeg-native` | `BigYellow12138/boundfree-community` |
+| 仓库 | `boundfree/boundfree-community` | `BigYellow12138/boundfree-community` |
 | 当前可见性 | 私有，需仓库访问权限 | 公开 |
 | Issue、PR、评审与验收 | 唯一协作入口 | 不新建、不复制，不做另一轮合并 |
 | 开发与集成 | 短分支 → PR → `master` | 同步 GitHub 已验证的主线，避免直接开发 |
@@ -26,13 +26,15 @@ GitHub 与 Gitee 托管的是**同一个 Community 项目**，共用 `master`、
 
 **同步方向：GitHub → Gitee。** 本文第 5 节同步源码；tag 和 Release 的同步归发布 SOP 管理。
 
-新成员先取得 GitHub 协作权限，再在其 [Issues](https://github.com/Vsonic12138/boundfree-eeg-native/issues) / [Pull requests](https://github.com/Vsonic12138/boundfree-eeg-native/pulls) 工作。未获权限时页面可能显示 404，应联系仓库维护者申请访问，不在 Gitee 建立替代任务库。本流程不自动公开 GitHub 或邀请协作者。
+组织管理员从 [People](https://github.com/orgs/boundfree/people) → **Invite member** 搜索 GitHub 用户名或邮箱，以 **Member** 邀请；对方接受邀请后加入组织。组织当前默认仓库权限为 **Read**，成员可读取私有仓库；参与开发时，再到本仓库 **Settings → Collaborators and teams** 为成员或团队授予 **Write**。只参与单个仓库的朋友也可在该页面作为外部协作者邀请，不必授予组织 Owner。管理员应在邀请时核对组织默认权限和具体仓库权限。
+
+新成员先取得 GitHub 协作权限，再在其 [Issues](https://github.com/boundfree/boundfree-community/issues) / [Pull requests](https://github.com/boundfree/boundfree-community/pulls) 工作。未获权限时页面可能显示 404，应联系仓库维护者申请访问，不在 Gitee 建立替代任务库。本流程不自动公开 GitHub 或邀请协作者。
 
 新克隆可二选一；以下只用于新目录，已有工作区先检查远端，不重复添加或盲目改名：
 
 ```bash
 # 直接从 GitHub 克隆：origin 自动指向研发主仓库。
-git clone https://github.com/Vsonic12138/boundfree-eeg-native.git boundfree-community
+git clone https://github.com/boundfree/boundfree-community.git boundfree-community
 cd boundfree-community
 git remote add gitee https://gitee.com/BigYellow12138/boundfree-community.git
 ```
@@ -42,7 +44,7 @@ git remote add gitee https://gitee.com/BigYellow12138/boundfree-community.git
 git clone https://gitee.com/BigYellow12138/boundfree-community.git boundfree-community
 cd boundfree-community
 git remote rename origin gitee
-git remote add origin https://github.com/Vsonic12138/boundfree-eeg-native.git
+git remote add origin https://github.com/boundfree/boundfree-community.git
 git fetch origin master
 git branch --set-upstream-to=origin/master master
 ```

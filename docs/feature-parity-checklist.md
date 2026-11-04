@@ -3,7 +3,7 @@ title: 当前能力与待验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 ---
 
 # 当前能力与待验收清单
@@ -27,7 +27,7 @@ last_updated: 2026-10-24
 - [x] 冻结边车、Qt/运行库组装、Windows Setup 与 Ubuntu 24.04 x86_64 归档。
 - [x] PR 和主线双平台 CI；Windows runner 安装/隔离开发路径运行/卸载，Linux 归档解压后运行。
 - [x] 日常 dev 构建身份、阶段版本同步和 Release 预检；错误 tag 拒绝及重跑入口有验证。
-- [x] Beta1 annotated tag、独立双平台 Release 构建、GitHub 草稿及六个原始附件核对；实际证据见 [Issue #5](https://github.com/Vsonic12138/boundfree-eeg-native/issues/5)。
+- [x] Beta1 annotated tag、独立双平台 Release 构建、GitHub 草稿及六个原始附件核对；实际证据见 [Issue #5](https://github.com/boundfree/boundfree-community/issues/5)。
 - [x] Gitee 分卷准备、原包 SHA256 校验与 Windows/Linux 还原脚本回归；本地准备不代表远端镜像已发布。
 
 ## 仍待验收
@@ -52,5 +52,5 @@ BBK/DAT/LSD 目前无正式读取实现；硬件/BLE 真实采集、设备监控
 
 - 当前代码与测试是实现依据，旧报告是特定时间/环境的证据，不把其安装包名和计数写成“最新”。
 - 数据格式、读片和分离输入的严格边界见 [契约](contracts.md) 与 [分析说明](analysis-guide.md)。
-- 云端流程入口及历史验证见 [Issue #2](https://github.com/Vsonic12138/boundfree-eeg-native/issues/2)；每次 beta/stable 另建本仓库发版验收 Issue，记录完整版本、SHA、CI、目标系统、结果与限制。
+- 云端流程入口及历史验证见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)；每次 beta/stable 另建本仓库发版验收 Issue，记录完整版本、SHA、CI、目标系统、结果与限制。
 - 对外发布以 [发布 SOP](release-sop.md) 为准。更新本清单必须附实际证据，不能用归档操作代替验收。

@@ -8,7 +8,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 
 | 平台 | 地址与职责 |
 | --- | --- |
-| GitHub · 研发主仓库 | [Vsonic12138/boundfree-eeg-native](https://github.com/Vsonic12138/boundfree-eeg-native)：Issue、PR、评审、验收、Actions 构建及发布来源 |
+| GitHub · 研发主仓库 | [boundfree/boundfree-community](https://github.com/boundfree/boundfree-community)：Issue、PR、评审、验收、Actions 构建及发布来源 |
 | Gitee · 国内镜像 | [BigYellow12138/boundfree-community](https://gitee.com/BigYellow12138/boundfree-community)：同步已验证源码、发布 tag、版本说明和国内安装包下载 |
 
 GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向同步规则统一见提交 SOP。
@@ -29,7 +29,7 @@ GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向�
 
 已实现文件浏览、原始/处理后数据切换、参考/滤波、频谱、播放与标注、视频同步、录制/导出，以及专用脑电/眼电离线分离工作区。Community 当前聚焦 EEG/LFP 与离线混合信号分析；Pro 的 Spike 采集产品独立维护。本仓库保留的 `bf_spike` 仅为历史原型，不是当前发布承诺。
 
-主线和 PR 均自动构建 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档。Beta1 的 annotated tag、独立双平台构建与 GitHub 草稿已生成并核对；当前仍是未公开的候选版，Gitee 尚无公开 Release，验收证据与待验项见 [Issue #5](https://github.com/Vsonic12138/boundfree-eeg-native/issues/5)。真实分离效果、目标桌面/干净机/高 DPI、真实授权兼容、完整第三方分发许可及正式版组织签名仍待分别验收，当前不宣称 stable。
+主线和 PR 均自动构建 Windows x64 Setup 与 Ubuntu 24.04 x86_64 归档。Beta1 的 annotated tag、独立双平台构建与 GitHub 草稿已生成并核对；当前仍是未公开的候选版，Gitee 尚无公开 Release，验收证据与待验项见 [Issue #5](https://github.com/boundfree/boundfree-community/issues/5)。真实分离效果、目标桌面/干净机/高 DPI、真实授权兼容、完整第三方分发许可及正式版组织签名仍待分别验收，当前不宣称 stable。
 
 ## 开源许可与商业扩展
 

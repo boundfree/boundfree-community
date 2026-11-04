@@ -22,7 +22,7 @@ def artifacts(tmp_path):
         folder.mkdir()
         info = {'source_version': '0.2.2-beta.1', 'version': '0.2.2-beta.1',
                 'git_commit': 'a' * 40, 'release_build': True, 'tag': 'community-v0.2.2-beta.1',
-                'run_url': 'https://github.com/Vsonic12138/boundfree-eeg-native/actions/runs/1'}
+                'run_url': 'https://github.com/boundfree/boundfree-community/actions/runs/1'}
         (folder / f'build-info-{platform}.json').write_text(json.dumps(info), encoding='utf-8')
         name = ('BoundFreeEEG_Setup_0.2.2-beta.1.exe' if platform == 'Windows'
                 else 'BoundFreeEEG_0.2.2-beta.1_ubuntu24.04-x86_64.tar.gz')
@@ -150,3 +150,34 @@ def test_windows_restore_checks_before_installation(artifacts, tmp_path, problem
         assert not package.exists()
     if problem == 'existing_partial':
         assert partial.read_bytes() == b'keep user partial'
+
+
+@pytest.mark.parametrize('repository', ['boundfree/boundfree-community', 'Vsonic12138/boundfree-eeg-native'])
+def test_migrated_and_original_release_provenance_are_accepted(artifacts, tmp_path, repository):
+    for platform, folder in artifacts.items():
+        path = folder / f'build-info-{platform}.json'
+        info = json.loads(path.read_text())
+        info['run_url'] = f'https://github.com/{repository}/actions/runs/123'
+        path.write_text(json.dumps(info), encoding='utf-8')
+        write_checksums(folder, platform)
+    plan = prepare(artifacts, tmp_path / 'accepted-origin')
+    assert plan['run_url'] == f'https://github.com/{repository}/actions/runs/123'
+
+
+@pytest.mark.parametrize('url', [
+    'https://github.com/other/boundfree-community/actions/runs/123',
+    'https://github.com/boundfree/other/actions/runs/123',
+    'https://githubXcom/boundfree/boundfree-community/actions/runs/123',
+    'https://github.com/boundfree/boundfree-community/actions/runs/123/extra',
+])
+def test_unrelated_release_provenance_is_rejected(artifacts, tmp_path, url):
+    folder = artifacts['Windows']
+    path = folder / 'build-info-Windows.json'
+    info = json.loads(path.read_text())
+    info['run_url'] = url
+    path.write_text(json.dumps(info), encoding='utf-8')
+    write_checksums(folder, 'Windows')
+    output = tmp_path / 'untrusted-origin'
+    with pytest.raises(ValueError):
+        prepare(artifacts, output)
+    assert not output.exists()
