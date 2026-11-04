@@ -1,0 +1,41 @@
+{
+  "session_id": "11111111-1111-4111-8111-111111111111",
+  "capture_id": "22222222-2222-4222-8222-222222222222",
+  "stream_id": 1,
+  "descriptor_revision": 1,
+  "name": "Synthetic voltage",
+  "signal_type": "voltage",
+  "rate_num": 250,
+  "rate_den": 1,
+  "dtype": "int24",
+  "layout": "channel_major",
+  "sample_index_source": "device",
+  "channels": [
+    {
+      "channel_id": "ch1",
+      "name": "CH1",
+      "signal_type": "voltage",
+      "unit": "uV",
+      "scale": 0.1,
+      "offset": 0,
+      "adc_bits": 24
+    },
+    {
+      "channel_id": "ch2",
+      "name": "CH2",
+      "signal_type": "voltage",
+      "unit": "uV",
+      "scale": 0.1,
+      "offset": 0,
+      "adc_bits": 24
+    }
+  ],
+  "clock": {
+    "clock_id": 1,
+    "ticks_per_second_num": "1000",
+    "ticks_per_second_den": "1",
+    "source": "hardware",
+    "epoch": "boot_relative"
+  },
+  "max_samples_per_block": 100
+}

@@ -33,15 +33,28 @@ public:
     void setDarkTheme(bool dark);
     void setAxisLabels(const QString& timeLabel, const QString& amplitudeLabel);
     void setNumberLocale(const QLocale& locale);
+    void setViewInteractionsEnabled(bool enabled);
+    void setViewPanningEnabled(bool enabled);
+    void setAmplitudeZoom(double zoom);
+    double amplitudeZoom() const { return amplitudeZoom_; }
     const WaveformDisplayModel& cachedDisplayModel(int maxVisibleChannels = 0) const;
     int displayModelBuildCount() const { return displayModelBuildCount_; }
 
 signals:
     void markerRequested(double time);
+    void timeZoomRequested(int steps, double anchorRatio);
+    void viewPanRequested(double seconds);
+    void pauseViewRequested();
+    void resetViewRequested();
+    void amplitudeZoomChanged(double zoom);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
 
@@ -71,6 +84,9 @@ private:
     mutable int cachedMaxVisibleChannels_ = -1;
     bool markerModeEnabled_ = false;
     bool darkTheme_ = false;
+    bool viewInteractions_ = false, viewPanning_ = false, draggingView_ = false;
+    QPointF lastDragPosition_;
+    double amplitudeZoom_ = 1.0;
     mutable int displayModelBuildCount_ = 0;
 };
 

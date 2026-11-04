@@ -133,3 +133,7 @@ analysis adapter subclasses its timestamp continuity hook to validate bounded bl
 quantities 0.16.x supplies Neo unit support. Its original BSD-compatible
 license text and included Scimath notices are preserved verbatim in
 `licenses/Quantities-license.rst`.
+
+## Fluent-Qt — MIT; embedded assets — MIT / OFL
+
+Core source and embedded font/icon attribution are pinned to commit `766e13c83599e8ca58f83e7c4917c66ae73aa559`. Installed full terms and notices are in `fluentqt/LICENSE`, `fluentqt/THIRD_PARTY_NOTICES.md`, `fluentqt/third_party/fonts/inter/LICENSE.txt` and `fluentqt/third_party/icons/fluentui-system-icons/`. These are copied from the pinned dependency source by the build, rather than replaced by Community licensing.

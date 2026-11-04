@@ -130,7 +130,16 @@ class Hdf5Source:
             if data.is_virtual or data.external or source.get("eeg", getlink=True).__class__.__name__ != "HardLink":
                 fail("unsupported_source", path=str(path), reason="external or virtual dataset")
             self.fs = float(data.attrs.get("fs", source.attrs.get("fs", math.nan)))
-            self.factor = unit_factor(data.attrs.get("unit", source.attrs.get("unit", "unknown")))
+            original_unit=data.attrs.get("unit",source.attrs.get("unit","unknown"))
+            original_unit=original_unit.decode() if isinstance(original_unit,bytes) else str(original_unit)
+            if original_unit in ("uV","µV","μV","mV","V"):
+                self.factor=unit_factor(original_unit);self.unit="uV"
+            elif original_unit in ("count","1","degC","A","mA","Pa","kPa"):
+                self.factor=1.;self.unit=original_unit
+            else: fail("unknown_unit",unit=original_unit)
+            if "channel_units" in data.attrs:
+                units=[x.decode() if isinstance(x,bytes) else str(x) for x in data.attrs["channel_units"]]
+                if any(u!=original_unit for u in units):fail("unsupported_source",path=str(path),reason="separation requires compatible channel units")
             names = data.attrs.get("ch_names")
             if names is None:
                 fail("source_invalid", path=str(path), reason="explicit ch_names required")
@@ -142,6 +151,11 @@ class Hdf5Source:
             if any(key in source for key in ("timestamps", "time", "time_s")):
                 fail("unsupported_source", path=str(path), reason="explicit timestamp dataset is not supported")
         self.format, self.hardware = "HDF5 eeg[C,N]", {}
+        self.source_metadata = {}
+        with h5py.File(path,"r") as source:
+            if "boundfree_signal_provenance" in source.attrs:
+                import json
+                self.source_metadata["signal_provenance"]=json.loads(source.attrs["boundfree_signal_provenance"])
         self.time_axis = "regular-by-schema"
 
     def read(self, start, count, channels):
@@ -197,7 +211,7 @@ class SourceRegistry:
         return {"handle": handle, "path": str(path), "fs": reader.fs, "n_samples": reader.n_samples,
                 "n_channels": len(reader.names), "duration": reader.n_samples / reader.fs,
                 "ch_names": reader.names, "channel_ids": [str(i) for i in range(len(reader.names))],
-                "fingerprint": before, "format": reader.format, "unit": "uV",
+                "fingerprint": before, "format": reader.format, "unit": getattr(reader,"unit","uV"),
                 "hardware": {"reference": None, "lower_bandwidth_hz": None, "upper_bandwidth_hz": None,
                              "notch_filter_mode": None, **reader.hardware}, "time_axis": reader.time_axis,
                 "capabilities": ["integer-slice", "float64-le", "source-sha256"],
@@ -235,7 +249,7 @@ class SourceRegistry:
             fail("source_changed", path=str(snapshot.path))
         if data.shape != (len(ids), count) or not np.isfinite(data).all():
             fail("source_invalid", path=str(snapshot.path), reason="invalid or non-finite signal samples")
-        return {"handle": params["handle"], "shape": [len(ids), count], "dtype": "float64-le", "unit": "uV",
+        return {"handle": params["handle"], "shape": [len(ids), count], "dtype": "float64-le", "unit": getattr(reader,"unit","uV"),
                 "fs": reader.fs, "first_sample": start, "channel_ids": ids,
                 "fingerprint": snapshot.fingerprint, "payload_bytes": size, "data": data,
                 "saturation": getattr(reader, "saturation", None)}

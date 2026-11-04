@@ -118,6 +118,19 @@ int main(int argc, char** argv) {
     check(bf::plot::formatAxisNumber(kEnUs, -1e-9, 2) == QStringLiteral("0"), "sub-resolution negative snaps to \"0\"");
     check(bf::plot::formatAxisNumber(kDeDe, 12.5, 2) == QStringLiteral("12,5"), "de_DE uses the locale decimal comma");
 
+    const auto adc = bf::plot::waveformAmplitudeTicks(kEnUs, -9587882.6, 8800994.6, "count", true);
+    check(adc.unit == QStringLiteral("count ×10⁶") && adc.lower == "-9.6" && adc.upper == "8.8",
+          "large ADC axis has an explicit multiplier and short ticks");
+    const auto ripple = bf::plot::waveformAmplitudeTicks(kEnUs, 4999995.4, 5000004.6, "count", true);
+    check(ripple.unit == "count" && ripple.lower != ripple.upper &&
+          kEnUs.toDouble(ripple.lower) < 5000000 && kEnUs.toDouble(ripple.upper) > 5000000,
+          "compact ticks preserve small variation on a large DC baseline");
+    const auto volts = bf::plot::waveformAmplitudeTicks(kDeDe, .0008, .0012, "V", true);
+    check(volts.unit == QStringLiteral("V ×10⁻³") && volts.lower == "0,8" && volts.upper == "1,2",
+          "small voltage ticks preserve units and locale");
+    const auto offline = bf::plot::waveformAmplitudeTicks(kEnUs, -9587882.6, 8800994.6, "uV", false);
+    check(offline.unit == "uV" && offline.upper == "8,800,994.6", "offline axis format remains unchanged");
+
     // (g) minimum-gap predicate used to thin dense row labels.
     const QVector<double> placed{16.0, 262.0};
     check(!bf::plot::labelFits(placed, 12.2, 17.0), "label too close to the top boundary label is rejected");

@@ -156,9 +156,19 @@ class RecordingSession:
                     chunks=(self.n_channels, chunk_samples),
                     dtype="float32",
                 )
+                if self.meta.get("signal_provenance"):
+                    import json
+                    provenance=json.loads(self.meta["signal_provenance"])
+                    if not isinstance(provenance,dict):raise ValueError("invalid recording signal provenance")
+                    h5_file.attrs["boundfree_signal_provenance"]=json.dumps(provenance,ensure_ascii=False,allow_nan=False)
                 h5_eeg.attrs["fs"] = self.fs
                 h5_eeg.attrs["ch_names"] = np.asarray(self.ch_names, dtype=h5py.string_dtype("utf-8"))
-                h5_eeg.attrs["unit"] = "uV"
+                h5_eeg.attrs["unit"] = self.meta.get("signal_unit","uV")
+                if self.meta.get("signal_channel_units"):
+                    import json
+                    units=json.loads(self.meta["signal_channel_units"])
+                    if len(units)!=self.n_channels:raise ValueError("invalid recorded channel units")
+                    h5_eeg.attrs["channel_units"]=np.asarray(units,dtype=h5py.string_dtype("utf-8"))
                 metadata = h5_file.require_group("meta")
                 for key, value in self.meta.items():
                     metadata.attrs[key] = value

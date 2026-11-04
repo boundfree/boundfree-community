@@ -5,522 +5,374 @@
 #include "license/license_manager.h"
 #include "license/machine_id.h"
 #include "license/online_activation_client.h"
+#include "ui/collapsible_panel.h"
+#include "ui/fluent_controls.h"
 
 #include <QApplication>
 #include <QClipboard>
-#include <QEventLoop>
+#include <QDebug>
+#include <QDateTime>
 #include <QFile>
-#include <QFrame>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QNetworkAccessManager>
 #include <QNetworkProxy>
-#include <QPlainTextEdit>
-#include <QToolButton>
-#include <QUrl>
+#include <QSysInfo>
+#include <QTextLayout>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace bf {
-
 namespace {
+using InfoBar = fluent::status_info::InfoBar;
 
-QString statusText(I18nService* i18n, const QString& status) {
-    if (status == QStringLiteral("pending_approval")) {
-        return i18n->text("app.activation.status_pending_approval");
-    }
-    if (status == QStringLiteral("active")) {
-        return i18n->text("app.activation.status_active");
-    }
-    if (status == QStringLiteral("expired")) {
-        return i18n->text("app.activation.status_expired");
-    }
-    if (status == QStringLiteral("revoked")) {
-        return i18n->text("app.activation.status_revoked");
-    }
-    if (status == QStringLiteral("rejected")) {
-        return i18n->text("app.activation.status_rejected");
-    }
-    if (status == QStringLiteral("not_found")) {
-        return i18n->text("app.activation.status_not_found");
-    }
-    return i18n->text("app.activation.request_failed");
+InfoBar::InfoBarSeverity licenseSeverity(LicenseStatus status) {
+    return status == LicenseStatus::Expired ? InfoBar::Warning : InfoBar::Error;
 }
 
-QString activationErrorText(I18nService* i18n, const QString& errorCode,
-                            const QJsonObject& params) {
-    if (errorCode == QStringLiteral("activation.machine_id_required") ||
-        errorCode == QStringLiteral("activation.invalid_machine_id")) {
-        return i18n->text("app.activation.error_invalid_machine_id");
-    }
-    if (errorCode == QStringLiteral("activation.not_found")) {
-        return i18n->text("app.activation.status_not_found");
-    }
-    if (errorCode == QStringLiteral("activation.expired_or_revoked")) {
-        return statusText(i18n, params.value("status").toString());
-    }
-    if (errorCode == QStringLiteral("activation.machine_already_bound")) {
-        return i18n->text("app.activation.status_machine_already_bound");
-    }
-    if (errorCode == QStringLiteral("activation.already_exists")) {
-        const QString status = params.value("current_status").toString();
-        return i18n->text("app.activation.error_already_exists", {{"status", statusText(i18n, status)}});
-    }
-    if (errorCode == QStringLiteral("activation.invalid_invite_code")) {
-        return i18n->text("app.activation.error_invalid_invite_code");
-    }
-    if (errorCode == QStringLiteral("activation.invite_revoked")) {
-        return i18n->text("app.activation.error_invite_revoked");
-    }
-    if (errorCode == QStringLiteral("activation.invite_already_used")) {
-        return i18n->text("app.activation.error_invite_already_used");
-    }
-    if (errorCode == QStringLiteral("activation.signing_failed")) {
-        return i18n->text("app.activation.error_signing_failed");
-    }
-    if (errorCode == QStringLiteral("rate_limit.exceeded")) {
-        return i18n->text("app.activation.error_rate_limited", {
-            {"retry_after", QString::number(params.value("retry_after").toInt())},
-        });
-    }
-    return i18n->text("app.activation.request_failed");
+QUrl serverUrl() {
+    return QUrl(qEnvironmentVariable("BF_ACTIVATION_SERVER_URL", "https://license-activate.unitc.cn"));
 }
 
-QString licenseErrorText(I18nService* i18n, const QString& errorCode,
-                         const QJsonObject& params) {
-    // Structured license time-watermark / save errors. These are the only
-    // license codes whose params are user-displayable (rollback timestamps);
-    // path/reason params never reach the UI (contract: no local paths or
-    // internal diagnostics shown to users).
-    if (errorCode == QStringLiteral("license.clock_rollback")) {
-        return i18n->text("error.license.clock_rollback",
-                          {{"last_seen_utc", params.value("last_seen_utc").toString()},
-                           {"current_utc", params.value("current_utc").toString()}});
+QString licenseErrorText(I18nService* i18n, const LicenseResult& result) {
+    switch (result.status) {
+    case LicenseStatus::Valid:
+    case LicenseStatus::Missing:
+        return {};
+    case LicenseStatus::Expired:
+        return i18n->text("app.activation.local_expired", {{"expires_at", result.error.params.value("expires_at")}});
+    case LicenseStatus::WrongMachine:
+        return i18n->text("app.activation.wrong_machine");
+    case LicenseStatus::ClockRollback: {
+        QJsonObject params = result.error.params;
+        for (const char* key : {"last_seen_utc", "current_utc"}) {
+            const QDateTime time = QDateTime::fromString(params.value(key).toString(), Qt::ISODateWithMs);
+            params.insert(key, time.toLocalTime().toString("yyyy-MM-dd HH:mm"));
+        }
+        return i18n->text("error.license.clock_rollback", params);
     }
-    if (errorCode == QStringLiteral("license.clock_state_missing")) {
+    case LicenseStatus::ClockStateMissing:
         return i18n->text("error.license.clock_state_missing");
-    }
-    if (errorCode == QStringLiteral("license.clock_state_corrupted")) {
+    case LicenseStatus::ClockStateCorrupted:
         return i18n->text("error.license.clock_state_corrupted");
-    }
-    if (errorCode == QStringLiteral("license.clock_state_write_failed")) {
+    case LicenseStatus::ClockStateWriteFailure:
         return i18n->text("error.license.clock_state_write_failed");
-    }
-    if (errorCode == QStringLiteral("license.save_failed")) {
+    case LicenseStatus::SaveFailed:
         return i18n->text("error.license.save_failed");
+    default:
+        return i18n->text("app.activation.invalid_key");
     }
-    // Historical results (no error.code, or legacy license.* codes carrying
-    // non-displayable path/reason params) fall back to the generic text.
-    return i18n->text("app.activation.invalid_key");
 }
 
+QString activationErrorText(I18nService* i18n, const QString& code, const QJsonObject& params) {
+    if (code == QLatin1String("activation.machine_id_required") || code == QLatin1String("activation.invalid_machine_id"))
+        return i18n->text("app.activation.error_invalid_machine_id");
+    if (code == QLatin1String("activation.machine_already_bound"))
+        return i18n->text("app.activation.status_machine_already_bound");
+    if (code == QLatin1String("activation.signing_failed"))
+        return i18n->text("app.activation.error_signing_failed");
+    if (code == QLatin1String("rate_limit.exceeded"))
+        return i18n->text("app.activation.error_rate_limited", {{"retry_after", QString::number(params.value("retry_after").toInt())}});
+    return i18n->text("app.activation.request_failed");
+}
 }  // namespace
 
 ActivationDialog::ActivationDialog(LicenseManager* manager, const VersionInfo& version,
-                                   I18nService* i18n, const LicenseResult& initialLicenseResult,
-                                   QWidget* parent)
-    : QDialog(parent),
-      manager_(manager),
-      i18n_(i18n),
-      productVersion_(version.version),
-      canonicalMachineId_(machineIdCanonical(readMachineGuid())),
-      displayMachineId_(currentMachineId()),
-      machineIdEdit_(nullptr),
-      copyBtn_(nullptr),
-      requestBtn_(nullptr),
-      inviteBtn_(nullptr),
-      inviteCodeEdit_(nullptr),
-      offlineKeyEdit_(nullptr),
-      offlineActivateBtn_(nullptr),
-      statusLabel_(nullptr),
-      refreshBtn_(nullptr),
-      nam_(new QNetworkAccessManager(this)),
-      client_(new OnlineActivationClient(
-          nam_, QUrl(qEnvironmentVariable("BF_ACTIVATION_SERVER_URL", "https://license-activate.unitc.cn")), this)),
-      pollTimer_(new QTimer(this)) {
-    // 激活网络请求必须直连，绕过用户本机的系统代理（Clash/VPN等）
-    // 否则 FlClash fake-ip / HTTP代理规则会导致连接失败
-    nam_->setProxy(QNetworkProxy(QNetworkProxy::NoProxy));
-
-    connect(client_, &OnlineActivationClient::registrationSubmitted,
-            this, &ActivationDialog::onRegistrationSubmitted);
-    connect(client_, &OnlineActivationClient::registrationAlreadyExists,
-            this, &ActivationDialog::onRegistrationAlreadyExists);
-    connect(client_, &OnlineActivationClient::activationSuccess,
-            this, &ActivationDialog::onActivationSuccess);
-    connect(client_, &OnlineActivationClient::activationFailed,
-            this, &ActivationDialog::onActivationFailed);
-    connect(client_, &OnlineActivationClient::statusReceived,
-            this, &ActivationDialog::onStatusReceived);
-    connect(client_, &OnlineActivationClient::networkError,
-            this, &ActivationDialog::onNetworkError);
-
-    buildUi();
+                                   I18nService* i18n, const LicenseResult& initialLicenseResult, QWidget* parent)
+    : QDialog(parent), manager_(manager), i18n_(i18n), productVersion_(version.version),
+      canonicalMachineId_(machineIdCanonical(readMachineGuid())), displayMachineId_(currentMachineId()),
+      client_(nullptr), pollTimer_(new QTimer(this)) {
+    auto* nam = new QNetworkAccessManager(this);
+    nam->setProxy(QNetworkProxy(QNetworkProxy::NoProxy));
+    client_ = new OnlineActivationClient(nam, serverUrl(), this);
+    connect(client_, &OnlineActivationClient::registrationSubmitted, this, &ActivationDialog::onRegistrationSubmitted);
+    connect(client_, &OnlineActivationClient::registrationAlreadyExists, this, &ActivationDialog::onRegistrationAlreadyExists);
+    connect(client_, &OnlineActivationClient::activationSuccess, this, &ActivationDialog::onActivationSuccess);
+    connect(client_, &OnlineActivationClient::activationFailed, this, &ActivationDialog::onActivationFailed);
+    connect(client_, &OnlineActivationClient::statusReceived, this, &ActivationDialog::onStatusReceived);
+    connect(client_, &OnlineActivationClient::networkError, this, &ActivationDialog::onNetworkError);
     pollTimer_->setInterval(30'000);
     connect(pollTimer_, &QTimer::timeout, this, &ActivationDialog::onRefreshStatus);
+    buildUi();
 
-    // Startup license check failure is surfaced immediately in the status
-    // bar (structured error.code + params → localized text). The reference
-    // is consumed here and never stored; a healthy result keeps the bar
-    // hidden (revocation-reopened dialogs already informed the user).
-    if (!initialLicenseResult.ok()) {
-        setState(licenseErrorText(i18n_, initialLicenseResult.error.code,
-                                  initialLicenseResult.error.params),
-                 true);
-        // buildUi() sized the dialog while the status bar was hidden. Account
-        // for a localized startup error now so it is not clipped and the
-        // offline-panel collapse restores a stable content-driven height.
-        if (QLayout* rootLayout = layout()) {
-            rootLayout->activate();
-            resize(width(), qMax(minimumHeight(), rootLayout->sizeHint().height()));
-        }
-    }
+    const QString message = canonicalMachineId_.isEmpty() ? i18n_->text("app.activation.machine_id_unavailable")
+                                                          : licenseErrorText(i18n_, initialLicenseResult);
+    setStatus(message, canonicalMachineId_.isEmpty() ? InfoBar::Error : licenseSeverity(initialLicenseResult.status));
+    setBusy(false);
+    if (!canonicalMachineId_.isEmpty()) onRefreshStatus();
 }
 
 bool ActivationDialog::requiresOnlineStatusCheck(const LicenseResult& savedLicense) {
-    if (!savedLicense.ok()) {
-        return false;
-    }
-    const QString mode = savedLicense.payload.value("mode").toString();
-    return mode == QLatin1String("online") || mode == QLatin1String("managed_offline");
+    return savedLicense.ok() && savedLicense.payload.value("mode").toString() == QLatin1String("online");
 }
 
-bool ActivationDialog::checkAndHandleRevocation(
-    LicenseManager* manager, const VersionInfo& version, I18nService* i18n) {
-    Q_UNUSED(version);
-    QNetworkAccessManager nam;
-    nam.setProxy(QNetworkProxy(QNetworkProxy::NoProxy));
-    OnlineActivationClient client(
-        &nam,
-        QUrl(qEnvironmentVariable("BF_ACTIVATION_SERVER_URL",
-                                  "https://license-activate.unitc.cn")));
-
-    const QString machineId = machineIdCanonical(readMachineGuid());
-    bool invalidated = false;
-
-    QEventLoop loop;
-    QTimer timeout;
-    timeout.setSingleShot(true);
-    timeout.setInterval(8000); // 8 秒超时 → fail-open
-
-    QObject::connect(&client, &OnlineActivationClient::statusReceived,
-        [&](const QString& status, const QDate&) {
-            if (status == QLatin1String("revoked") ||
-                status == QLatin1String("rejected") ||
-                status == QLatin1String("not_found")) {
-                invalidated = true;
-            }
-            loop.quit();
-        });
-    QObject::connect(&client, &OnlineActivationClient::networkError,
-        [&](const QString&) { loop.quit(); }); // fail-open
-    QObject::connect(&client, &OnlineActivationClient::activationFailed,
-        [&](const QString&, const QJsonObject&) { loop.quit(); }); // fail-open
-    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
-
-    client.checkStatus(machineId);
-    timeout.start();
-    loop.exec();
-
-    if (invalidated) {
-        QFile::remove(manager->licenseFilePath());
-        QMessageBox::warning(nullptr,
-            i18n->text("app.activation.title"),
-            i18n->text("app.activation.revoked_on_server"));
-        return false;
-    }
-    return true;
+void ActivationDialog::checkAndHandleRevocation(LicenseManager* manager, const VersionInfo& version,
+                                                  I18nService* i18n, QWidget* parent) {
+    auto* nam = new QNetworkAccessManager(parent);
+    nam->setProxy(QNetworkProxy(QNetworkProxy::NoProxy));
+    auto* client = new OnlineActivationClient(nam, serverUrl(), nam);
+    connect(client, &OnlineActivationClient::statusReceived, nam,
+            [manager, version, i18n, parent, nam](const QString& status, const QDate&) {
+        if (status == QLatin1String("revoked") || status == QLatin1String("rejected") || status == QLatin1String("not_found")) {
+            QFile::remove(manager->licenseFilePath());
+            QMessageBox::warning(parent, i18n->text("app.activation.title"), i18n->text("app.activation.revoked_on_server"));
+            LicenseResult missing;
+            missing.status = LicenseStatus::Missing;
+            ActivationDialog dialog(manager, version, i18n, missing, parent);
+            if (dialog.exec() != QDialog::Accepted) parent->close();
+        }
+        nam->deleteLater();
+    });
+    connect(client, &OnlineActivationClient::networkError, nam, &QObject::deleteLater);
+    connect(client, &OnlineActivationClient::activationFailed, nam, &QObject::deleteLater);
+    client->checkStatus(machineIdCanonical(readMachineGuid()));
 }
 
 void ActivationDialog::buildUi() {
     setWindowTitle(i18n_->text("app.activation.title"));
-    setMinimumSize(560, 520);
-
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(28, 28, 28, 24);
-    layout->setSpacing(12);
-
-    auto* title = new QLabel(i18n_->text("app.activation.title"), this);
-    title->setObjectName("activationTitle");
-    layout->addWidget(title);
-
-    auto* machinePanel = new QFrame(this);
-    machinePanel->setObjectName("machinePanel");
-    auto* machineLayout = new QHBoxLayout(machinePanel);
-    machineLayout->setContentsMargins(14, 12, 14, 12);
-    auto* machineLabel = new QLabel(i18n_->text("app.activation.machine_id_label"), machinePanel);
-    machineIdEdit_ = new QLineEdit(displayMachineId_, machinePanel);
+    setStyleSheet(nativeFluentStyle());
+    setPalette(fluentPalette());
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(28, 28, 28, 24);
+    root->setSpacing(12);
+    root->setSizeConstraint(QLayout::SetFixedSize);
+    auto* title = new fluent::textfields::Label(i18n_->text("app.activation.title"), this);
+    title->setFluentTypography(Typography::FontRole::Title);
+    root->addWidget(title);
+    auto* machineLabel = new QLabel(i18n_->text("app.activation.machine_id_label"), this);
+    root->addWidget(machineLabel);
+    auto* machineRow = new QHBoxLayout;
+    machineIdEdit_ = new TextInput(displayMachineId_, this);
     machineIdEdit_->setObjectName("machineIdEdit");
     machineIdEdit_->setReadOnly(true);
-    machineIdEdit_->setMinimumHeight(34);
-    copyBtn_ = new QPushButton(i18n_->text("app.activation.copy"), machinePanel);
-    copyBtn_->setObjectName("secondaryAction");
-    machineLayout->addWidget(machineLabel);
-    machineLayout->addWidget(machineIdEdit_, 1);
-    machineLayout->addWidget(copyBtn_);
-    layout->addWidget(machinePanel);
+    machineLabel->setBuddy(machineIdEdit_);
+    copyBtn_ = new ActionButton(i18n_->text("app.activation.copy"), this);
+    copyBtn_->setObjectName("copyButton");
+    machineRow->addWidget(machineIdEdit_, 1);
+    machineRow->addWidget(copyBtn_);
+    root->addLayout(machineRow);
 
-    auto* onlineTitle = new QLabel(i18n_->text("app.activation.online_section"), this);
-    onlineTitle->setObjectName("sectionTitle");
-    layout->addWidget(onlineTitle);
-    auto* onlineHint = new QLabel(i18n_->text("app.activation.online_hint"), this);
-    onlineHint->setObjectName("sectionHint");
-    onlineHint->setWordWrap(true);
-    layout->addWidget(onlineHint);
+    requestPanel_ = new QWidget(this);
+    requestPanel_->setObjectName("requestPanel");
+    auto* requestLayout = new QVBoxLayout(requestPanel_);
+    requestLayout->setContentsMargins(0, 0, 0, 0);
+    requestLayout->setSpacing(8);
+    auto* orgLabel = new QLabel(i18n_->text("app.activation.org_name"), requestPanel_);
+    orgNameEdit_ = new TextInput(requestPanel_);
+    orgNameEdit_->setObjectName("orgNameEdit");
+    orgNameEdit_->setMaxLength(128);
+    orgLabel->setBuddy(orgNameEdit_);
+    requestLayout->addWidget(orgLabel);
+    requestBtn_ = new ActionButton(i18n_->text("app.activation.request"), requestPanel_);
+    requestBtn_->setObjectName("requestButton");
+    requestBtn_->setFluentStyle(fluent::basicinput::Button::Accent);
+    auto* requestRow = new QHBoxLayout;
+    requestRow->addWidget(orgNameEdit_, 1);
+    requestRow->addWidget(requestBtn_);
+    requestLayout->addLayout(requestRow);
+    auto* hint = new fluent::textfields::Label(i18n_->text("app.activation.approval_hint"), requestPanel_);
+    hint->setObjectName("approvalHint");
+    hint->setTextColorRole(fluent::textfields::Label::TextColorRole::Secondary);
+    hint->setWordWrap(true);
+    requestLayout->addWidget(hint);
+    root->addWidget(requestPanel_);
 
-    requestBtn_ = new QPushButton(i18n_->text("app.activation.request"), this);
-    requestBtn_->setObjectName("primaryAction");
-    requestBtn_->setToolTip(i18n_->text("app.activation.request_hint"));
-    layout->addWidget(requestBtn_);
-    auto* requestHint = new QLabel(i18n_->text("app.activation.request_hint"), this);
-    requestHint->setObjectName("actionHint");
-    requestHint->setWordWrap(true);
-    layout->addWidget(requestHint);
+    statusBar_ = new InfoBar(this);
+    statusBar_->setObjectName("statusLabel");
+    statusBar_->setIsClosable(false);
+    statusBar_->setTitleFontRole(Typography::FontRole::Body);
+    statusBar_->setMultiLineMinHeight(statusBar_->singleLineHeight());
+    statusBar_->setMultiLineActionMinHeight(90);
+    QSizePolicy statusPolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    statusPolicy.setRetainSizeWhenHidden(true);
+    statusBar_->setSizePolicy(statusPolicy);
+    refreshBtn_ = new ActionButton(this);
+    refreshBtn_->setObjectName("refreshButton");
+    root->addWidget(statusBar_);
 
-    auto* separator = new QFrame(this);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setObjectName("sectionSeparator");
-    layout->addWidget(separator);
-
-    auto* inviteTitle = new QLabel(i18n_->text("app.activation.invite_code_section"), this);
-    inviteTitle->setObjectName("sectionTitle");
-    layout->addWidget(inviteTitle);
-    auto* inviteHint = new QLabel(i18n_->text("app.activation.invite_code_hint"), this);
-    inviteHint->setObjectName("sectionHint");
-    inviteHint->setWordWrap(true);
-    layout->addWidget(inviteHint);
-    auto* inviteRow = new QHBoxLayout;
-    inviteCodeEdit_ = new QLineEdit(this);
-    inviteCodeEdit_->setObjectName("inviteCodeEdit");
-    inviteCodeEdit_->setMinimumHeight(34);
-    inviteCodeEdit_->setPlaceholderText(i18n_->text("app.activation.invite_code_placeholder"));
-    inviteBtn_ = new QPushButton(i18n_->text("app.activation.invite_code"), this);
-    inviteBtn_->setObjectName("secondaryAction");
-    inviteRow->addWidget(inviteCodeEdit_, 1);
-    inviteRow->addWidget(inviteBtn_);
-    layout->addLayout(inviteRow);
-
-    auto* offlineToggle = new QToolButton(this);
-    offlineToggle->setObjectName("offlineToggle");
-    offlineToggle->setText(i18n_->text("app.activation.offline_section"));
-    offlineToggle->setCheckable(true);
-    offlineToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    offlineToggle->setArrowType(Qt::RightArrow);
-    offlineToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    layout->addWidget(offlineToggle);
-
-    auto* offlinePanel = new QFrame(this);
+    auto* offlinePanel = new CollapsiblePanel(i18n_->text("app.activation.offline_section"), this);
     offlinePanel->setObjectName("offlinePanel");
-    auto* offlineLayout = new QVBoxLayout(offlinePanel);
+    offlinePanel->headerButton()->setObjectName("offlineToggle");
+    offlineKeyEdit_ = new fluent::textfields::TextEdit(offlinePanel);
+    offlineKeyEdit_->setObjectName("offlineKeyEdit");
+    offlineKeyEdit_->setPlaceholderText(i18n_->text("app.activation.paste_placeholder"));
+    offlineKeyEdit_->setAccessibleName(i18n_->text("app.activation.offline_license_label"));
+    offlineKeyEdit_->setAutoResizeEnabled(false);
+    offlineKeyEdit_->setFixedHeight(100);
+    offlineActivateBtn_ = new ActionButton(i18n_->text("app.activation.activate_btn"), offlinePanel);
+    offlineActivateBtn_->setObjectName("offlineActivateButton");
+    auto* offlineLayout = new QVBoxLayout;
     offlineLayout->setContentsMargins(14, 12, 14, 12);
     offlineLayout->setSpacing(8);
-    auto* offlineHint = new QLabel(i18n_->text("app.activation.offline_description"), offlinePanel);
-    offlineHint->setObjectName("sectionHint");
-    offlineHint->setWordWrap(true);
-    offlineLayout->addWidget(offlineHint);
-    auto* offlineLabel = new QLabel(i18n_->text("app.activation.offline_license_label"), offlinePanel);
-    offlineLayout->addWidget(offlineLabel);
-    offlineKeyEdit_ = new QPlainTextEdit(offlinePanel);
-    offlineKeyEdit_->setPlaceholderText(i18n_->text("app.activation.paste_placeholder"));
-    offlineKeyEdit_->setMinimumHeight(96);
     offlineLayout->addWidget(offlineKeyEdit_);
-    offlineActivateBtn_ = new QPushButton(i18n_->text("app.activation.activate_btn"), offlinePanel);
-    offlineActivateBtn_->setObjectName("secondaryAction");
     offlineLayout->addWidget(offlineActivateBtn_, 0, Qt::AlignRight);
-    offlinePanel->hide();
-    layout->addWidget(offlinePanel);
+    offlinePanel->setContentLayout(offlineLayout);
+    offlinePanel->setExpanded(false);
+    root->addWidget(offlinePanel);
 
-    auto* statusLayout = new QHBoxLayout;
-    statusLabel_ = new QLabel(this);
-    statusLabel_->setObjectName("statusLabel");
-    statusLabel_->setWordWrap(true);
-    refreshBtn_ = new QPushButton(i18n_->text("app.activation.status_refresh"), this);
-    refreshBtn_->setObjectName("secondaryAction");
-    statusLayout->addWidget(statusLabel_, 1);
-    statusLayout->addWidget(refreshBtn_, 0, Qt::AlignTop);
-    layout->addLayout(statusLayout);
-    statusLabel_->hide();
-    refreshBtn_->hide();
-    layout->addStretch();
-
-    setStyleSheet(
-        "QLabel#activationTitle { font-size: 22px; font-weight: 600; }"
-        "QLabel#sectionTitle { font-size: 15px; font-weight: 600; }"
-        "QLabel#sectionHint, QLabel#actionHint { color: palette(mid); }"
-        "QFrame#machinePanel, QFrame#offlinePanel { border: 1px solid palette(mid); border-radius: 8px; }"
-        "QFrame#sectionSeparator { color: palette(mid); }"
-        "QPushButton, QToolButton { min-height: 34px; padding: 0 14px; border: 1px solid palette(mid); border-radius: 4px; background: palette(button); color: palette(button-text); }"
-        "QLineEdit { min-height: 34px; padding: 0 8px; border: 1px solid palette(mid); border-radius: 4px; background: palette(base); color: palette(text); }"
-        "QPlainTextEdit { padding: 6px 8px; border: 1px solid palette(mid); border-radius: 4px; background: palette(base); color: palette(text); }"
-        "QPushButton:hover, QToolButton:hover { background: palette(light); }"
-        "QPushButton:pressed, QToolButton:pressed { background: palette(mid); }"
-        "QPushButton:disabled, QToolButton:disabled { color: palette(mid); }"
-        "QPushButton#primaryAction { font-weight: 600; background: palette(highlight); color: palette(highlighted-text); border-color: palette(highlight); }"
-        "QPushButton#primaryAction:hover { background: palette(dark); border-color: palette(dark); }"
-        "QToolButton#offlineToggle { text-align: left; padding: 0 10px; }"
-        "QLabel#statusLabel { padding: 6px 0; }"
-    );
-
+    for (auto* button : {copyBtn_, requestBtn_, offlineActivateBtn_, refreshBtn_})
+        button->setFluentSize(fluent::basicinput::Button::StandardSize);
     connect(copyBtn_, &QPushButton::clicked, this, &ActivationDialog::onCopyMachineId);
     connect(requestBtn_, &QPushButton::clicked, this, &ActivationDialog::onRequestActivation);
-    connect(inviteBtn_, &QPushButton::clicked, this, &ActivationDialog::onInviteCode);
     connect(offlineActivateBtn_, &QPushButton::clicked, this, &ActivationDialog::onOfflineActivate);
     connect(refreshBtn_, &QPushButton::clicked, this, &ActivationDialog::onRefreshStatus);
-    connect(offlineToggle, &QToolButton::toggled, this, [this, offlineToggle, offlinePanel, layout](bool expanded) {
-        offlineToggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
-        offlinePanel->setVisible(expanded);
-        layout->activate();
-        const int requiredHeight = qMax(minimumHeight(), layout->sizeHint().height());
-        if (expanded) {
-            if (height() < requiredHeight) {
-                resize(width(), requiredHeight);
-            }
-        } else if (height() > requiredHeight) {
-            resize(width(), requiredHeight);
-        }
-    });
-
-    // 初始窗口高度按折叠态内容所需，避免硬编码高度留下大块空白。
-    layout->activate();
-    resize(600, qMax(minimumHeight(), layout->sizeHint().height()));
 }
 
-void ActivationDialog::setState(const QString& stateLabel, bool showStatusBar) {
-    statusLabel_->setText(stateLabel);
-    statusLabel_->setVisible(showStatusBar);
-    refreshBtn_->setVisible(showStatusBar);
-
-    const bool onlineRequestPending = state_ == REGISTERING || state_ == ACTIVATING;
-    const bool waitingApproval = state_ == WAITING_APPROVAL;
-    requestBtn_->setEnabled(!onlineRequestPending && !waitingApproval);
-    inviteBtn_->setEnabled(!onlineRequestPending && !waitingApproval);
-    inviteCodeEdit_->setEnabled(!onlineRequestPending && !waitingApproval);
-    refreshBtn_->setEnabled(!onlineRequestPending);
-    offlineActivateBtn_->setEnabled(state_ != VERIFYING);
-}
-
-void ActivationDialog::startPolling() {
-    if (!pollTimer_->isActive()) {
-        pollTimer_->start();
+void ActivationDialog::setStatus(const QString& text, InfoBar::InfoBarSeverity severity, const QString& action) {
+    refreshBtn_->setText(action);
+    const QFont font = statusBar_->themeFont(Typography::FontRole::Body).toQFont();
+    const QMargins margins = statusBar_->contentMargins();
+    const int textWidth = statusBar_->preferredWidth() - margins.left() - margins.right() -
+                          statusBar_->severityIconSize() - statusBar_->iconTextSpacing();
+    QTextLayout lines(text, font);
+    QTextOption option;
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    lines.setTextOption(option);
+    lines.beginLayout();
+    QTextLine firstLine = lines.createLine();
+    if (firstLine.isValid()) firstLine.setLineWidth(textWidth);
+    const int firstLength = firstLine.isValid() ? firstLine.textLength() : 0;
+    lines.endLayout();
+    const QString remainder = text.mid(firstLength).trimmed();
+    const bool fitsAction = action.isEmpty() || QFontMetrics(font).horizontalAdvance(text) +
+                            refreshBtn_->sizeHint().width() + 8 <= textWidth;
+    statusBar_->setSeverity(severity);
+    // Preserve the bar's natural width when hidden, without reserving its height.
+    QSizePolicy policy = statusBar_->sizePolicy();
+    policy.setVerticalPolicy(text.isEmpty() ? QSizePolicy::Ignored : QSizePolicy::Minimum);
+    statusBar_->setSizePolicy(policy);
+    statusBar_->setVisible(!text.isEmpty());
+    statusBar_->setSingleLine(remainder.isEmpty() && fitsAction);
+    statusBar_->setTitle(text.left(firstLength).trimmed());
+    statusBar_->setMessage(remainder);
+    if (action.isEmpty()) {
+        statusBar_->setActionWidget(nullptr);
+        refreshBtn_->setParent(this);
+        refreshBtn_->hide();
+    } else {
+        statusBar_->setActionWidget(refreshBtn_);
     }
 }
 
-void ActivationDialog::stopPolling() {
-    pollTimer_->stop();
+void ActivationDialog::setBusy(bool busy) {
+    busy_ = busy;
+    const bool available = !canonicalMachineId_.isEmpty();
+    requestBtn_->setEnabled(available && !busy);
+    orgNameEdit_->setEnabled(available && !busy);
+    refreshBtn_->setEnabled(available && !busy);
+    copyBtn_->setEnabled(available);
+    offlineActivateBtn_->setEnabled(available);
+    offlineKeyEdit_->setEnabled(available);
 }
 
 void ActivationDialog::onRequestActivation() {
-    state_ = REGISTERING;
-    setState(i18n_->text("app.activation.registering"), true);
-    client_->registerDevice(canonicalMachineId_, productVersion_);
-}
-
-void ActivationDialog::onInviteCode() {
-    const QString inviteCode = inviteCodeEdit_->text().trimmed();
-    if (inviteCode.isEmpty()) {
-        setState(i18n_->text("app.activation.invalid_key"), true);
-        return;
-    }
-
-    state_ = ACTIVATING;
-    setState(i18n_->text("app.activation.activating"), true);
-    client_->activateWithCode(canonicalMachineId_, inviteCode, productVersion_);
+    setBusy(true);
+    setStatus(i18n_->text("app.activation.registering"), InfoBar::Informational);
+    client_->registerDevice(canonicalMachineId_, productVersion_, QSysInfo::machineHostName(),
+                            QSysInfo::prettyProductName(), orgNameEdit_->text().trimmed());
 }
 
 void ActivationDialog::onOfflineActivate() {
     const QString key = offlineKeyEdit_->toPlainText().trimmed();
     if (key.isEmpty()) {
-        QMessageBox::warning(this, i18n_->text("app.activation.title"),
-                             i18n_->text("app.activation.invalid_key"));
+        setStatus(i18n_->text("app.activation.empty_license"), InfoBar::Error);
         return;
     }
-
     const LicenseResult saved = manager_->saveLicense(key);
     if (!saved.ok()) {
-        state_ = IDLE;
-        setState(licenseErrorText(i18n_, saved.error.code, saved.error.params), true);
+        setStatus(licenseErrorText(i18n_, saved), licenseSeverity(saved.status));
         return;
     }
-
-    stopPolling();
-    QMessageBox::information(this, i18n_->text("app.activation.title"),
-                             i18n_->text("app.activation.activated"));
-    accept();
+    finishActivation(QDate::fromString(saved.payload.value("expiry").toString(), Qt::ISODate));
 }
 
 void ActivationDialog::onCopyMachineId() {
     QApplication::clipboard()->setText(displayMachineId_);
-    setState(i18n_->text("app.activation.copied"), true);
+    copyBtn_->setText(i18n_->text("app.activation.copied"));
+    QTimer::singleShot(2000, copyBtn_, [this] { copyBtn_->setText(i18n_->text("app.activation.copy")); });
 }
 
 void ActivationDialog::onRefreshStatus() {
+    if (busy_) return;
+    setBusy(true);
+    if (statusBar_->isHidden()) setStatus(i18n_->text("app.activation.checking"), InfoBar::Informational);
     client_->checkStatus(canonicalMachineId_);
 }
 
-void ActivationDialog::onRegistrationSubmitted(const QString& requestId) {
-    Q_UNUSED(requestId);
-    state_ = WAITING_APPROVAL;
-    setState(i18n_->text("app.activation.status_waiting"), true);
-    startPolling();
-}
-void ActivationDialog::onRegistrationAlreadyExists() {
-    state_ = WAITING_APPROVAL;
-    setState(i18n_->text("app.activation.status_waiting"), true);
-    startPolling();
+void ActivationDialog::onRegistrationSubmitted(const QString&) {
+    setBusy(false);
+    requestPanel_->hide();
+    setStatus(i18n_->text("app.activation.status_waiting"), InfoBar::Informational, i18n_->text("app.activation.status_refresh"));
+    pollTimer_->start();
     onRefreshStatus();
 }
+void ActivationDialog::onRegistrationAlreadyExists() { onRegistrationSubmitted({}); }
 
-void ActivationDialog::onActivationSuccess(const QString& licenseKey, const QDate& expiresAt) {
-    Q_UNUSED(expiresAt);
-    // Server granted this machine a license: persist via the online path,
-    // the only one allowed to reset a rolled-back/missing watermark.
-    const LicenseResult saved = manager_->saveOnlineLicense(licenseKey);
-    if (!saved.ok()) {
-        state_ = IDLE;
-        setState(licenseErrorText(i18n_, saved.error.code, saved.error.params), true);
-        return;
-    }
-
-    stopPolling();
+void ActivationDialog::finishActivation(const QDate& expiresAt) {
+    pollTimer_->stop();
+    client_->disconnect(this);
     QMessageBox::information(this, i18n_->text("app.activation.title"),
-                             i18n_->text("app.activation.activated"));
-    inviteCodeEdit_->clear();
+                             i18n_->text("app.activation.activated", {{"expires_at", expiresAt.toString(Qt::ISODate)}}));
     accept();
 }
 
-void ActivationDialog::onActivationFailed(const QString& errorCode, const QJsonObject& params) {
-    stopPolling();
-    state_ = IDLE;
-    setState(activationErrorText(i18n_, errorCode, params), true);
+void ActivationDialog::onActivationSuccess(const QString& licenseKey, const QDate& expiresAt) {
+    const LicenseResult saved = manager_->saveOnlineLicense(licenseKey);
+    if (!saved.ok()) {
+        setBusy(false);
+        setStatus(licenseErrorText(i18n_, saved), licenseSeverity(saved.status),
+                  i18n_->text("app.activation.status_refresh"));
+        return;
+    }
+    finishActivation(expiresAt);
 }
 
-void ActivationDialog::onStatusReceived(const QString& status, const QDate& expiresAt) {
-    Q_UNUSED(expiresAt);
-    if (status == QStringLiteral("active")) {
-        state_ = ACTIVATING;
-        setState(i18n_->text("app.activation.activating"), true);
+void ActivationDialog::onActivationFailed(const QString& errorCode, const QJsonObject& params) {
+    setBusy(false);
+    if (errorCode == QLatin1String("activation.expired_or_revoked")) {
+        onStatusReceived(params.value("status").toString(), {});
+        return;
+    }
+    const auto severity = errorCode == QLatin1String("activation.invalid_machine_id") ||
+                          errorCode == QLatin1String("activation.machine_id_required") ? InfoBar::Error : InfoBar::Warning;
+    setStatus(activationErrorText(i18n_, errorCode, params), severity, i18n_->text("app.activation.retry"));
+}
+
+void ActivationDialog::onStatusReceived(const QString& status, const QDate&) {
+    setBusy(false);
+    if (status == QLatin1String("active")) {
+        pollTimer_->stop();
+        requestPanel_->hide();
+        setBusy(true);
+        setStatus(i18n_->text("app.activation.activating"), InfoBar::Informational);
         client_->fetchLicense(canonicalMachineId_, productVersion_);
-        return;
+    } else if (status == QLatin1String("pending_approval")) {
+        requestPanel_->hide();
+        if (!pollTimer_->isActive()) pollTimer_->start();
+        setStatus(i18n_->text("app.activation.status_waiting"), InfoBar::Informational, i18n_->text("app.activation.status_refresh"));
+    } else if (status == QLatin1String("not_found")) {
+        pollTimer_->stop();
+        requestPanel_->show();
+        setStatus({}, InfoBar::Informational);
+    } else if (status == QLatin1String("expired") || status == QLatin1String("revoked") || status == QLatin1String("rejected")) {
+        pollTimer_->stop();
+        requestPanel_->hide();
+        const char* key = status == QLatin1String("expired") ? "app.activation.status_expired"
+            : status == QLatin1String("revoked") ? "app.activation.status_revoked" : "app.activation.status_rejected";
+        setStatus(i18n_->text(key), InfoBar::Warning, i18n_->text("app.activation.status_refresh"));
+    } else {
+        requestPanel_->show();
+        setStatus(i18n_->text("app.activation.request_failed"), InfoBar::Warning, i18n_->text("app.activation.retry"));
     }
-
-    if (status == QStringLiteral("pending_approval")) {
-        state_ = WAITING_APPROVAL;
-        setState(i18n_->text("app.activation.status_waiting"), true);
-        startPolling();
-        return;
-    }
-
-    state_ = IDLE;
-    stopPolling();
-    setState(statusText(i18n_, status), true);
 }
 
 void ActivationDialog::onNetworkError(const QString& detail) {
-    stopPolling();
-    state_ = IDLE;
-    const QString base = i18n_->text("app.activation.network_unavailable");
-    const QString text = detail.isEmpty() ? base
-                                          : base + QStringLiteral(" (") + detail + QStringLiteral(")");
-    setState(text, true);
+    qWarning() << "Activation network error:" << detail;
+    setBusy(false);
+    requestPanel_->show();
+    setStatus(i18n_->text("app.activation.network_unavailable"), InfoBar::Warning, i18n_->text("app.activation.retry"));
 }
 
 }  // namespace bf

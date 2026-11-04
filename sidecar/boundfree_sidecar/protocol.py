@@ -5,7 +5,8 @@ from typing import Any
 
 from .errors import error_payload, make_error
 from .analysis_io import AnalysisError, handle_analysis
-from .readers.errors import CsvSchemaError, OptionalDependencyMissing
+from .capture_io import CaptureError, available as capture_available, handle_capture
+from .readers.errors import CsvSchemaError, CaptureReaderError, OptionalDependencyMissing
 from .readers.registry import reader_for_path
 from .sessions import FileSessionRegistry
 from .version import load_version
@@ -67,7 +68,10 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
     path = Path(raw_path)
     if not path.exists():
         return error_response(request_id, "file.not_found", {"path": raw_path})
-    reader = reader_for_path(path)
+    stream = params.get("capture_stream", "")
+    if not isinstance(stream, str):
+        return error_response(request_id, "protocol.invalid_params", {"field": "capture_stream", "reason": "expected string"})
+    reader = reader_for_path(path, stream) if stream else reader_for_path(path)
     if reader is None:
         return error_response(request_id, "reader.unsupported_format", {"path": raw_path, "suffix": path.suffix.lower()})
     try:
@@ -78,12 +82,12 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
             "dependency": exc.dependency,
             "reason": exc.reason or str(exc),
         })
-    except CsvSchemaError as exc:
+    except (CsvSchemaError, CaptureReaderError) as exc:
         return error_response(request_id, exc.code, {"path": raw_path, **exc.params})
     except Exception as exc:
         return error_response(request_id, "reader.open_failed", {"path": raw_path, "reason": str(exc)})
-    session = _sessions.add(path, meta.fs, meta.n_channels, meta.n_samples, meta.ch_names, reader)
-    return success_response(request_id, {
+    session = _sessions.add(path, meta.fs, meta.n_channels, meta.n_samples, meta.ch_names, reader, duration=meta.duration)
+    result = {
         "handle": session.handle,
         "fs": meta.fs,
         "n_channels": meta.n_channels,
@@ -93,7 +97,11 @@ def _handle_open(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
         "unit": meta.unit,
         "format": meta.format_name,
         "events": meta.events,
-    })
+    }
+    if meta.channel_units is not None: result["channel_units"] = meta.channel_units
+    if meta.capture is not None: result["capture"] = meta.capture
+    if meta.source_metadata is not None: result["signal_metadata"] = meta.source_metadata
+    return success_response(request_id, result)
 
 
 def _handle_get_slice(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -121,11 +129,11 @@ def _handle_get_slice(request_id: Any, params: dict[str, Any]) -> dict[str, Any]
             "dependency": exc.dependency,
             "reason": exc.reason or str(exc),
         })
-    except CsvSchemaError as exc:
+    except (CsvSchemaError, CaptureReaderError) as exc:
         return error_response(request_id, exc.code, {"path": str(session.path), **exc.params})
     except Exception as exc:
         return error_response(request_id, "reader.open_failed", {"path": str(session.path), "reason": str(exc)})
-    return success_response(request_id, {
+    result = {
         "handle": handle,
         "t0": data.t0,
         "t1": data.t1,
@@ -133,7 +141,10 @@ def _handle_get_slice(request_id: Any, params: dict[str, Any]) -> dict[str, Any]
         "shape": data.shape,
         "unit": data.unit,
         "data": data.data,
-    })
+    }
+    if data.channel_units is not None: result["channel_units"] = data.channel_units
+    if data.sample_times is not None: result["sample_times"] = data.sample_times
+    return success_response(request_id, result)
 
 
 def _handle_close(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -323,7 +334,7 @@ def _handle_export_samples(request_id: Any, params: dict[str, Any], binary_paylo
     if (
         not isinstance(shape, list) or len(shape) != 2
         or not all(isinstance(value, int) and not isinstance(value, bool) and value > 0 for value in shape)
-        or shape[0] != len(names) or params.get("dtype") != "float32-le" or params.get("unit") != "uV"
+        or shape[0] != len(names) or params.get("dtype") != "float32-le" or not isinstance(params.get("unit"), str) or not params.get("unit")
         or binary_payload is None or len(binary_payload) != shape[0] * shape[1] * 4
     ):
         return error_response(request_id, "ipc.invalid_frame", {"reason": "export payload metadata does not match bytes"})
@@ -331,7 +342,8 @@ def _handle_export_samples(request_id: Any, params: dict[str, Any], binary_paylo
         import numpy as np
 
         data = np.frombuffer(binary_payload, dtype="<f4").reshape(shape)
-        return success_response(request_id, export_samples(data, fs, names, t0, t1, Path(destination), markers))
+        return success_response(request_id, export_samples(data, fs, names, t0, t1, Path(destination), markers,
+            unit=params.get("unit", "uV"), channel_units=params.get("channel_units"), sample_times=params.get("sample_times"), provenance=params.get("provenance")))
     except Exception as exc:
         return error_response(request_id, "export.failed", {"path": destination, "reason": str(exc)})
 
@@ -345,9 +357,21 @@ def handle_request(request: Any, binary_payload: bytes | None = None) -> dict[st
     method = request["method"]
     if method == "hello":
         version = load_version()
-        return success_response(request_id, {"product_version": version.version, "ipc_protocol_version": version.ipc_protocol_version,
-                                             "analysis_capabilities": ["source-f64-v1", "bundle-f64-v1"]})
+        result = {"product_version": version.version, "ipc_protocol_version": version.ipc_protocol_version,
+                  "analysis_capabilities": ["source-f64-v1", "bundle-f64-v1"]}
+        requested = _params(request).get("requested_capabilities", [])
+        capture_capabilities = ("capture.v1", "capture.metadata.v1")
+        if isinstance(requested, list) and any(capability in requested for capability in capture_capabilities):
+            result["capabilities"] = [capability for capability in capture_capabilities if capability in requested] if capture_available() else []
+        return success_response(request_id, result)
     params = _params(request)
+    if method in ("capture_open", "capture_append", "capture_event", "capture_finalize", "capture_inspect"):
+        try:
+            return success_response(request_id, handle_capture(method, params, binary_payload))
+        except CaptureError as exc:
+            return error_response(request_id, exc.code, exc.params)
+        except Exception as exc:
+            return error_response(request_id, "capture.writer_failed", {"operation": method, "reason": str(exc)})
     if method in ("analysis_source_open", "analysis_source_read", "analysis_source_close",
                   "analysis_bundle_write", "analysis_bundle_publish", "analysis_bundle_discard"):
         try:

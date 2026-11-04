@@ -7,10 +7,14 @@ source_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 config_path="$source_root/config/windows-dev.local.json"
 
 init_mode=false
+dry_run=false
 target_root=""
 
 for arg in "$@"; do
   case "$arg" in
+    --dry-run)
+      dry_run=true
+      ;;
     --init)
       init_mode=true
       ;;
@@ -63,7 +67,7 @@ fi
 
 if [[ ! -d "$target_root" ]]; then
   if [[ "$init_mode" == true ]]; then
-    mkdir -p "$target_root"
+    if [[ "$dry_run" == false ]]; then mkdir -p "$target_root"; fi
   else
     echo "Windows repository not found: $target_root" >&2
     exit 1
@@ -75,24 +79,8 @@ if [[ "$init_mode" == false && ! -f "$target_root/version.json" ]]; then
   exit 1
 fi
 
-rsync -a --delete \
-  --exclude='.git/' \
-  --exclude='.venv/' \
-  --exclude='native/spike/build/' \
-  --exclude='native/spike/build-*/' \
-  --exclude='native/build/' \
-  --exclude='native/build-*/' \
-  --exclude='native/**/*_autogen/' \
-  --exclude='release/' \
-  --exclude='dist/' \
-  --exclude='installer/Output/' \
-  --exclude='__pycache__/' \
-  --exclude='.pytest_cache/' \
-  --exclude='*.pyc' \
-  --exclude='private_key.pem' \
-  --exclude='*private*key*' \
-  --exclude='*.pfx' \
-  --exclude='license.dat' \
-  "$source_root/" "$target_root/"
-
-printf 'Synchronized WSL source to Windows repository: %s\n' "$target_root"
+sync_options=()
+if [[ "$init_mode" == true ]]; then sync_options+=(--init); fi
+if [[ "$dry_run" == true ]]; then sync_options+=(--dry-run); fi
+python3 "$source_root/scripts/common/sync_windows_source.py" \
+  "$source_root" "$target_root" "${sync_options[@]}"

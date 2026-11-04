@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #pragma once
 
 #include "controller/processing_view_state.h"
@@ -24,7 +25,7 @@ public:
         layout_->setSpacing(4);
         title_ = new QLabel(this);
         layout_->addWidget(title_);
-        selector_ = new QComboBox(this);
+        selector_ = new ChoiceBox(this);
         selector_->setObjectName("eegBandpassChannel");
         selector_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         selector_->setMinimumContentsLength(12);
@@ -140,7 +141,7 @@ private:
         box->setContentsMargins(0, 0, 0, 0);
         box->setSpacing(0);
         auto* header = new ControlBar(widget);
-        auto* mode = new QComboBox(header);
+        auto* mode = new ChoiceBox(header);
         mode->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         mode->setObjectName(QString("eegBandpassMode_%1").arg(channel));
         mode->addItems({QString(), QString(), QString()});

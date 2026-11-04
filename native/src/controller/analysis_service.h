@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QJsonObject>
 #include <memory>
 
 namespace bf {
@@ -27,6 +28,10 @@ struct AnalysisRequest {
     double fmax = 100.0;
     int nperseg = 0;
     int epochSamples = 0;
+    QString unit = "uV";
+    QString sourceId;
+    QString streamId;
+    QJsonObject sourceContext;
 };
 
 struct BandTrendResult {

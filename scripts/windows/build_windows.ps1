@@ -126,6 +126,13 @@ if (-not [System.IO.Path]::IsPathRooted($VenvDir)) {
 }
 $VenvDir    = [System.IO.Path]::GetFullPath($VenvDir)
 $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
+$ConfiguredPython = Get-CfgValue "python_executable"
+if ($ConfiguredPython) {
+    $VenvPython = [System.IO.Path]::GetFullPath([string]$ConfiguredPython)
+    if (-not (Test-Path -LiteralPath $VenvPython -PathType Leaf)) {
+        throw "Configured python_executable not found: $VenvPython"
+    }
+}
 
 if (-not [System.IO.Path]::IsPathRooted($LicensePublicKeyFile)) {
     $LicensePublicKeyFile = Join-Path $RepoRoot $LicensePublicKeyFile
@@ -233,6 +240,12 @@ if ($pyVer.Trim() -ne "3.12") {
 
 # ---- venv -------------------------------------------------------------------
 $VenvExisted = Test-Path -LiteralPath $VenvPython -PathType Leaf
+if ($ConfiguredPython) {
+    $configuredVersion = & $VenvPython -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+    if ($LASTEXITCODE -ne 0 -or $configuredVersion.Trim() -ne '3.12') {
+        throw "Configured python_executable must use Python 3.12: $VenvPython"
+    }
+}
 if (-not $VenvExisted) {
     Write-Step "Create Python 3.12 virtual environment"
     & $Bootstrap @BootstrapArgs -m venv $VenvDir
@@ -287,10 +300,10 @@ if ($SkipVerification) {
     return
 }
 
-$verifyArgs = [string[]]@()
-if ($SkipInstaller) { $verifyArgs += "-SkipInstaller" }
 try {
-    Invoke-Checked "Windows automated acceptance" $VerifyScript $verifyArgs
+    Write-Step "Windows automated acceptance"
+    & $VerifyScript -SkipInstaller:$SkipInstaller
+    if ($LASTEXITCODE -ne 0) { throw "Windows automated acceptance failed (exit $LASTEXITCODE)." }
 } catch {
     $expectedInstaller = Join-Path $RepoRoot "dist\BoundFreeEEG_Setup_$($version.version).exe"
     if (Test-Path -LiteralPath $expectedInstaller -PathType Leaf) {

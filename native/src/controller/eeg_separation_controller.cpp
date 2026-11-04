@@ -51,7 +51,7 @@ SeparationSource parseSource(const QJsonObject& meta) {
     source.metadata = meta;
     require(std::isfinite(source.fs) && source.fs > 0 && source.samples > 0 &&
             source.channels.size() == source.channelIds.size() && !source.channels.empty() &&
-            meta.value("unit").toString() == "uV", "analysis.source_invalid",
+            QStringList{"uV","count","1","degC","A","mA","Pa","kPa"}.contains(meta.value("unit").toString()), "analysis.source_invalid",
             {{"reason", "invalid_metadata"}});
     return source;
 }
@@ -70,12 +70,12 @@ QJsonArray labelJson(const std::vector<int>& values) {
     for (int value : values) array.append(value);
     return array;
 }
-SeparationMatrix readDoublePayload(const QJsonObject& meta, const QByteArray& payload, int channels, qint64 samples) {
+SeparationMatrix readDoublePayload(const QJsonObject& meta, const QByteArray& payload, int channels, qint64 samples, const QString& unit = "uV") {
     const auto shape = meta.value("shape").toArray();
     const qint64 expected = static_cast<qint64>(channels) * samples * 8;
     require(channels > 0 && samples > 0 && expected <= 256LL * 1024 * 1024 &&
             shape.size() == 2 && shape[0].toInteger() == channels && shape[1].toInteger() == samples &&
-            meta.value("dtype").toString() == "float64-le" && meta.value("unit").toString() == "uV" &&
+            meta.value("dtype").toString() == "float64-le" && meta.value("unit").toString() == unit &&
             meta.value("payload_bytes").toInteger() == expected && payload.size() == expected,
             "ipc.invalid_frame", {{"reason", "analysis_payload_mismatch"}});
     SeparationMatrix result(channels, std::vector<double>(samples));
@@ -177,12 +177,16 @@ void EegSeparationController::clearSource() {
     if (state_ == State::Exporting && publishing_ && publishing_->load()) return;
     stopWorker(); source_ = {}; settings_ = {}; invalidate(); setState(State::Empty); emit sourceChanged();
 }
-void EegSeparationController::openSource(const QString& path, const QString& csvUnit) {
+void EegSeparationController::openSource(const QString& path, const QString& csvUnit, bool preserveOnFailure) {
     if (state_ == State::Exporting && publishing_ && publishing_->load()) return;
-    clearSource();
-    if (state_ != State::Empty || path.isEmpty()) return;
+    if (preserveOnFailure && (isBusy() || path.isEmpty())) return;
+    const auto previousSource = source_;
+    const auto previousSettings = settings_;
+    if (preserveOnFailure) stopWorker();
+    else clearSource();
+    if ((!preserveOnFailure && state_ != State::Empty) || path.isEmpty()) return;
     const auto root = repoRoot_; const auto version = version_; QPointer<EegSeparationController> owner(this);
-    launch(State::Inspecting, [owner, root, version, path, csvUnit](quint64 generation, auto cancelled) {
+    launch(State::Inspecting, [owner, root, version, path, csvUnit, previousSource, previousSettings, preserveOnFailure](quint64 generation, auto cancelled) {
         const auto deliver = [owner, generation, cancelled](std::function<void(EegSeparationController*)> action) {
             if (!owner || cancelled->load()) return;
             QMetaObject::invokeMethod(owner, [owner, generation, cancelled, action]() {
@@ -210,32 +214,54 @@ void EegSeparationController::openSource(const QString& path, const QString& csv
                 teaching.value("ch_names").toArray() == meta.value("ch_names").toArray() &&
                 teaching.value("channel_ids").toArray() == meta.value("channel_ids").toArray() &&
                 teaching.value("roles").toArray() == QJsonArray{1,1,1,2,3};
-            deliver([source](auto self) {
+            const auto origin = source.metadata.value("signal_provenance").toObject();
+            source.simulatorIca = source.channels.size() == 5 && origin.value("simulated").toBool() &&
+                origin.value("channel_ids").toArray() == QJsonArray{"sim-ica-v1-1", "sim-ica-v1-2", "sim-ica-v1-3", "sim-ica-v1-4", "sim-ica-v1-5"} &&
+                origin.value("channel_units").toArray() == QJsonArray{"uV", "uV", "uV", "uV", "uV"};
+            deliver([source, previousSource, previousSettings, preserveOnFailure](auto self) {
+                if (preserveOnFailure) { self->settings_ = {}; self->invalidate(); }
                 self->source_ = source;
                 self->settings_.roles.assign(source.channels.size(), 0);
-                if (source.teaching) self->settings_.roles = {1,1,1,2,3};
+                if (source.teaching || source.simulatorIca) self->settings_.roles = {1,1,1,2,3};
                 // Match the time editors without rounding a full-file interval past EOF.
                 self->settings_.duration = std::floor(std::min(120.0, source.duration()) * 1e6) / 1e6;
                 self->settings_.outputRate = source.fs >= 500 ? 500 : 250;
+                const auto origin = source.metadata.value("signal_provenance").toObject();
+                const auto previous = previousSource.metadata.value("signal_provenance").toObject();
+                if (!origin.value("source_id").toString().isEmpty() && origin.value("source_id") == previous.value("source_id") &&
+                    origin.value("stream_id") == previous.value("stream_id") &&
+                    !origin.value("channel_ids").toArray().isEmpty() && origin.value("channel_ids") == previous.value("channel_ids") &&
+                    origin.value("channel_units") == previous.value("channel_units") && source.fs == previousSource.fs &&
+                    previousSettings.roles.size() == static_cast<size_t>(source.channels.size())) {
+                    self->settings_.roles = previousSettings.roles;
+                    self->settings_.outputRate = previousSettings.outputRate;
+                    self->settings_.notchHz = previousSettings.notchHz;
+                }
                 self->setState(State::Ready); emit self->sourceChanged();
             });
-        } catch (const TaskFailure& failure) { deliver([failure, path, csvUnit](auto self) {
-            self->setState(State::Empty);
+        } catch (const TaskFailure& failure) { deliver([failure, path, csvUnit, preserveOnFailure](auto self) {
+            self->setState(self->output_ ? State::Review : self->source_.path.isEmpty() ? State::Empty : State::Ready);
             if (csvUnit.isEmpty() && path.endsWith(".csv", Qt::CaseInsensitive) &&
                 failure.error.code == "analysis.unknown_unit" && failure.error.params.value("unit").toString() == "unknown")
                 emit self->unitRequired(path);
+            else if (preserveOnFailure) emit self->sourceReplacementFailed(failure.error);
             else emit self->failed(failure.error);
         }); }
-          catch (...) { deliver([](auto self) { self->setState(State::Empty); emit self->failed(makeError("analysis.failed")); }); }
+          catch (...) { deliver([preserveOnFailure](auto self) {
+              self->setState(self->output_ ? State::Review : self->source_.path.isEmpty() ? State::Empty : State::Ready);
+              if (preserveOnFailure) emit self->sourceReplacementFailed(makeError("analysis.failed"));
+              else emit self->failed(makeError("analysis.failed"));
+          }); }
     });
 }
 void EegSeparationController::openTeachingSource() {
     openSource(QDir(repoRoot_).filePath("samples/offline-eeg/teaching.h5"));
 }
 bool EegSeparationController::canApplyTeachingLabels() const {
-    return source_.teaching && output_ && !isBusy() && settings_.roles == std::vector<int>({1,1,1,2,3}) &&
-        settings_.start == 0.0 && settings_.duration == 16.0 && settings_.outputRate == 500 &&
-        settings_.notchHz == 0 && output_->rank == 3 && output_->scores.size() == 3;
+    if (!output_ || isBusy() || settings_.roles != std::vector<int>({1,1,1,2,3}) ||
+        settings_.notchHz != 0 || output_->rank != 3 || output_->scores.size() != 3) return false;
+    return (source_.teaching && settings_.start == 0.0 && settings_.duration == 16.0 && settings_.outputRate == 500) ||
+        (source_.simulatorIca && settings_.duration >= 5.0);
 }
 void EegSeparationController::applyTeachingLabels() {
     if (!canApplyTeachingLabels()) return;
@@ -244,7 +270,7 @@ void EegSeparationController::applyTeachingLabels() {
         if (eye < 0 || output_->scores[i].eyeCorrelation > output_->scores[eye].eyeCorrelation) eye = i;
         if (muscle < 0 || output_->scores[i].muscleCorrelation > output_->scores[muscle].muscleCorrelation) muscle = i;
     }
-    // This mapping is exclusively a demonstration on the hash-verified mathematical fixture.
+    // Demonstration only: a verified bundled fixture or the versioned simulator profile.
     if (eye == muscle || output_->scores[eye].eyeCorrelation < .9 || output_->scores[muscle].muscleCorrelation < .8) return;
     const auto previous = labels_;
     const auto historySize = labelHistory_.size();
@@ -321,7 +347,7 @@ void EegSeparationController::start() {
             require(slice.value("fs").toDouble() == source.fs &&
                     slice.value("first_sample").toInteger(-1) == static_cast<qint64>(request.readFirstSample),
                     "ipc.invalid_frame", {{"reason", "analysis_sample_coordinates_mismatch"}});
-            request.samples = readDoublePayload(slice, bytes, ids.size(), readCount);
+            request.samples = readDoublePayload(slice, bytes, ids.size(), readCount,source.metadata.value("unit").toString("uV"));
             bytes.clear();
             deliver([](auto self) { emit self->progressChanged("fitting"); });
             const auto result = separation::analyze(request, [cancelled] { return cancelled->load(); });
@@ -380,7 +406,7 @@ void EegSeparationController::setLabel(int component, int group) {
             projections_[previous][c][t] -= contribution;
             projections_[group][c][t] += contribution;
         }
-    labels_[component] = group; confirmed_ = false;
+    labels_[component] = group; confirmed_ = false; exportedPath_.clear();
     emit labelsChanged(); emit confirmationChanged();
 }
 void EegSeparationController::undoLabel() {
@@ -395,7 +421,7 @@ void EegSeparationController::undoLabel() {
                 projections_[previous[component]][c][t] += contribution;
             }
     }
-    labels_ = previous; confirmed_ = false;
+    labels_ = previous; confirmed_ = false; exportedPath_.clear();
     emit labelsChanged(); emit confirmationChanged();
 }
 void EegSeparationController::setConfirmed(bool confirmed) {
@@ -438,7 +464,7 @@ void EegSeparationController::exportBundle(const QString& destination) {
                 {{"path", destination}, {"fs", output->fs}, {"t0", output->start},
                  {"ch_names", QJsonArray::fromStringList(output->channels)},
                  {"shape", QJsonArray{7, static_cast<qint64>(output->analysis.size()), static_cast<qint64>(output->analysis.front().size())}},
-                 {"dtype", "float64-le"}, {"unit", "uV"}, {"manifest", manifest}, {"stage_only", true},
+                 {"dtype", "float64-le"}, {"unit", manifest.value("source").toObject().value("unit").toString("uV")}, {"manifest", manifest}, {"stage_only", true},
                  {"cancel_path", cancelPath}}, bytes, nullptr, 120000));
             const auto token = staged.value("token");
             {

@@ -26,3 +26,12 @@ __pycache__/
 config/windows-dev.local.json
 
 build-info.json
+
+# Machine-local CMake presets and generated Python bundles
+native/CMakeUserPresets.json
+sidecar/build/
+
+# Guarded Windows build-mirror state (machine-local)
+.boundfree-windows-mirror.json
+.boundfree-sync.lock
+.boundfree-manifest-*
