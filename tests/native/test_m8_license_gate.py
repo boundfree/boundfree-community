@@ -140,7 +140,8 @@ def test_cmake_require_license_configures_builds_and_runs_smoke_gate(tmp_path):
 
     # 3. 构建 bf_app 目标成功
     r = subprocess.run(
-        [cmake, "--build", str(build), "--target", "bf_app", "-j"],
+        # Bare "-j" starts every job at once; heavy Qt translation units then exhaust memory.
+        [cmake, "--build", str(build), "--target", "bf_app", "--parallel", str(min(os.cpu_count() or 2, 4))],
         capture_output=True,
         text=True,
         timeout=300,

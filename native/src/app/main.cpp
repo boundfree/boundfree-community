@@ -2291,7 +2291,8 @@ int main(int argc, char** argv) {
             result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
-            result.waveform.t1 = 10.0;
+            // Cache 2 s so the 4 s browser window must request more data.
+            result.waveform.t1 = 2.0;
             result.waveform.channelNames = {"ch1", "ch2"};
             result.waveform.data = {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, -1.0f}};
             window.showFileOpenResult(result);

@@ -23,6 +23,11 @@ inline int smokeEmptyControls(int argc, char** argv, const bf::VersionInfo& vers
     const auto fail = [](const char* reason) { std::cerr << "empty-controls-failed " << reason << '\n'; return 1; };
     settle();
     auto* sidebar = window.findChild<QSplitter*>("eegAnalysisSplitter");
+    // Narrow windows host the analysis splitter as a tab beside the waveform.
+    const auto analysisShown = [&] {
+        auto* compact = window.findChild<QTabWidget*>("signalCompactTools");
+        return sidebar->isVisible() || (compact && compact->isVisible() && compact->indexOf(sidebar) >= 0);
+    };
     auto* logo = window.findChild<QLabel*>("brandLogo");
     auto* workspace = window.findChild<QSplitter*>("eegWorkspaceSplitter");
     if (!sidebar || sidebar->isVisible() || !logo || !workspace) return fail("empty_sidebar");
@@ -43,14 +48,14 @@ inline int smokeEmptyControls(int argc, char** argv, const bf::VersionInfo& vers
     result.waveform.channelNames = result.session.chNames;
     result.waveform.data = {std::vector<float>(1000)};
     window.showFileOpenResult(result); settle();
-    if (!sidebar->isVisible()) return fail("loaded_sidebar");
+    if (!analysisShown()) return fail("loaded_sidebar");
     for (const QString& name : {QString("Channels"), QString("Markers"), QString("Analysis"), QString("Video")})
         if (!window.findChild<QAction*>("eegToggle" + name)->isEnabled()) return fail("loaded_view_action");
     auto* waveform = window.findChild<bf::WaveformWidget*>();
     window.showFileOpenLoading("missing-next.csv");
     window.showFileOpenError(bf::makeError("reader.slice_out_of_range", {}));
     settle();
-    if (!sidebar->isVisible() || !waveform->isVisible()
+    if (!analysisShown() || !waveform->isVisible()
         || waveform->cachedDisplayModel().channelNames != result.session.chNames) return fail("failed_reopen_loses_session");
     auto* windowSize = window.findChild<QDoubleSpinBox*>("eegWindowSeconds");
     auto* presetButton = window.findChild<QToolButton*>("eegWindowSecondsPresetButton");
@@ -58,8 +63,12 @@ inline int smokeEmptyControls(int argc, char** argv, const bf::VersionInfo& vers
     if (!windowSize || !presetButton || !presetMenu || !presetButton->isVisible()
         || windowSize->buttonSymbols() != QAbstractSpinBox::NoButtons) return fail("window_presets");
     QMetaObject::invokeMethod(presetMenu, "aboutToShow", Qt::DirectConnection);
-    if (presetMenu->actions().size() != 8) return fail("preset_choices");
-    presetMenu->actions()[1]->trigger();
+    // Presets .25/.5/1/2/5/10/20/30/60/120 s all fit the fixed 0.25-120 s range.
+    if (presetMenu->actions().size() != 10) {
+        std::cerr << "preset count=" << presetMenu->actions().size() << " range=" << windowSize->minimum() << "-" << windowSize->maximum() << "\n";
+        return fail("preset_choices");
+    }
+    presetMenu->actions()[3]->trigger();
     if (windowSize->value() != 2) return fail("preset_selection");
     windowSize->setFocus(); windowSize->selectAll();
     QKeyEvent typed(QEvent::KeyPress, 0, Qt::NoModifier, "7");
