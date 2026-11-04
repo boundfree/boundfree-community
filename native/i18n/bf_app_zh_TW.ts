@@ -199,22 +199,6 @@
       <translation>日本語</translation>
     </message>
     <message>
-      <source>app.language.ko_KR</source>
-      <translation>한국어</translation>
-    </message>
-    <message>
-      <source>app.language.de_DE</source>
-      <translation>Deutsch</translation>
-    </message>
-    <message>
-      <source>app.language.fr_FR</source>
-      <translation>Français</translation>
-    </message>
-    <message>
-      <source>app.language.es_ES</source>
-      <translation>Español</translation>
-    </message>
-    <message>
       <source>app.language.pseudo</source>
       <translation>偽在地化</translation>
     </message>

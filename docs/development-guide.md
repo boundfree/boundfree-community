@@ -64,7 +64,7 @@ last_updated: 2026-11-02
 
 ### 平台保护
 
-上述是仓库协作规则，平台强制执行依赖实际套餐和设置。2026-10-25 核对：组织为 GitHub Free、仓库私有、`master` 的 `protected=false`，Ruleset 查询返回套餐限制的 403；目前不能声称已强制阻止直推。
+上述是仓库协作规则，平台强制执行依赖实际套餐和设置。2026-11-05 核对：组织为 GitHub Free，仓库已公开，`master` 的 `protected=false`，没有 Ruleset；公开仓库可以配置分支保护，但尚未配置，目前不能声称已强制阻止直推。
 
 具备平台能力后，由管理员在 **Settings → Rules / Branches** 配置 `master`：必须经 PR、两个平台的必要 CI 成功、分支与主线更新、审查对话解决、禁止强推和删除。Required status checks 选用实际成功 PR 中的检查名称。多人协作要求至少一次非作者批准，并使新增改动后的旧批准失效；单人维护时保留人工自审记录，不配置无人能够满足的他人批准人数。允许 merge commit 时不要同时要求 linear history。
 

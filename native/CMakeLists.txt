@@ -30,7 +30,7 @@ endif()
 
 # ---------------------------------------------------------------------------
 # 翻译：用 Qt6 LinguistTools/lrelease 把 native/i18n/*.ts 编译为 .qm。
-# 仅 stable + test locale（zh_CN/en_US/ja_JP/zh_TW/pseudo）产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
+# 仅 stable + test locale（zh_CN/en_US/ja_JP/zh_TW/pseudo）产出 .qm。
 # bf_app 构建前生成；install 只安装 .qm，不安装 .ts。Qt 基础翻译按可用性部署。
 # ---------------------------------------------------------------------------
 set(BF_I18N_TS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/i18n")
@@ -45,7 +45,7 @@ foreach(_loc ${BF_I18N_LOCALES})
     set_source_files_properties("${_ts_file}" PROPERTIES OUTPUT_LOCATION "${BF_I18N_QM_DIR}")
 endforeach()
 # qt_add_lrelease 创建 lrelease 目标并把 .qm 写入 BF_I18N_QM_DIR。
-# 仅 stable + pseudo 产出 .qm；其余 locale 保留 .ts 源但不产出 .qm、不进包。
+# 仅 stable + pseudo 产出 .qm。
 qt_add_lrelease(
     LRELEASE_TARGET bf_i18n_qm
     QM_OUTPUT_DIRECTORY "${BF_I18N_QM_DIR}"

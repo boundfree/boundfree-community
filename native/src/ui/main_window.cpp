@@ -794,7 +794,7 @@ void MainWindow::buildLanguageMenu() {
     languageMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.language"), menuBar());
     menuBar()->addMenu(languageMenu_);
     // 语言选项互斥；stable 菜单仅展示 supportedLocales（zh_CN/en_US/ja_JP/zh_TW），
-    // pseudo 与未审校 locale 不在此列表，不暴露给用户。
+    // pseudo 与非 stable locale 不在此列表，不暴露给用户。
     languageGroup_ = new QActionGroup(this);
     languageGroup_->setExclusive(true);
     const QStringList locales = i18n_->supportedLocales();
