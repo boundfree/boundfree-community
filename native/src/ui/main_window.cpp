@@ -1460,6 +1460,8 @@ void MainWindow::buildAnalysisDock() {
         analysisLegendLabels_[index] = legend;
         if (summary == nullptr) summary = new AnalysisSummaryLabel(content);
         summary->setObjectName(QString("eegAnalysisSummary_%1").arg(index));
+        // The window style sheet stops setFont() propagation; keep result tables at workbench size.
+        summary->setFont(workbenchFont());
         summary->setTextFormat(Qt::RichText);
         summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
         summary->setWordWrap(true);
