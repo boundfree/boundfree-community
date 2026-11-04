@@ -56,8 +56,12 @@ inline int smokeReferenceLabels(int argc, char** argv, const bf::VersionInfo& ve
                     if (!control->isVisible()) continue;
                     if (qobject_cast<QComboBox*>(control) || qobject_cast<QAbstractSpinBox*>(control)
                         || qobject_cast<QPushButton*>(control) || control->property("controlBarAction").toBool()) {
-                        if (std::abs(control->height() - combo->height()) > 1)
+                        if (std::abs(control->height() - combo->height()) > 1) {
+                            std::cerr << "control " << control->objectName().toStdString() << " ("
+                                      << control->metaObject()->className() << ") height=" << control->height()
+                                      << " reference=" << combo->height() << " dark=" << dark << '\n';
                             return fail("unequal_control_height");
+                        }
                     }
                 }
             }
@@ -76,8 +80,16 @@ inline int smokeReferenceLabels(int argc, char** argv, const bf::VersionInfo& ve
                 int longestText = 0;
                 for (int item = 0; item < combo->count(); ++item)
                     longestText = std::max(longestText, view->fontMetrics().horizontalAdvance(combo->itemText(item)));
-                if (view->width() > std::max(combo->width(), longestText + 64) + 16)
+                // Fluent combo boxes draw their own popup instead of showing view().
+                QWidget* popup = view;
+                for (QWidget* candidate : QApplication::allWidgets())
+                    if (candidate->isVisible() && candidate->objectName() == "ComboBoxPopup") popup = candidate;
+                // Compare the content area; Fluent flyouts reserve their shadow inside the widget.
+                if (popup->contentsRect().width() > std::max(combo->width(), longestText + 64) + 16) {
+                    std::cerr << "popup width=" << popup->contentsRect().width() << " combo=" << combo->width()
+                              << " longest=" << longestText << " popup=" << popup->metaObject()->className() << '\n';
                     return fail("popup_width_grows_after_locale_change");
+                }
                 for (int item = 0; item < combo->count(); ++item) {
                     const auto index = combo->model()->index(item, combo->modelColumn(), combo->rootModelIndex());
                     const QRect row = view->visualRect(index);

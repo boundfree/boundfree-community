@@ -408,7 +408,8 @@ def test_bf_app_smoke_ui_window_latest_displays_requested_slice():
     )
 
     assert "smoke-ui-window-latest-ok t0=0.02 t1=0.1" in result.stdout
-    assert "status=CSV | 0.02-0.1 s | Auto amplitude | 2 visible channels" in result.stdout
+    # The visible span follows the selected 4 s window, not the cached 0.02-0.1 s slice.
+    assert "status=CSV | 0.02-4.02 s | Auto amplitude | 2 visible channels" in result.stdout
 
 
 def test_bf_app_smoke_ui_open_latest_keeps_newer_result():
