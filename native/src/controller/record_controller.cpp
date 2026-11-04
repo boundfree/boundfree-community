@@ -1,4 +1,5 @@
 #include "controller/record_controller.h"
+#include "render/waveform_slice.h"
 
 #include <QElapsedTimer>
 #include <QMetaObject>
@@ -105,7 +106,7 @@ bool RecordController::startFromFile(
             if (!controller.isNull()) emit controller->started(summary);
         }, Qt::QueuedConnection);
 
-        QThread* producer = QThread::create([state, repoRoot, version, sourcePath, fs, duration, sourceStart, chunkSamples, emitFailure]() {
+        QThread* producer = QThread::create([state, repoRoot, version, sourcePath, fs, duration, sourceStart, chunkSamples, metadata, emitFailure]() {
             SidecarClient source(repoRoot);
             const SidecarHelloResult hello = source.startAndHello(version, 5000);
             if (!hello.ok) {
@@ -115,7 +116,7 @@ bool RecordController::startFromFile(
                 state->hasData.wakeAll();
                 return;
             }
-            const SidecarOpenResult openedSource = source.openFile(sourcePath, 30000);
+            const SidecarOpenResult openedSource = source.openFile(sourcePath, 30000, metadata.value("signal_stream").toString());
             if (!openedSource.ok) {
                 emitFailure(openedSource.error);
                 state->stopRequested.store(true);
@@ -144,7 +145,7 @@ bool RecordController::startFromFile(
                 if (state->chunks.size() >= state->maxSourceQueueChunks) {
                     ++state->sourceDroppedChunks;
                 } else {
-                    state->chunks.enqueue(slice.data);
+                    state->chunks.enqueue(normalizedSignalWindow(waveformSliceFromSidecar(openedSource,slice)).data);
                     state->hasData.wakeOne();
                 }
             }

@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #include "ui/export_segment_dialog.h"
 #include "i18n/i18n_service.h"
 
@@ -31,7 +32,7 @@ ExportSegmentDialog::ExportSegmentDialog(I18nService* i18n, double duration, dou
     end_->setObjectName("eegExportEnd");
     start_->setValue(std::clamp(start, 0.0, duration));
     end_->setValue(std::clamp(end, 0.0, duration));
-    mode_ = new QComboBox(this);
+    mode_ = new ChoiceBox(this);
     mode_->setObjectName("eegExportDataMode");
     mode_->addItems({QString(), QString()});
     mode_->setCurrentIndex(processed ? 1 : 0);

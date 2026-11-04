@@ -28,6 +28,10 @@ def analysis_environment(*modules: str) -> dict[str, str]:
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    if os.name == "nt":
+        # The offscreen platform has no font directory on Windows; without it text renders no glyphs.
+        env.setdefault("QT_QPA_FONTDIR", str(Path(os.environ["SystemRoot"]) / "Fonts"))
+        env.setdefault("QT_FORCE_STDERR_LOGGING", "1")
     if modules:
         result = subprocess.run([python, "-c", "; ".join("import " + module for module in modules)],
                                 capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)

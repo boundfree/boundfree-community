@@ -1,4 +1,7 @@
+#include "ui/fluent_controls.h"
+#include "ui/workspace_splitter.h"
 #include "ui/main_window.h"
+#include "controller/acquisition_view.h"
 #include "ui/preset_spin_box.h"
 #include "ui/analysis_properties.h"
 #include "ui/analysis_band_table.h"
@@ -8,17 +11,27 @@
 
 #include "controller/processing_view_state.h"
 #include "render/waveform_slice.h"
+#include "render/signal_processor.h"
 
 #include <QActionGroup>
 #include <QScopeGuard>
 #include <QPalette>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QCloseEvent>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QFileInfo>
+#include <QDesktopServices>
+#include <QProcess>
+#include <QDir>
+#include <QUrl>
+#include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QKeySequence>
 #include <QScrollArea>
 #include <QSignalBlocker>
@@ -33,23 +46,54 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QStorageInfo>
+#include <QTemporaryDir>
+#include <QResizeEvent>
+#include <QSplitterHandle>
+#include <QPainter>
+#include <QEnterEvent>
+#include <QMouseEvent>
+#include <QUuid>
 #include <QTime>
 #include <QStyle>
 #include <QToolBar>
+#include <QToolTip>
 #include <QVBoxLayout>
 
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <numeric>
 
 namespace bf {
-
+namespace {
+class RecordingStatusLabel final : public QLabel {
+public:
+    explicit RecordingStatusLabel(QWidget* parent) : QLabel(parent) {
+        setMinimumWidth(0);
+        setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        setTextFormat(Qt::PlainText);
+    }
+    QSize minimumSizeHint() const override { return QSize(0, fontMetrics().height() + 2); }
+    QSize sizeHint() const override { return QSize(QLabel::sizeHint().width(), fontMetrics().height() + 2); }
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter painter(this);
+        painter.setFont(font()); painter.setPen(palette().color(QPalette::WindowText));
+        painter.drawText(contentsRect(), Qt::AlignLeading | Qt::AlignVCenter | Qt::TextSingleLine,
+            fontMetrics().elidedText(text(), Qt::ElideMiddle, std::max(0, contentsRect().width())));
+    }
+};
+}
 MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QString& repoRoot, QWidget* parent)
     : QMainWindow(parent), version_(version), repoRoot_(repoRoot), i18n_(i18n) {
+    QCoreApplication::setApplicationVersion(version.version);
+    setFont(workbenchFont());
+    fluent::initializeResources();
+    setMenuBar(new fluent::menus_toolbars::FluentMenuBar(this));
     setWindowIcon(QIcon(QStringLiteral(":/branding/app_icon.png")));
     centralStack_ = new QStackedWidget(this);
     centralStack_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    centralStack_->setMinimumSize(320, 180);
+    centralStack_->setMinimumSize(240, 180);
     emptyPage_ = new QWidget(centralStack_);
     emptyPage_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     auto* emptyLayout = new QVBoxLayout(emptyPage_);
@@ -60,7 +104,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     logoLabel->setAlignment(Qt::AlignCenter);
     centralLabel_ = new QLabel(emptyPage_);
     centralLabel_->setAlignment(Qt::AlignCenter);
-    openButton_ = new QPushButton(emptyPage_);
+    openButton_ = new ActionButton(emptyPage_);
     openButton_->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
     openButton_->setMinimumWidth(140);
     emptyLayout->addWidget(logoLabel, 0, Qt::AlignCenter);
@@ -70,7 +114,7 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     waveformWidget_ = new WaveformWidget(this);
     centralStack_->addWidget(emptyPage_);
     centralStack_->addWidget(waveformWidget_);
-    waveformWidget_->setMinimumSize(320, 180);
+    waveformWidget_->setMinimumSize(240, 180);
     // Keep the menu bar inside the Qt widget hierarchy on Windows so palette,
     // stylesheet and action geometry are deterministic.
     menuBar()->setNativeMenuBar(false);
@@ -89,10 +133,30 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
         combo->setMinimumContentsLength(6);
     }
     buildFixedWorkspace();
+    connect(waveformWidget_, &WaveformWidget::timeZoomRequested, this, [this](int steps, double anchor) {
+        if (deviceWaveformActive_) { deviceWorkspace_->zoomViewTime(steps, anchor); return; }
+        if (!hasCurrentFile_ || openingFile_ || playbackPanel_->isProgressSliderDown()) return;
+        const auto range = waveformWidget_->timeRange();
+        const double seconds = std::clamp(std::round((range.second - range.first) * std::pow(1.25, -steps) * 100) / 100,
+            timeWindowSpin_->minimum(), timeWindowSpin_->maximum());
+        if (std::abs(seconds - (range.second - range.first)) < 1e-9) return;
+        setFileViewport(range.first + anchor * (range.second - range.first - seconds), seconds);
+    });
+    connect(waveformWidget_, &WaveformWidget::viewPanRequested, this, [this](double seconds) {
+        if (deviceWaveformActive_) { deviceWorkspace_->panView(seconds); return; }
+        if (!hasCurrentFile_ || openingFile_ || playback_.isPlaying()) return;
+        setFileViewport(waveformWidget_->timeRange().first - seconds, viewState_.windowSeconds);
+    });
+    connect(waveformWidget_, &WaveformWidget::pauseViewRequested, this, [this] {
+        if (deviceWaveformActive_) deviceWorkspace_->toggleViewPause();
+        else if (hasCurrentFile_ && !openingFile_) togglePlayback();
+    });
+    connect(waveformWidget_, &WaveformWidget::resetViewRequested, this, &MainWindow::resetWaveformView);
     // Build all top-level menus consecutively after toolbar/dock layout is
     // complete. This keeps their mouse regions in one stable QMenuBar layout.
     buildFileMenu();
     buildViewMenu();
+    buildDeviceMenu();
     buildLanguageMenu();
     buildThemeMenu();
     // 订阅 I18nService 语言切换信号，统一刷新常驻 UI；避免在各回调里手工 retranslate。
@@ -120,11 +184,130 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     statusModeLabel_->setMinimumWidth(40);
     statusBar()->addPermanentWidget(statusFileLabel_);
     statusBar()->addPermanentWidget(statusModeLabel_);
+    deviceStatusButton_ = new ActionButton(this);
+    deviceStatusButton_->setObjectName("deviceGlobalStatus");
+    deviceStatusButton_->hide();
+    statusBar()->addPermanentWidget(deviceStatusButton_);
+    recordingStatusLabel_ = new RecordingStatusLabel(statusBar());
+    recordingStatusLabel_->setObjectName("deviceRecordingStatusBar");
+    statusBar()->insertWidget(0, recordingStatusLabel_, 1);
+    recordingStatusLabel_->hide();
+    connect(statusBar(), &QStatusBar::messageChanged, this, [this](const QString& message) {
+        recordingStatusLabel_->setVisible(recordingStatusVisible_ && message.isEmpty());
+    });
+    deviceWorkspace_->recordingStatusChanged = [this](const QString& message, bool visible) {
+        const bool began = visible && !recordingStatusVisible_;
+        recordingStatusVisible_ = visible;
+        recordingStatusLabel_->setText(message);
+        recordingStatusLabel_->setToolTip(message);
+        recordingStatusLabel_->setAccessibleDescription(message);
+        if (began && statusKey_ != "app.status.file_failed" && statusKey_ != "app.status.sidecar_failed")
+            statusBar()->clearMessage();
+        recordingStatusLabel_->setVisible(visible && statusBar()->currentMessage().isEmpty());
+    };
+    deviceWorkspace_->setLiveViewActive(deviceWaveformActive_ && workspaceStack_->currentIndex() == 0);
+
+    connect(deviceStatusButton_, &QPushButton::clicked, this, &MainWindow::showDeviceWaveform);
+    connect(acquisitionController_, &AcquisitionController::stateChanged, this, &MainWindow::refreshDeviceStatus);
+    connect(acquisitionController_, &AcquisitionController::logLocationRequested, this, [this](const QString& path) {
+        bool opened = false;
+        if (logLocationHandler_) opened = logLocationHandler_(path);
+        else if (!path.isEmpty() && QFileInfo::exists(path)) {
+#ifdef Q_OS_WIN
+            if (QFileInfo(path).isFile()) {
+                const auto explorer = QDir(qEnvironmentVariable("WINDIR", "C:/Windows")).filePath("explorer.exe");
+                opened = QProcess::startDetached(explorer, {"/select,", QDir::toNativeSeparators(path)});
+            } else opened = QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+#else
+            opened = QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).isDir() ? path : QFileInfo(path).absolutePath()));
+#endif
+        }
+        if (!opened) statusBar()->showMessage(i18n_->text("app.device.logs_unavailable", {{"path", path}}), 10000);
+    });
+    connect(acquisitionController_, &AcquisitionController::shutdownFinished, this, [this](bool success) {
+        if (!deviceShutdownPending_) return;
+        deviceShutdownPending_ = false;
+        if (!success && QMessageBox::question(this, i18n_->text("app.device.exit_failed_title"),
+                i18n_->text("app.device.exit_failed"), QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel) != QMessageBox::Yes) return;
+        deviceShutdownApproved_ = true;
+        close();
+    });
     resize(1280, 800);
     retranslateUi();
     // Apply theme only after menu titles/actions are translated, otherwise the
     // first QMenuBar items can stay blank under stylesheet on Windows.
     applyTheme(darkTheme_);
+}
+
+void MainWindow::refreshDeviceStatus() {
+    if (!deviceStatusButton_ || !acquisitionController_) return;
+    const auto view = acquisitionController_->snapshot();
+    if (separationWorkspace_) separationWorkspace_->setDeviceInput(view.deviceName, acquisitionController_->signalStreams(),
+        view.connection == DeviceConnectionState::Connected && view.samples > 0);
+    if (liveIcaController_) {
+        const auto model = separationController_->output();
+        const bool compatible = model && view.connection == DeviceConnectionState::Connected &&
+            view.acquisition == DeviceAcquisitionState::Streaming &&
+            liveIcaModelCompatible(*model, acquisitionController_->signalSourceId());
+        separationWorkspace_->setLiveAvailable(compatible);
+        if (liveIcaController_->isActive() && !compatible) liveIcaController_->stop();
+    }
+    const bool warning = view.recording.state == CaptureRecordState::Failed || view.acquisition == DeviceAcquisitionState::Faulted;
+    if (deviceLiveControls_) deviceLiveControls_->setVisible(deviceWaveformActive_ ||
+        view.connection == DeviceConnectionState::Connected || acquisitionController_->hasActiveTasks() || warning ||
+        view.recording.state == CaptureRecordState::Saved || view.recording.state == CaptureRecordState::Partial);
+    deviceStatusButton_->setVisible((view.connection == DeviceConnectionState::Connected || acquisitionController_->hasActiveTasks() || warning) &&
+        (!deviceWaveformActive_ || workspaceStack_->currentIndex() != 0));
+    deviceStatusButton_->setText(i18n_->text(warning ? "app.device.global_warning" :
+        view.recording.state == CaptureRecordState::Recording ? "app.device.global_recording" :
+        view.recording.state == CaptureRecordState::Finalizing ? "app.device.global_saving" : "app.device.global_active"));
+    deviceStatusButton_->setAccessibleName(deviceStatusButton_->text());
+    const QString deviceErrorKey = QStringLiteral("error.") + view.error.code;
+    if (deviceWaveformActive_) {
+        statusFileLabel_->setText(view.deviceName);
+        statusModeLabel_->setText(i18n_->text(view.connection == DeviceConnectionState::Faulted || view.acquisition == DeviceAcquisitionState::Faulted ?
+            acquisitionFailureStatusKey(view) : view.connection != DeviceConnectionState::Connected ? "app.device.status_disconnected" :
+            view.acquisition == DeviceAcquisitionState::Streaming ? view.simulated ? "app.device.status_streaming" : "app.device.status_streaming_live" : "app.device.status_idle"));
+        statusBar()->showMessage(!view.error.code.isEmpty() ? i18n_->text(deviceErrorKey, view.error.params) : QString());
+    }
+}
+
+void MainWindow::openDeviceConnections() {
+    deviceWorkspace_->openConnections();
+    deviceDialog_->show(); deviceDialog_->raise(); deviceDialog_->activateWindow();
+}
+
+void MainWindow::showDeviceWaveform() {
+    if (!deviceWaveformActive_) {
+        // Device and file browsing have one active source. Discard the old
+        // file instead of keeping a second view/cache to restore later.
+        cancelScrubPreview();
+        if (closeFileHandler_) closeFileHandler_();
+        if (hasCurrentFile_) resetSeparationForBrowserSource();
+        if (recordController_ && recordController_->isActive()) recordController_->stop();
+        currentFile_ = {}; rawWaveform_ = {}; hasCurrentFile_ = false;
+        waveformWidget_->setSlice({}); waveformWidget_->clearTimeRange();
+        openingFile_ = false; setLoading(false);
+        playbackPrefetchPending_ = windowRequestPending_ = waitingForPlaybackData_ = false;
+        playbackViewportActive_ = false; signalDurationSeconds_ = 0;
+        playback_ = PlaybackState{};
+        videoPanel_->clear();
+        markerStore_.replaceFromEvents({});
+        processingState_.clearAllChannelBandpass();
+        viewState_ = WaveformViewState{};
+        const QSignalBlocker block(processingModeCombo_);processingModeCombo_->setCurrentIndex(1);
+        viewState_=WaveformViewState{};viewState_.setWindowSeconds(2);
+    }
+    playback_.pause();playbackTimer_.stop();cancelScrubPreview();invalidateAnalysis();syncVideoToPlayback();
+    deviceWaveformActive_=true;setProperty("deviceWaveformActive",true);
+    parameterTabs_->show();if(!compactSignalLayout_)findChild<QSplitter*>("eegAnalysisSplitter")->show();analysisDock_->show();
+    videoDock_->hide();playbackBar_->hide();browserToolbar_->show();waveformTitle_->show();deviceLiveControls_->show();
+    centralStack_->setCurrentWidget(waveformWidget_);
+    for(auto* action:{toggleChannelsAction_,toggleMarkersAction_,toggleAnalysisAction_,toggleVideoAction_})action->setEnabled(true);
+    exportSegmentAction_->setEnabled(hasActiveSignal());openVideoAction_->setEnabled(true);recordAction_->setEnabled(true);
+    switchWorkspace(0);refreshSignalTools();refreshBrowserControls();refreshDeviceStatus();
+    setWindowTitle(acquisitionController_->snapshot().deviceName+" — "+version_.productName+" "+version_.version);
 }
 
 void MainWindow::buildFixedWorkspace() {
@@ -133,13 +316,14 @@ void MainWindow::buildFixedWorkspace() {
     layout->setContentsMargins(6, 4, 6, 4);
     layout->setSpacing(6);
 
-    auto* workspace = new QSplitter(Qt::Horizontal, root);
+    auto* workspace = new WorkspaceSplitter(root);
+    signalWorkspaceSplitter_=workspace;
     workspace->setObjectName("eegWorkspaceSplitter");
     workspace->setChildrenCollapsible(false);
-    signalSplitter_ = new QSplitter(Qt::Vertical, workspace);
+    signalSplitter_ = new WorkspaceSplitter(Qt::Vertical, workspace);
     signalSplitter_->setObjectName("eegSignalSplitter");
     signalSplitter_->setChildrenCollapsible(false);
-    auto* analysisSplit = new QSplitter(Qt::Vertical, workspace);
+    auto* analysisSplit = new WorkspaceSplitter(Qt::Vertical, workspace);
     analysisSplit->setObjectName("eegAnalysisSplitter");
     analysisSplit->hide(); // The complete data sidebar becomes visible after the first successful open.
     analysisSplit->setChildrenCollapsible(false);
@@ -170,7 +354,7 @@ void MainWindow::buildFixedWorkspace() {
     analysisSplit->addWidget(analysisDock_);
     parameterTabs_ = new QTabWidget(workspace);
     parameterTabs_->hide();
-    parameterTabs_->setMinimumWidth(228);
+    parameterTabs_->setMinimumWidth(180);
     parameterTabs_->setUsesScrollButtons(true);
     parameterTabs_->setObjectName("eegParameterTabs");
     parameterTabs_->setMinimumHeight(48);
@@ -217,25 +401,83 @@ void MainWindow::buildFixedWorkspace() {
     parameterTabs_->addTab(markerDock_, i18n_->text("app.marker.panel"));
     // Scope follows the horizontal reading order: shared signal settings,
     // waveform browsing, then parameters belonging to the active analysis.
-    auto* signalPage = new QWidget(workspace);
+    auto* signalPage = new QWidget(workspace);signalPage_=signalPage;signalAnalysisPane_=analysisSplit;
     signalPage->setObjectName("eegSignalPage");
     auto* signalLayout = new QVBoxLayout(signalPage);
     signalLayout->setContentsMargins(0, 0, 0, 0);
     signalLayout->setSpacing(6);
     waveformTitle_ = new QLabel(signalPage);
+    waveformTitle_->setObjectName("eegWaveformHeading");
     auto titleFont = waveformTitle_->font(); titleFont.setBold(true);
     waveformTitle_->setFont(titleFont);
     waveformTitle_->hide();
     signalLayout->addWidget(waveformTitle_);
     signalLayout->addWidget(browserToolbar_);
+    auto* captureControls = new ControlBar(signalPage); captureControls->setWrappedMinimum(true);
+    captureBar_ = captureControls; captureBar_->setObjectName("captureReplayControls"); captureBar_->hide();
+    captureStreamLabel_ = new QLabel(captureBar_);
+    captureStreamCombo_ = new ChoiceBox(captureBar_); captureStreamCombo_->setObjectName("captureReplayStream");
+    captureStreamCombo_->setSizeAdjustPolicy(QComboBox::AdjustToContents); captureStreamCombo_->setMinimumContentsLength(8);
+    captureStreamLabel_->setBuddy(captureStreamCombo_);
+    captureSummary_ = new QLabel(captureBar_); captureSummary_->setWordWrap(true); captureSummary_->setObjectName("captureReplaySummary");
+    captureControls->addPair(captureStreamLabel_, captureStreamCombo_); captureControls->addWidget(captureSummary_);
+    // Source details belong with channels, leaving the familiar waveform toolbar compact.
+    channelPanel_->addWidget(captureBar_);
+    captureControls->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Maximum);
+    captureStreamCombo_->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    captureStreamCombo_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    auto* advancedSignal = new CollapsiblePanel(i18n_->text("app.device.wifi_advanced"), filterPanel_);
+    advancedSignal->setObjectName("signalAdvancedProcessing");
+    auto* signalOptions = new QWidget(advancedSignal);
+    auto* signalOptionsForm = new QFormLayout(signalOptions);
+    signalOptionsForm->setContentsMargins(0, 0, 0, 0);
+    signalOptionsForm->setRowWrapPolicy(QFormLayout::WrapAllRows);
+    signalOptionsForm->addRow(waveformDataLabel_, waveformDataCombo_);
+    auto* executionLabel = new QLabel(i18n_->text("app.signal.execution_mode"), signalOptions);
+    executionLabel->setObjectName("signalExecutionLabel");
+    executionLabel->setBuddy(processingModeCombo_);
+    signalOptionsForm->addRow(executionLabel, processingModeCombo_);
+    auto* filteringHint = new QLabel(signalOptions);
+    filteringHint->setObjectName("signalFilteringHint");
+    filteringHint->setTextFormat(Qt::PlainText);
+    filteringHint->setWordWrap(true);
+    filteringHint->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    signalOptionsForm->addRow(filteringHint);
+    const auto updateFilteringHint = [this, filteringHint] {
+        const auto text = i18n_->text(processingModeCombo_->currentIndex() == 1
+            ? "app.signal.causal_mode_hint" : "app.signal.offline_mode_hint");
+        filteringHint->setText(text);
+        processingModeCombo_->setToolTip(text);
+        processingModeCombo_->setAccessibleDescription(text);
+    };
+    connect(processingModeCombo_, &QComboBox::currentIndexChanged, filteringHint, updateFilteringHint);
+    connect(i18n_, &I18nService::languageChanged, filteringHint, updateFilteringHint);
+    updateFilteringHint();
+    advancedSignal->addWidget(signalOptions);
+    advancedSignal->setExpanded(false);
+    filterPanel_->addWidget(advancedSignal);
+    connect(captureStreamCombo_, &QComboBox::currentIndexChanged, this, [this] {
+        if(deviceWaveformActive_) {
+            liveStreamKey_=captureStreamCombo_->currentData().toString();liveRawSignal_={};liveProcessedSignal_={};
+            acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();invalidateAnalysis();return;
+        }
+        if (!isCaptureReplay() || !openCaptureHandler_ || openingFile_) return;
+        const auto key = captureStreamCombo_->currentData().toString();
+        if (key == currentFile_.session.capture.value("stream_key").toString()) return;
+        const auto path = currentFile_.session.path;
+        showFileOpenLoading(path); openCaptureHandler_(path, key);
+    });
     signalLayout->addWidget(signalSplitter_, 1);
     workspace->addWidget(parameterTabs_);
     workspace->addWidget(signalPage);
     workspace->addWidget(analysisSplit);
     workspace->setStretchFactor(0, 0);
-    workspace->setStretchFactor(1, 3);
-    workspace->setStretchFactor(2, 2);
-    workspace->setSizes({260, 600, 400});
+    // Keep side tools compact and give additional desktop width to the signal.
+    workspace->setStretchFactor(1, 1);
+    workspace->setStretchFactor(2, 0);
+    workspace->setSizes({240, 760, 320});
+    compactSignalTabs_=new QTabWidget(workspace);compactSignalTabs_->setObjectName("signalCompactTools");
+    compactSignalTabs_->setDocumentMode(true);compactSignalTabs_->setMinimumSize(240,180);compactSignalTabs_->hide();
     layout->addWidget(workspace, 1);
     playbackBar_ = new QWidget(root);
     playbackBar_->setObjectName("eegPlaybackBar");
@@ -252,13 +494,133 @@ void MainWindow::buildFixedWorkspace() {
     const QString separationRoot = repoRoot_.isEmpty() ? QStringLiteral(BF_REPO_ROOT) : repoRoot_;
     separationController_ = new EegSeparationController(separationRoot, version_, this);
     connect(separationController_, &EegSeparationController::stateChanged, this, [this] {
-        if (separationResetPending_ && !separationController_->isBusy()) {
+        if (separationResetPending_ && !separationController_->isBusy() && !preparingSeparation_) {
             separationResetPending_ = false;
             separationController_->clearSource();
         }
     }, Qt::QueuedConnection);
+    const auto snapshots=std::make_shared<QTemporaryDir>(QDir::tempPath()+"/boundfree-signal-snapshots-XXXXXX");
+    snapshotDirectory_=snapshots->path();
     separationWorkspace_ = new EegSeparationWorkspace(separationController_, i18n_, workspaceStack_);
+    separationWorkspace_->inputActionsChanged = [this] { refreshInputActions(); };
+    // QStackedLayout includes every page's minimum hint. An inactive ICA page
+    // must not constrain the waveform browser's compact window sizes.
+    separationWorkspace_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    separationSnapshotExporter_ = new ExportController(separationRoot, version_, this);
+    connect(separationSnapshotExporter_, &ExportController::completed, this, [this](const SidecarExportResult& result) {
+        const bool current = preparingSeparation_ && separationSnapshotExportRequest_ == separationSnapshotRequest_;
+        preparingSeparation_ = false;
+        separationWorkspace_->setInputPending(false);
+        if (current) {
+            if (!separationSnapshotDeviceSource_.isEmpty() &&
+                (acquisitionController_->signalSourceId() != separationSnapshotDeviceSource_ ||
+                 acquisitionController_->snapshot().connection != DeviceConnectionState::Connected))
+                separationWorkspace_->showInputError(makeError("signal.no_samples"));
+            else separationController_->openSource(result.path, {}, true);
+        }
+    });
+    connect(separationSnapshotExporter_, &ExportController::failed, this, [this](const AppError& error) {
+        const bool current = preparingSeparation_ && separationSnapshotExportRequest_ == separationSnapshotRequest_;
+        preparingSeparation_ = false; separationWorkspace_->setInputPending(false);
+        if (current) separationWorkspace_->showInputError(error);
+    });
+    // Delete temporary inputs after both the analysis and snapshot workers join.
+    auto* snapshotOwner = new QObject(this);
+    connect(snapshotOwner, &QObject::destroyed, [snapshots] {});
+    separationWorkspace_->deviceSnapshotRequested = [this](const QString& stream) { prepareDeviceSeparationSnapshot(stream); };
     workspaceStack_->addWidget(separationWorkspace_);
+    acquisitionController_ = new AcquisitionController(separationRoot, version_, this);
+    liveIcaController_ = new LiveIcaController(acquisitionController_, this);
+    connect(liveIcaController_, &LiveIcaController::activeChanged, separationWorkspace_, &EegSeparationWorkspace::setLiveActive);
+    connect(liveIcaController_, &LiveIcaController::frameReady, separationWorkspace_, &EegSeparationWorkspace::setLiveFrame);
+    connect(liveIcaController_, &LiveIcaController::failed, separationWorkspace_, &EegSeparationWorkspace::showInputError);
+    separationWorkspace_->liveToggleRequested = [this] {
+        if (liveIcaController_->isActive()) liveIcaController_->stop();
+        else if (separationController_->isConfirmed()) liveIcaController_->start(separationController_->output(), separationController_->labels());
+    };
+    connect(separationController_, &EegSeparationController::resultChanged, this, [this] {
+        liveIcaController_->stop(); refreshDeviceStatus();
+    });
+    connect(separationController_, &EegSeparationController::labelsChanged, this, [this] {
+        liveIcaController_->setLabels(separationController_->labels());
+    });
+    connect(separationController_, &EegSeparationController::stateChanged, this, [this] {
+        if (separationController_->isBusy()) liveIcaController_->stop();
+    });
+    separationCollectTimer_ = new QTimer(this);
+    separationCollectTimer_->setInterval(500);
+    connect(separationCollectTimer_, &QTimer::timeout, this, [this] {
+        separationCollectTimer_->stop();
+        if (preparingSeparation_ && separationCollecting_)
+            acquisitionController_->requestRawSignalWindow(separationSnapshotRequest_, separationCollectStream_);
+    });
+    separationWorkspace_->inputCancellationRequested = [this] {
+        ++separationSnapshotRequest_; preparingSeparation_ = separationCollecting_ = false;
+        separationCollectTimer_->stop();
+        separationWorkspace_->setInputPending(separationSnapshotExporter_->isBusy());
+    };
+    connect(acquisitionController_, &AcquisitionController::rawSignalWindowReady, this,
+        [this](quint64 requestId, const WaveformSlice& raw) {
+            if (requestId == separationSnapshotRequest_ && preparingSeparation_) {
+                if (separationCollecting_) {
+                    if (raw.sourceId != separationCollectSource_) {
+                        preparingSeparation_ = separationCollecting_ = false;
+                        separationWorkspace_->setInputPending(false);
+                        separationWorkspace_->showInputError(makeError("signal.no_samples")); return;
+                    }
+                    std::vector<int> channels(raw.data.size()); std::iota(channels.begin(), channels.end(), 0);
+                    double longest = 0;
+                    for (const auto& span : signalContinuousRanges(raw, channels))
+                        longest = std::max(longest, (span.last - span.first) / raw.fs);
+                    if (longest < 5 && separationCollectClock_.elapsed() < 30000) {
+                        separationWorkspace_->setInputProgress(longest);
+                        separationCollectTimer_->start(); return;
+                    }
+                    separationCollecting_ = false;
+                }
+                separationSnapshotDeviceSource_ = raw.sourceId;
+                writeSeparationSnapshot(raw, acquisitionController_->snapshot().deviceName);
+            }
+        });
+    connect(acquisitionController_, &AcquisitionController::rawSignalWindowFailed, this,
+        [this](quint64 requestId, const AppError& error) {
+            if (requestId != separationSnapshotRequest_ || !preparingSeparation_) return;
+            preparingSeparation_ = separationCollecting_ = false; separationCollectTimer_->stop();
+            separationWorkspace_->setInputPending(false);
+            separationWorkspace_->showInputError(error);
+        });
+    deviceDialog_ = new QDialog(this, Qt::Window);
+    deviceDialog_->setObjectName("deviceConnectionWindow"); deviceDialog_->resize(640, 480);
+    deviceDialog_->setMinimumSize(600, 420);
+    auto* connectionLayout = new QVBoxLayout(deviceDialog_); connectionLayout->setContentsMargins(0,0,0,0);
+    deviceWorkspace_ = new DeviceWorkspace(acquisitionController_, i18n_, deviceDialog_, waveformWidget_);
+    deviceWorkspace_->setProperty("appVersion", version_.version);
+    connectionLayout->addWidget(deviceWorkspace_);
+    deviceWorkspace_->signalChannelNames=[this]{return activeSignal().channelNames;};
+    deviceWorkspace_->signalViewRequested=[this](double start,double end,bool frozen,int channel,double seconds){refreshLiveSignal(start,end,frozen,channel,seconds);};
+    connect(acquisitionController_,&AcquisitionController::signalWindowReady,this,[this](const WaveformSlice& raw,const WaveformSlice& processed){
+        if(!deviceWaveformActive_ || liveFrozen_)return;
+        const bool changed=liveRawSignal_.sourceId!=raw.sourceId || liveRawSignal_.streamId!=raw.streamId || liveRawSignal_.channelNames!=raw.channelNames || liveRawSignal_.channelIds!=raw.channelIds || liveRawSignal_.channelUnits!=raw.channelUnits || liveRawSignal_.fs!=raw.fs;
+        if(changed){invalidateAnalysis();liveStreamKey_=raw.streamId;processingState_.clearAllChannelBandpass();resetBrowserChannelSelections();
+            const auto markerSource=raw.sourceId+"/"+raw.streamId;
+            if(liveMarkerSource_!=markerSource){liveMarkerSource_=markerSource;markerStore_.replaceFromEvents({});}
+        }
+        liveRawSignal_=raw;liveProcessedSignal_=processed;if(!processed.data.empty())processingError_.clear();
+        if(processed.data.empty()){liveProcessedSignal_=raw;waveformProcessed_=false;const QSignalBlocker block(waveformDataCombo_);waveformDataCombo_->setCurrentIndex(0);}
+        if(changed){refreshSignalTools();refreshAnalysisControls();rebuildChannelControls();refreshBrowserControls();}
+        displayLiveSignal();
+        requestCurrentAnalysis(true);
+    });
+    connect(acquisitionController_,&AcquisitionController::signalWindowFailed,this,[this](const AppError& error){
+        if(deviceWaveformActive_){processingError_=error.code;refreshAnalysisInputSummary();statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code)),5000);}
+    });
+    deviceWorkspace_->liveRequested = [this] { showDeviceWaveform(); deviceDialog_->hide(); };
+    deviceWorkspace_->connectionsRequested = [this] { openDeviceConnections(); };
+    deviceWorkspace_->captureOpenRequested = [this](const QString& path) { openPathForBrowser(path); };
+    deviceLiveControls_ = deviceWorkspace_->takeLiveControls();
+    // Keep transport actions below the three-column workbench, like file playback.
+    deviceLiveControls_->setProperty("sharedDeviceControls", true);
+    deviceLiveControls_->hide();
     auto* workspaceRoot = new QWidget(this);
     auto* workspaceLayout = new QVBoxLayout(workspaceRoot);
     workspaceLayout->setContentsMargins(0, 0, 0, 0);
@@ -270,29 +632,102 @@ void MainWindow::buildFixedWorkspace() {
     workspaceNavigation_->setFocusPolicy(Qt::StrongFocus);
     workspaceNavigation_->addTab(i18n_->text("app.separation.browser_workspace"));
     workspaceNavigation_->addTab(i18n_->text("app.separation.separation_workspace"));
+
     connect(workspaceNavigation_, &QTabBar::currentChanged, this, &MainWindow::switchWorkspace);
-    workspaceLayout->addWidget(workspaceNavigation_);
+    auto* workspaceHeader = new QWidget(workspaceRoot);
+    workspaceHeader->setObjectName("eegWorkspaceHeader");
+    auto* navigation = new QHBoxLayout(workspaceHeader);
+    navigation->setContentsMargins(8, 4, 8, 4);
+    navigation->setSpacing(12);
+    navigation->addWidget(workspaceNavigation_);
+    navigation->addStretch();
+    workspaceLayout->addWidget(workspaceHeader);
     workspaceLayout->addWidget(workspaceStack_, 1);
+    workspaceLayout->addWidget(deviceLiveControls_);
+    deviceWorkspace_->viewControlsOverride = [this]() -> std::optional<DeviceWorkspace::ViewControls> {
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_)
+                return DeviceWorkspace::ViewControls{!playback_.isPlaying(), !openingFile_,
+                    i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"),
+                    i18n_->text(playback_.isPlaying() ? "app.status.mode.playback" : "app.device.view_paused"),
+                    i18n_->text("app.browser.view_hint"), true};
+            return std::nullopt;
+        }
+        return DeviceWorkspace::ViewControls{separationWorkspace_->viewPaused(), separationWorkspace_->viewControlsAvailable(),
+            separationWorkspace_->viewPauseText(), separationWorkspace_->viewStatusText(), separationWorkspace_->viewHint(), false};
+    };
+    deviceWorkspace_->pauseViewOverride = [this] {
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) { togglePlayback(); return true; }
+            return false;
+        }
+        separationWorkspace_->toggleViewPause(); return true;
+    };
+    deviceWorkspace_->resetViewOverride = [this] {
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) { resetWaveformView(); return true; }
+            return false;
+        }
+        separationWorkspace_->resetView(); return true;
+    };
+    deviceWorkspace_->viewHelpOverride = [this] {
+        if (workspaceStack_->currentIndex() != 1) {
+            if (!deviceWaveformActive_ && hasCurrentFile_) {
+                QToolTip::showText(QCursor::pos(), i18n_->text("app.browser.view_hint"), waveformWidget_); return true;
+            }
+            return false;
+        }
+        separationWorkspace_->showPlotHelp(); return true;
+    };
     setCentralWidget(workspaceRoot);
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event){QMainWindow::resizeEvent(event);updateSignalWorkspaceLayout();}
+void MainWindow::updateSignalWorkspaceLayout(){
+    if(!compactSignalTabs_ || !signalWorkspaceSplitter_)return;
+    compactSignalTabs_->setTabText(0,i18n_->text("app.workspace.waveform"));
+    compactSignalTabs_->setTabText(1,i18n_->text("app.analysis.panel"));
+    const bool compact=width()<1000;if(compact==compactSignalLayout_)return;
+    compactSignalLayout_=compact;
+    if(compact){
+        compactSignalTabs_->addTab(signalPage_,i18n_->text("app.workspace.waveform"));
+        compactSignalTabs_->addTab(signalAnalysisPane_,i18n_->text("app.analysis.panel"));
+        compactSignalTabs_->show();compactSignalTabs_->setCurrentIndex(0);
+        signalWorkspaceSplitter_->setSizes({180,std::max(240,width()-200)});
+    }else{
+        while(compactSignalTabs_->count())compactSignalTabs_->removeTab(0);
+        signalWorkspaceSplitter_->insertWidget(1,signalPage_);signalWorkspaceSplitter_->insertWidget(2,signalAnalysisPane_);
+        compactSignalTabs_->hide();signalPage_->show();signalAnalysisPane_->setVisible(hasActiveSignal());
+        signalWorkspaceSplitter_->setSizes({240,760,320});
+    }
 }
 
 void MainWindow::switchWorkspace(int index) {
     if (index < 0 || index >= workspaceStack_->count()) return;
-    if (index == 1) {
+    for (int page = 0; page < workspaceStack_->count(); ++page) {
+        const auto policy = page == index ? QSizePolicy::Preferred : QSizePolicy::Ignored;
+        workspaceStack_->widget(page)->setSizePolicy(policy, policy);
+    }
+    if (index != 0) {
         if (playback_.isPlaying()) {
             playback_.pause();
             playbackTimer_.stop();
             refreshPlaybackControls();
             syncVideoToPlayback();
         }
-        // Seed an empty analysis workspace once; subsequent visits retain its results.
-        if (hasCurrentFile_ && separationController_->source().path.isEmpty()
-            && !separationController_->isBusy())
-            separationController_->openSource(currentFile_.session.path);
-    } else {
+        if(index==1 && separationController_->source().path.isEmpty() && !separationController_->isBusy()) {
+            const auto device = acquisitionController_->snapshot();
+            if (device.connection == DeviceConnectionState::Connected && device.acquisition == DeviceAcquisitionState::Streaming)
+                prepareDeviceSeparationSnapshot(deviceWaveformActive_ ? liveStreamKey_ : QString());
+            else if (hasActiveSignal()) prepareSeparationSnapshot();
+        }
+    }
+    if (index != 1) {
         separationWorkspace_->pausePreview();
     }
     workspaceStack_->setCurrentIndex(index);
+    refreshWaveformInteractions();
+    deviceWorkspace_->setLiveViewActive(deviceWaveformActive_ && index == 0);
     {
         const QSignalBlocker navigationBlocker(workspaceNavigation_);
         workspaceNavigation_->setCurrentIndex(index);
@@ -301,24 +736,63 @@ void MainWindow::switchWorkspace(int index) {
         const QSignalBlocker actionBlocker(separationAction_);
         separationAction_->setChecked(index == 1);
     }
+    refreshInputActions();
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (deviceShutdownApproved_ || !acquisitionController_ || !acquisitionController_->hasActiveTasks()) {
+        QMainWindow::closeEvent(event);
+        return;
+    }
+    event->ignore();
+    if (deviceShutdownPending_) return;
+    if (QMessageBox::question(this, i18n_->text("app.device.exit_title"), i18n_->text("app.device.exit_confirm"),
+            QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel) != QMessageBox::Yes) return;
+    deviceShutdownPending_ = true;
+    acquisitionController_->requestShutdown();
 }
 
 void MainWindow::buildFileMenu() {
-    fileMenu_ = menuBar()->addMenu(i18n_->text("app.menu.file"));
+    fileMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.file"), menuBar());
+    menuBar()->addMenu(fileMenu_);
     openAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), QString());
+    openAction_->setObjectName("openCurrentWorkspaceFile");
     openAction_->setShortcut(QKeySequence::Open);
     connect(openAction_, &QAction::triggered, this, &MainWindow::chooseFile);
+    openCaptureAction_ = fileMenu_->addAction(QString()); openCaptureAction_->setObjectName("openCaptureRecording");
+    connect(openCaptureAction_, &QAction::triggered, this, &MainWindow::chooseCapture);
     openVideoAction_ = fileMenu_->addAction(QString());
     openVideoAction_->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     connect(openVideoAction_, &QAction::triggered, this, &MainWindow::chooseVideo);
+    fileMenu_->addSeparator();
+    openTeachingAction_ = fileMenu_->addAction(QString());
+    openTeachingAction_->setObjectName("openTeachingRecording");
+    connect(openTeachingAction_, &QAction::triggered, this, [this] {
+        if (fileMenuLoading_ || !separationWorkspace_->canChangeInput()) return;
+        separationWorkspace_->openTeachingSource();
+        switchWorkspace(1);
+    });
     fileMenu_->addSeparator();
     quitAction_ = fileMenu_->addAction(style()->standardIcon(QStyle::SP_DialogCloseButton), QString());
     quitAction_->setShortcut(QKeySequence::Quit);
     connect(quitAction_, &QAction::triggered, this, &QWidget::close);
 }
 
+void MainWindow::buildDeviceMenu() {
+    deviceMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.device"), menuBar());
+    menuBar()->addMenu(deviceMenu_);
+    deviceMenu_->setObjectName("deviceMenu");
+    deviceManageAction_ = deviceMenu_->addAction(i18n_->text("app.device.connections"));
+    deviceManageAction_->setObjectName("deviceManageConnections");
+    connect(deviceManageAction_, &QAction::triggered, this, &MainWindow::openDeviceConnections);
+    deviceOpenLogsAction_ = deviceMenu_->addAction(i18n_->text("app.device.open_logs"));
+    deviceOpenLogsAction_->setObjectName("deviceOpenLogsAction");
+    connect(deviceOpenLogsAction_, &QAction::triggered, acquisitionController_, &AcquisitionController::requestOpenLogs);
+}
+
 void MainWindow::buildLanguageMenu() {
-    languageMenu_ = menuBar()->addMenu(i18n_->text("app.menu.language"));
+    languageMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.language"), menuBar());
+    menuBar()->addMenu(languageMenu_);
     // 语言选项互斥；stable 菜单仅展示 supportedLocales（zh_CN/en_US/ja_JP/zh_TW），
     // pseudo 与未审校 locale 不在此列表，不暴露给用户。
     languageGroup_ = new QActionGroup(this);
@@ -351,7 +825,8 @@ void MainWindow::buildLanguageMenu() {
 }
 
 void MainWindow::buildViewMenu() {
-    viewMenu_ = menuBar()->addMenu(i18n_->text("app.menu.view"));
+    viewMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.view"), menuBar());
+    menuBar()->addMenu(viewMenu_);
     toggleChannelsAction_ = viewMenu_->addAction(QString());
     toggleChannelsAction_->setObjectName("eegToggleChannels");
     toggleMarkersAction_ = viewMenu_->addAction(QString());
@@ -394,7 +869,8 @@ void MainWindow::buildViewMenu() {
 }
 
 void MainWindow::buildThemeMenu() {
-    themeMenu_ = menuBar()->addMenu(i18n_->text("app.menu.theme"));
+    themeMenu_ = new fluent::menus_toolbars::FluentMenu(i18n_->text("app.menu.theme"), menuBar());
+    menuBar()->addMenu(themeMenu_);
     themeGroup_ = new QActionGroup(this);
     themeGroup_->setExclusive(true);
     lightThemeAction_ = themeMenu_->addAction(QString());
@@ -411,58 +887,9 @@ void MainWindow::buildThemeMenu() {
 }
 
 void MainWindow::applyTheme(bool dark) {
+    fluent::FluentElement::setTheme(dark ? fluent::FluentElement::Dark : fluent::FluentElement::Light);
     darkTheme_ = dark;
-    // Match the archived PySide6 neutral light / blue-gray dark surfaces,
-    // retaining its purple accent for native control selection.
-    QPalette palette;
-    if (dark) {
-        const QColor accentDark("#9B4DA8");
-        palette.setColor(QPalette::Window, QColor("#181828"));
-        palette.setColor(QPalette::Base, QColor("#22223A"));
-        palette.setColor(QPalette::AlternateBase, QColor("#33334A"));
-        palette.setColor(QPalette::WindowText, QColor("#DDE0FF"));
-        palette.setColor(QPalette::Text, QColor("#DDE0FF"));
-        palette.setColor(QPalette::Button, QColor("#33334A"));
-        palette.setColor(QPalette::ButtonText, QColor("#DDE0FF"));
-        palette.setColor(QPalette::BrightText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::PlaceholderText, QColor("#AAAAC0"));
-        palette.setColor(QPalette::Highlight, accentDark);
-        palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::Link, QColor("#DDE0FF"));
-        palette.setColor(QPalette::ToolTipBase, QColor("#33334A"));
-        palette.setColor(QPalette::ToolTipText, QColor("#DDE0FF"));
-        palette.setColor(QPalette::Light, QColor("#555577"));
-        palette.setColor(QPalette::Mid, QColor("#33334A"));
-        palette.setColor(QPalette::Dark, QColor("#22223A"));
-        palette.setColor(QPalette::Shadow, QColor("#111120"));
-    } else {
-        // Neutral light surfaces keep scientific data visually distinct.
-        const QColor accentLight("#68237A");
-        palette.setColor(QPalette::Window, QColor("#F0F0F0"));
-        palette.setColor(QPalette::Base, QColor("#FFFFFF"));
-        palette.setColor(QPalette::AlternateBase, QColor("#E0E0E0"));
-        palette.setColor(QPalette::WindowText, QColor("#222222"));
-        palette.setColor(QPalette::Text, QColor("#222222"));
-        palette.setColor(QPalette::Button, QColor("#FFFFFF"));
-        palette.setColor(QPalette::ButtonText, QColor("#222222"));
-        palette.setColor(QPalette::BrightText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::PlaceholderText, QColor("#555555"));
-        palette.setColor(QPalette::Highlight, accentLight);
-        palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-        palette.setColor(QPalette::Link, QColor("#68237A"));
-        palette.setColor(QPalette::ToolTipBase, QColor("#FFFFFF"));
-        palette.setColor(QPalette::ToolTipText, QColor("#222222"));
-        palette.setColor(QPalette::Light, QColor("#FFFFFF"));
-        palette.setColor(QPalette::Mid, QColor("#CCCCCC"));
-        palette.setColor(QPalette::Dark, QColor("#AAAAAA"));
-        palette.setColor(QPalette::Shadow, QColor("#9B4DA8"));
-    }
-    // Disabled roles still need readable contrast.
-    const QColor disabledText = dark ? QColor("#AAAAC0") : QColor("#767676");
-    palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
-    palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
-    palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
-
+    const QPalette palette = fluentPalette();
     setPalette(palette);
     for (QWidget* child : findChildren<QWidget*>()) {
         // Palette propagation is enough. Forcing autoFillBackground on every
@@ -470,76 +897,11 @@ void MainWindow::applyTheme(bool dark) {
         child->setAutoFillBackground(false);
         child->setPalette(palette);
     }
-    // Windows native menu bar often ignores QPalette; style sheet keeps labels readable.
-    if (!dark) {
-        setStyleSheet(
-            "QMainWindow { background: #F0F0F0; color: #222222; }"
-            "QMenuBar { background: #FFFFFF; color: #222222; border-bottom: 1px solid #CCCCCC; }"
-            "QMenuBar::item { background: transparent; color: #222222; padding: 4px 10px; }"
-            "QMenuBar::item:selected { background: #E0E0E0; color: #222222; }"
-            "QMenu { background: #FFFFFF; color: #222222; border: 1px solid #CCCCCC; }"
-            "QMenu::item:selected { background: #E0E0E0; color: #222222; }"
-            "QToolBar { background: #FFFFFF; color: #222222; border-bottom: 1px solid #CCCCCC; spacing: 6px; }"
-            "QStatusBar { background: #FFFFFF; color: #222222; border-top: 1px solid #CCCCCC; }"
-            "QPushButton { background: #FFFFFF; color: #222222; border: 1px solid #AAAAAA; border-radius: 4px; padding: 4px 12px; }"
-            "QPushButton:hover { background: #E0E0E0; }"
-            "QPushButton:pressed { background: #CCCCCC; }"
-            "QToolButton { color: #222222; }"
-            "QLabel { color: #222222; }"
-            "QDockWidget { color: #222222; titlebar-close-icon: none; }"
-            "QDockWidget::title { background: #E0E0E0; color: #222222; padding: 4px; }"
-            "QTabBar::tab { background: #FFFFFF; color: #222222; border: 1px solid #CCCCCC; padding: 4px 10px; }"
-            "QTabBar::tab:selected { background: #E0E0E0; color: #222222; }"
-            "QHeaderView::section { background: #E0E0E0; color: #222222; border: 1px solid #CCCCCC; }"
-            "QTableWidget { background: #FFFFFF; color: #222222; gridline-color: #CCCCCC; }"
-            "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { background: #FFFFFF; color: #222222; border: 1px solid #AAAAAA; selection-background-color: #68237A; selection-color: #FFFFFF; }"
-        );
-    } else {
-        setStyleSheet(
-            "QMainWindow { background: #181828; color: #DDE0FF; }"
-            "QMenuBar { background: #22223A; color: #DDE0FF; border-bottom: 1px solid #33334A; }"
-            "QMenuBar::item { background: transparent; color: #DDE0FF; padding: 4px 10px; }"
-            "QMenuBar::item:selected { background: #33334A; color: #FFFFFF; }"
-            "QMenu { background: #22223A; color: #DDE0FF; border: 1px solid #33334A; }"
-            "QMenu::item:selected { background: #33334A; color: #FFFFFF; }"
-            "QToolBar { background: #22223A; color: #DDE0FF; border-bottom: 1px solid #33334A; }"
-            "QStatusBar { background: #22223A; color: #DDE0FF; border-top: 1px solid #33334A; }"
-            "QPushButton { background: #33334A; color: #DDE0FF; border: 1px solid #555577; border-radius: 4px; padding: 4px 12px; }"
-            "QPushButton:hover { background: #555577; }"
-            "QToolButton { color: #DDE0FF; }"
-            "QLabel { color: #DDE0FF; }"
-            "QDockWidget { color: #DDE0FF; }"
-            "QDockWidget::title { background: #33334A; color: #DDE0FF; padding: 4px; }"
-            "QTabBar::tab { background: #22223A; color: #DDE0FF; border: 1px solid #33334A; padding: 4px 10px; }"
-            "QTabBar::tab:selected { background: #33334A; color: #FFFFFF; }"
-            "QHeaderView::section { background: #33334A; color: #DDE0FF; border: 1px solid #555577; }"
-            "QTableWidget { background: #22223A; color: #DDE0FF; gridline-color: #33334A; }"
-            "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { background: #22223A; color: #DDE0FF; border: 1px solid #555577; selection-background-color: #9B4DA8; selection-color: #FFFFFF; }"
-        );
-    }
-    // Style every spin subcontrol explicitly: a custom border otherwise leaves
-    // the native arrow rendering dependent on the platform style. XPM icons use
-    // Qt's built-in decoder, with no SVG plugin dependency in packaged builds.
+    setStyleSheet(nativeFluentStyle());
     const QString arrowTone = dark ? QStringLiteral("light") : QStringLiteral("dark");
-    const QString borderTone = dark ? QStringLiteral("#555577") : QStringLiteral("#AAAAAA");
-    const QString hoverTone = dark ? QStringLiteral("#33334A") : QStringLiteral("#E0E0E0");
     setStyleSheet(styleSheet() + QString(
-        "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QToolButton[controlBarAction=\"true\"] { min-height: %4px; max-height: %4px; padding-top: 2px; padding-bottom: 2px; }"
-        "QSpinBox, QDoubleSpinBox, QComboBox { padding-left: 6px; padding-right: 26px; }"
-        "QAbstractSpinBox QLineEdit { min-height: 0px; max-height: 16777215px; padding: 0px; border: none; }"
-        "QToolButton[controlBarAction=\"true\"] { border: 1px solid %1; border-radius: 3px; padding-left: 8px; padding-right: 8px; }"
-        "QComboBox::drop-down { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; }"
-        "QComboBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
-        "QDoubleSpinBox[presetControl=\"true\"] QToolButton::menu-indicator { image: none; }"
-        "QSpinBox::up-button, QDoubleSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 22px; border-left: 1px solid %1; border-bottom: 1px solid %1; }"
-        "QSpinBox::down-button, QDoubleSpinBox::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 22px; border-left: 1px solid %1; }"
-        "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: %2; }"
-        "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { image: url(:/controls/up-%3.xpm); width: 9px; height: 5px; }"
-        "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { image: url(:/controls/down-%3.xpm); width: 9px; height: 5px; }"
-    ).arg(borderTone, hoverTone, arrowTone).arg(std::max(24, fontMetrics().height() + 4)));
-    setStyleSheet(styleSheet() + QString(
-        "QFrame[processingDivider=\"true\"] { border: none; min-height: 1px; max-height: 1px; background: %1; }")
-        .arg(dark ? "#555577" : "#CCCCCC"));
+        "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { image: url(:/controls/up-%1.xpm); width: 9px; height: 5px; }"
+        "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { image: url(:/controls/down-%1.xpm); width: 9px; height: 5px; }").arg(arrowTone));
     // Stylesheets can rematerialize some palette roles on Fusion/Windows; re-apply
     // the intended palette after setStyleSheet so Highlight/Text stay correct.
     setPalette(palette);
@@ -562,6 +924,7 @@ void MainWindow::applyTheme(bool dark) {
         waveformWidget_->setDarkTheme(darkTheme_);
     }
     if (separationWorkspace_) separationWorkspace_->setDarkTheme(darkTheme_);
+    if (deviceWorkspace_) deviceWorkspace_->setDarkTheme(darkTheme_);
     if (spectrumWidget_ != nullptr) spectrumWidget_->setDarkTheme(darkTheme_);
     if (spectrogramWidget_ != nullptr) spectrogramWidget_->setDarkTheme(darkTheme_);
     if (trendWidget_ != nullptr) trendWidget_->setDarkTheme(darkTheme_);
@@ -570,6 +933,7 @@ void MainWindow::applyTheme(bool dark) {
 }
 
 void MainWindow::refreshPersistentStatus() {
+    if (deviceWaveformActive_) { refreshDeviceStatus(); return; }
     if (statusFileLabel_ == nullptr || statusModeLabel_ == nullptr) {
         return;
     }
@@ -588,7 +952,8 @@ void MainWindow::refreshAnalysisInputSummary() {
     if (!analysisInputSummary_) return;
     if (!waveformProcessed_) {
         analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
-            + i18n_->text("app.signal.raw") + "\n" + i18n_->text("app.signal.raw_hint"));
+            + i18n_->text("app.signal.raw") + "\n" + i18n_->text("app.signal.raw_hint")
+            + (processingError_.isEmpty()?QString():"\n"+i18n_->text(QString("error.%1").arg(processingError_))));
         return;
     }
     analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
@@ -631,17 +996,21 @@ void MainWindow::buildBrowserControls() {
     browserToolbar_->setObjectName("eegSignalToolbar");
     browserToolbar_->setWrappedMinimum(true);
     waveformDataLabel_ = new QLabel(this);
-    waveformDataCombo_ = new QComboBox(this);
+    waveformDataCombo_ = new ChoiceBox(this);
     waveformDataCombo_->setObjectName("eegWaveformDataMode");
     waveformDataCombo_->addItems({QString(), QString()});
     waveformDataCombo_->setCurrentIndex(1);
     waveformDataCombo_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     waveformDataLabel_->setBuddy(waveformDataCombo_);
-    browserToolbar_->addPair(waveformDataLabel_, waveformDataCombo_);
+
     connect(waveformDataCombo_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         waveformProcessed_ = index == 1;
         applyProcessingAndDisplay();
     });
+    processingModeCombo_=new ChoiceBox(this);processingModeCombo_->setObjectName("signalProcessingMode");
+    processingModeCombo_->addItem(QString(),0);processingModeCombo_->addItem(QString(),1);
+
+    connect(processingModeCombo_,&QComboBox::currentIndexChanged,this,[this]{applyProcessingAndDisplay();});
     playbackToolbar_ = new ControlBar(this);
     playbackToolbar_->setWrappedMinimum(true);
     progressRow_ = new QWidget(this);
@@ -702,15 +1071,15 @@ void MainWindow::buildBrowserControls() {
         refreshPlaybackControls();
     });
     timeWindowLabel_ = new QLabel(this);
-    timeWindowSpin_ = new PresetDoubleSpinBox({1, 2, 5, 10, 20, 30, 60, 120}, this);
+    timeWindowSpin_ = new PresetDoubleSpinBox({.25, .5, 1, 2, 5, 10, 20, 30, 60, 120}, this);
     timeWindowSpin_->setObjectName("eegWindowSeconds");
     timeWindowSpin_->setKeyboardTracking(false);
-    timeWindowSpin_->setRange(1.0, 120.0);
-    timeWindowSpin_->setDecimals(0);
+    timeWindowSpin_->setRange(.25, 120.0);
+    timeWindowSpin_->setDecimals(2);
     timeWindowSpin_->setValue(viewState_.windowSeconds);
     timeWindowSpin_->setSuffix(" s");
 
-    autoAmplitudeCheck_ = new QCheckBox(this);
+    autoAmplitudeCheck_ = new CheckOption(this);
     autoAmplitudeCheck_->setObjectName("eegAutoAmplitude");
     autoAmplitudeCheck_->setChecked(true);
     connect(autoAmplitudeCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
@@ -763,17 +1132,19 @@ void MainWindow::buildBrowserControls() {
         if (refreshingBrowserControls_) {
             return;
         }
-        viewState_.setWindowSeconds(value);
-        applyBrowserStateToWaveform();
-        if (hasCurrentFile_ && windowRequestHandler_) {
-            requestWindow(playback_.position());
+        if (!deviceWaveformActive_ && hasCurrentFile_) {
+            setFileViewport(playback_.position(), value);
+        } else {
+            viewState_.setWindowSeconds(value);
+            if(deviceWaveformActive_)deviceWorkspace_->setViewSeconds(value);
+            applyBrowserStateToWaveform();
         }
     });
     connect(amplitudeSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this](double value) {
         if (refreshingBrowserControls_) {
             return;
         }
-        viewState_.setAmplitudeUv(value);
+        if(hasActiveSignal() && activeSignal().unit!="uV")viewState_.amplitudeUv=std::clamp(value,1e-6,1e12);else viewState_.setAmplitudeUv(value);
         applyBrowserStateToWaveform();
     });
     connect(firstChannelSpin_, qOverload<int>(&QSpinBox::valueChanged), this, [this](int value) {
@@ -787,6 +1158,7 @@ void MainWindow::buildBrowserControls() {
 
 void MainWindow::buildPlaybackControls() {
     playAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_MediaPlay), QString());
+    playAction_->setObjectName("filePlaybackAction");
     connect(playAction_, &QAction::triggered, this, &MainWindow::togglePlayback);
     nextWindowAction_ = playbackToolbar_->addAction(style()->standardIcon(QStyle::SP_ArrowForward), QString());
     connect(nextWindowAction_, &QAction::triggered, this, [this]() {
@@ -802,8 +1174,9 @@ void MainWindow::buildPlaybackControls() {
         }
     });
     markerModeAction_ = browserToolbar_->addAction(QString());
+    markerModeAction_->setObjectName("eegMarkerMode");
     markerModeAction_->setCheckable(true);
-    connect(markerModeAction_, &QAction::toggled, this, [this](bool enabled) { waveformWidget_->setMarkerModeEnabled(enabled); });
+    connect(markerModeAction_, &QAction::toggled, this, [this](bool) { refreshWaveformInteractions(); });
 }
 
 void MainWindow::buildRecordControls() {
@@ -812,6 +1185,7 @@ void MainWindow::buildRecordControls() {
     exportController_ = new ExportController(root, version_, this);
     recordAction_ = playbackToolbar_->addAction(QString());
     exportSegmentAction_ = playbackToolbar_->addAction(QString());
+    recordAction_->setObjectName("fileRecordAction"); exportSegmentAction_->setObjectName("fileExportAction");
     connect(recordAction_, &QAction::triggered, this, &MainWindow::toggleRecording);
     connect(exportSegmentAction_, &QAction::triggered, this, &MainWindow::exportSegment);
     connect(recordController_, &RecordController::started, this, [this](const RecordSummary& summary) {
@@ -844,21 +1218,22 @@ void MainWindow::buildRecordControls() {
     connect(exportController_, &ExportController::completed, this, [this](const SidecarExportResult& result) {
         exportRunning_ = false;
         lastExportResult_ = result;
-        exportSegmentAction_->setEnabled(true);
+        exportSegmentAction_->setEnabled(hasActiveSignal());
         statusBar()->showMessage(i18n_->text("app.export.completed", {{"path", result.path}}), 5000);
     });
     connect(exportController_, &ExportController::failed, this, [this](const AppError& error) {
         exportRunning_ = false;
-        exportSegmentAction_->setEnabled(true);
+        exportSegmentAction_->setEnabled(hasActiveSignal());
         statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code), error.params), 5000);
     });
 }
 
 void MainWindow::toggleRecording() {
+    if(deviceWaveformActive_){auto* button=findChild<QPushButton*>("deviceRecord");if(button)button->click();return;}
     if (recordController_->isActive()) {
         recordController_->stop();
         recordAction_->setEnabled(false);
-        QTimer::singleShot(250, this, [this]() { recordAction_->setEnabled(true); });
+        QTimer::singleShot(250, this, [this]() { recordAction_->setEnabled(hasActiveSignal()); });
         return;
     }
     if (!hasCurrentFile_) {
@@ -867,7 +1242,12 @@ void MainWindow::toggleRecording() {
     }
     RecordMetadataDialog dialog(i18n_, recordOutputDir_, this);
     if (dialog.exec() != QDialog::Accepted) return;
-    const QJsonObject metadata = dialog.metadata();
+    QJsonObject metadata = dialog.metadata();
+    metadata.insert("signal_unit",activeRawSignal().unit);
+    metadata.insert("signal_channel_units",QString::fromUtf8(QJsonDocument(QJsonArray::fromStringList(activeRawSignal().channelUnits)).toJson(QJsonDocument::Compact)));
+    metadata.insert("signal_stream",currentFile_.session.capture.value("stream_key").toString());
+    metadata.insert("signal_provenance",QString::fromUtf8(QJsonDocument(QJsonObject{{"source_id",activeRawSignal().sourceId},
+        {"stream_id",activeRawSignal().streamId},{"simulated",activeRawSignal().simulated},{"projection_dtype","float32"}}).toJson(QJsonDocument::Compact)));
     const QString outputDir = dialog.outputDirectory();
     recordOutputDir_ = outputDir;
     recordSourceStart_ = std::min(playback_.position(), std::max(0.0, currentFile_.session.duration - 1.0 / currentFile_.session.fs));
@@ -877,16 +1257,22 @@ void MainWindow::toggleRecording() {
 }
 
 void MainWindow::exportSegment() {
-    if (!hasCurrentFile_ || exportController_->isBusy()) {
+    if (!hasActiveSignal() || exportController_->isBusy()) {
         statusBar()->showMessage(i18n_->text(exportController_->isBusy() ? "error.export.busy" : "app.record.no_file"), 3000);
         return;
     }
+    const auto rawInput=activeRawSignal(), displayedInput=activeSignal();
+    const bool liveInput=deviceWaveformActive_;
+    const auto sourcePath=currentFile_.session.path;
+    const auto streamKey=currentFile_.session.capture.value("stream_key").toString();
+    const bool displayedProcessed=waveformProcessed_;
+    const bool causalMode=processingModeCombo_->currentIndex()==1;
     const auto range = waveformWidget_->timeRange();
     const ProcessingViewState exportState = processingState_;
-    const double contextStart = rawWaveform_.t0;
-    const double contextEnd = rawWaveform_.t1;
-    ExportSegmentDialog dialog(i18n_, signalDurationSeconds_, range.first, range.second,
-                               waveformProcessed_, processingDescription(), this);
+    const double contextStart = rawInput.t0;
+    const double contextEnd = rawInput.t1;
+    ExportSegmentDialog dialog(i18n_, liveInput?rawInput.t1:signalDurationSeconds_, range.first, range.second,
+                               displayedProcessed, processingDescription(), this);
     if (dialog.exec() != QDialog::Accepted) return;
     const double t0 = dialog.startTime();
     const double t1 = dialog.endTime();
@@ -899,7 +1285,24 @@ void MainWindow::exportSegment() {
         const bool inCache = t0 >= contextStart && t1 <= contextEnd;
         processing = ExportProcessingOptions{exportState, inCache ? contextStart : t0, inCache ? contextEnd : t1};
     }
-    if (!exportController_->exportAsync(currentFile_.session.path, t0, t1, signalDurationSeconds_, outputPath, events, processing)) {
+    if(!streamKey.isEmpty() && !processing){processing=ExportProcessingOptions{};processing->applyProcessing=false;}
+    if(processing){processing->streamKey=streamKey;processing->causal=causalMode;}
+    if(t0>=contextStart && t1<=contextEnd) {
+        WaveformSlice prepared=rawInput;
+        if(dialog.processed()){
+            if(displayedProcessed)prepared=displayedInput;
+            else {try{SignalProcessor processor;prepared=processor.process(rawInput,exportState,causalMode);}
+                catch(const std::exception&){statusBar()->showMessage(i18n_->text("error.signal.invalid_window"),5000);return;}}
+        }
+        const auto snapshot=signalWindowRange(prepared,t0,t1);
+        QJsonObject provenance{{"signal_metadata",snapshot.metadata},{"source_id",snapshot.sourceId},{"stream_id",snapshot.streamId},
+            {"simulated",snapshot.simulated},{"processed",dialog.processed()},
+            {"processing",processingDescription()},{"execution_mode",causalMode?1:0}};
+        if(!exportController_->exportSignalAsync(snapshot,outputPath,events,provenance))return;
+        exportRunning_=true;exportSegmentAction_->setEnabled(false);return;
+    }
+    if(liveInput){statusBar()->showMessage(i18n_->text("error.signal.invalid_window"),5000);return;}
+    if (!exportController_->exportAsync(sourcePath, t0, t1, signalDurationSeconds_, outputPath, events, processing)) {
         statusBar()->showMessage(i18n_->text("error.export.invalid_range", {{"t0", t0}, {"t1", t1}, {"duration", signalDurationSeconds_}}), 3000);
         return;
     }
@@ -936,9 +1339,9 @@ void MainWindow::buildMarkerDock() {
     markerTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     layout->addWidget(markerTable_);
     auto* buttons = new ControlFlowLayout(nullptr);
-    deleteMarkerButton_ = new QPushButton(content);
-    clearMarkersButton_ = new QPushButton(content);
-    exportMarkersButton_ = new QPushButton(content);
+    deleteMarkerButton_ = new ActionButton(content);
+    clearMarkersButton_ = new ActionButton(content);
+    exportMarkersButton_ = new ActionButton(content);
     buttons->addWidget(deleteMarkerButton_);
     buttons->addWidget(clearMarkersButton_);
     buttons->addWidget(exportMarkersButton_);
@@ -1001,6 +1404,7 @@ void MainWindow::buildAnalysisDock() {
     analysisLayout->setContentsMargins(4, 4, 4, 4);
     analysisLayout->setSpacing(8);
     analysisHeading_ = new QLabel(analysisPage);
+    analysisHeading_->setObjectName("eegAnalysisHeading");
     auto headingFont = analysisHeading_->font(); headingFont.setBold(true);
     analysisHeading_->setFont(headingFont);
     analysisLayout->addWidget(analysisHeading_);
@@ -1011,7 +1415,13 @@ void MainWindow::buildAnalysisDock() {
     analysisInputSummary_->setTextFormat(Qt::PlainText);
     analysisInputSummary_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     analysisLayout->addWidget(analysisInputSummary_);
-    analysisDock_->setWidget(analysisPage);
+    auto* selection=new ActionButton(analysisPage);selection->setObjectName("signalSendToSeparation");
+    selection->hide(); // Workspace navigation already opens the same current-selection snapshot.
+    connect(selection,&QPushButton::clicked,this,[this]{prepareSeparationSnapshot();switchWorkspace(1);});
+    auto* analysisScroll=new QScrollArea(analysisDock_);analysisScroll->setObjectName("signalAnalysisScroll");
+    analysisScroll->setWidgetResizable(true);analysisScroll->setFrameShape(QFrame::NoFrame);
+    analysisScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);analysisScroll->setMinimumSize(180,100);
+    analysisScroll->setWidget(analysisPage);analysisDock_->setWidget(analysisScroll);
     analysisDock_->hide();
 
     const auto addHeader = [this](QWidget* page, QVBoxLayout* layout, int index) {
@@ -1050,6 +1460,8 @@ void MainWindow::buildAnalysisDock() {
         analysisLegendLabels_[index] = legend;
         if (summary == nullptr) summary = new AnalysisSummaryLabel(content);
         summary->setObjectName(QString("eegAnalysisSummary_%1").arg(index));
+        // The window style sheet stops setFont() propagation; keep result tables at workbench size.
+        summary->setFont(workbenchFont());
         summary->setTextFormat(Qt::RichText);
         summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
         summary->setWordWrap(true);
@@ -1062,9 +1474,9 @@ void MainWindow::buildAnalysisDock() {
     auto* psdLayout = new QVBoxLayout(psdPage);
     addHeader(psdPage, psdLayout, 0);
     auto* psdControls = new ControlFlowLayout(nullptr);
-    psdChannelCombo_ = new QComboBox(psdPage);
-    psdModeCombo_ = new QComboBox(psdPage);
-    psdDbCheck_ = new QCheckBox(psdPage);
+    psdChannelCombo_ = new ChoiceBox(psdPage);
+    psdModeCombo_ = new ChoiceBox(psdPage);
+    psdDbCheck_ = new CheckOption(psdPage);
     psdFmaxSpin_ = new QSpinBox(psdPage);
     psdFmaxSpin_->setRange(5, 500);
     psdFmaxSpin_->setValue(100);
@@ -1077,7 +1489,7 @@ void MainWindow::buildAnalysisDock() {
     psdControls->addWidget(psdFmaxSpin_);
     spectrumWidget_ = new SpectrumWidget(psdPage);
     spectrumWidget_->setObjectName("eegAnalysisPlot_0");
-    spectrumWidget_->setMinimumSize(220, 160);
+    spectrumWidget_->setMinimumSize(180, 160);
     spectrumWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     psdLayout->addLayout(psdControls);
     psdLayout->addWidget(spectrumWidget_, 1);
@@ -1091,8 +1503,8 @@ void MainWindow::buildAnalysisDock() {
     auto* stftLayout = new QVBoxLayout(stftPage);
     addHeader(stftPage, stftLayout, 1);
     auto* stftControls = new ControlFlowLayout(nullptr);
-    stftChannelCombo_ = new QComboBox(stftPage);
-    stftResolutionCombo_ = new QComboBox(stftPage);
+    stftChannelCombo_ = new ChoiceBox(stftPage);
+    stftResolutionCombo_ = new ChoiceBox(stftPage);
     stftFmaxSpin_ = new QSpinBox(stftPage);
     stftFmaxSpin_->setRange(5, 500);
     stftFmaxSpin_->setValue(100);
@@ -1102,7 +1514,7 @@ void MainWindow::buildAnalysisDock() {
     stftControls->addWidget(stftFmaxSpin_);
     spectrogramWidget_ = new SpectrogramWidget(stftPage);
     spectrogramWidget_->setObjectName("eegAnalysisPlot_1");
-    spectrogramWidget_->setMinimumSize(220, 160);
+    spectrogramWidget_->setMinimumSize(180, 160);
     spectrogramWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     stftLayout->addLayout(stftControls);
     stftLayout->addWidget(spectrogramWidget_, 1);
@@ -1116,7 +1528,7 @@ void MainWindow::buildAnalysisDock() {
     auto* trendLayout = new QVBoxLayout(trendPage);
     addHeader(trendPage, trendLayout, 2);
     auto* trendControls = new ControlFlowLayout(nullptr);
-    trendChannelCombo_ = new QComboBox(trendPage);
+    trendChannelCombo_ = new ChoiceBox(trendPage);
     trendEpochSpin_ = new QDoubleSpinBox(trendPage);
     trendEpochSpin_->setRange(0.5, 30.0);
     trendEpochSpin_->setValue(1.0);
@@ -1125,7 +1537,7 @@ void MainWindow::buildAnalysisDock() {
     trendControls->addWidget(trendEpochSpin_);
     trendWidget_ = new BandTrendWidget(trendPage);
     trendWidget_->setObjectName("eegAnalysisPlot_2");
-    trendWidget_->setMinimumSize(220, 160);
+    trendWidget_->setMinimumSize(180, 160);
     trendWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     trendLayout->addLayout(trendControls);
     trendLayout->addWidget(trendWidget_, 1);
@@ -1136,8 +1548,8 @@ void MainWindow::buildAnalysisDock() {
     auto* coherenceLayout = new QVBoxLayout(coherencePage);
     addHeader(coherencePage, coherenceLayout, 3);
     auto* coherenceControls = new ControlFlowLayout(nullptr);
-    coherenceACombo_ = new QComboBox(coherencePage);
-    coherenceBCombo_ = new QComboBox(coherencePage);
+    coherenceACombo_ = new ChoiceBox(coherencePage);
+    coherenceBCombo_ = new ChoiceBox(coherencePage);
     coherenceFmaxSpin_ = new QSpinBox(coherencePage);
     coherenceFmaxSpin_->setRange(5, 500);
     coherenceFmaxSpin_->setValue(100);
@@ -1158,7 +1570,7 @@ void MainWindow::buildAnalysisDock() {
     labeledControl(coherenceFmaxLabel_, coherenceFmaxSpin_);
     coherenceWidget_ = new SpectrumWidget(coherencePage);
     coherenceWidget_->setObjectName("eegAnalysisPlot_3");
-    coherenceWidget_->setMinimumSize(220, 160);
+    coherenceWidget_->setMinimumSize(180, 160);
     coherenceWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     coherenceSummaryLabel_ = new AnalysisSummaryLabel(coherencePage);
     coherenceSummaryLabel_->setWordWrap(true);
@@ -1188,7 +1600,7 @@ void MainWindow::refreshAnalysisControls() {
         return;
     }
     refreshingAnalysisControls_ = true;
-    const QStringList names = hasCurrentFile_ ? currentFile_.waveform.channelNames : QStringList{};
+    const QStringList names = hasActiveSignal() ? activeSignal().channelNames : QStringList{};
     for (QComboBox* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
         const int selected = combo->currentIndex();
         combo->clear();
@@ -1198,8 +1610,9 @@ void MainWindow::refreshAnalysisControls() {
     if (coherenceBCombo_->count() > 1 && coherenceBCombo_->currentIndex() == coherenceACombo_->currentIndex()) {
         coherenceBCombo_->setCurrentIndex(1);
     }
-    const int nyquist = hasCurrentFile_ ? std::max(5, static_cast<int>(currentFile_.waveform.fs / 2.0)) : 500;
+    const int nyquist = hasActiveSignal() ? std::max(1, static_cast<int>(activeSignal().fs / 2.0)) : 500;
     for (QSpinBox* spin : {psdFmaxSpin_, stftFmaxSpin_, coherenceFmaxSpin_}) {
+        spin->setMinimum(std::min(5,nyquist));
         spin->setMaximum(nyquist);
         spin->setValue(std::min(spin->value(), nyquist));
     }
@@ -1207,7 +1620,7 @@ void MainWindow::refreshAnalysisControls() {
 }
 
 void MainWindow::requestCurrentAnalysis(bool background) {
-    if (!hasCurrentFile_ || refreshingAnalysisControls_ || analysisService_ == nullptr
+    if (!hasActiveSignal() || refreshingAnalysisControls_ || analysisService_ == nullptr
         || (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown())) {
         return;
     }
@@ -1217,19 +1630,12 @@ void MainWindow::requestCurrentAnalysis(bool background) {
     // changes still supersede work immediately via a new generation.
     if (background && requestedAnalysisPage_ == currentTab && analysisRequestPending_) return;
     AnalysisRequest request;
-    request.fs = currentFile_.waveform.fs;
+    request.fs = activeSignal().fs;
     if (!(request.fs > 0.0) || windowRequestPending_ || openingFile_) return;
     const auto range = waveformWidget_->timeRange();
     const double start = range.first;
     const double end = range.second;
-    const double firstSample = std::max(0.0, std::ceil((start - currentFile_.waveform.t0) * request.fs - 1e-6));
-    const double endSample = std::max(firstSample, std::ceil((end - currentFile_.waveform.t0) * request.fs - 1e-6));
-    for (const auto& channel : currentFile_.waveform.data) {
-        const auto first = static_cast<std::size_t>(std::min(firstSample, static_cast<double>(channel.size())));
-        const auto last = static_cast<std::size_t>(std::min(endSample, static_cast<double>(channel.size())));
-        request.data.emplace_back(channel.begin() + first, channel.begin() + last);
-    }
-    request.tStart = currentFile_.waveform.t0 + firstSample / request.fs;
+    const auto window=signalWindowRange(activeSignal(),start,end);
     if (currentTab == 0) {
         request.kind = psdModeCombo_->currentIndex() == 1 ? AnalysisKind::Fft : AnalysisKind::Psd;
         request.channel = psdChannelCombo_->currentIndex();
@@ -1251,9 +1657,21 @@ void MainWindow::requestCurrentAnalysis(bool background) {
         request.channelB = coherenceBCombo_->currentIndex();
         request.fmax = coherenceFmaxSpin_->value();
     }
-    if (request.channel < 0 || (request.kind == AnalysisKind::Coherence && request.channelB < 0)) {
-        return;
+    std::vector<int> selected{request.channel};
+    if(request.kind==AnalysisKind::Coherence)selected.push_back(request.channelB);
+    const auto spans=signalContinuousRanges(window,selected);
+    if(spans.empty()) {
+        auto& page=analysisPages_[currentTab];page={};page.state=AnalysisDisplayState::Empty;
+        clearAnalysisPlot(currentTab);refreshAnalysisPage(currentTab);return;
     }
+    const auto span=*std::max_element(spans.begin(),spans.end(),[](const auto& a,const auto& b){return a.last-a.first<b.last-b.first;});
+    if(span.last-span.first<2)return;
+    for(const auto& channel:window.data) {
+        if(span.last>channel.size())return;
+        request.data.emplace_back(channel.begin()+span.first,channel.begin()+span.last);
+    }
+    request.tStart=span.start;
+    request.unit=signalUnit(window,request.channel);request.sourceId=window.sourceId;request.streamId=window.streamId;request.sourceContext=window.metadata;
     if (requestedAnalysisPage_ >= 0 && requestedAnalysisPage_ != currentTab)
         analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
     // Every request owns one page and its exact input context. A pending result
@@ -1274,9 +1692,10 @@ void MainWindow::requestCurrentAnalysis(bool background) {
     page.end = request.tStart + (request.data.empty() ? 0.0 : request.data.front().size() / request.fs);
     page.fmax = request.fmax;
     page.asDb = request.kind == AnalysisKind::Psd && psdDbCheck_->isChecked();
-    page.channel = currentFile_.waveform.channelNames.value(request.channel);
+    page.unit=request.unit;page.partialWindow=spans.size()>1;
+    page.channel = activeSignal().channelNames.value(request.channel);
     if (request.kind == AnalysisKind::Coherence) {
-        page.channel += QStringLiteral(" / ") + currentFile_.waveform.channelNames.value(request.channelB);
+        page.channel += QStringLiteral(" / ") + activeSignal().channelNames.value(request.channelB);
     }
     requestedAnalysisPage_ = currentTab;
     pendingAnalysis_ = std::move(page);
@@ -1341,7 +1760,7 @@ void MainWindow::refreshAnalysisPage(int index) {
     const QString context = page.state == AnalysisDisplayState::Idle ? QString() : i18n_->text("app.analysis.context", {
         {"channel", page.channel}, {"start", i18n_->formatNumber(page.start, 2)}, {"end", i18n_->formatNumber(page.end, 2)},
     });
-    analysisStatusLabels_[index]->setText(stateText + (context.isEmpty() ? QString() : QStringLiteral("\n") + context));
+    analysisStatusLabels_[index]->setText(stateText + (context.isEmpty() ? QString() : QStringLiteral("\n") + context) + (page.partialWindow?QStringLiteral("\n")+i18n_->text("app.signal.continuous_segment"):QString()));
     analysisStatusLabels_[index]->setToolTip(analysisStatusLabels_[index]->text());
     const char* states[] = {"idle", "pending", "ready", "empty", "failed"};
     analysisStatusLabels_[index]->setProperty("analysisState", states[static_cast<int>(page.state)]);
@@ -1363,9 +1782,9 @@ void MainWindow::refreshAnalysisPage(int index) {
         && (page.kind == AnalysisKind::Psd || page.kind == AnalysisKind::Coherence);
     analysisLegendLabels_[index]->setVisible(!bands.isEmpty() && !hasBandTable);
     QString yLabel;
-    if (index == 0) yLabel = i18n_->text(page.kind == AnalysisKind::Fft ? "app.analysis.amplitude" : (page.asDb ? "app.analysis.db_unit" : "app.analysis.psd_unit"));
+    if (index == 0) yLabel = analysisUnitLabel(page.kind,page.unit,page.asDb);
     else if (index == 1) yLabel = i18n_->text("app.analysis.frequency");
-    else if (index == 2) yLabel = i18n_->text("app.analysis.trend_unit");
+    else if (index == 2) yLabel = analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false);
     else yLabel = i18n_->text("app.analysis.coherence");
     const QString empty = QString();
     if (index == 0) spectrumWidget_->setAxisLabels(i18n_->text("app.analysis.frequency"), yLabel, empty);
@@ -1440,12 +1859,12 @@ void MainWindow::renderAnalysisResult(int index) {
         spectrumWidget_->setSpectrum(
             spectrum,
             fft ? i18n_->text("app.analysis.fft") : i18n_->text("app.analysis.psd"),
-            fft ? i18n_->text("app.analysis.amplitude") : (asDb ? i18n_->text("app.analysis.db_unit") : i18n_->text("app.analysis.psd_unit")));
+            analysisUnitLabel(result.kind,page.unit,asDb));
         if (!fft) {
             std::vector<double> powers;
             for (const dsp::Band& band : dsp::eegBands())
                 powers.push_back(dsp::bandPower(result.spectrum, band.low, band.high));
-            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, i18n_->text("app.analysis.trend_unit"), powers));
+            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false), powers));
         } else {
             psdBandSummaryLabel_->clear();
         }
@@ -1458,14 +1877,15 @@ void MainWindow::renderAnalysisResult(int index) {
         for (const auto& row : result.spectrogram.values) {
             for (double value : row) { low = std::min(low, value); high = std::max(high, value); }
         }
-        analysisSummaryLabels_[1]->setText(i18n_->text("app.analysis.color_range", {
+        analysisSummaryLabels_[1]->setText(i18n_->text(page.unit=="uV"?"app.analysis.color_range":"app.signal.color_range", {
+            {"unit",page.unit},
             {"min", i18n_->formatNumber(low, 1)}, {"max", i18n_->formatNumber(high, 1)},
         }));
         break;
     }
     case AnalysisKind::BandTrend:
         trendWidget_->setTrend(result.trend.times, result.trend.powers);
-        analysisSummaryLabels_[2]->setText(i18n_->text("app.analysis.trend_unit"));
+        analysisSummaryLabels_[2]->setText(analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false));
         break;
 
     case AnalysisKind::Coherence: {
@@ -1522,6 +1942,7 @@ void MainWindow::requestPlaybackPrefetch() {
 }
 
 void MainWindow::togglePlayback() {
+    if (deviceWaveformActive_) return;
     if (!hasCurrentFile_ || openingFile_) return;
     if (playback_.isPlaying()) {
         playback_.pause();
@@ -1577,6 +1998,7 @@ void MainWindow::advancePlayback() {
 }
 
 void MainWindow::refreshPlaybackControls() {
+    refreshWaveformInteractions();
     if (playAction_ == nullptr) {
         return;
     }
@@ -1584,7 +2006,7 @@ void MainWindow::refreshPlaybackControls() {
     playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
     playAction_->setToolTip(playAction_->text());
     const bool scrubbing = playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown();
-    waveformWidget_->setCursorTime(scrubbing && scrubPreviewDisplayed_ ? scrubDisplayedPosition_ : playback_.position());
+    if (!deviceWaveformActive_) waveformWidget_->setCursorTime(scrubbing && scrubPreviewDisplayed_ ? scrubDisplayedPosition_ : playback_.position());
     if (positionSpin_ != nullptr && !playbackPanel_->isProgressSliderDown()) {
         const QSignalBlocker blocker(positionSpin_);
         positionSpin_->setValue(std::min(playback_.position(), positionSpin_->maximum()));
@@ -1614,12 +2036,12 @@ void MainWindow::updatePlaybackDuration() {
 }
 
 void MainWindow::addMarkerAt(double time) {
-    if (!hasCurrentFile_) return;
+    if (!hasActiveSignal()) return;
     bool accepted = false;
     const QString label = QInputDialog::getText(this, i18n_->text("app.marker.add_title"), i18n_->text("app.marker.add_prompt", {{"time", i18n_->formatNumber(time, 3)}}), QLineEdit::Normal, {}, &accepted);
     if (!accepted) return;
     markerStore_.add(time, label);
-    if (recordController_ != nullptr && recordController_->isActive()) {
+    if (!deviceWaveformActive_ && recordController_ != nullptr && recordController_->isActive()) {
         recordController_->appendEvent(std::max(0.0, time - recordSourceStart_), label);
     }
     refreshMarkerControls();
@@ -1641,7 +2063,7 @@ void MainWindow::refreshMarkerControls() {
         markerTable_->setItem(row, 2, color);
     }
     refreshingMarkerControls_ = false;
-    waveformWidget_->setMarkers(markerStore_.markers());
+    if (deviceWaveformActive_) displayLiveSignal();else waveformWidget_->setMarkers(markerStore_.markers());
 }
 
 void MainWindow::deleteSelectedMarker() {
@@ -1654,7 +2076,7 @@ void MainWindow::clearMarkers() {
 }
 
 void MainWindow::exportMarkers() {
-    if (!hasCurrentFile_ || !exportMarkersHandler_) return;
+    if (!hasActiveSignal() || !exportMarkersHandler_) return;
     QVector<SidecarEvent> events;
     events.reserve(markerStore_.markers().size());
     for (const Marker& marker : markerStore_.markers()) events.push_back({marker.time, marker.label});
@@ -1676,6 +2098,9 @@ void MainWindow::handleAnalysisFailed(int generation, const QString& code, const
 }
 
 void MainWindow::chooseFile() {
+    if (workspaceStack_->currentIndex() == 1) {
+        separationWorkspace_->chooseSource(); return;
+    }
     const QString path = QFileDialog::getOpenFileName(
         this,
         i18n_->text("app.dialog.open_title"),
@@ -1684,6 +2109,131 @@ void MainWindow::chooseFile() {
     if (!path.isEmpty()) {
         openPathForBrowser(path);
     }
+}
+void MainWindow::refreshInputActions() {
+    if (!openAction_ || !openTeachingAction_ || !separationWorkspace_) return;
+    const bool separation = workspaceStack_->currentIndex() == 1;
+    openAction_->setText(i18n_->text("app.action.open"));
+    openAction_->setEnabled(!fileMenuLoading_ && (!separation || separationWorkspace_->canChangeInput()));
+    openTeachingAction_->setEnabled(!fileMenuLoading_ && separationWorkspace_->canChangeInput());
+}
+
+void MainWindow::chooseCapture() {
+    const auto path = QFileDialog::getExistingDirectory(this, i18n_->text("app.capture.open"));
+    if (!path.isEmpty()) openPathForBrowser(path);
+}
+
+bool MainWindow::isCaptureReplay() const {
+    return hasCurrentFile_ && currentFile_.session.capture.value("schema").toString() == "boundfree.capture.v1";
+}
+
+void MainWindow::refreshSignalTools() {
+    if (!captureBar_) return;
+    const bool capture = isCaptureReplay() && !deviceWaveformActive_;
+    const bool signal=hasActiveSignal();
+    const bool simulatedFile=signal && activeRawSignal().simulated && !capture && !deviceWaveformActive_;
+    captureBar_->setVisible(capture || deviceWaveformActive_ || simulatedFile);
+    captureStreamCombo_->setVisible(capture || deviceWaveformActive_);captureStreamLabel_->setVisible(capture || deviceWaveformActive_);
+    if(simulatedFile)captureSummary_->setText(i18n_->text("app.device.simulated_notice"));
+    if (capture || deviceWaveformActive_) {
+        const auto streams = deviceWaveformActive_?acquisitionController_->signalStreams():currentFile_.session.capture.value("streams").toArray();
+        const QSignalBlocker blocker(captureStreamCombo_);
+        bool same = captureStreamCombo_->count() == streams.size();
+        for (int i = 0; same && i < streams.size(); ++i)
+            same = captureStreamCombo_->itemData(i).toString() == streams[i].toObject().value("key").toString();
+        if (!same) captureStreamCombo_->clear();
+        for (int i = 0; i < streams.size(); ++i) {
+            const auto stream = streams[i].toObject();
+            const auto label = i18n_->text("app.capture.stream_description", {
+                {"name", stream.value("name")}, {"rate", i18n_->formatNumber(stream.value("fs").toDouble(), 2)},
+                {"channels", stream.value("channels")}});
+            if (same) captureStreamCombo_->setItemText(i, label);
+            else captureStreamCombo_->addItem(label, stream.value("key").toString());
+        }
+        captureStreamCombo_->setCurrentIndex(captureStreamCombo_->findData(deviceWaveformActive_?liveStreamKey_:currentFile_.session.capture.value("stream_key").toString()));
+        captureStreamCombo_->setEnabled(streams.size() > 1 && !openingFile_);
+        if(!deviceWaveformActive_){
+        const auto state = currentFile_.session.capture.value("status").toString();
+        captureSummary_->setText(i18n_->text("app.capture.summary", {
+            {"state", i18n_->text(state == "complete" ? "app.capture.complete" : "app.capture.partial")},
+            {"gaps", currentFile_.session.capture.value("gap_records")}}));
+        if (currentFile_.session.capture.value("simulated").toBool())
+            captureSummary_->setText(captureSummary_->text() + "\n" + i18n_->text("app.device.simulated_notice"));
+    }
+        else captureSummary_->setText(i18n_->text("app.signal.live_tools"));
+    }
+    captureStreamLabel_->setText(i18n_->text("app.capture.stream"));
+    captureStreamCombo_->setAccessibleName(captureStreamLabel_->text());
+    captureBar_->setToolTip(i18n_->text("app.signal.shared_tools"));
+    timeWindowSpin_->setRange(.25,deviceWaveformActive_?10.:120.);
+    waveformDataCombo_->setEnabled(signal);
+    { const QSignalBlocker blocker(waveformDataCombo_); waveformDataCombo_->setCurrentIndex(waveformProcessed_ ? 1 : 0); }
+    filterToolbar_->setEnabled(signal);
+    filterToolbar_->setToolTip(QString());
+    amplitudeLabel_->setVisible(true);
+    amplitudeSpin_->setVisible(true);
+    amplitudeSpin_->setSuffix(" "+(signal?activeSignal().unit:QString("uV")));
+    const bool voltage=!signal || activeSignal().unit=="uV";
+    amplitudeSpin_->setRange(voltage?50.:1e-6,voltage?5000.:1e12);
+    amplitudeSpin_->setDecimals(voltage || (signal && activeSignal().unit=="count")?0:4);amplitudeSpin_->setMaximumWidth(170);
+    autoAmplitudeCheck_->setEnabled(true);
+    if (parameterTabs_) parameterTabs_->setTabEnabled(1, signal);
+    if (analysisDock_) analysisDock_->setEnabled(signal);
+    if (toggleAnalysisAction_) toggleAnalysisAction_->setEnabled(signal);
+    if (recordAction_) recordAction_->setEnabled(signal);
+    if (exportSegmentAction_) exportSegmentAction_->setEnabled(signal && !exportRunning_);
+    refreshWaveformInteractions();
+}
+
+void MainWindow::refreshWaveformInteractions() {
+    // Rendering preferences and gesture availability belong to the shared
+    // browser. Source adapters supply ranges and execute navigation only.
+    const bool ready = (deviceWaveformActive_ || hasCurrentFile_) && !openingFile_;
+    waveformWidget_->setViewInteractionsEnabled(ready);
+    waveformWidget_->setAutoScaleEnabled(autoAmplitudeCheck_->isChecked());
+    const bool marking = markerModeAction_ && markerModeAction_->isChecked();
+    waveformWidget_->setMarkerModeEnabled(marking);
+    waveformWidget_->setViewPanningEnabled(ready && !marking &&
+        (deviceWaveformActive_ ? liveFrozen_ : !playback_.isPlaying()));
+    waveformWidget_->setAccessibleName(i18n_->text("app.separation.browser_workspace"));
+    waveformWidget_->setNumberLocale(i18n_->qlocale());
+    waveformWidget_->setToolTip(ready ? i18n_->text(deviceWaveformActive_ ? "app.device.view_only_hint" : "app.browser.view_hint") : QString());
+}
+
+void MainWindow::setFileViewport(double start, double seconds) {
+    if (deviceWaveformActive_ || !hasCurrentFile_ || openingFile_) return;
+    {
+        const QSignalBlocker blocker(timeWindowSpin_);
+        timeWindowSpin_->setValue(seconds);
+        viewState_.setWindowSeconds(timeWindowSpin_->value());
+    }
+    playback_.seek(viewportStart(start));
+    playbackElapsed_.restart();
+    playbackViewportActive_ = true;
+    applyBrowserStateToWaveform();
+    if (windowRequestHandler_ && (!cacheCoversPosition(playback_.position()) || windowRequestPending_ || playbackPrefetchPending_))
+        requestWindow(playback_.position(), true);
+    else requestCurrentAnalysis();
+    refreshPlaybackControls();
+    syncVideoToPlayback();
+}
+
+void MainWindow::resetWaveformView() {
+    if (deviceWaveformActive_) { deviceWorkspace_->resetView(); return; }
+    if (!hasCurrentFile_ || openingFile_) return;
+    waveformWidget_->setAmplitudeZoom(1);
+    setFileViewport(waveformWidget_->timeRange().first, 10.);
+}
+
+void MainWindow::resetBrowserChannelSelections() {
+    viewState_.firstVisibleChannel = 0;
+    viewState_.hiddenChannels.clear();
+    for (auto* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
+        const QSignalBlocker blocker(combo);
+        combo->setCurrentIndex(0);
+    }
+    const QSignalBlocker blocker(coherenceBCombo_);
+    if (coherenceBCombo_->count() > 1) coherenceBCombo_->setCurrentIndex(1);
 }
 
 void MainWindow::chooseVideo() {
@@ -1765,11 +2315,11 @@ void MainWindow::requestScrubPreview() {
     windowRequestHandler_(currentFile_.session.path, viewportStart(scrubPreviewPosition_), viewState_.windowSeconds);
 }
 
-void MainWindow::requestWindow(double t0) {
+void MainWindow::requestWindow(double t0, bool keepViewport) {
     if (!hasCurrentFile_ || openingFile_ || !windowRequestHandler_) return;
     scrubPreviewTimer_.stop();
     scrubRequestPending_ = false;
-    if (!playback_.isPlaying()) playbackViewportActive_ = false;
+    if (!playback_.isPlaying()) playbackViewportActive_ = keepViewport;
     playback_.seek(t0);
     playbackElapsed_.restart();
     playbackPrefetchPending_ = false;
@@ -1784,12 +2334,16 @@ void MainWindow::requestWindow(double t0) {
 }
 
 void MainWindow::setLoading(bool loading) {
+    fileMenuLoading_ = loading;
+    if (openCaptureAction_) openCaptureAction_->setEnabled(!loading);
+    if (captureStreamCombo_) captureStreamCombo_->setEnabled(!loading && (isCaptureReplay() || deviceWaveformActive_) && captureStreamCombo_->count() > 1);
     if (openAction_ != nullptr) {
         openAction_->setEnabled(!loading);
     }
     if (openButton_ != nullptr) {
         openButton_->setEnabled(!loading);
     }
+    refreshInputActions();
 }
 
 void MainWindow::refreshBrowserControls() {
@@ -1820,10 +2374,10 @@ void MainWindow::refreshBrowserControls() {
 }
 
 int MainWindow::channelCount() const {
-    if (!hasCurrentFile_) {
+    if (!hasActiveSignal()) {
         return 0;
     }
-    return static_cast<int>(currentFile_.waveform.data.size());
+    return static_cast<int>(activeSignal().data.size());
 }
 
 void MainWindow::rebuildChannelControls() {
@@ -1833,17 +2387,17 @@ void MainWindow::rebuildChannelControls() {
 
     QStringList names;
     for (int channel = 0; channel < channelCount(); ++channel) {
-        names.push_back(channel < currentFile_.waveform.channelNames.size()
-            ? currentFile_.waveform.channelNames[channel] : QString("Ch%1").arg(channel + 1));
+        names.push_back(channel < activeSignal().channelNames.size()
+            ? activeSignal().channelNames[channel] : QString("Ch%1").arg(channel + 1));
     }
     if (channelBandpassControls_ != nullptr) {
-        QStringList processingNames = rawWaveform_.channelNames;
+        QStringList processingNames = activeRawSignal().channelNames;
         if (processingState_.referenceMode == dsp::ReferenceMode::Bipolar && processingNames.size() >= 2) {
             processingNames.clear();
-            for (int index = 0; index + 1 < rawWaveform_.channelNames.size(); ++index)
-                processingNames << rawWaveform_.channelNames[index] + "-" + rawWaveform_.channelNames[index + 1];
+            for (int index = 0; index + 1 < activeRawSignal().channelNames.size(); ++index)
+                processingNames << activeRawSignal().channelNames[index] + "-" + activeRawSignal().channelNames[index + 1];
         }
-        channelBandpassControls_->refresh(processingNames, hasCurrentFile_ ? currentFile_.waveform.fs : 0.0, processingState_);
+        channelBandpassControls_->refresh(processingNames, hasActiveSignal() ? activeSignal().fs : 0.0, processingState_);
     }
     // Overrides address reference outputs. Raw input identities may differ.
     if (channelFilterPanel_) {
@@ -1866,14 +2420,14 @@ void MainWindow::rebuildChannelControls() {
     }
     channelChecks_.clear();
 
-    if (!hasCurrentFile_) {
+    if (!hasActiveSignal()) {
         return;
     }
 
     const int nChannels = channelCount();
     for (int channel = 0; channel < nChannels; ++channel) {
         const QString label = names[channel];
-        auto* check = new QCheckBox(label, channelListWidget_);
+        auto* check = new CheckOption(label, channelListWidget_);
         check->setChecked(viewState_.isChannelVisible(channel));
         connect(check, &QCheckBox::toggled, this, [this, channel](bool checked) {
             if (refreshingBrowserControls_) {
@@ -1889,13 +2443,27 @@ void MainWindow::rebuildChannelControls() {
 }
 
 void MainWindow::retranslateUi() {
+    for (auto* splitter : findChildren<QSplitter*>()) {
+        if (!splitter->property("workspaceSplitter").toBool()) continue;
+        for (int index = 1; index < splitter->count(); ++index) {
+            auto* handle = splitter->handle(index);
+            handle->setToolTip(i18n_->text("app.separation.splitter_help"));
+            handle->setAccessibleName(i18n_->text("app.separation.splitter_help"));
+        }
+    }
+
+    if (openCaptureAction_) openCaptureAction_->setText(i18n_->text("app.capture.open"));
+    refreshSignalTools();
     const QScopedValueRollback<bool> analysisTranslationGuard(refreshingAnalysisControls_, true);
     const QString productTitle = i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}});
-    setWindowTitle(hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() + " — " + productTitle : productTitle);
+    setWindowTitle(deviceWaveformActive_ ? acquisitionController_->snapshot().deviceName + " — " + productTitle :
+        hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() + " — " + productTitle : productTitle);
     centralLabel_->setText(i18n_->text(emptyStateKey_, emptyStateParams_));
     fileMenu_->setTitle(i18n_->text("app.menu.file"));
     fileMenu_->menuAction()->setText(i18n_->text("app.menu.file"));
     openAction_->setText(i18n_->text("app.action.open"));
+    openTeachingAction_->setText(i18n_->text("app.separation.open_teaching"));
+    refreshInputActions();
     openVideoAction_->setText(i18n_->text("app.video.open"));
     openButton_->setText(i18n_->text("app.action.open"));
     quitAction_->setText(i18n_->text("app.action.quit"));
@@ -1906,12 +2474,20 @@ void MainWindow::retranslateUi() {
         workspaceNavigation_->setAccessibleName(i18n_->text("app.separation.workspace_navigation"));
         workspaceNavigation_->setTabText(0, i18n_->text("app.separation.browser_workspace"));
         workspaceNavigation_->setTabText(1, i18n_->text("app.separation.separation_workspace"));
+
         const QString workspaceHelp = i18n_->text("app.separation.browser_workspace_help");
         workspaceNavigation_->setTabToolTip(0, workspaceHelp);
         workspaceNavigation_->setTabToolTip(1, workspaceHelp);
+
         workspaceNavigation_->setAccessibleDescription(workspaceHelp);
         if (separationAction_) separationAction_->setToolTip(workspaceHelp);
     }
+    if (deviceWorkspace_) deviceWorkspace_->retranslateUi();
+    if (deviceDialog_) deviceDialog_->setWindowTitle(i18n_->text("app.device.manager_title"));
+    deviceMenu_->setTitle(i18n_->text("app.menu.device"));
+    deviceManageAction_->setText(i18n_->text("app.device.connections"));
+    deviceOpenLogsAction_->setText(i18n_->text("app.device.open_logs"));
+    refreshDeviceStatus();
     viewMenu_->setTitle(i18n_->text("app.menu.view"));
     viewMenu_->menuAction()->setText(i18n_->text("app.menu.view"));
     toggleChannelsAction_->setText(i18n_->text("app.view.channels"));
@@ -1934,6 +2510,8 @@ void MainWindow::retranslateUi() {
     nextWindowAction_->setToolTip(i18n_->text("app.browser.next"));
     positionLabel_->setText(i18n_->text("app.browser.position"));
     timeWindowLabel_->setText(i18n_->text("app.browser.window"));
+    findChild<CollapsiblePanel*>("signalAdvancedProcessing")->setTitle(i18n_->text("app.device.wifi_advanced"));
+    findChild<QLabel*>("signalExecutionLabel")->setText(i18n_->text("app.signal.execution_mode"));
     waveformDataLabel_->setText(i18n_->text("app.signal.data"));
     waveformDataCombo_->setAccessibleName(waveformDataLabel_->text());
     waveformDataCombo_->setToolTip(i18n_->text("app.signal.mode_hint"));
@@ -1942,6 +2520,9 @@ void MainWindow::retranslateUi() {
         waveformDataCombo_->setItemText(0, i18n_->text("app.signal.raw"));
         waveformDataCombo_->setItemText(1, i18n_->text("app.signal.processed"));
     }
+    processingModeCombo_->setItemText(0,i18n_->text("app.signal.offline_mode"));
+    processingModeCombo_->setItemText(1,i18n_->text("app.signal.causal_mode"));
+    processingModeCombo_->setAccessibleName(i18n_->text("app.signal.execution_mode"));
     timeWindowSpin_->setAccessibleName(timeWindowLabel_->text());
     static_cast<PresetDoubleSpinBox*>(timeWindowSpin_)->setPresetAccessibleName(timeWindowLabel_->text());
     autoAmplitudeCheck_->setText(i18n_->text("app.browser.auto_amplitude"));
@@ -1949,7 +2530,7 @@ void MainWindow::retranslateUi() {
     amplitudeSpin_->setAccessibleName(amplitudeLabel_->text());
     static_cast<PresetDoubleSpinBox*>(amplitudeSpin_)->setPresetAccessibleName(amplitudeLabel_->text());
     firstChannelLabel_->setText(i18n_->text("app.browser.first_channel"));
-    waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"), i18n_->text("app.analysis.amplitude"));
+    waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"), i18n_->text(hasActiveSignal() && activeSignal().unit!="uV" ? "app.device.signal_amplitude" : "app.analysis.amplitude"));
     waveformWidget_->setNumberLocale(i18n_->qlocale());
     channelDock_->setWindowTitle(i18n_->text("app.browser.channels"));
     channelPanel_->setTitle(i18n_->text("app.browser.channels"));
@@ -1970,12 +2551,14 @@ void MainWindow::retranslateUi() {
     }
     waveformTitle_->setText(i18n_->text("app.workspace.waveform"));
     analysisHeading_->setText(i18n_->text("app.analysis.panel"));
+    findChild<QPushButton*>("signalSendToSeparation")->setText(i18n_->text("app.signal.separate_selection"));
     coherenceALabel_->setText(i18n_->text("app.analysis.channel_a"));
     coherenceBLabel_->setText(i18n_->text("app.analysis.channel_b"));
     coherenceFmaxLabel_->setText(i18n_->text("app.analysis.frequency_limit"));
     coherenceACombo_->setAccessibleName(coherenceALabel_->text());
     coherenceBCombo_->setAccessibleName(coherenceBLabel_->text());
     coherenceFmaxSpin_->setAccessibleName(coherenceFmaxLabel_->text());
+    updateSignalWorkspaceLayout();
     refreshAnalysisInputSummary();
     analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
     analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
@@ -2017,7 +2600,8 @@ void MainWindow::retranslateUi() {
         refreshPersistentStatus();
         return;
     }
-    statusBar()->showMessage(i18n_->text(statusKey_, statusParams_));
+    if (recordingStatusVisible_) statusBar()->clearMessage();
+    else statusBar()->showMessage(i18n_->text(statusKey_, statusParams_));
     refreshPersistentStatus();
 }
 
@@ -2041,6 +2625,11 @@ void MainWindow::setSidecarFailed(const AppError& error) {
 }
 
 void MainWindow::resetSeparationForBrowserSource() {
+    liveIcaController_->stop();
+    separationCollecting_ = false; separationCollectTimer_->stop();
+    preparingSeparation_ = false; // Reject a late snapshot handoff from the previous source.
+    ++separationSnapshotRequest_;
+    separationWorkspace_->setInputPending(separationSnapshotExporter_->isBusy());
     switchWorkspace(0);
     separationController_->clearSource();
     // Atomic publication may already be committed; discard its view after acknowledgement.
@@ -2048,6 +2637,19 @@ void MainWindow::resetSeparationForBrowserSource() {
 }
 
 void MainWindow::showFileOpenLoading(const QString& path) {
+    if (deviceWaveformActive_) {
+        deviceWaveformActive_ = false; setProperty("deviceWaveformActive", false);
+        deviceWorkspace_->setLiveViewActive(false);
+        acquisitionController_->cancelSignalWindow();
+        liveRawSignal_ = {}; liveProcessedSignal_ = {}; liveStreamKey_.clear();
+        viewState_ = WaveformViewState{};
+        markerStore_.replaceFromEvents({});
+        waveformWidget_->setSlice({}); waveformWidget_->clearTimeRange();
+        waveformWidget_->setAmplitudeZoom(1);
+        const QSignalBlocker block(processingModeCombo_); processingModeCombo_->setCurrentIndex(0);
+        centralStack_->setCurrentWidget(emptyPage_);
+        emptyStateKey_ = "app.main.empty_state"; emptyStateParams_ = {};
+    }
     if (!hasCurrentFile_ || currentFile_.session.path != path)
         resetSeparationForBrowserSource();
     cancelScrubPreview();
@@ -2066,6 +2668,13 @@ void MainWindow::showFileOpenLoading(const QString& path) {
 }
 
 void MainWindow::showFileOpenResult(const FileOpenResult& result) {
+    if (deviceWaveformActive_) {
+        // Connecting a device is the newer view request. A file open or
+        // prefetch dispatched earlier must not replace that device view.
+        setLoading(false); openingFile_ = false;
+        playbackPrefetchPending_ = windowRequestPending_ = waitingForPlaybackData_ = false;
+        return;
+    }
     if ((!hasCurrentFile_ || currentFile_.session.path != result.session.path)
         && (!separationController_->source().path.isEmpty() || separationController_->isBusy()))
         resetSeparationForBrowserSource();
@@ -2084,7 +2693,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         const bool coversTarget = !result.waveform.data.empty()
             && result.waveform.t0 <= start + tolerance && result.waveform.t1 + tolerance >= end;
         if (coversTarget) {
-            rawWaveform_ = result.waveform;
+            rawWaveform_ = normalizedSignalWindow(result.waveform);
+    rawWaveform_.sourceId=result.session.path;
+    rawWaveform_.streamId=result.session.capture.value("stream_key").toString();
             currentFile_.waveform = selectedWaveform();
             waveformWidget_->setSlice(currentFile_.waveform);
             previewScrubPosition(scrubPreviewPosition_);
@@ -2115,7 +2726,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     }
     openingFile_ = false;
     currentFile_ = result;
-    rawWaveform_ = result.waveform;
+    rawWaveform_ = normalizedSignalWindow(result.waveform);
+    rawWaveform_.sourceId=result.session.path;
+    rawWaveform_.streamId=result.session.capture.value("stream_key").toString();
     hasCurrentFile_ = true;
     for (QAction* action : {toggleChannelsAction_, toggleMarkersAction_, toggleAnalysisAction_, toggleVideoAction_})
         action->setEnabled(true);
@@ -2125,6 +2738,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     if (!sameSession) {
         // Overrides belong to this file's output-channel identities, not a
         // coincidentally matching index in the next file (or sample rate).
+        if (isCaptureReplay()) viewState_.setWindowSeconds(2.0);
+        waveformWidget_->setAmplitudeZoom(1);
+        resetBrowserChannelSelections();
         processingState_.clearAllChannelBandpass();
         if (channelBandpassControls_ != nullptr) channelBandpassControls_->refresh({}, 0.0, processingState_);
     }
@@ -2147,8 +2763,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     parameterTabs_->show();
     playbackBar_->show();
     if (!sameSession) {
-        playbackViewportActive_ = false;
-        waveformWidget_->clearTimeRange();
+        // The initial reader window is a cache, not the visible time span.
+        // In particular capture replay loads 10 s but defaults to a 2 s view.
+        playbackViewportActive_ = true;
         const QSignalBlocker blocker(playbackPanel_->progressSlider());
         playbackPanel_->progressSlider()->setSliderDown(false);
         playback_.pause();
@@ -2179,7 +2796,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     refreshAnalysisControls();
     if (!sameSession) {
         analysisDock_->show();
-        findChild<QSplitter*>("eegAnalysisSplitter")->show();
+        if(!compactSignalLayout_)findChild<QSplitter*>("eegAnalysisSplitter")->show();
     }
     refreshPersistentStatus();
     refreshPlaybackControls();
@@ -2189,6 +2806,11 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
 }
 
 void MainWindow::showFileOpenError(const AppError& error) {
+    if (deviceWaveformActive_) {
+        setLoading(false); openingFile_ = false;
+        playbackPrefetchPending_ = windowRequestPending_ = waitingForPlaybackData_ = false;
+        return;
+    }
     cancelScrubPreview();
     setLoading(false);
     playbackPrefetchPending_ = false;
@@ -2250,6 +2872,7 @@ void MainWindow::setBrowserWindowSecondsForBrowser(double seconds) {
 }
 
 void MainWindow::applyBrowserStateToWaveform() {
+    if(deviceWaveformActive_){displayLiveSignal();return;}
     waveformWidget_->setViewState(viewState_);
     if (!hasCurrentFile_) {
         return;
@@ -2257,12 +2880,13 @@ void MainWindow::applyBrowserStateToWaveform() {
     updatePlaybackViewport();
 
     const WaveformDisplayModel model = waveformDisplayModel(currentFile_.waveform, viewState_, 0);
-    statusKey_ = waveformWidget_->autoScaleEnabled() ? "app.status.file_window_auto" : "app.status.file_window";
+    statusKey_ = waveformWidget_->autoScaleEnabled() ? "app.status.file_window_auto" : activeSignal().unit=="uV"?"app.status.file_window":"app.signal.window";
     statusParams_ = {
         {"format", currentFile_.session.format},
         {"t0", waveformWidget_->timeRange().first},
         {"t1", waveformWidget_->timeRange().second},
         {"amplitude", viewState_.amplitudeUv},
+        {"unit",activeSignal().unit},
         {"n_visible", static_cast<int>(model.data.size())},
     };
     retranslateUi();
@@ -2311,23 +2935,124 @@ void MainWindow::clearPerChannelBandpassOverrides() {
     applyProcessingAndDisplay();
 }
 
-WaveformSlice MainWindow::selectedWaveform() const {
-    return waveformProcessed_ ? applyProcessingToSlice(rawWaveform_, processingState_) : rawWaveform_;
+void MainWindow::prepareSeparationSnapshot(){
+    if (deviceWaveformActive_) { prepareDeviceSeparationSnapshot(liveStreamKey_); return; }
+    if (preparingSeparation_ || separationSnapshotExporter_->isBusy() || separationController_->isBusy()) return;
+    ++separationSnapshotRequest_; preparingSeparation_ = true;
+    separationSnapshotDeviceSource_.clear();
+    separationWorkspace_->setInputPending(true);
+    writeSeparationSnapshot(activeRawSignal(), QFileInfo(currentFile_.session.path).fileName());
+}
+
+void MainWindow::prepareDeviceSeparationSnapshot(const QString& stream) {
+    if (preparingSeparation_ || separationSnapshotExporter_->isBusy() || separationController_->isBusy()) return;
+    ++separationSnapshotRequest_; preparingSeparation_ = true;
+    liveIcaController_->stop();
+    separationCollecting_ = true; separationCollectClock_.start();
+    separationCollectStream_ = stream; separationCollectSource_ = acquisitionController_->signalSourceId();
+    separationWorkspace_->setInputPending(true);
+    acquisitionController_->requestRawSignalWindow(separationSnapshotRequest_, stream);
+}
+
+void MainWindow::writeSeparationSnapshot(const WaveformSlice& raw, const QString& name) {
+    const auto fail = [this](const QString& code) {
+        preparingSeparation_ = false; separationWorkspace_->setInputPending(false);
+        separationWorkspace_->showInputError(makeError(code));
+    };
+    if (raw.displayOnly || !std::isfinite(raw.fs) || raw.fs <= 0 || snapshotDirectory_.isEmpty()) {
+        fail("signal.invalid_window"); return;
+    }
+    if (raw.unit == "mixed") { fail("signal.incompatible_units"); return; }
+    std::vector<int> channels(raw.data.size()); std::iota(channels.begin(), channels.end(), 0);
+    const auto spans = signalContinuousRanges(raw, channels);
+    SignalRange span;
+    // Prefer the latest of equally long segments; never join across a gap.
+    for (const auto& candidate : spans)
+        if (candidate.last - candidate.first >= span.last - span.first) span = candidate;
+    const double seconds = (span.last - span.first) / raw.fs;
+    if (seconds < 5.0) { fail("signal.insufficient_continuous_data"); return; }
+    const double start = span.start + std::max(0.0, seconds - 120.0);
+    auto snapshot = signalWindowRange(raw, start, span.start + seconds);
+    snapshot.sampleTimes.clear();
+    const auto path = QDir(snapshotDirectory_).filePath(QUuid::createUuid().toString(QUuid::WithoutBraces) + ".h5");
+    QJsonObject provenance{{"signal_metadata", snapshot.metadata}, {"source_id", snapshot.sourceId},
+        {"source_name", name}, {"stream_id", snapshot.streamId}, {"simulated", snapshot.simulated},
+        {"channel_ids", QJsonArray::fromStringList(snapshot.channelIds)},
+        {"channel_units", QJsonArray::fromStringList(snapshot.channelUnits)},
+        {"source_start_seconds", start}, {"source_end_seconds", span.start + seconds},
+        {"input_precision", "float32_projection"}, {"signal_role", "original_analysis_snapshot"}};
+    separationSnapshotExportRequest_ = separationSnapshotRequest_;
+    if (!separationSnapshotExporter_->exportSignalAsync(snapshot, path, {}, provenance)) fail("signal.invalid_window");
+}
+
+bool MainWindow::hasActiveSignal() const {return deviceWaveformActive_?!liveRawSignal_.data.empty():hasCurrentFile_;}
+const WaveformSlice& MainWindow::activeSignal() const {return deviceWaveformActive_?(waveformProcessed_?liveProcessedSignal_:liveRawSignal_):currentFile_.waveform;}
+const WaveformSlice& MainWindow::activeRawSignal() const {return deviceWaveformActive_?liveRawSignal_:rawWaveform_;}
+void MainWindow::refreshLiveSignal(double start,double end,bool frozen,int channel,double seconds){
+    if(!deviceWaveformActive_)return;
+    viewState_.setWindowSeconds(seconds);
+    {const QSignalBlocker block(timeWindowSpin_);timeWindowSpin_->setValue(seconds);}
+    const bool redraw=liveFrozen_!=frozen || liveRange_!=std::make_pair(start,end) || liveChannel_!=channel;
+    liveFrozen_=frozen;liveRange_={start,end};liveChannel_=channel;
+    if(redraw && frozen){displayLiveSignal();requestCurrentAnalysis();}
+    if(!frozen && (!liveReadElapsed_.isValid() || liveReadElapsed_.elapsed()>=200)){
+        liveReadElapsed_.start();acquisitionController_->requestSignalWindow(liveStreamKey_,processingState_,processingModeCombo_->currentIndex()==1,viewState_.windowSeconds);
+    }
+}
+void MainWindow::displayLiveSignal(){
+    if(!deviceWaveformActive_ || !hasActiveSignal())return;
+    auto display=viewState_;
+    if(liveChannel_>=0)for(int c=0;c<static_cast<int>(activeSignal().data.size());++c)display.setChannelVisible(c,c==liveChannel_);
+    waveformWidget_->setSlice(activeSignal());waveformWidget_->setViewState(display);
+    waveformWidget_->setMarkers(markerStore_.markers());waveformWidget_->setMarkerModeEnabled(markerModeAction_->isChecked());
+    const double end=std::min(liveRange_.second,activeSignal().t1);
+    waveformWidget_->setTimeRange(std::max(activeSignal().t0,end-viewState_.windowSeconds),end);
+    refreshWaveformInteractions();
+    waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"),i18n_->text(activeSignal().unit=="uV"?"app.analysis.amplitude":"app.device.signal_amplitude"));
+}
+QString MainWindow::analysisUnitLabel(AnalysisKind kind,const QString& unit,bool db) const {
+    const bool voltage=unit=="uV" || unit==QString::fromUtf8("µV") || unit==QString::fromUtf8("μV");
+    if(kind==AnalysisKind::Coherence)return i18n_->text("app.analysis.coherence");
+    if(voltage)return i18n_->text(kind==AnalysisKind::Fft?"app.analysis.amplitude":kind==AnalysisKind::BandTrend?"app.analysis.trend_unit":db?"app.analysis.db_unit":"app.analysis.psd_unit");
+    return i18n_->text(kind==AnalysisKind::Fft?"app.signal.amplitude_unit":kind==AnalysisKind::BandTrend?"app.signal.power_unit":db?"app.signal.db_unit":"app.signal.psd_unit",{{"unit",unit.isEmpty() || unit=="unknown"?i18n_->text("app.device.unknown_unit"):unit}});
+}
+
+WaveformSlice MainWindow::selectedWaveform() {
+    if(!waveformProcessed_)return rawWaveform_;
+    try {
+        SignalProcessor processor;
+        auto result=processor.process(rawWaveform_,processingState_,processingModeCombo_ && processingModeCombo_->currentIndex()==1);
+        processingError_.clear();return result;
+    } catch(const std::exception& error) {
+        processingError_=QString::fromUtf8(error.what());
+        if(!processingError_.startsWith("signal."))processingError_="signal.invalid_window";
+        waveformProcessed_=false;const QSignalBlocker block(waveformDataCombo_);waveformDataCombo_->setCurrentIndex(0);
+        return rawWaveform_;
+    }
 }
 
 void MainWindow::applyProcessingAndDisplay() {
+    if(deviceWaveformActive_) {
+        acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();invalidateAnalysis();
+        if(liveFrozen_ && !liveRawSignal_.data.empty()) {
+            try{SignalProcessor p;liveProcessedSignal_=p.process(liveRawSignal_,processingState_,processingModeCombo_->currentIndex()==1);displayLiveSignal();requestCurrentAnalysis();}
+            catch(const std::exception& e){statusBar()->showMessage(i18n_->text(QString("error.%1").arg(QString::fromUtf8(e.what()))),5000);}
+        }
+        refreshAnalysisInputSummary();return;
+    }
     if (!hasCurrentFile_) {
         return;
     }
     invalidateAnalysis();
-    currentFile_.waveform = selectedWaveform();
+    try{currentFile_.waveform=selectedWaveform();}
+    catch(const std::exception& e){statusBar()->showMessage(i18n_->text(QString("error.%1").arg(QString::fromUtf8(e.what()))),5000);return;}
     waveformWidget_->setSlice(currentFile_.waveform);
     refreshAnalysisControls();
-    requestCurrentAnalysis();
     rebuildChannelControls();
     viewState_.firstVisibleChannel = std::clamp(viewState_.firstVisibleChannel, 0, std::max(0, channelCount() - 1));
     refreshBrowserControls();
     applyBrowserStateToWaveform();
+    requestCurrentAnalysis();
 }
 
 void MainWindow::setProcessingViewStateForBrowser(const ProcessingViewState& state) {

@@ -39,13 +39,17 @@ GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向�
 
 官方包仍需激活，免费核心与扩展权益迁移尚未实现；公开下载、签名和验收安排统一见 [发布 SOP 第 5 节](docs/release-sop.md#5-对外发布门槛)，不改变 Apache-2.0 源码权利。
 
+激活时可在线申请授权，等待管理员审批后自动激活；无法联网时可粘贴管理员提供的离线许可证。在线授权到期后，管理员续期即可在下次打开激活窗口时自动领取。
+
 ## 使用与开发入口
+
+本地采用 Linux/WSL 开发、Windows 副本编译的分工；Windows 副本从 Linux 单向同步。目录、环境与同步保护见 [工具链说明](docs/toolchain-wsl2.md)。
 
 | 任务 | 入口 |
 | --- | --- |
 | 下载或重建安装包、更新版本和发布 | [版本与发布 SOP](docs/release-sop.md) |
 | 浏览、导出、脑电/眼电分离 | [分析操作说明](docs/analysis-guide.md) |
-| 开始开发、提交、PR 与同步远端 | [提交与交付 SOP](docs/contribution-sop.md) |
+| 功能需求、建分支、PR 评审合入、同步与清理 | [提交与交付 SOP](docs/contribution-sop.md) |
 | 本地 WSL2 / Windows 构建 | [工具链说明](docs/toolchain-wsl2.md) |
 | 架构、契约、当前路线与验收边界 | [文档索引](docs/README.md) |
 | 代码代理 | [AGENTS.md](AGENTS.md) 与 [community-delivery skill](.agents/skills/community-delivery/SKILL.md)，支持 `$community-delivery` |

@@ -2,7 +2,8 @@
 
 #include <QLayout>
 #include <QString>
-#include <QToolButton>
+#include <QAbstractButton>
+namespace fluent::layout { class Expander; }
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -40,6 +41,7 @@ public:
     // Title accessors so callers can retranslate the header text.
     void setTitle(const QString& title);
     QString title() const;
+    QAbstractButton* headerButton() const;
 
 signals:
     // Emitted whenever the expansion state changes, carrying the new state.
@@ -48,7 +50,8 @@ signals:
 private:
     void onHeaderClicked();
 
-    QToolButton* headerButton_ = nullptr;
+    fluent::layout::Expander* expander_ = nullptr;
+    bool headerVisible_ = true;
     QWidget* content_ = nullptr;
     QVBoxLayout* contentLayout_ = nullptr;
     bool expanded_ = true;

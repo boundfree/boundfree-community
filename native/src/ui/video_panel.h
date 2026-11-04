@@ -26,6 +26,7 @@ public:
     explicit VideoPanel(I18nService* i18n, QWidget* parent = nullptr);
 
     bool load(const QString& path);
+    void clear();
     bool isLoaded() const { return loaded_; }
     void syncTo(double eegTimeSeconds, bool eegPlaying);
     void setRate(double rate);

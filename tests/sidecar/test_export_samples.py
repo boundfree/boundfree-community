@@ -46,7 +46,7 @@ def test_prepared_samples_keep_output_channels_values_and_events(tmp_path, suffi
     ("shape", [2, 4], "ipc.invalid_frame"),
     ("shape", [True, 4], "ipc.invalid_frame"),
     ("dtype", "float64", "ipc.invalid_frame"),
-    ("unit", "V", "ipc.invalid_frame"),
+    ("unit", "", "ipc.invalid_frame"),
     ("t1", 1.0, "export.invalid_range"),
 ])
 def test_invalid_prepared_metadata_rejected_before_writing(tmp_path, field, value, code):

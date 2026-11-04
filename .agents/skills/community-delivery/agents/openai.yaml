@@ -1,4 +1,4 @@
 interface:
   display_name: "Community 开发交付"
-  short_description: "按 GitHub 协作、版本构建及 Gitee 发布镜像流程交付，记录验证证据"
-  default_prompt: "使用 $community-delivery 按仓库 SOP 完成本次修改与交付，并报告验证结果。"
+  short_description: "按 SOP 管理功能分支、PR 评审合入、主线验证、版本与 Gitee 同步"
+  default_prompt: "使用 $community-delivery 按仓库 SOP 完成本次任务的分支、验证和已授权交付，报告 PR 与评审状态。"

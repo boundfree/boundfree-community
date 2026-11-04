@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QImage>
 #include <QWheelEvent>
+#include <QThread>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -92,5 +93,59 @@ int main(int argc, char** argv) {
     widget.setSlice(bf::WaveformSlice{});
     widget.setAutoScaleEnabled(true);
     if (!check(widget.channelAmplitudeRange(0) == std::make_pair(-5.0, 5.0), "empty_safe")) return 1;
+    // Regression: a large raw DC offset must not flatten a few ADC counts
+    // of real variation. A saturated/constant input must stay a flat line.
+    bf::WaveformWidget live;
+    live.resize(1000, 500);
+    live.setAxisLabels("Time (s)", "Amplitude (count)");
+    bf::WaveformSlice raw;
+    raw.t0 = 0; raw.t1 = 1;
+    raw.channelNames = {"small ripple", "ADC upper rail", "negative offset"};
+    raw.channelUnits = {"count", "count", "count"};
+    raw.data.resize(3); raw.sampleTimes.resize(3);
+    for (int i = 0; i < 250; ++i) {
+        const float ripple = static_cast<float>(std::round(4 * std::sin(i * .15)));
+        raw.data[0].push_back(5000000 + ripple);
+        raw.data[1].push_back(8388607);
+        raw.data[2].push_back(-2400000 + ripple);
+        for (auto& times : raw.sampleTimes) times.push_back(i / 250.0);
+    }
+    live.setSlice(raw);
+    for (int ch : {0, 2}) {
+        const auto range = live.channelAmplitudeRange(ch);
+        if (!check(range.second - range.first >= 8 && range.second - range.first < 20,
+            "live_large_offset_small_variation_visible")) return 1;
+    }
+    const auto rail = live.channelAmplitudeRange(1);
+    if (!check(near((rail.first + rail.second) / 2, 8388607) && near(rail.second - rail.first, 2),
+        "constant_rail_remains_constant")) return 1;
+    if (!check(live.cachedDisplayModel().data == raw.data, "auto_scale_preserves_raw_values")) return 1;
+    live.show(); app.processEvents();
+    QImage liveImage(live.size(), QImage::Format_ARGB32); live.render(&liveImage);
+    const auto traceHeight = [&](const QColor& color) {
+        int top = liveImage.height(), bottom = -1;
+        for (int y = 0; y < liveImage.height(); ++y) for (int x = 0; x < liveImage.width(); ++x)
+            if (liveImage.pixel(x, y) == color.rgba()) { top = std::min(top, y); bottom = std::max(bottom, y); }
+        return bottom - top;
+    };
+    if (!check(traceHeight(bf::plot::eegChannelColor(0, false)) > 40 &&
+        traceHeight(bf::plot::eegChannelColor(1, false)) <= 1, "live_render_ripple_visible_constant_flat")) return 1;
+    if (argc > 1) liveImage.save(QString::fromLocal8Bit(argv[1]));
+    // Cached live ranges must update when the next display window arrives.
+    for (auto& value : raw.data[0]) value = 5000000;
+    live.setSlice(raw);
+    bf::WaveformWidget fine;
+    bf::WaveformSlice volts;
+    volts.t0 = 0; volts.t1 = 1; volts.channelNames = {"Voltage"}; volts.channelUnits = {"V"};
+    volts.data = {{.001F, .0011F, .0009F}}; volts.sampleTimes = {{0., .5, 1.}};
+    fine.setSlice(volts);
+    const auto fineBefore = fine.channelAmplitudeRange(0);
+    volts.data = {{.001F, .0012F, .0008F}}; fine.setSlice(volts);
+    QThread::msleep(2100);
+    const auto constant = live.channelAmplitudeRange(0);
+    if (!check(near(constant.second - constant.first, 2), "live_range_refreshes_after_window_change")) return 1;
+    const auto fineAfter = fine.channelAmplitudeRange(0);
+    const double ratio = (fineAfter.second - fineAfter.first) / (fineBefore.second - fineBefore.first);
+    if (!check(ratio > 1.9 && ratio < 2.1, "subunit_live_ranges_adapt_without_one_unit_hysteresis")) return 1;
     std::cout << "waveform-channels-ok auto=true viewport=true finite=true scroll=true cache=true manual=true\n";
 }

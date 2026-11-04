@@ -1,0 +1,18 @@
+name: bf-qt6-6.8.2
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12.12
+  - pip
+  - qt6-main=6.8.2
+  - qt6-multimedia=6.8.2
+  - gxx_linux-64=14
+  - cmake>=3.21
+  - ninja
+  - pkg-config
+  - openssl
+  - libgl-devel
+  - libegl-devel
+  - libopengl-devel
+  - ffmpeg=7.*=lgpl*

@@ -39,10 +39,14 @@ struct SidecarOpenResult {
     QString path;
     double fs = 0.0;
     int nChannels = 0;
-    int nSamples = 0;
+    qint64 nSamples = 0;
     double duration = 0.0;
     QString format;
     QStringList chNames;
+    QString unit = QStringLiteral("uV");
+    QStringList channelUnits;
+    QJsonObject capture;
+    QJsonObject signalMetadata;
     QVector<SidecarEvent> events;
     AppError error;
 };
@@ -57,6 +61,8 @@ struct SidecarSliceResult {
     int nSamples = 0;
     QString unit;
     std::vector<std::vector<float>> data;
+    QStringList channelUnits;
+    std::vector<double> sampleTimes;
     AppError error;
 };
 
@@ -102,7 +108,7 @@ public:
                                   const QByteArray& outgoing, QByteArray* incoming,
                                   int timeoutMs = 30000);
     void setCancellation(std::function<bool()> cancelled) { cancelled_ = std::move(cancelled); }
-    SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000);
+    SidecarOpenResult openFile(const QString& path, int timeoutMs = 3000, const QString& captureStream = {});
     SidecarResponse exportMarkersCsv(const QString& path, const QVector<SidecarEvent>& events, int timeoutMs = 3000);
     SidecarSliceResult getSlice(const QString& handle, double t0, double t1, int timeoutMs = 3000);
     SidecarRecordOpenResult recordOpen(
@@ -133,7 +139,8 @@ public:
         double t1,
         const QString& outputPath,
         const QVector<SidecarEvent>& events,
-        int timeoutMs = 30000);
+        int timeoutMs = 30000,
+        const QJsonObject& signalMetadata = {});
     void stop();
 
 private:

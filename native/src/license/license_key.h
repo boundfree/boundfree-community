@@ -41,7 +41,8 @@ enum class LicenseStatus {
     SaveFailed,
 };
 
-// Structured license outcome: status + payload (on success) + AppError envelope.
+// Structured license outcome: status + verified payload (on success) + AppError.
+// Legacy keys without expiry expose their effective default expiry in payload.
 struct LicenseResult {
     LicenseStatus status = LicenseStatus::KeyFormatError;
     QJsonObject payload;

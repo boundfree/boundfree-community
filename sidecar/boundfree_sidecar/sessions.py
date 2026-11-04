@@ -29,9 +29,10 @@ class FileSessionRegistry:
         n_samples: int,
         ch_names: list[str],
         reader: Any | None = None,
+        duration: float | None = None,
     ) -> FileSession:
         handle = f"file-{next(self._next_id)}"
-        duration = n_samples / fs if fs > 0 else 0.0
+        duration = duration if duration is not None else n_samples / fs if fs > 0 else 0.0
         session = FileSession(
             handle=handle,
             path=path,

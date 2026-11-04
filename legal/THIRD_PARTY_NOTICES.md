@@ -64,3 +64,7 @@ dependencies of this product.
 Neo supplies the Intan RHD/RHS memory-mapped decoder for offline separation.
 Its original license is preserved in `licenses/Neo-BSD-3-Clause.txt`; quantities
 unit support and its included notices are preserved in `licenses/Quantities-license.rst`.
+
+## Fluent-Qt core components
+
+The native UI links the Fluent-Qt core at commit `766e13c83599e8ca58f83e7c4917c66ae73aa559` under MIT. Bundled Inter-derived fonts use SIL OFL 1.1; Fluent UI System Icons assets retain their MIT license and notice. CMake install copies the complete core license, upstream third-party notices, and font/icon license texts to `legal/fluentqt/`. Source: https://github.com/calvinhxx/Fluent-Qt/tree/766e13c83599e8ca58f83e7c4917c66ae73aa559. Optional UI plugins and the Gallery are not included.

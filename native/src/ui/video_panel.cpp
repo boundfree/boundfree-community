@@ -108,6 +108,17 @@ bool VideoPanel::load(const QString& path) {
     return true;
 }
 
+void VideoPanel::clear() {
+    loaded_ = false;
+    player_->stop(); player_->setSource(QUrl());
+    syncState_ = VideoSyncState{};
+    eegTimeSeconds_ = 0; eegPlaying_ = false;
+    renderedFrameCount_ = droppedFrameCount_ = 0;
+    lastFrame_ = {}; videoLabel_->clear();
+    offsetSpin_->setValue(0);
+    fileLabel_->setText(i18n_->text("app.video.not_loaded"));
+}
+
 void VideoPanel::syncTo(double eegTimeSeconds, bool eegPlaying) {
     if (!loaded_) {
         return;

@@ -1,0 +1,33 @@
+name: 功能需求
+description: 明确 Community 新功能的范围和验收标准，再建立功能分支与 PR。
+title: "feat: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用场景与问题
+      description: 谁在什么场景下需要这项功能，目前有什么具体困难？
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 功能范围
+      description: 说明包含和不包含的行为，以及依赖的 Issue 或前置 PR。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 列出可检查的输入、操作与预期结果，作为 PR 实现和评审依据。
+      placeholder: "- [ ] 给定具体输入，完成指定操作后得到预期结果"
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响与验证计划
+      description: 说明受影响的平台、文件格式、接口/IPC、数据精度或许可边界，以及拟执行的验证。
+    validations:
+      required: true

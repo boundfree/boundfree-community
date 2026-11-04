@@ -7,10 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+include(cmake/FluentQt.cmake)
+
 set(BF_BRANDING_QRC "${CMAKE_CURRENT_SOURCE_DIR}/resources/branding.qrc")
 set(BF_WINDOWS_APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/boundfree_app.rc")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia Network LinguistTools)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../config/qt-version.txt" BF_QT_BASELINE_VERSION LIMIT_COUNT 1)
+option(BF_ALLOW_OTHER_QT "Allow an experimental Qt version outside the validated baseline" OFF)
+if(BF_ALLOW_OTHER_QT)
+    find_package(Qt6 6.8 REQUIRED COMPONENTS Core Widgets Multimedia Network LinguistTools)
+    message(WARNING "Experimental Qt ${Qt6_VERSION}; Community baseline is ${BF_QT_BASELINE_VERSION}")
+else()
+    find_package(Qt6 ${BF_QT_BASELINE_VERSION} EXACT REQUIRED COMPONENTS Core Widgets Multimedia Network LinguistTools)
+endif()
+message(STATUS "Community Qt: ${Qt6_VERSION}; baseline: ${BF_QT_BASELINE_VERSION}; Qt6_DIR: ${Qt6_DIR}")
 find_package(Threads REQUIRED)
 if(NOT WIN32)
     # RSA-2048 PSS verification backend on Linux/WSL2 (license_crypto.cpp).
@@ -122,6 +132,10 @@ set(BF_CORE_SOURCES
     src/license/online_activation_client.h
     src/render/minmax_decimator.cpp
     src/render/minmax_decimator.h
+    src/render/signal_processor.cpp
+    src/render/signal_processor.h
+    src/render/live_ica_projection.cpp
+    src/render/live_ica_projection.h
     src/render/waveform_slice.cpp
     src/render/waveform_slice.h
     src/ui/waveform_widget.cpp
@@ -135,7 +149,11 @@ set(BF_CORE_SOURCES
 add_library(bf_core STATIC ${BF_CORE_SOURCES})
 target_include_directories(bf_core PUBLIC src)
 target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(bf_core PUBLIC Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
+target_link_libraries(bf_core PUBLIC FluentQt::FluentQt Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
+add_executable(signal_window_test src/render/signal_window_test.cpp)
+target_link_libraries(signal_window_test PRIVATE bf_core)
+add_executable(live_ica_projection_test src/render/live_ica_projection_test.cpp)
+target_link_libraries(live_ica_projection_test PRIVATE bf_core)
 if(NOT WIN32)
     target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
 endif()
@@ -148,6 +166,8 @@ endif()
 # everything shared comes from bf_core. Name and behavior are unchanged so the
 # existing test suite and M8 packaging pipeline keep working.
 # ---------------------------------------------------------------------------
+add_subdirectory(src/acquisition)
+
 add_executable(bf_app
     src/app/main.cpp
     src/controller/analysis_service.cpp
@@ -178,7 +198,7 @@ if(WIN32)
     set_target_properties(bf_app PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 target_include_directories(bf_app PRIVATE src)
-target_link_libraries(bf_app PRIVATE bf_core Qt6::Network)
+target_link_libraries(bf_app PRIVATE bf_core bf_device_ui Qt6::Network)
 target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})
 if(WIN32)
     target_sources(bf_app PRIVATE ${BF_WINDOWS_APP_ICON_RC})
@@ -361,7 +381,7 @@ add_executable(activation_dialog_test
 )
 target_include_directories(activation_dialog_test PRIVATE src)
 target_compile_definitions(activation_dialog_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(activation_dialog_test PRIVATE bf_core Qt6::Widgets Qt6::Network)
+target_link_libraries(activation_dialog_test PRIVATE bf_core FluentQt::FluentQt Qt6::Widgets Qt6::Network)
 add_dependencies(activation_dialog_test bf_i18n_qm)
 
 add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)

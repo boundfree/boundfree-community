@@ -15,6 +15,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTemporaryDir>
 #include <QtEndian>
 
 #ifndef Q_OS_WIN
@@ -83,6 +84,33 @@ void testMachineIdDeterminism() {
 
     const QString fromFmt = bf::machineIdCanonicalFromFormatted(id1);
     check(fromFmt == canonical, "machineIdCanonicalFromFormatted round-trip");
+    check(bf::machineIdCanonical(QString()).isEmpty(), "empty GUID has no canonical machine id");
+    check(bf::machineIdFromGuid(QStringLiteral("  \n")).isEmpty(), "blank GUID has no displayed machine id");
+    QTemporaryDir dir;
+    const QString first = dir.filePath("first");
+    const QString second = dir.filePath("second");
+    QFile firstFile(first);
+    check(firstFile.open(QIODevice::WriteOnly) && firstFile.write("  \n") == 3, "create empty machine id file");
+    firstFile.close();
+    QFile secondFile(second);
+    check(secondFile.open(QIODevice::WriteOnly) && secondFile.write("  FILE-GUID \n") == 13, "create fallback machine id file");
+    secondFile.close();
+    check(bf::readMachineGuidFromFiles({first, second}) == QStringLiteral("FILE-GUID"), "empty file falls back and trims");
+    check(bf::readMachineGuidFromFiles({dir.filePath("missing"), second}) == QStringLiteral("FILE-GUID"), "missing file falls back");
+    check(bf::readMachineGuidFromFiles({first, dir.filePath("missing")}).isEmpty(), "empty and missing files return empty");
+    check(firstFile.open(QIODevice::WriteOnly | QIODevice::Truncate) && firstFile.write("FIRST-GUID") == 10,
+          "create primary machine id file");
+    firstFile.close();
+    check(bf::readMachineGuidFromFiles({first, second}) == QStringLiteral("FIRST-GUID"), "first valid file takes priority");
+#ifndef Q_OS_WIN
+    const bool mockWasSet = qEnvironmentVariableIsSet("BF_MOCK_MACHINE_GUID");
+    const QByteArray previousMock = qgetenv("BF_MOCK_MACHINE_GUID");
+    qputenv("BF_MOCK_MACHINE_GUID", "  MOCK-GUID  ");
+    check(bf::readMachineGuid() == QStringLiteral("MOCK-GUID"), "mock overrides machine id files");
+    qputenv("BF_MOCK_MACHINE_GUID", "  ");
+    check(bf::currentMachineId().isEmpty(), "blank mock produces no current machine id");
+    if (mockWasSet) qputenv("BF_MOCK_MACHINE_GUID", previousMock); else qunsetenv("BF_MOCK_MACHINE_GUID");
+#endif
 }
 
 void testEnvelopeDecode() {

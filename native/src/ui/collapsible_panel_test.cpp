@@ -13,6 +13,7 @@
 
 #include <QApplication>
 #include <QLabel>
+#include <QScrollArea>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -46,18 +47,18 @@ int main(int argc, char** argv) {
     check(panel.isExpanded(), "default isExpanded() == true");
     check(child->isVisible(), "default content visible");
 
-    if (auto* btn = panel.findChild<QToolButton*>()) {
-        check(btn->arrowType() == Qt::DownArrow, "expanded arrow == Qt::DownArrow");
+    if (auto* btn = panel.headerButton()) {
+        check(btn->accessibleName() == panel.title(), "header has an accessible title");
     } else {
-        check(false, "header QToolButton exists");
+        check(false, "header button exists");
     }
 
     // (b) setExpanded(false) hides content, flips arrow, isExpanded()==false.
     panel.setExpanded(false);
     check(!panel.isExpanded(), "after collapse isExpanded() == false");
     check(!child->isVisible(), "after collapse content hidden");
-    if (auto* btn = panel.findChild<QToolButton*>()) {
-        check(btn->arrowType() == Qt::RightArrow, "collapsed arrow == Qt::RightArrow");
+    if (auto* btn = panel.headerButton()) {
+        check(btn->isEnabled(), "collapsed header stays operable");
     }
 
     // (c) toggling twice returns to the original state.
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
             lastToggledValue = expanded;
         });
     // Start collapsed (from step b). Click header -> expand.
-    if (auto* btn = panel.findChild<QToolButton*>()) {
+    if (auto* btn = panel.headerButton()) {
         btn->click();
     }
     check(toggledCount == 1, "header click emits toggled once");
@@ -84,7 +85,7 @@ int main(int argc, char** argv) {
     check(panel.isExpanded(), "header click expanded the panel");
     check(child->isVisible(), "header click made content visible");
     // Click again -> collapse.
-    if (auto* btn = panel.findChild<QToolButton*>()) {
+    if (auto* btn = panel.headerButton()) {
         btn->click();
     }
     check(toggledCount == 2, "second header click emits toggled again");
@@ -99,13 +100,54 @@ int main(int argc, char** argv) {
 
     // setContentLayout: replace default layout with a custom one.
     auto* customLayout = new QVBoxLayout;
+    customLayout->setContentsMargins(14, 12, 14, 12);
+    customLayout->setSpacing(8);
     auto* customChild = new QLabel(QStringLiteral("custom"));
-    customLayout->addWidget(customChild);
+    customLayout->addWidget(customChild, 0, Qt::AlignRight);
+    auto* nestedLayout = new QHBoxLayout;
+    auto* nestedChild = new QLabel(QStringLiteral("nested"));
+    nestedLayout->addWidget(nestedChild);
+    nestedLayout->addStretch();
+    customLayout->addLayout(nestedLayout);
     panel.setContentLayout(customLayout);
     panel.setExpanded(true);
     check(customChild->isVisible(), "child in setContentLayout visible after expand");
+    check(nestedChild->isVisible(), "nested layout and spacer survive transfer");
+    auto* installed = customChild->parentWidget()->layout();
+    check(installed->contentsMargins() == QMargins(14, 12, 14, 12) && installed->spacing() == 8,
+          "custom content margins and spacing preserved");
+    check(installed->itemAt(installed->indexOf(customChild))->alignment() == Qt::AlignRight,
+          "custom widget alignment preserved");
     panel.setExpanded(false);
     check(!customChild->isVisible(), "child in setContentLayout hidden after collapse");
+
+    panel.setExpanded(true);
+    panel.setHeaderVisible(false);
+    check(customChild->isVisible(), "headerless embedding retains content");
+    panel.setHeaderVisible(true);
+    check(customChild->isVisible(), "restoring header retains content ownership");
+    panel.headerButton()->click();
+    check(!customChild->isVisible(), "restored header still collapses content");
+
+    // A headerless tab must fill tall windows, rather than center a fixed
+    // natural-height fragment left behind by Expander's clipping contract.
+    bf::CollapsiblePanel channels(QStringLiteral("Channels"));
+    auto* navigation = new QLabel(QStringLiteral("First channel"));
+    auto* scroll = new QScrollArea;
+    scroll->setMinimumHeight(60);
+    channels.addWidget(navigation);
+    channels.addWidget(scroll);
+    channels.setHeaderVisible(false);
+    channels.resize(240, 900);
+    channels.show();
+    app.processEvents();
+    check(navigation->mapTo(&channels, QPoint()).y() < 12, "headerless controls align to top");
+    check(scroll->height() > 800, "headerless channel scroll fills available height");
+    channels.setHeaderVisible(true);
+    channels.setHeaderVisible(false);
+    channels.resize(240, 600);
+    app.processEvents();
+    check(scroll->height() > 500, "header restore and resize preserve expanding content");
 
     if (failures == 0) {
         std::cout << "collapsible-panel-test-ok failures=0\n";

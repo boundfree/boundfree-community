@@ -1,0 +1,1228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://boundfree.local/contracts/bfsp/1.0/messages.schema.json",
+  "title": "BFSP 1.0 candidate message definitions",
+  "description": "Select a message-specific $defs entry using registry.json; runtime applies additional context and byte limits.",
+  "type": "object",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "positive_u32": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "u64": {
+      "type": "string",
+      "maxLength": 20,
+      "pattern": "^(?:0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)(?![\\s\\S])"
+    },
+    "positive_u64": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/u64"
+        },
+        {
+          "not": {
+            "pattern": "^0+$"
+          }
+        }
+      ]
+    },
+    "i64": {
+      "type": "string",
+      "maxLength": 20,
+      "pattern": "^(?:(?:0|[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-6]|9223372036854775807)|-(?:[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-7]|9223372036854775808))(?![\\s\\S])"
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "params",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "required": [
+        "major",
+        "minor"
+      ],
+      "properties": {
+        "major": {
+          "const": 1
+        },
+        "minor": {
+          "const": 0
+        }
+      }
+    },
+    "receive_limits": {
+      "type": "object",
+      "required": [
+        "max_payload",
+        "max_json",
+        "max_channels",
+        "max_streams"
+      ],
+      "properties": {
+        "max_payload": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "max_json": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "max_channels": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "max_streams": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "can_configure",
+        "can_start_stop",
+        "supports_hardware_timestamps",
+        "supports_udp"
+      ],
+      "properties": {
+        "can_configure": {
+          "type": "boolean"
+        },
+        "can_start_stop": {
+          "type": "boolean"
+        },
+        "supports_hardware_timestamps": {
+          "type": "boolean"
+        },
+        "supports_udp": {
+          "type": "boolean"
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "required": [
+        "device_id",
+        "name",
+        "vendor",
+        "model",
+        "firmware",
+        "identity_strength",
+        "capabilities"
+      ],
+      "properties": {
+        "device_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vendor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "firmware": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identity_strength": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "capabilities": {
+          "$ref": "#/$defs/capabilities"
+        }
+      }
+    },
+    "clock": {
+      "type": "object",
+      "required": [
+        "clock_id",
+        "ticks_per_second_num",
+        "ticks_per_second_den",
+        "source",
+        "epoch"
+      ],
+      "properties": {
+        "clock_id": {
+          "$ref": "#/$defs/u32"
+        },
+        "ticks_per_second_num": {
+          "$ref": "#/$defs/positive_u64"
+        },
+        "ticks_per_second_den": {
+          "$ref": "#/$defs/positive_u64"
+        },
+        "source": {
+          "enum": [
+            "hardware",
+            "host_monotonic",
+            "estimated"
+          ]
+        },
+        "epoch": {
+          "enum": [
+            "boot_relative",
+            "session_relative"
+          ]
+        }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": [
+        "channel_id",
+        "name",
+        "signal_type",
+        "unit",
+        "scale",
+        "offset"
+      ],
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signal_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "enum": [
+            "V",
+            "mV",
+            "uV",
+            "A",
+            "mA",
+            "Pa",
+            "kPa",
+            "degC",
+            "1",
+            "count",
+            null
+          ]
+        },
+        "scale": {
+          "type": "number",
+          "not": {
+            "const": 0
+          }
+        },
+        "offset": {
+          "type": "number"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "unit": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "unit"
+            ]
+          },
+          "then": {
+            "properties": {
+              "scale": {
+                "const": 1
+              },
+              "offset": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "signal_type": {
+                "enum": [
+                  "eeg",
+                  "eog",
+                  "emg",
+                  "ecg",
+                  "voltage"
+                ]
+              }
+            },
+            "required": [
+              "signal_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "enum": [
+                  "V",
+                  "mV",
+                  "uV",
+                  "count",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "signal_type": {
+                "const": "temperature"
+              }
+            },
+            "required": [
+              "signal_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "enum": [
+                  "degC",
+                  "count",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "signal_type": {
+                "const": "pressure"
+              }
+            },
+            "required": [
+              "signal_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "enum": [
+                  "Pa",
+                  "kPa",
+                  "count",
+                  null
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HELLO": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "client_name",
+        "client_version",
+        "receive_limits",
+        "features",
+        "required_features",
+        "nonce"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "client_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "client_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "receive_limits": {
+          "$ref": "#/$defs/receive_limits"
+        },
+        "features": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_features": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "type": "string"
+          }
+        },
+        "nonce": {
+          "$ref": "#/$defs/uuid"
+        }
+      }
+    },
+    "HELLO_ACK": {
+      "type": "object",
+      "required": [
+        "ok",
+        "nonce"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "nonce": {
+          "$ref": "#/$defs/uuid"
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "receive_limits": {
+          "$ref": "#/$defs/receive_limits"
+        },
+        "features": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "type": "string"
+          }
+        },
+        "device": {
+          "$ref": "#/$defs/device"
+        },
+        "session_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "boot_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "heartbeat_ms": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/positive_u32"
+            },
+            {
+              "maximum": 10000
+            }
+          ]
+        },
+        "idle_timeout_ms": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/positive_u32"
+            },
+            {
+              "maximum": 30000
+            }
+          ]
+        },
+        "error": {
+          "$ref": "#/$defs/error"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            },
+            "required": [
+              "ok"
+            ]
+          },
+          "then": {
+            "required": [
+              "protocol",
+              "receive_limits",
+              "features",
+              "device",
+              "session_id",
+              "boot_id",
+              "heartbeat_ms",
+              "idle_timeout_ms"
+            ]
+          },
+          "else": {
+            "required": [
+              "error"
+            ]
+          }
+        }
+      ]
+    },
+    "COMMAND": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "method",
+        "params"
+      ],
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "capture.start",
+                  "capture.stop",
+                  "capture.discard"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": [
+                  "capture_id"
+                ],
+                "properties": {
+                  "capture_id": {
+                    "$ref": "#/$defs/uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "config.validate",
+                  "config.apply"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": [
+                  "candidate",
+                  "expected_revision"
+                ],
+                "properties": {
+                  "candidate": {
+                    "$ref": "#/$defs/candidate_config"
+                  },
+                  "expected_revision": {
+                    "$ref": "#/$defs/u32"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "capture.prepare"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": [
+                  "expected_config_revision"
+                ],
+                "properties": {
+                  "expected_config_revision": {
+                    "$ref": "#/$defs/u32"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "time.sync"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": [
+                  "clock_id",
+                  "client_send_ns"
+                ],
+                "properties": {
+                  "clock_id": {
+                    "$ref": "#/$defs/u32"
+                  },
+                  "client_send_ns": {
+                    "$ref": "#/$defs/u64"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "stream.accept"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "$ref": "#/$defs/stream_accept_params"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "transport.bind_udp"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "$ref": "#/$defs/udp_bind_params"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "device.get_info",
+                  "device.get_status",
+                  "device.disconnect"
+                ]
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "$ref": "#/$defs/no_required_params"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RESPONSE": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "ok"
+      ],
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "client_send_ns": {
+              "$ref": "#/$defs/u64"
+            },
+            "receive_ticks": {
+              "$ref": "#/$defs/u64"
+            },
+            "send_ticks": {
+              "$ref": "#/$defs/u64"
+            },
+            "streams": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "last_sample_exclusive": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/u64"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "error": {
+          "$ref": "#/$defs/error"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            },
+            "required": [
+              "ok"
+            ]
+          },
+          "then": {
+            "required": [
+              "result"
+            ],
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "error"
+            ],
+            "not": {
+              "required": [
+                "result"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "DESCRIPTOR": {
+      "type": "object",
+      "required": [
+        "session_id",
+        "capture_id",
+        "stream_id",
+        "descriptor_revision",
+        "name",
+        "signal_type",
+        "rate_num",
+        "rate_den",
+        "dtype",
+        "layout",
+        "channels",
+        "clock",
+        "max_samples_per_block"
+      ],
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "capture_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "stream_id": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "descriptor_revision": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signal_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rate_num": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "rate_den": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "dtype": {
+          "enum": [
+            "int16",
+            "int24",
+            "int32",
+            "float32",
+            "float64"
+          ]
+        },
+        "layout": {
+          "const": "channel_major"
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/channel"
+          }
+        },
+        "clock": {
+          "$ref": "#/$defs/clock"
+        },
+        "max_samples_per_block": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "sample_index_source": {
+          "enum": [
+            "device",
+            "adapter_received"
+          ]
+        }
+      }
+    },
+    "EVENT": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "kind",
+        "params"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/u64"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "count": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/u64"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "stream_id": {
+          "$ref": "#/$defs/u32"
+        },
+        "descriptor_revision": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "sample_index": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ticks": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "data.gap"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "stream_id",
+              "descriptor_revision",
+              "sample_index",
+              "count"
+            ],
+            "properties": {
+              "stream_id": {
+                "$ref": "#/$defs/positive_u32"
+              },
+              "sample_index": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/u64"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "count": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/positive_u64"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "params": {
+                "type": "object",
+                "required": [
+                  "reason",
+                  "detection"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detection": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "start"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "count"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "$comment": "If sample_index and count are both known, checked u64 addition must not overflow. The header stream_id must match."
+          }
+        }
+      ]
+    },
+    "STATUS": {
+      "type": "object",
+      "required": [
+        "state",
+        "active_capture_id",
+        "config_revision",
+        "counters"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "active_capture_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config_revision": {
+          "$ref": "#/$defs/u32"
+        },
+        "counters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/u64"
+          }
+        }
+      }
+    },
+    "HEARTBEAT": {
+      "type": "object"
+    },
+    "STREAM_END": {
+      "type": "object",
+      "required": [
+        "capture_id",
+        "stream_id",
+        "last_sample_exclusive",
+        "reason",
+        "complete"
+      ],
+      "properties": {
+        "capture_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "stream_id": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "last_sample_exclusive": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "config_group": {
+      "type": "object",
+      "required": [
+        "group_id",
+        "enabled_channel_ids",
+        "rate_num",
+        "rate_den",
+        "dtype"
+      ],
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enabled_channel_ids": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "type": "string"
+          }
+        },
+        "rate_num": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "rate_den": {
+          "$ref": "#/$defs/positive_u32"
+        },
+        "dtype": {
+          "enum": [
+            "int16",
+            "int24",
+            "int32",
+            "float32",
+            "float64"
+          ]
+        }
+      }
+    },
+    "candidate_config": {
+      "type": "object",
+      "required": [
+        "groups",
+        "device_options"
+      ],
+      "properties": {
+        "groups": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/config_group"
+          }
+        },
+        "device_options": {
+          "type": "object"
+        }
+      }
+    },
+    "stream_accept_params": {
+      "type": "object",
+      "required": [
+        "capture_id",
+        "streams"
+      ],
+      "properties": {
+        "capture_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "streams": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "$comment": "Each stream_id must be unique regardless of revision; the session verifies the complete prepared stream set.",
+          "items": {
+            "type": "object",
+            "required": [
+              "stream_id",
+              "descriptor_revision"
+            ],
+            "properties": {
+              "stream_id": {
+                "$ref": "#/$defs/positive_u32"
+              },
+              "descriptor_revision": {
+                "$ref": "#/$defs/positive_u32"
+              }
+            }
+          }
+        }
+      }
+    },
+    "udp_bind_params": {
+      "type": "object",
+      "required": [
+        "address",
+        "port"
+      ],
+      "properties": {
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "no_required_params": {
+      "type": "object",
+      "description": "No mandatory parameters; optional extension fields remain allowed."
+    }
+  }
+}

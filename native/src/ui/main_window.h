@@ -19,11 +19,14 @@
 #include "ui/collapsible_panel.h"
 #include "ui/channel_bandpass_controls.h"
 #include "ui/eeg_separation_workspace.h"
+#include "ui/device_workspace.h"
+#include "controller/live_ica_controller.h"
 
 #include <QActionGroup>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
+#include <QDialog>
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QMainWindow>
@@ -66,36 +69,83 @@ public:
     void setChannelVisibleForBrowser(int channel, bool visible);
     QString browserControlSummary() const;
     QString processingSummary() const;
+    void setCloseFileHandler(std::function<void()> handler) { closeFileHandler_ = std::move(handler); }
     void setOpenFileHandler(std::function<void(const QString&)> handler);
+    void setOpenCaptureHandler(std::function<void(const QString&, const QString&)> handler) { openCaptureHandler_ = std::move(handler); }
+    void setLogLocationHandler(std::function<bool(const QString&)> handler) { logLocationHandler_ = std::move(handler); }
     void setWindowRequestHandler(std::function<void(const QString&, double, double)> handler);
     void setBrowserWindowSecondsForBrowser(double seconds);
     void setExportMarkersHandler(std::function<SidecarResponse(const QString&, const QVector<SidecarEvent>&)> handler);
     void openPathForBrowser(const QString& path);
     void setProcessingViewStateForBrowser(const ProcessingViewState& state);
+    const WaveformSlice& signalWindow(bool original=false) const {return original?activeRawSignal():activeSignal();}
     ProcessingViewState processingViewState() const { return processingState_; }
     bool loadVideoForBrowser(const QString& path);
     QString videoStatusSummary() const;
     QString recordStatusSummary() const;
     QString exportStatusSummary() const;
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
     void buildFixedWorkspace();
+    void updateSignalWorkspaceLayout();
+    QSplitter* signalWorkspaceSplitter_ = nullptr;
+    QWidget* signalPage_ = nullptr;
+    QSplitter* signalAnalysisPane_ = nullptr;
+    QTabWidget* compactSignalTabs_ = nullptr;
+    bool compactSignalLayout_ = false;
     void switchWorkspace(int index);
     void resetSeparationForBrowserSource();
     void buildViewMenu();
     void buildThemeMenu();
     void applyTheme(bool dark);
     void refreshPersistentStatus();
+    void refreshDeviceStatus();
+    void openDeviceConnections();
+    void showDeviceWaveform();
     void refreshAnalysisInputSummary();
+    bool hasActiveSignal() const;
+    const WaveformSlice& activeSignal() const;
+    const WaveformSlice& activeRawSignal() const;
+    void refreshLiveSignal(double start,double end,bool frozen,int channel,double seconds);
+    void displayLiveSignal();
+    void prepareSeparationSnapshot();
+    void prepareDeviceSeparationSnapshot(const QString& stream);
+    void writeSeparationSnapshot(const WaveformSlice& raw, const QString& name = {});
+    LiveIcaController* liveIcaController_ = nullptr;
+    QTimer* separationCollectTimer_ = nullptr;
+    QElapsedTimer separationCollectClock_;
+    QString separationCollectStream_, separationCollectSource_;
+    bool separationCollecting_ = false;
+    ExportController* separationSnapshotExporter_ = nullptr;
+    quint64 separationSnapshotRequest_ = 0;
+    quint64 separationSnapshotExportRequest_ = 0;
+    QString separationSnapshotDeviceSource_;
+    QString snapshotDirectory_;
+    bool preparingSeparation_ = false;
+    QString analysisUnitLabel(AnalysisKind,const QString&,bool) const;
     QString processingDescription() const;
-    WaveformSlice selectedWaveform() const;
+    WaveformSlice selectedWaveform();
+    QString processingError_;
     QString currentModeKey() const;
     void buildFileMenu();
+    void buildDeviceMenu();
     void buildLanguageMenu();
     void buildBrowserControls();
     void buildProcessingControls();
     void buildAnalysisDock();
     void chooseFile();
+    void refreshInputActions();
+    void chooseCapture();
+    bool isCaptureReplay() const;
+    void refreshSignalTools();
+    void refreshWaveformInteractions();
+    void resetWaveformView();
+    void resetBrowserChannelSelections();
+    void setFileViewport(double start, double seconds);
     void chooseVideo();
     void buildVideoDock();
     void buildRecordControls();
@@ -103,7 +153,7 @@ private:
     void exportSegment();
     void syncVideoToPlayback();
     void updatePlaybackDuration();
-    void requestWindow(double t0);
+    void requestWindow(double t0, bool keepViewport = false);
     void cancelScrubPreview();
     void previewScrubPosition(double position);
     void requestScrubPreview();
@@ -152,6 +202,14 @@ private:
     QTabBar* workspaceNavigation_ = nullptr;
     EegSeparationController* separationController_ = nullptr;
     EegSeparationWorkspace* separationWorkspace_ = nullptr;
+    AcquisitionController* acquisitionController_ = nullptr;
+    DeviceWorkspace* deviceWorkspace_ = nullptr;
+    QDialog* deviceDialog_ = nullptr;
+    QWidget* deviceLiveControls_ = nullptr;
+    bool deviceWaveformActive_ = false;
+    QPushButton* deviceStatusButton_ = nullptr;
+    bool deviceShutdownPending_ = false;
+    bool deviceShutdownApproved_ = false;
     QAction* separationAction_ = nullptr;
     bool separationResetPending_ = false;
     QStackedWidget* centralStack_ = nullptr;
@@ -160,7 +218,13 @@ private:
     QPushButton* openButton_ = nullptr;
     WaveformWidget* waveformWidget_ = nullptr;
     QMenu* fileMenu_ = nullptr;
+    QMenu* deviceMenu_ = nullptr;
+    QAction* deviceManageAction_ = nullptr;
+    QAction* deviceOpenLogsAction_ = nullptr;
+    std::function<bool(const QString&)> logLocationHandler_;
     QAction* openAction_ = nullptr;
+    QAction* openTeachingAction_ = nullptr;
+    bool fileMenuLoading_ = false;
     QAction* openVideoAction_ = nullptr;
     QAction* quitAction_ = nullptr;
     QMenu* languageMenu_ = nullptr;
@@ -175,6 +239,8 @@ private:
     QAction* toggleVideoAction_ = nullptr;
     QLabel* statusFileLabel_ = nullptr;
     QLabel* statusModeLabel_ = nullptr;
+    QLabel* recordingStatusLabel_ = nullptr;
+    bool recordingStatusVisible_ = false;
     bool darkTheme_ = false;
     QActionGroup* languageGroup_ = nullptr;
     QVector<QAction*> languageActions_;
@@ -271,6 +337,8 @@ private:
         AnalysisKind kind = AnalysisKind::Psd;
         QString channel;
         QString errorCode;
+        QString unit = "uV";
+        bool partialWindow = false;
         double start = 0.0;
         double end = 0.0;
         double fmax = 100.0;
@@ -287,6 +355,19 @@ private:
     bool refreshingBrowserControls_ = false;
     bool refreshingAnalysisControls_ = false;
     std::function<void(const QString&)> openFileHandler_;
+    std::function<void()> closeFileHandler_;
+    std::function<void(const QString&, const QString&)> openCaptureHandler_;
+    QWidget* captureBar_ = nullptr;
+    QComboBox* captureStreamCombo_ = nullptr;
+    QLabel *captureStreamLabel_ = nullptr, *captureSummary_ = nullptr;
+    QAction* openCaptureAction_ = nullptr;
+    WaveformSlice liveRawSignal_, liveProcessedSignal_;
+    QComboBox* processingModeCombo_ = nullptr;
+    QString liveStreamKey_;
+    bool liveFrozen_ = false;
+    int liveChannel_ = -1;
+    std::pair<double,double> liveRange_{0,2};
+    QElapsedTimer liveReadElapsed_;
     std::function<void(const QString&, double, double)> windowRequestHandler_;
     WaveformViewState viewState_;
     ProcessingViewState processingState_;
@@ -300,6 +381,7 @@ private:
     PlaybackState playback_;
     double signalDurationSeconds_ = 0.0;
     MarkerStore markerStore_;
+    QString liveMarkerSource_;
     QTimer playbackTimer_;
     QElapsedTimer playbackElapsed_;
     bool refreshingMarkerControls_ = false;

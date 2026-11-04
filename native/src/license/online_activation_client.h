@@ -18,14 +18,10 @@ public:
 
     void setServerUrl(const QUrl& url);
 
-    // Mode A: submit registration request
-    void registerDevice(const QString& machineId, const QString& clientVersion);
+    void registerDevice(const QString& machineId, const QString& clientVersion,
+                        const QString& hostname, const QString& os, const QString& orgName);
 
-    // Mode B: activate with invite code
-    void activateWithCode(const QString& machineId, const QString& inviteCode,
-                          const QString& clientVersion);
-
-    // Mode A post-approval: fetch license (no invite_code)
+    // Fetch the license after approval.
     void fetchLicense(const QString& machineId, const QString& clientVersion);
 
     // Query activation status

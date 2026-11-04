@@ -12,6 +12,9 @@ class FileMetadata:
     unit: str
     format_name: str
     events: list[dict[str, object]]
+    channel_units: list[str] | None = None
+    capture: dict[str, object] | None = None
+    source_metadata: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -21,6 +24,8 @@ class SliceData:
     fs: float
     unit: str
     data: list[list[float]]
+    channel_units: list[str] | None = None
+    sample_times: list[float] | None = None
 
     @property
     def shape(self) -> list[int]:

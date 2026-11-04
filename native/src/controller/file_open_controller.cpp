@@ -19,6 +19,7 @@ struct FileOpenController::WorkerState {
         double t1;
         int generation;
         quint64 revision;
+        QString captureStream;
     };
 
     std::mutex mutex;
@@ -26,6 +27,7 @@ struct FileOpenController::WorkerState {
     std::optional<Request> pending;
     bool stopping = false;
     quint64 revision = 0;
+    QString captureStream;
 };
 
 FileOpenController::FileOpenController(QString repoRoot, VersionInfo version, QObject* parent)
@@ -67,8 +69,14 @@ FileOpenController::FileOpenController(QString repoRoot, VersionInfo version, QO
                 state->pending.reset();
             }
             if (!generations->isCurrent(request.generation)) continue;
+            if (request.path.isEmpty()) {
+                resetSession();
+                continue;
+            }
             if (!connected) {
-                const SidecarHelloResult hello = sidecar.startAndHello(version);
+                // A cold frozen sidecar may need as long as the initial file
+                // read to start; keep the GUI responsive while the worker waits.
+                const SidecarHelloResult hello = sidecar.startAndHello(version, 30000);
                 if (!hello.ok) {
                     fail(request.generation, hello.error);
                     continue;
@@ -87,7 +95,7 @@ FileOpenController::FileOpenController(QString repoRoot, VersionInfo version, QO
             }
             if (!generations->isCurrent(request.generation)) continue;
             if (!opened.ok) {
-                opened = sidecar.openFile(request.path, 30000);
+                opened = sidecar.openFile(request.path, 30000, request.captureStream);
                 if (!opened.ok) {
                     fail(request.generation, opened.error);
                     continue;
@@ -139,15 +147,26 @@ FileOpenController::~FileOpenController() {
     delete worker_;
 }
 
-void FileOpenController::openInitialWindow(const QString& path, double windowSeconds) {
-    enqueueWindow(path, 0.0, windowSeconds, true);
+void FileOpenController::closeSession() {
+    const int generation = requestGeneration_->next();
+    {
+        std::lock_guard<std::mutex> lock(workerState_->mutex);
+        ++workerState_->revision;
+        workerState_->captureStream.clear();
+        workerState_->pending = WorkerState::Request{{}, 0, 0, generation, workerState_->revision, {}};
+    }
+    workerState_->ready.notify_one();
+}
+
+void FileOpenController::openInitialWindow(const QString& path, double windowSeconds, const QString& captureStream) {
+    enqueueWindow(path, 0.0, windowSeconds, true, captureStream);
 }
 
 void FileOpenController::openWindow(const QString& path, double t0, double windowSeconds) {
     enqueueWindow(path, t0, windowSeconds, false);
 }
 
-void FileOpenController::enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen) {
+void FileOpenController::enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen, const QString& captureStream) {
     const int generation = requestGeneration_->next();
     const double requestedT0 = std::max(0.0, t0);
     // Display windows remain <=120s; allow at most 8s of bounded lookahead.
@@ -156,9 +175,9 @@ void FileOpenController::enqueueWindow(const QString& path, double t0, double wi
         std::lock_guard<std::mutex> lock(workerState_->mutex);
         // An explicit reopen changes the revision even when a newer seek
         // replaces its mailbox entry or supersedes an in-flight operation.
-        if (reopen) ++workerState_->revision;
+        if (reopen) { ++workerState_->revision; workerState_->captureStream = captureStream; }
         workerState_->pending = WorkerState::Request{
-            path, requestedT0, requestedT0 + requestedWindowSeconds, generation, workerState_->revision,
+            path, requestedT0, requestedT0 + requestedWindowSeconds, generation, workerState_->revision, workerState_->captureStream,
         };
     }
     workerState_->ready.notify_one();

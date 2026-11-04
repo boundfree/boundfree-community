@@ -3,12 +3,14 @@ title: 当前能力与待验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-10-25
+last_updated: 2026-11-02
 ---
 
 # 当前能力与待验收清单
 
-本清单区分已有实现/自动化覆盖和仍待独立验收的事项。勾选不代表所有真实设备、样本和目标桌面均已通过。原逐项 M1–M8 清单与测试细节保存在 [历史清单](archive/reports/feature-parity-checklist-20261020.md) 和 [归档报告](archive/README.md)。本次文档整理不新增功能或验收结论。
+本清单区分已有实现/自动化覆盖和仍待独立验收的事项。勾选不代表所有真实设备、样本和目标桌面均已通过。原逐项 M1–M8 清单与测试细节保存在 [历史清单](archive/reports/feature-parity-checklist-20261020.md) 和 [归档报告](archive/README.md)。
+
+通用设备采集在 `feature/bfsp-acquisition` 候选分支实施；其模拟器、TCP、RT-BCI Wi-Fi 适配、设备选择与原始录制的软件能力见 [设备采集说明](device-acquisition.md)。它尚未发布，RT-BCI 实机与目标 Windows 桌面仍待验收，不将既有安装包或 CI 证据视为新增能力的验收。
 
 ## 已有实现与回归
 
@@ -46,7 +48,7 @@ last_updated: 2026-10-25
 | 首轮 beta 公开发布与国内镜像 | GitHub 草稿已经生成；实机、真实授权和分发许可仍待验收。发布后同步 Gitee tag/说明/分卷，并实际访客下载还原核对原包 SHA256；当前尚未公开发布 |
 | 历史回归 partial | 标注连接次数与跨不同路径切文件的专用 smoke 仍需按历史收口记录独立核验，不因整理文档补勾 |
 
-BBK/DAT/LSD 目前无正式读取实现；硬件/BLE 真实采集、设备监控和 12 小时长稳未纳入当前交付，后续需另行立项。具体产品范围见 [路线](roadmap.md)。
+BBK/DAT/LSD 目前无正式读取实现；硬件/BLE 真实采集与 12 小时长稳尚未完成。具体产品范围见 [路线](roadmap.md)。
 
 ## 证据使用
 

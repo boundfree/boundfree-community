@@ -47,10 +47,18 @@ inline int smokeAnalysisText(int argc, char** argv, const bf::VersionInfo& versi
             if (status->property("analysisState").toString() != "ready") return fail("not_ready");
             for (const QSize target : {QSize(900, 560), QSize(1280, 800)}) {
                 window.resize(target); settle(); window.resize(target); settle();
+                // Narrow windows show waveform and analysis as tabs; inspect the analysis tab.
+                auto* compactTabs = window.findChild<QTabWidget*>("signalCompactTools");
+                if (compactTabs && compactTabs->isVisible()) { compactTabs->setCurrentIndex(1); settle(); }
                 auto* properties = window.findChild<QWidget*>(QString("eegAnalysisProperties_%1").arg(page));
                 if (!properties || qobject_cast<QScrollArea*>(properties) || !properties->isVisible()) return fail("scrolling_properties");
-                const QRect propertyBounds(properties->mapTo(&window, QPoint()), properties->size());
-                if (!window.rect().contains(propertyBounds)) return fail("properties_outside_window");
+                // Analysis content scrolls vertically; it must still fit the viewport width.
+                auto* analysisScroll = window.findChild<QScrollArea*>("signalAnalysisScroll");
+                if (!analysisScroll || !analysisScroll->isAncestorOf(properties)) return fail("properties_outside_analysis_scroll");
+                analysisScroll->ensureWidgetVisible(properties, 0, 0); settle();
+                const QRect propertyBounds(properties->mapTo(analysisScroll->viewport(), QPoint()), properties->size());
+                if (propertyBounds.left() < 0 || propertyBounds.right() >= analysisScroll->viewport()->width())
+                    return fail("properties_wider_than_analysis");
                 auto* inputContext = window.findChild<QLabel*>("eegAnalysisInputSummary");
                 if (!inputContext || inputContext->height() < inputContext->heightForWidth(inputContext->width()))
                     return fail("input_context_clipped");
@@ -61,6 +69,7 @@ inline int smokeAnalysisText(int argc, char** argv, const bf::VersionInfo& versi
                     if (label->height() < required) return fail(QString("clipped:%1:%2:%3 %4x%5 required=%6")
                         .arg(locale).arg(page).arg(role).arg(label->width()).arg(label->height()).arg(required));
                     if (!properties->rect().contains(QRect(label->mapTo(properties, QPoint()), label->size()))) return fail("text_outside_properties");
+                    analysisScroll->ensureWidgetVisible(label, 0, 0); settle();
                     for (QWidget* ancestor = label->parentWidget(); ancestor && ancestor != &window; ancestor = ancestor->parentWidget()) {
                         if (!ancestor->rect().contains(QRect(label->mapTo(ancestor, QPoint()), label->size())))
                             return fail(QString("ancestor_clips:%1:%2:%3:%4 label=%5x%6 ancestor=%7x%8")
@@ -79,7 +88,10 @@ inline int smokeAnalysisText(int argc, char** argv, const bf::VersionInfo& versi
                     for (auto* frame : document.rootFrame()->childFrames())
                         if ((table = qobject_cast<QTextTable*>(frame))) break;
                     if (!table || table->rows() != 6 || table->columns() != 3
-                        || summary->font().pointSizeF() < window.font().pointSizeF()) return fail("band_table_readability");
+                        || summary->font().pointSizeF() < window.font().pointSizeF())
+                        return fail(QString("band_table_readability:%1:%2 rows=%3 cols=%4 font=%5/%6").arg(locale).arg(page)
+                            .arg(table ? table->rows() : -1).arg(table ? table->columns() : -1)
+                            .arg(summary->font().pointSizeF()).arg(window.font().pointSizeF()));
                     if (window.findChild<QLabel*>(QString("eegAnalysisLegend_%1").arg(page))->isVisible()) return fail("duplicate_band_legend");
                 }
                 for (auto* combo : window.findChildren<QComboBox*>()) {

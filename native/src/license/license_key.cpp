@@ -124,7 +124,8 @@ LicenseResult verifyLicenseEnvelope(const QByteArray& payloadBytes, const QByteA
 
     // Machine id check.
     const QString keyMachineId = payload.value("machine_id").toString().toUpper().remove('-');
-    if (keyMachineId.isEmpty() || keyMachineId != localMachineIdCanonical.toUpper()) {
+    if (keyMachineId.isEmpty() || localMachineIdCanonical.isEmpty() ||
+        keyMachineId != localMachineIdCanonical.toUpper()) {
         result.status = LicenseStatus::WrongMachine;
         result.error = makeError("license.invalid_signature", {{"reason", "wrong_machine"}});
         return result;
@@ -155,6 +156,8 @@ LicenseResult verifyLicenseEnvelope(const QByteArray& payloadBytes, const QByteA
     }
     Q_UNUSED(productVersion)
 
+    // Expose the effective legacy expiry even when the signed payload omitted it.
+    result.payload.insert("expiry", expiryStr);
     result.status = LicenseStatus::Valid;
     result.error = {};
     return result;
@@ -170,14 +173,8 @@ LicenseResult verifyLicenseKey(const QString& licenseKey, const QString& publicK
         // decodeEnvelope sets KeyFormatError on failure; surface as-is.
         return decoded;
     }
-    // Carry the parsed payload forward.
-    const QJsonObject payload = decoded.payload;
-    LicenseResult verified = verifyLicenseEnvelope(payloadBytes, signature, publicKeyPem,
-                                                    localMachineIdCanonical, productVersion, todayIso);
-    if (verified.status == LicenseStatus::Valid) {
-        verified.payload = payload;
-    }
-    return verified;
+    return verifyLicenseEnvelope(payloadBytes, signature, publicKeyPem,
+                                 localMachineIdCanonical, productVersion, todayIso);
 }
 
 }  // namespace bf

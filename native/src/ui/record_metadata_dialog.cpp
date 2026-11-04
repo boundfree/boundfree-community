@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #include "ui/record_metadata_dialog.h"
 
 #include "i18n/i18n_service.h"
@@ -24,13 +25,13 @@ RecordMetadataDialog::RecordMetadataDialog(I18nService* i18n, const QString& ini
     auto* form = new QFormLayout(this);
     form->setRowWrapPolicy(QFormLayout::WrapLongRows);
     form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-    animal_ = new QLineEdit(QStringLiteral("Animal_01"), this);
-    experiment_ = new QLineEdit(QStringLiteral("LFP_baseline"), this);
+    animal_ = new TextInput(QStringLiteral("Animal_01"), this);
+    experiment_ = new TextInput(QStringLiteral("LFP_baseline"), this);
     notes_ = new QPlainTextEdit(this);
     notes_->setMinimumHeight(80);
     notes_->setMaximumHeight(160);
     notes_->setTabChangesFocus(true);
-    output_ = new QLineEdit(this);
+    output_ = new TextInput(this);
     animal_->setObjectName("recordAnimalId");
     experiment_->setObjectName("recordExperimentType");
     notes_->setObjectName("recordNotes");
@@ -47,7 +48,7 @@ RecordMetadataDialog::RecordMetadataDialog(I18nService* i18n, const QString& ini
     form->addRow(experimentLabel_, experiment_);
     form->addRow(notesLabel_, notes_);
     auto* directoryRow = new QHBoxLayout;
-    browse_ = new QPushButton(this);
+    browse_ = new ActionButton(this);
     browse_->setObjectName("recordBrowseDirectory");
     directoryRow->addWidget(output_, 1);
     directoryRow->addWidget(browse_);

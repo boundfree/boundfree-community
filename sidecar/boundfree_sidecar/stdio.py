@@ -4,13 +4,17 @@ from typing import BinaryIO
 from .framing import FRAME_BINARY, FrameError, read_frame, write_frame, write_json_frame
 from .protocol import error_response, handle_request
 from .analysis_io import cleanup
+from .capture_io import cleanup as cleanup_captures
 
 
 def run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
     try:
         return _run_stdio(stdin, stdout)
     finally:
-        cleanup()
+        try:
+            cleanup_captures()
+        finally:
+            cleanup()
 
 
 def _run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
@@ -28,7 +32,7 @@ def _run_stdio(stdin: BinaryIO, stdout: BinaryIO) -> int:
                 continue
 
             binary_payload = None
-            if isinstance(request, dict) and request.get("method") in ("record_write", "export_samples", "analysis_bundle_write"):
+            if isinstance(request, dict) and request.get("method") in ("record_write", "export_samples", "analysis_bundle_write", "capture_append"):
                 payload_frame = read_frame(stdin)
                 if payload_frame is None or payload_frame.frame_type != FRAME_BINARY:
                     raise FrameError("request requires a binary payload frame")

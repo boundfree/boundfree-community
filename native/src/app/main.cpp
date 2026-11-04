@@ -1,3 +1,7 @@
+#include "ui/unified_signal_smoke.h"
+#include <QFileDialog>
+#include "ui/live_ica_smoke.h"
+#include "ui/simulator_ica_smoke.h"
 #include "controller/file_open_controller.h"
 #include "controller/export_controller.h"
 #include "controller/export_data_modes_smoke.h"
@@ -19,6 +23,9 @@
 #include "render/minmax_decimator.h"
 #include "render/waveform_slice.h"
 #include "ui/main_window.h"
+#include "ui/fluent_controls.h"
+#include "ui/device_waveform_smoke.h"
+#include "ui/capture_replay_smoke.h"
 #include "ui/empty_controls_smoke.h"
 #include "ui/scrub_file_smoke.h"
 #include "ui/analysis_text_smoke.h"
@@ -33,6 +40,7 @@
 #include <QApplication>
 #include <QScrollBar>
 #include <QMenuBar>
+#include <QMenu>
 #include <QStyleFactory>
 #include <QAction>
 #include <QDir>
@@ -75,13 +83,12 @@
 #ifdef BF_REQUIRE_LICENSE
 namespace {
 
-bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoot, const bf::I18nService& i18n, bool smokeGate) {
+bool ensureOfflineLicense(bf::LicenseManager& manager, const bf::VersionInfo& version,
+                          bf::I18nService& i18n, bool smokeGate, bool& checkOnline) {
     // Automated smoke gate verifies the gate path without waiting for online network or interactive dialogs.
     if (smokeGate) {
         return false;
     }
-
-    bf::LicenseManager manager(version.version, repoRoot);
 
     // Level 1: check saved license.dat exactly once (no network, instant).
     // The result — including structured clock-watermark failures — is kept
@@ -89,22 +96,12 @@ bool ensureOfflineLicense(const bf::VersionInfo& version, const QString& repoRoo
     // in the status bar instead of being lost.
     const bf::LicenseResult startupCheck = manager.checkSavedLicense();
     if (startupCheck.ok()) {
-        // Legacy keys are offline-compatible: do not let an absent or stale
-        // server record invalidate a locally verified offline authorization.
-        if (!bf::ActivationDialog::requiresOnlineStatusCheck(startupCheck)) {
-            return true;
-        }
-        // Server-managed keys retain remote revocation checks and fail open on
-        // a network error or timeout.
-        if (bf::ActivationDialog::checkAndHandleRevocation(
-                &manager, version, const_cast<bf::I18nService*>(&i18n))) {
-            return true;
-        }
+        checkOnline = bf::ActivationDialog::requiresOnlineStatusCheck(startupCheck);
+        return true;
     }
 
     {
-        bf::ActivationDialog dlg(&manager, version, const_cast<bf::I18nService*>(&i18n),
-                                 startupCheck);
+        bf::ActivationDialog dlg(&manager, version, &i18n, startupCheck);
         if (dlg.exec() == QDialog::Accepted) {
             return true;
         }
@@ -252,12 +249,15 @@ int main(int argc, char** argv) {
             // Re-apply the archived light then dark theme and verify both.
             light->trigger();
             app.processEvents();
-            const bool lightApplied = window.palette().color(QPalette::Window) == QColor("#F0F0F0")
-                && window.palette().color(QPalette::WindowText) == QColor("#222222");
+            const auto lightColors = bf::surfaceColors();
+            const bool lightApplied = window.palette().color(QPalette::Window) == lightColors.bgCanvas
+                && window.palette().color(QPalette::WindowText) == lightColors.textPrimary;
             dark->trigger();
             app.processEvents();
-            const bool darkApplied = window.palette().color(QPalette::Window) == QColor("#181828")
-                && window.palette().color(QPalette::Highlight) == QColor("#9B4DA8");
+            const auto darkColors = bf::surfaceColors();
+            const bool darkApplied = window.palette().color(QPalette::Window) == darkColors.bgCanvas
+                && window.palette().color(QPalette::Highlight) == darkColors.accentDefault
+                && darkColors.bgCanvas != lightColors.bgCanvas;
             const bool emptyViewDisabled = !channels->isEnabled();
 
             bool hasIdleStatus = false;
@@ -734,12 +734,12 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-open-slice" && i + 3 < argc) {
             QCoreApplication app(argc, argv);
             bf::SidecarClient sidecar(repoRoot);
-            const bf::SidecarHelloResult hello = sidecar.startAndHello(version);
+            const bf::SidecarHelloResult hello = sidecar.startAndHello(version, 30000);
             if (!hello.ok) {
                 std::cerr << "smoke-open-slice-failed code=" << hello.error.code.toStdString() << "\n";
                 return 1;
             }
-            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]));
+            const bf::SidecarOpenResult opened = sidecar.openFile(QString::fromLocal8Bit(argv[i + 1]), 30000);
             if (!opened.ok) {
                 sidecar.stop();
                 std::cerr << "smoke-open-slice-failed " << formatErrorDetail(opened.error).toStdString() << "\n";
@@ -747,7 +747,7 @@ int main(int argc, char** argv) {
             }
             const double t0 = QString::fromLocal8Bit(argv[i + 2]).toDouble();
             const double t1 = QString::fromLocal8Bit(argv[i + 3]).toDouble();
-            const bf::SidecarSliceResult slice = sidecar.getSlice(opened.handle, t0, t1);
+            const bf::SidecarSliceResult slice = sidecar.getSlice(opened.handle, t0, t1, 30000);
             sidecar.stop();
             if (!slice.ok || slice.data.empty() || slice.data.front().empty()) {
                 std::cerr << "smoke-open-slice-failed code=" << slice.error.code.toStdString() << "\n";
@@ -1116,6 +1116,12 @@ int main(int argc, char** argv) {
             std::cout << "smoke-ui-channel-parameters-ok amplitude=true filters=true identity=true bipolar=true\n";
             return 0;
         }
+        if (arg == "--smoke-ui-device-waveform") return bf::smokeDeviceWaveform(argc, argv, version, repoRoot);
+        if (arg == "--smoke-ui-unified-tools") return bf::smokeUnifiedSignalTools(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-live-ica") return bf::smokeLiveIca(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-simulator-ica") return bf::smokeSimulatorIca(argc,argv,version,repoRoot);
+        if (arg == "--smoke-ui-capture-replay" && i + 1 < argc)
+            return bf::smokeCaptureReplay(argc, argv, version, repoRoot, QString::fromLocal8Bit(argv[i + 1]));
         if (arg == "--smoke-ui-workspace-navigation") {
             QApplication app(argc, argv);
             // This early smoke path never invokes licensing and isolates UI preferences.
@@ -1135,6 +1141,8 @@ int main(int argc, char** argv) {
             auto* stack = window.findChild<QStackedWidget*>("eegWorkspaceStack");
             auto* action = window.findChild<QAction*>("eegOpenSeparation");
             auto* controller = window.findChild<bf::EegSeparationController*>();
+            auto* fileOpen = window.findChild<QAction*>("openCurrentWorkspaceFile");
+            auto* teachingOpen = window.findChild<QAction*>("openTeachingRecording");
             const auto fail = [&](const QString& reason) {
                 std::cerr << "smoke-ui-workspace-navigation-failed " << reason.toStdString()
                           << " last_error=" << error.toStdString() << '\n';
@@ -1149,8 +1157,12 @@ int main(int argc, char** argv) {
                 return ready();
             };
             if (!navigation || !stack || !action || !controller || navigation->count() != 2
+                || stack->count() != 2
                 || navigation->currentIndex() != 0 || stack->currentIndex() != 0)
                 return fail("initial_controls");
+            if (!fileOpen || !teachingOpen || window.findChild<QWidget*>("separationAlternativeInput") ||
+                window.findChild<QPushButton*>("separationOpen") || window.findChild<QPushButton*>("separationOpenTeaching"))
+                return fail("file_menu_inputs");
             QObject::connect(controller, &bf::EegSeparationController::failed, &window,
                              [&](const bf::AppError& failure) { error = formatErrorDetail(failure); });
             bf::FileOpenResult browser;
@@ -1178,16 +1190,30 @@ int main(int argc, char** argv) {
             if (!action->isChecked() || stack->currentIndex() != 1
                 || browserPlay->text() != i18n.text("app.playback.play"))
                 return fail("enter_separation_pauses_browser");
+            if (!until([&] { return controller->state() == bf::EegSeparationController::State::Ready; }, 60000)
+                || controller->source().path == browser.session.path
+                || controller->source().metadata.value("signal_provenance").toObject()
+                       .value("source_id").toString() != browser.session.path
+                || controller->source().channels != browser.session.chNames)
+                return fail("inherit_browser_selection_snapshot");
+            // The verified teaching fixture remains an explicit advanced file input.
+            teachingOpen->trigger();
             if (!until([&] { return !controller->isBusy(); }, 60000)
-                || controller->state() != bf::EegSeparationController::State::Ready
-                || controller->source().path != browser.session.path)
-                return fail("inherit_browser_source");
+                || !controller->source().teaching)
+                return fail("teaching_file_input");
             controller->start();
+            if (fileOpen->isEnabled() || teachingOpen->isEnabled()) return fail("file_actions_enabled_during_fit");
             if (!until([&] { return !controller->isBusy(); }, 60000) || !controller->output())
                 return fail("teaching_fit");
             controller->applyTeachingLabels();
             controller->setConfirmed(true);
             const auto output = controller->output();
+            QTimer::singleShot(50, &window, [] {
+                if (auto* chooser = qobject_cast<QFileDialog*>(QApplication::activeModalWidget())) chooser->reject();
+            });
+            fileOpen->trigger();
+            if (controller->output() != output || !controller->isConfirmed() || !fileOpen->isEnabled())
+                return fail("file_menu_cancel_loses_analysis");
             const auto labels = controller->labels();
             const auto settings = controller->settings();
             auto* workspace = stack->widget(1);
@@ -1220,6 +1246,8 @@ int main(int argc, char** argv) {
                         || stack->currentIndex() != index || action->isChecked() != (index == 1)
                         || navigation->tabText(0) != i18n.text("app.separation.browser_workspace")
                         || navigation->tabText(1) != i18n.text("app.separation.separation_workspace")
+                        || fileOpen->text() != i18n.text("app.action.open")
+                        || teachingOpen->text() != i18n.text("app.separation.open_teaching")
                         || !navigation->rect().contains(navigation->tabRect(1))
                         || navigation->accessibleName() != i18n.text("app.separation.workspace_navigation")
                         || navigation->tabToolTip(0) != i18n.text("app.separation.browser_workspace_help"))
@@ -1234,6 +1262,15 @@ int main(int argc, char** argv) {
                         && !window.grab().save(QDir(screenshots).filePath(index == 1
                             ? "navigation-separation-zhCN.png" : "navigation-browser-zhCN.png")))
                         return fail("screenshot_write");
+                    if (locale == "zh_CN" && index == 1 && !screenshots.isEmpty()) {
+                        auto* menu = qobject_cast<QMenu*>(fileOpen->parent());
+                        if (!menu) return fail("file_menu_missing");
+                        menu->popup(window.mapToGlobal(QPoint(10, 50)));
+                        wait(300);
+                        const bool saved = menu->grab().save(QDir(screenshots).filePath("file-menu-zhCN.png"));
+                        menu->hide();
+                        if (!saved) return fail("file_menu_screenshot_write");
+                    }
                 }
             }
             action->trigger();
@@ -1246,6 +1283,12 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-ui-empty-controls") return smokeEmptyControls(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-fixed-layout") {
             QApplication app(argc, argv);
+            QTemporaryDir settings;
+            if (!settings.isValid()) return 1;
+            QSettings::setDefaultFormat(QSettings::IniFormat);
+            QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
+            QCoreApplication::setOrganizationName("BoundFreeLayoutSmoke");
+            QCoreApplication::setApplicationName("BoundFreeLayoutSmoke");
             bf::I18nService i18n(repoRoot);
             QString error;
             if (!i18n.loadLocale("en_US", &error)) return 1;
@@ -1264,10 +1307,9 @@ int main(int argc, char** argv) {
             }
             window.showFileOpenResult(result);
             window.show();
-            if (qEnvironmentVariableIntValue("BF_LAYOUT_DARK") == 1) {
-                for (auto* action : window.findChildren<QAction*>())
-                    if (action->text() == i18n.text("app.theme.dark")) { action->trigger(); break; }
-            }
+            const auto themeKey = qEnvironmentVariableIntValue("BF_LAYOUT_DARK") == 1 ? "app.theme.dark" : "app.theme.light";
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->text() == i18n.text(themeKey)) { action->trigger(); break; }
             const auto settle = []() { QEventLoop loop; QTimer::singleShot(30, &loop, &QEventLoop::quit); loop.exec(); };
             const auto fail = [&](const QString& detail) {
                 std::cerr << "smoke-ui-fixed-layout-failed " << detail.toStdString() << '\n';
@@ -1301,11 +1343,15 @@ int main(int argc, char** argv) {
             auto* bottom = window.findChild<QWidget*>("eegPlaybackBar");
             auto* parameters = window.findChild<QTabWidget*>("eegParameterTabs");
             auto* processingScroll = window.findChild<QScrollArea*>("eegProcessingScroll");
+            auto* analysisScroll = window.findChild<QScrollArea*>("signalAnalysisScroll");
             auto* waveform = window.findChild<bf::WaveformWidget*>();
             auto* analysisPanel = window.findChild<QWidget*>("eegAnalysisPanel");
+            auto* compactTabs = window.findChild<QTabWidget*>("signalCompactTools");
+            auto* signalPage = window.findChild<QWidget*>("eegSignalPage");
             auto* progress = window.findChild<QSlider*>("eegPlaybackProgress");
             if (!workspace || !signal || !analysis || !top || !bottom || !parameters || !waveform
-                || !analysisPanel || !progress || !processingScroll || parameters->count() != 3) return fail("missing_regions");
+                || !analysisPanel || !compactTabs || !signalPage || !progress || !processingScroll || !analysisScroll
+                || parameters->count() != 3) return fail("missing_regions");
             auto* notch = window.findChild<QCheckBox*>("eegNotchEnabled");
             auto* notchSection = window.findChild<QWidget*>("eegNotchSection");
             auto* notchFrequency = window.findChild<QDoubleSpinBox*>("eegNotchFrequency_0");
@@ -1335,17 +1381,53 @@ int main(int argc, char** argv) {
                 QWidget* hit = window.childAt(widget->mapTo(&window, widget->rect().center()));
                 return hit == widget || (hit != nullptr && widget->isAncestorOf(hit));
             };
+            const auto analysisReachable = [&](QWidget* page, int index) -> QString {
+                if (!page->isVisible()) return "hidden_page";
+                QList<QWidget*> targets;
+                for (auto* child : page->findChildren<QWidget*>()) {
+                    if (child->isVisible() && (qobject_cast<QComboBox*>(child)
+                        || qobject_cast<QAbstractSpinBox*>(child) || qobject_cast<QCheckBox*>(child)))
+                        targets.push_back(child);
+                }
+                for (const auto& suffix : {QString("Plot"), QString("Status"), QString("Summary")}) {
+                    auto* child = window.findChild<QWidget*>(QString("eegAnalysis%1_%2").arg(suffix).arg(index));
+                    if (child && child->isVisible()) targets.push_back(child);
+                }
+                for (auto* child : targets) {
+                    analysisScroll->ensureWidgetVisible(child, 0, 4); settle();
+                    if (!accessible(child)) return "unreachable:" + child->objectName();
+                }
+                analysisScroll->verticalScrollBar()->setValue(0); settle();
+                return {};
+            };
             const auto regionError = [&]() -> QString {
                 if (workspace->orientation() != Qt::Horizontal || signal->orientation() != Qt::Vertical
                     || analysis->orientation() != Qt::Vertical) return "splitter_orientation";
-                if (bounds(waveform).right() >= bounds(analysisPanel).left()
-                    || bounds(parameters).right() >= bounds(waveform).left()
-                    || bounds(top).bottom() >= bounds(waveform).top()
-                    || bounds(workspace).bottom() >= bounds(bottom).top()) return "region_order";
-                if (workspace->count() != 3 || top->isAncestorOf(window.findChild<QWidget*>("eegNotchEnabled")))
-                    return "signal_scope";
+                if (bounds(workspace).bottom() >= bounds(bottom).top()
+                    || workspace->widget(0) != parameters) return "region_order";
+                if (window.width() < 1000) {
+                    // Narrow windows share the right column through two tabs.
+                    // Hidden pages retain stale geometry and must be checked
+                    // for visibility/ownership rather than as adjacent columns.
+                    if (!compactTabs->isVisible() || workspace->count() != 2
+                        || workspace->widget(1) != compactTabs || compactTabs->count() != 2
+                        || compactTabs->widget(0) != signalPage || compactTabs->widget(1) != analysis
+                        || bounds(parameters).right() >= bounds(compactTabs).left()) return "compact_scope";
+                    const bool showingWaveform = compactTabs->currentIndex() == 0;
+                    if (waveform->isVisible() != showingWaveform || analysisPanel->isVisible() == showingWaveform
+                        || !accessible(compactTabs->currentWidget())) return "compact_page_visibility";
+                } else {
+                    if (compactTabs->isVisible() || compactTabs->count() != 0
+                        || workspace->widget(1) != signalPage || workspace->widget(2) != analysis
+                        || !waveform->isVisible() || !analysisPanel->isVisible()) return "wide_scope";
+                    if (bounds(waveform).right() >= bounds(analysisPanel).left()
+                        || bounds(parameters).right() >= bounds(waveform).left()) return "region_order";
+                }
+                if (waveform->isVisible() && bounds(top).bottom() >= bounds(waveform).top()) return "toolbar_order";
+                if (top->isAncestorOf(notch)) return "signal_scope";
                 if (!accessible(progress)) return "progress_unreachable";
                 for (QWidget* region : {top, bottom}) {
+                    if (!region->isVisible()) continue;
                     for (QWidget* child : region->findChildren<QWidget*>()) {
                         if (qobject_cast<QAbstractButton*>(child) || qobject_cast<QAbstractSpinBox*>(child)
                             || qobject_cast<QComboBox*>(child) || qobject_cast<QSlider*>(child)) {
@@ -1367,7 +1449,7 @@ int main(int argc, char** argv) {
                 // Retranslation changes height-for-width hints asynchronously.
                 // Let those layout requests settle before requesting a size.
                 settle();
-                for (const QSize size : {QSize(900, 560), QSize(1280, 800)}) {
+                for (const QSize size : {QSize(760, 560), QSize(900, 560), QSize(999, 700), QSize(1000, 700), QSize(1280, 800)}) {
                     window.resize(size);
                     settle();
                     // A width change can invalidate the previous minimum height.
@@ -1386,6 +1468,25 @@ int main(int argc, char** argv) {
                         .arg(locale).arg(window.width()).arg(window.height()));
                     const QString problem = regionError();
                     if (!problem.isEmpty()) return fail(locale + ":" + QString::number(size.width()) + ":" + problem);
+                    if (compactTabs->isVisible()) {
+                        if (compactTabs->tabText(0) != i18n.text("app.workspace.waveform")
+                            || compactTabs->tabText(1) != i18n.text("app.analysis.panel")) return fail("compact_tab_translation");
+                        compactTabs->setCurrentIndex(1); settle();
+                        const QString analysisProblem = regionError();
+                        if (!analysisProblem.isEmpty()) return fail(locale + ":compact_analysis:" + analysisProblem);
+                        auto* pages = window.findChild<QTabWidget*>("eegAnalysisTabs");
+                        if (!pages || pages->count() != 4) return fail("compact_analysis_tabs");
+                        for (int tab = 0; tab < pages->count(); ++tab) {
+                            pages->setCurrentIndex(tab); settle();
+                            const auto problem = analysisReachable(pages->currentWidget(), tab);
+                            if (!problem.isEmpty()) return fail("compact_analysis:" + QString::number(tab) + ":" + problem);
+                        }
+                        pages->setCurrentIndex(0);
+                        if (!screenshotDir.isEmpty() && !window.grab().save(QDir(screenshotDir).filePath(
+                            QString("layout-analysis-%1-%2.png").arg(locale).arg(size.width())))) return fail("compact_screenshot_save");
+                        compactTabs->setCurrentIndex(0); settle();
+                        if (!regionError().isEmpty()) return fail("compact_waveform_restore");
+                    }
                 }
                 auto* toggle = window.findChild<QAction*>("eegToggleAnalysis");
                 if (!toggle || toggle->text() != i18n.text("app.view.analysis")) return fail("untranslated_action");
@@ -1402,7 +1503,7 @@ int main(int argc, char** argv) {
             if (!analysisTabs || analysisTabs->count() != 4) return fail("analysis_tabs");
             for (int tab = 0; tab < 4; ++tab) {
                 analysisTabs->setCurrentIndex(tab); settle();
-                if (analysisTabs->currentIndex() != tab || !accessible(analysisTabs->currentWidget())
+                if (analysisTabs->currentIndex() != tab || !analysisReachable(analysisTabs->currentWidget(), tab).isEmpty()
                     || !regionError().isEmpty()) return fail("analysis_tab_unreachable:" + QString::number(tab));
             }
             analysisTabs->setCurrentIndex(0);
@@ -1426,11 +1527,13 @@ int main(int argc, char** argv) {
             auto* channelFilters = window.findChild<bf::CollapsiblePanel*>("eegPerChannelFilters");
             if (!channelFilters || channelFilters->isExpanded()) return fail("per_channel_default_expanded");
             channelFilters->setExpanded(true); settle();
-            const auto advancedButtons = filters->findChildren<QPushButton*>();
-            if (advancedButtons.isEmpty()) return fail("advanced_filter_buttons");
-            for (auto* button : advancedButtons) {
+            // Expander internals also contain buttons, including deliberately
+            // hidden headers. Check the two actual filter actions by identity.
+            for (const auto* name : {"eegApplyBandpassToSelected", "eegClearChannelBandpass"}) {
+                auto* button = filters->findChild<QPushButton*>(name);
+                if (!button) return fail("advanced_filter_button_missing:" + QString::fromLatin1(name));
                 processingScroll->ensureWidgetVisible(button, 0, 4); settle();
-                if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->text());
+                if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->objectName());
             }
             const auto panelVisible = [&](const QString& suffix, QWidget* panel) {
                 return suffix == "Channels" ? parameters->isTabVisible(0)
@@ -1456,10 +1559,12 @@ int main(int argc, char** argv) {
                     window.resize(900, 560); settle();
                     window.resize(900, 560); settle();
                     app.processEvents();
-                if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
+                    if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
                     if (window.width() != 900 || window.height() < 560
                         || window.height() > std::max(560, window.minimumHeight()) || !regionError().isEmpty()
                         || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
+                    window.resize(1280, 800); settle();
+                    if (!regionError().isEmpty()) return fail("wide_layout_after_video");
                 }
                 action->trigger(); settle();
                 if (panelVisible(suffix, panel) != initial || action->isChecked() != initial) return fail("toggle_restore:" + suffix);
@@ -1501,7 +1606,7 @@ int main(int argc, char** argv) {
                     menu->hide(); break;
                 }
             }
-            std::cout << "smoke-ui-fixed-layout-ok locales=4 panels=true splitters=true controls=true\n";
+            std::cout << "smoke-ui-fixed-layout-ok locales=4 widths=5 compact_tabs=true breakpoint=true panels=true splitters=true controls=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-scrub-file" && i + 1 < argc) {
@@ -2186,7 +2291,8 @@ int main(int argc, char** argv) {
             result.session.duration = 10.0;
             result.waveform.fs = 100.0;
             result.waveform.t0 = 0.0;
-            result.waveform.t1 = 10.0;
+            // Cache 2 s so the 4 s browser window must request more data.
+            result.waveform.t1 = 2.0;
             result.waveform.channelNames = {"ch1", "ch2"};
             result.waveform.data = {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, -1.0f}};
             window.showFileOpenResult(result);
@@ -2378,7 +2484,7 @@ int main(int argc, char** argv) {
                 std::cerr << "smoke-m7-record-failed code=" << error.code.toStdString() << "\n";
                 app.quit();
             });
-            if (!controller.startFromFile(sourcePath, source.fs, source.chNames, source.duration, 0.0, outputDir, {{"animal_id", "smoke"}, {"exp_type", "file_replay"}, {"notes", "M7 smoke"}}, std::max(1, source.nSamples / 2), 2)) {
+            if (!controller.startFromFile(sourcePath, source.fs, source.chNames, source.duration, 0.0, outputDir, {{"animal_id", "smoke"}, {"exp_type", "file_replay"}, {"notes", "M7 smoke"}}, static_cast<int>(std::clamp<qint64>(source.nSamples / 2, 1, 1024)), 2)) {
                 std::cerr << "smoke-m7-record-failed code=start_rejected\n";
                 return 1;
             }
@@ -2489,7 +2595,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 #ifdef BF_REQUIRE_LICENSE
-    if (!ensureOfflineLicense(version, repoRoot, i18n, parser.isSet(smokeLicenseGateOpt))) {
+    bf::LicenseManager licenseManager(version.version, repoRoot);
+    bool checkOnlineLicense = false;
+    if (!ensureOfflineLicense(licenseManager, version, i18n, parser.isSet(smokeLicenseGateOpt),
+                              checkOnlineLicense)) {
         if (parser.isSet(smokeLicenseGateOpt)) {
             std::cout << "smoke-license-gate-ok\n";
         }
@@ -2500,8 +2609,12 @@ int main(int argc, char** argv) {
     bf::MainWindow window(version, &i18n, repoRoot);
     bf::SidecarClient sidecar(repoRoot);
     bf::FileOpenController fileController(repoRoot, version);
+    window.setCloseFileHandler([&]() { fileController.closeSession(); });
     window.setOpenFileHandler([&](const QString& path) {
         fileController.openInitialWindow(path);
+    });
+    window.setOpenCaptureHandler([&](const QString& path, const QString& stream) {
+        fileController.openInitialWindow(path, 10.0, stream);
     });
     window.setWindowRequestHandler([&](const QString& path, double t0, double windowSeconds) {
         fileController.openWindow(path, t0, windowSeconds);
@@ -2536,6 +2649,13 @@ int main(int argc, char** argv) {
         }
     });
     window.show();
+#ifdef BF_REQUIRE_LICENSE
+    if (checkOnlineLicense) {
+        QTimer::singleShot(0, &window, [&] {
+            bf::ActivationDialog::checkAndHandleRevocation(&licenseManager, version, &i18n, &window);
+        });
+    }
+#endif
     window.setSidecarConnecting();
 
     QTimer::singleShot(0, &window, [&]() {

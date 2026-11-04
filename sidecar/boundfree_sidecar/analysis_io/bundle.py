@@ -63,10 +63,11 @@ class BundleRegistry:
         shape, names = params.get("shape"), params.get("ch_names")
         if (not isinstance(shape, list) or len(shape) != 3 or shape[0] != 7
                 or not all(positive_integer(x) for x in shape) or not 2 <= shape[1] <= 32
-                or shape[2] > 60000 or params.get("dtype") != "float64-le" or params.get("unit") != "uV"
+                or shape[2] > 60000 or params.get("dtype") != "float64-le" or params.get("unit") not in ("uV","count","1","degC","A","mA","Pa","kPa")
                 or not isinstance(names, list) or len(names) != shape[1]
                 or not all(isinstance(x, str) and x for x in names)):
             fail("invalid_request", field="shape", reason="required [7,2..32,1..60000] float64-le uV and channel names")
+        unit=params.get("unit")
         size = math.prod(shape) * 8
         if size > MAX_BYTES:
             fail("resource_limit", bytes=size, limit_bytes=MAX_BYTES)
@@ -83,6 +84,8 @@ class BundleRegistry:
             fail("invalid_request", field="manifest.mean", reason="required finite channel mean")
         mean = np.asarray(mean, dtype="<f8")
         source_path = _verify_source(manifest.get("source"))
+        if manifest["source"].get("unit","uV") != unit:
+            fail("invalid_request",field="unit",reason="source and output units differ")
         value = params.get("path")
         if not isinstance(value, str) or not value:
             fail("invalid_request", field="path", reason="required new directory")
@@ -110,7 +113,7 @@ class BundleRegistry:
             readback = np.empty(shape, dtype="<f8")
             for index, group in enumerate(GROUPS):
                 _check_cancel(cancel_path)
-                path = temporary / (group + "_uV.csv")
+                path = temporary / (group + "_" + unit + ".csv")
                 with path.open("w", newline="", encoding="utf-8") as output:
                     writer = csv.writer(output)
                     writer.writerow(["time_s", *names])
@@ -146,9 +149,13 @@ class BundleRegistry:
             _verify_source(manifest["source"])
             _check_cancel(cancel_path)
             summary = {**manifest, "schema": SCHEMA, "fs": fs, "t0": t0, "shape": shape,
-                       "ch_names": names, "unit": "uV", "dtype": "float64-le", "groups": list(GROUPS),
+                       "ch_names": names, "unit": unit, "dtype": "float64-le", "groups": list(GROUPS),
                        "group_identity": "analysis = mean + eeg + eog + emg + unresolved + residual",
                        "reconstruction_error_uV": error, "readback_error_uV": roundtrip_error, "files": outputs}
+            if unit!="uV":
+                summary["reconstruction_error"]=summary.pop("reconstruction_error_uV")
+                summary["readback_error"]=summary.pop("readback_error_uV")
+                summary["error_unit"]=unit
             path = temporary / "analysis.json"
             with path.open("w", encoding="utf-8") as stream:
                 json.dump(summary, stream, ensure_ascii=False, indent=2, allow_nan=False)
@@ -159,7 +166,7 @@ class BundleRegistry:
             # Parse the manifest again, not just the numeric CSVs.
             json.loads(path.read_text(encoding="utf-8"))
             outputs[path.name] = {"sha256": fingerprint(path)["sha256"], "size": path.stat().st_size}
-            stage["result"] = {"path": str(destination), "files": outputs, "readback_error_uV": roundtrip_error}
+            stage["result"] = {"path": str(destination), "files": outputs, "readback_error_uV" if unit=="uV" else "readback_error": roundtrip_error}
             if params.get("stage_only", False):
                 return {**stage["result"], "token": token, "staged": True, "temporary_path": str(temporary)}
             return self.publish({"token": token})

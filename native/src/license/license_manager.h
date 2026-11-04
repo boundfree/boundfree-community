@@ -53,7 +53,8 @@ public:
     // first and only writes the license when the watermark is established;
     // an existing license.dat requires a passing
     // checkAndAdvanceClockWatermark before it may be overwritten — the
-    // watermark is never reset on this path. Returns Valid on success, or a
+    // watermark is never reset on this path. Returns Valid with the verified
+    // payload on success, or a
     // structured status/error (ClockRollback, ClockStateMissing,
     // ClockStateCorrupted, ClockStateWriteFailure, SaveFailed) on failure.
     LicenseResult saveLicense(const QString& licenseKey) const;

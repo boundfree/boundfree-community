@@ -221,7 +221,9 @@ LicenseResult LicenseManager::saveLicense(const QString& licenseKey) const {
         }
     }
 
-    return writeLicenseFileAtomically(licensePath, licenseKey);
+    LicenseResult saved = writeLicenseFileAtomically(licensePath, licenseKey);
+    if (saved.ok()) saved.payload = verified.payload;
+    return saved;
 }
 
 LicenseResult LicenseManager::saveOnlineLicense(const QString& licenseKey) const {

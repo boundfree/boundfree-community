@@ -1,3 +1,4 @@
+#include "ui/fluent_controls.h"
 #include "ui/eeg_playback_panel.h"
 
 #include "controller/playback_state.h"
@@ -11,14 +12,14 @@ EegPlaybackPanel::EegPlaybackPanel(QObject* parent)
 
 void EegPlaybackPanel::buildWidgets() {
     speedLabel_ = new QLabel;
-    speedCombo_ = new QComboBox;
+    speedCombo_ = new ChoiceBox;
     for (double speed : PlaybackState::kSpeeds) {
         speedCombo_->addItem(QString::number(speed) + "x", speed);
     }
     speedCombo_->setCurrentIndex(2);
     speedCombo_->setMaximumWidth(80);
 
-    playbackProgress_ = new QSlider(Qt::Horizontal);
+    playbackProgress_ = new ProgressSlider(Qt::Horizontal);
     playbackProgress_->setObjectName("eegPlaybackProgress");
     playbackProgress_->setRange(0, 10000);
     playbackProgress_->setMinimumWidth(160);

@@ -5,7 +5,7 @@
 namespace bf {
 
 void WaveformViewState::setWindowSeconds(double value) {
-    windowSeconds = std::clamp(value, 1.0, 120.0);
+    windowSeconds = std::clamp(value, .25, 120.0);
 }
 
 void WaveformViewState::setAmplitudeUv(double value) {

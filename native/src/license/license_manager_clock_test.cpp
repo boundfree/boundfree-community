@@ -103,10 +103,10 @@ bool generateRsa2048InMemory(EVP_PKEY** outKey, QString* outPem) {
 // The signature covers exactly the compact JSON bytes, mirroring the
 // server's issue_license_key (PSS/MGF1-SHA256, MAX salt length).
 QString buildSignedLicenseKey(EVP_PKEY* pkey, const QString& machineId,
-                              const QString& productVersion) {
+                              const QString& productVersion, bool includeExpiry = true) {
     QJsonObject payload;
     payload["machine_id"] = machineId;
-    payload["expiry"] = QStringLiteral("2099-12-31");
+    if (includeExpiry) payload["expiry"] = QStringLiteral("2099-12-31");
     payload["version"] = productVersion;
     const QByteArray payloadBytes = QJsonDocument(payload).toJson(QJsonDocument::Compact);
 
@@ -211,9 +211,11 @@ int main(int argc, char** argv) {
 
     const QString productVersion = QStringLiteral("0.1.0-dev");
     const QString validKey = buildSignedLicenseKey(pkey, machineId, productVersion);
+    const QString legacyKey = buildSignedLicenseKey(pkey, machineId, productVersion, false);
     EVP_PKEY_free(pkey);
     pkey = nullptr;
     check(!validKey.isEmpty(), "legacy envelope signed with RSA-PSS-SHA256");
+    check(!legacyKey.isEmpty(), "legacy license without expiry signed");
 
     // Redirect the license data dir into the temp root BEFORE any
     // LicenseManager use. licenseDataDir() consults XDG_DATA_HOME on every
@@ -243,13 +245,23 @@ int main(int argc, char** argv) {
     }
     check(mgr.isConfigured(), "manager loaded runtime license_public.pem");
     check(mgr.isBackendAvailable(), "OpenSSL verification backend available");
+    qputenv("BF_MOCK_MACHINE_GUID", "");
+    check(mgr.verifyKey(validKey).status == bf::LicenseStatus::WrongMachine,
+          "valid signature with empty machine GUID is rejected");
+    qputenv("BF_MOCK_MACHINE_GUID", "GUID-001");
 
     // ---- (4) first offline authorization: license + watermark both appear --
     {
         const bf::LicenseResult r = mgr.saveLicense(validKey);
         check(r.status == bf::LicenseStatus::Valid, "saveLicense(valid) -> Valid");
+        check(r.payload.value("machine_id").toString() == machineId &&
+              r.payload.value("expiry").toString() == "2099-12-31", "saveLicense returns verified payload");
         check(QFileInfo::exists(licensePath), "license.dat written");
         check(QFileInfo::exists(watermarkPath), ".last_run written alongside license.dat");
+        const bf::LicenseResult legacy = mgr.saveLicense(legacyKey);
+        check(legacy.ok() && legacy.payload.value("expiry").toString() == "2099-12-31",
+              "legacy license without expiry exposes the effective expiry");
+        check(mgr.saveLicense(validKey).ok(), "restore license for watermark checks");
     }
 
     // ---- (5) watermark removed: hard ClockStateMissing, license.dat intact -

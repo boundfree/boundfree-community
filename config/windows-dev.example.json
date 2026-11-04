@@ -1,9 +1,11 @@
 {
   "schema_version": 1,
-  "wsl_sync_target": "/mnt/c/Users/YourName/source/BoundFree/boundfree-community",
-  "qt_root": "E:\\Qt\\6.8.2\\msvc2022_64",
+  "wsl_sync_target": "/mnt/f/workspace/BoudFree/development/boundfree-community",
+  "qt_root": "F:\\workspace\\BoudFree\\.dev\\qt\\windows\\6.8.2\\msvc2022_64",
   "bootstrap_python": "py",
-  "bootstrap_python_args": ["-3.12"],
+  "bootstrap_python_args": [
+    "-3.12"
+  ],
   "venv_dir": ".venv",
   "iscc_path": "",
   "license_public_key_file": "license_public.pem",

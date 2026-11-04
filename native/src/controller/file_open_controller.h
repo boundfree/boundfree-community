@@ -26,7 +26,8 @@ public:
     FileOpenController(QString repoRoot, VersionInfo version, QObject* parent = nullptr);
     ~FileOpenController() override;
 
-    void openInitialWindow(const QString& path, double windowSeconds = 10.0);
+    void closeSession();
+    void openInitialWindow(const QString& path, double windowSeconds = 10.0, const QString& captureStream = {});
     void openWindow(const QString& path, double t0, double windowSeconds);
 
 signals:
@@ -35,7 +36,7 @@ signals:
 
 private:
     struct WorkerState;
-    void enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen);
+    void enqueueWindow(const QString& path, double t0, double windowSeconds, bool reopen, const QString& captureStream = {});
 
     QString repoRoot_;
     VersionInfo version_;
