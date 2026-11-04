@@ -1,6 +1,7 @@
 #include "ui/eeg_separation_workspace.h"
 #include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
+#include "ui/fluent_controls.h"
 #include <QApplication>
 #include <QDialog>
 #include <QTabWidget>
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
     bf::EegSeparationWorkspace ui(&controller, &i18n);
     ui.resize(1280, 900);
     ui.show();
+    ui.setDarkTheme(false);
     app.processEvents();
     auto fail = [](const char *reason) {
         std::cerr << reason << '\n';
@@ -100,6 +102,17 @@ int main(int argc, char **argv) {
     auto *status = ui.findChild<QLabel *>("separationStatus");
     if (!cancel || !rerun || !help || !helpButton || !helpClose || !helpTabs || !metadataButton || !advancedPanel || !status)
         return fail("teaching entry missing");
+    auto* actionBar = ui.findChild<QWidget*>("separationActionBar");
+    auto* liveToggle = ui.findChild<QPushButton*>("separationLiveToggle");
+    auto* nextStep = ui.findChild<QLabel*>("separationNextStep");
+    if (!actionBar || !liveToggle || !nextStep) return fail("workflow action bar missing");
+    for (auto* action : {main, rerun, cancel, liveToggle, ui.findChild<QPushButton*>("separationRetry")})
+        if (!action || !actionBar->isAncestorOf(action)) return fail("workflow actions are scattered");
+    const QString capture = qEnvironmentVariable("BF_UI_CAPTURE_DIR");
+    const auto captureUi = [&](const QString& name) {
+        app.processEvents();
+        return capture.isEmpty() || (QDir().mkpath(capture) && ui.grab().save(QDir(capture).filePath(name)));
+    };
     if (ui.findChild<QPushButton*>("separationRoleHelpButton") ||
         ui.findChild<QPushButton*>("separationPlotHelpButton") || helpTabs->count() != 5)
         return fail("duplicate guide entries or missing component review tab");
@@ -118,6 +131,40 @@ int main(int argc, char **argv) {
     };
     if (help->isVisible() || advancedPanel->isExpanded() || status->isVisible() || rerun->isVisible())
         return fail("empty workspace shows secondary details or result actions");
+    // Check rendered semantic feedback in both themes, including recovery.
+    const QString errorPath = QStringLiteral("/tmp/<occupied>/result");
+    for (const bool dark : {false, true}) {
+        ui.setDarkTheme(dark);
+        ui.showInputError(bf::makeError("analysis.destination_exists", {{"path", errorPath}}, true));
+        app.processEvents();
+        const auto colors = bf::surfaceColors();
+        const auto image = status->grab().toImage();
+        int redPixels = 0;
+        for (int y = 0; y < image.height(); ++y)
+            for (int x = 0; x < image.width(); ++x) {
+                const auto pixel = image.pixelColor(x, y);
+                // Include antialiased glyph edges; the red-tinted background
+                // itself has much smaller differences between RGB channels.
+                if (pixel.red() - pixel.green() > 40 && pixel.red() - pixel.blue() > 35) ++redPixels;
+            }
+        if (!captureUi(dark ? "separation-error-dark-1280x900.png" : "separation-error-light-1280x900.png"))
+            return fail("cannot capture error feedback");
+        if (status->property("feedbackTone") != "error" || redPixels < 10 ||
+            status->palette().color(QPalette::WindowText) != colors.systemCritical ||
+            status->textFormat() != Qt::PlainText ||
+            status->accessibleDescription() != status->text()) {
+            std::cerr << "feedback dark=" << dark << " red_pixels=" << redPixels << " expected=" << colors.systemCritical.name().toStdString()
+                << " actual=" << status->palette().color(QPalette::WindowText).name().toStdString()
+                << " text=" << status->text().toStdString() << '\n';
+            return fail("failure is not clearly rendered in red");
+        }
+        ui.setInputPending(true);
+        if (status->property("feedbackTone") != "info" || !status->toolTip().isEmpty() ||
+            !cancel->property("primaryAction").toBool()) return fail("recovery retains stale error feedback");
+        ui.setInputPending(false);
+        if (status->isVisible()) return fail("recovery retains error notice");
+    }
+    ui.setDarkTheme(false);
     for (int attempt = 0; attempt < 2; ++attempt) {
         mouseClick(helpButton);
         if (!help->isVisible() || help->isModal() || QApplication::activeModalWidget() || helpTabs->currentIndex() != 0)
@@ -130,6 +177,7 @@ int main(int argc, char **argv) {
         cancel->click();
         if (controller.isBusy() || !ui.canChangeInput() || main->isEnabled())
             return fail("cancelled inspection leaves actions disabled");
+        if (status->property("feedbackTone") == "error") return fail("user cancellation is presented as a failure");
     }
     ui.openTeachingSource();
     if (!wait([&] { return !controller.isBusy(); }) || controller.source().channels.size() != 5 ||
@@ -140,6 +188,18 @@ int main(int argc, char **argv) {
     ui.openTeachingSource();
     if (!wait([&] { return !controller.isBusy(); }) || !main->isEnabled() || !failure.isEmpty())
         return fail("teaching record cannot be opened a second time");
+    const auto readySettings = controller.settings();
+    auto excluded = readySettings;
+    std::fill(excluded.roles.begin(), excluded.roles.end(), 4);
+    controller.setSettings(excluded);
+    if (main->isEnabled() || nextStep->property("feedbackTone") != "warning" ||
+        !nextStep->text().contains(i18n.text("app.separation.next_observations")))
+        return fail("observation requirement is not explained as a warning");
+    if (!captureUi("separation-validation-1280x900.png")) return fail("cannot capture validation guidance");
+    controller.setSettings(readySettings);
+    if (!main->isEnabled() || !main->property("primaryAction").toBool() || nextStep->property("feedbackTone") != "info")
+        return fail("ready model action has no primary emphasis");
+    if (!captureUi("separation-ready-1280x900.png")) return fail("cannot capture model action");
     for (int attempt = 0; attempt < 2; ++attempt) {
         mouseClick(advancedPanel->headerButton());
         if (!advancedPanel->isExpanded()) return fail("settings cannot be opened repeatedly");
@@ -706,7 +766,19 @@ int main(int argc, char **argv) {
     i18n.loadLocale("zh_CN", &error);
     ui.setDarkTheme(false);
     app.processEvents();
-    const QString capture = qEnvironmentVariable("BF_UI_CAPTURE_DIR");
+    for (const auto& size : {QSize(1000, 780), QSize(1870, 1000), QSize(1280, 900)}) {
+        ui.resize(size);
+        app.processEvents();
+        if (ui.size() != size) return fail("workspace exceeds requested desktop size");
+        const auto* panes = ui.findChild<QSplitter*>("separationSplitter");
+        for (auto* action : {main, rerun}) {
+            const QRect bounds(action->mapTo(&ui, QPoint()), action->size());
+            if (!ui.rect().contains(bounds) || bounds.bottom() >= panes->mapTo(&ui, QPoint()).y())
+                return fail("workflow action moves out of the top action bar");
+        }
+        if (!captureUi(QString("separation-layout-%1x%2.png").arg(size.width()).arg(size.height())))
+            return fail("cannot capture responsive action layout");
+    }
     if (!capture.isEmpty()) {
         QDir().mkpath(capture);
         auto captureState = [&](const char *filename) {
@@ -875,7 +947,7 @@ int main(int argc, char **argv) {
     dialogs.stop();
     dialogTimeout.stop();
     if (!fileDialogAccepted || dialogTimedOut || !failure.isEmpty() || !status->isVisible() ||
-        status->text() != i18n.text("error.analysis.destination_exists", {{"path", output}})
+        status->text() != i18n.text("app.separation.feedback_error", {{"message", i18n.text("error.analysis.destination_exists", {{"path", output}})}})
                               .section(QStringLiteral("\n\n"), 0, 0) ||
         !main->isEnabled() || !controller.isConfirmed())
         return fail("existing destination is not rejected recoverably");
@@ -884,6 +956,9 @@ int main(int argc, char **argv) {
     auto *retry = ui.findChild<QPushButton *>("separationRetry");
     if (!retry || !retry->isVisible() || !retry->isEnabled())
         return fail("recoverable export failure offers no retry action");
+    if (!retry->property("primaryAction").toBool() || main->isVisible() || status->property("feedbackTone") != "error")
+        return fail("export recovery has ambiguous primary actions or lacks error feedback");
+    if (!captureUi("separation-export-error-1280x900.png")) return fail("cannot capture export recovery");
     confirm->setChecked(false);
     if (retry->isEnabled() || main->isEnabled())
         return fail("export retry bypasses revoked review confirmation");

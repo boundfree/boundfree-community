@@ -15,6 +15,7 @@
 #include <QLabel>
 #include <QTextDocument>
 #include <QtMath>
+#include <algorithm>
 
 namespace bf {
 
@@ -79,13 +80,16 @@ private:
             // retain a taller minimum after changing tabs or languages.
             if (auto* stack = qobject_cast<QStackedWidget*>(owner)) {
                 auto* page = stack->currentWidget();
-                stack->setMinimumHeight(page ? page->minimumHeight() : 0);
+                stack->setMinimumHeight(page ? std::max(page->minimumHeight(), page->minimumSizeHint().height()) : 0);
             }
             if (auto* tabs = qobject_cast<QTabWidget*>(owner)) {
                 auto* page = tabs->currentWidget();
                 const int chrome = tabs->tabBar()->sizeHint().height()
                     + 2 * tabs->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, nullptr, tabs);
-                tabs->setMinimumHeight((page ? page->minimumHeight() : 0) + chrome);
+                // The compact waveform page includes an optional video pane.
+                // Its layout hint must survive this analysis-footer update;
+                // otherwise the stack can clip the waveform over the video.
+                tabs->setMinimumHeight((page ? std::max(page->minimumHeight(), page->minimumSizeHint().height()) : 0) + chrome);
             }
             if (owner->layout()) {
                 owner->layout()->invalidate();

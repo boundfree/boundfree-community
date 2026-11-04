@@ -2187,9 +2187,11 @@ While paused, drag or use Left/Right to inspect the cached window.</translation>
       <source>app.device.logs_unavailable</source>
       <translation>Could not open acquisition log location: {path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>Window: zero phase</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>Continuous: causal</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>Processing execution mode</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>구간 필터링</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>연속 필터링</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>필터링 방식</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>파일 검토용: 현재 구간에 영위상 필터를 적용합니다. 구간 양 끝은 영향을 받을 수 있습니다.</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>실시간 수집용: 인과 필터로 새 샘플을 연속 처리합니다. 신호의 시간 위치가 달라질 수 있습니다.</translation></message>
     <message><source>app.signal.live_tools</source><translation>Live signal · processing and analysis use full samples</translation></message>
     <message><source>app.signal.shared_tools</source><translation>Processing, display and analysis share the signal window. Raw recording remains independent.</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>Using the longest valid continuous segment in this window.</translation></message>
@@ -2353,5 +2355,8 @@ The built-in separation example includes teaching labels. The simulator supports
 Ctrl+휠: 포인터 중심 시간 확대/축소. Shift+휠: 진폭 확대/축소. 휠: 채널 스크롤.
 파형 클릭 후 Space: 재생/일시 정지; +/−: 시간 확대/축소; 0 또는 두 번 클릭: 10초 창과 진폭 1배 복원.
 재생이 일시 정지되고 주석 모드가 꺼져 있으면 드래그 또는 좌우 키로 파일을 탐색합니다.</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>오류: {message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>주의: {message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>분리에 사용할 관측 채널을 2–32개 선택하세요. 참조 채널은 관측 수에 포함되지 않습니다.</translation></message>
   </context>
 </TS>

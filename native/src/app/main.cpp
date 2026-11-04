@@ -1294,6 +1294,12 @@ int main(int argc, char** argv) {
         if (arg == "--smoke-ui-empty-controls") return smokeEmptyControls(argc, argv, version, repoRoot);
         if (arg == "--smoke-ui-fixed-layout") {
             QApplication app(argc, argv);
+            QTemporaryDir settings;
+            if (!settings.isValid()) return 1;
+            QSettings::setDefaultFormat(QSettings::IniFormat);
+            QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
+            QCoreApplication::setOrganizationName("BoundFreeLayoutSmoke");
+            QCoreApplication::setApplicationName("BoundFreeLayoutSmoke");
             bf::I18nService i18n(repoRoot);
             QString error;
             if (!i18n.loadLocale("en_US", &error)) return 1;
@@ -1312,10 +1318,9 @@ int main(int argc, char** argv) {
             }
             window.showFileOpenResult(result);
             window.show();
-            if (qEnvironmentVariableIntValue("BF_LAYOUT_DARK") == 1) {
-                for (auto* action : window.findChildren<QAction*>())
-                    if (action->text() == i18n.text("app.theme.dark")) { action->trigger(); break; }
-            }
+            const auto themeKey = qEnvironmentVariableIntValue("BF_LAYOUT_DARK") == 1 ? "app.theme.dark" : "app.theme.light";
+            for (auto* action : window.findChildren<QAction*>())
+                if (action->text() == i18n.text(themeKey)) { action->trigger(); break; }
             const auto settle = []() { QEventLoop loop; QTimer::singleShot(30, &loop, &QEventLoop::quit); loop.exec(); };
             const auto fail = [&](const QString& detail) {
                 std::cerr << "smoke-ui-fixed-layout-failed " << detail.toStdString() << '\n';
@@ -1349,11 +1354,15 @@ int main(int argc, char** argv) {
             auto* bottom = window.findChild<QWidget*>("eegPlaybackBar");
             auto* parameters = window.findChild<QTabWidget*>("eegParameterTabs");
             auto* processingScroll = window.findChild<QScrollArea*>("eegProcessingScroll");
+            auto* analysisScroll = window.findChild<QScrollArea*>("signalAnalysisScroll");
             auto* waveform = window.findChild<bf::WaveformWidget*>();
             auto* analysisPanel = window.findChild<QWidget*>("eegAnalysisPanel");
+            auto* compactTabs = window.findChild<QTabWidget*>("signalCompactTools");
+            auto* signalPage = window.findChild<QWidget*>("eegSignalPage");
             auto* progress = window.findChild<QSlider*>("eegPlaybackProgress");
             if (!workspace || !signal || !analysis || !top || !bottom || !parameters || !waveform
-                || !analysisPanel || !progress || !processingScroll || parameters->count() != 3) return fail("missing_regions");
+                || !analysisPanel || !compactTabs || !signalPage || !progress || !processingScroll || !analysisScroll
+                || parameters->count() != 3) return fail("missing_regions");
             auto* notch = window.findChild<QCheckBox*>("eegNotchEnabled");
             auto* notchSection = window.findChild<QWidget*>("eegNotchSection");
             auto* notchFrequency = window.findChild<QDoubleSpinBox*>("eegNotchFrequency_0");
@@ -1383,17 +1392,53 @@ int main(int argc, char** argv) {
                 QWidget* hit = window.childAt(widget->mapTo(&window, widget->rect().center()));
                 return hit == widget || (hit != nullptr && widget->isAncestorOf(hit));
             };
+            const auto analysisReachable = [&](QWidget* page, int index) -> QString {
+                if (!page->isVisible()) return "hidden_page";
+                QList<QWidget*> targets;
+                for (auto* child : page->findChildren<QWidget*>()) {
+                    if (child->isVisible() && (qobject_cast<QComboBox*>(child)
+                        || qobject_cast<QAbstractSpinBox*>(child) || qobject_cast<QCheckBox*>(child)))
+                        targets.push_back(child);
+                }
+                for (const auto& suffix : {QString("Plot"), QString("Status"), QString("Summary")}) {
+                    auto* child = window.findChild<QWidget*>(QString("eegAnalysis%1_%2").arg(suffix).arg(index));
+                    if (child && child->isVisible()) targets.push_back(child);
+                }
+                for (auto* child : targets) {
+                    analysisScroll->ensureWidgetVisible(child, 0, 4); settle();
+                    if (!accessible(child)) return "unreachable:" + child->objectName();
+                }
+                analysisScroll->verticalScrollBar()->setValue(0); settle();
+                return {};
+            };
             const auto regionError = [&]() -> QString {
                 if (workspace->orientation() != Qt::Horizontal || signal->orientation() != Qt::Vertical
                     || analysis->orientation() != Qt::Vertical) return "splitter_orientation";
-                if (bounds(waveform).right() >= bounds(analysisPanel).left()
-                    || bounds(parameters).right() >= bounds(waveform).left()
-                    || bounds(top).bottom() >= bounds(waveform).top()
-                    || bounds(workspace).bottom() >= bounds(bottom).top()) return "region_order";
-                if (workspace->count() != 3 || top->isAncestorOf(window.findChild<QWidget*>("eegNotchEnabled")))
-                    return "signal_scope";
+                if (bounds(workspace).bottom() >= bounds(bottom).top()
+                    || workspace->widget(0) != parameters) return "region_order";
+                if (window.width() < 1000) {
+                    // Narrow windows share the right column through two tabs.
+                    // Hidden pages retain stale geometry and must be checked
+                    // for visibility/ownership rather than as adjacent columns.
+                    if (!compactTabs->isVisible() || workspace->count() != 2
+                        || workspace->widget(1) != compactTabs || compactTabs->count() != 2
+                        || compactTabs->widget(0) != signalPage || compactTabs->widget(1) != analysis
+                        || bounds(parameters).right() >= bounds(compactTabs).left()) return "compact_scope";
+                    const bool showingWaveform = compactTabs->currentIndex() == 0;
+                    if (waveform->isVisible() != showingWaveform || analysisPanel->isVisible() == showingWaveform
+                        || !accessible(compactTabs->currentWidget())) return "compact_page_visibility";
+                } else {
+                    if (compactTabs->isVisible() || compactTabs->count() != 0
+                        || workspace->widget(1) != signalPage || workspace->widget(2) != analysis
+                        || !waveform->isVisible() || !analysisPanel->isVisible()) return "wide_scope";
+                    if (bounds(waveform).right() >= bounds(analysisPanel).left()
+                        || bounds(parameters).right() >= bounds(waveform).left()) return "region_order";
+                }
+                if (waveform->isVisible() && bounds(top).bottom() >= bounds(waveform).top()) return "toolbar_order";
+                if (top->isAncestorOf(notch)) return "signal_scope";
                 if (!accessible(progress)) return "progress_unreachable";
                 for (QWidget* region : {top, bottom}) {
+                    if (!region->isVisible()) continue;
                     for (QWidget* child : region->findChildren<QWidget*>()) {
                         if (qobject_cast<QAbstractButton*>(child) || qobject_cast<QAbstractSpinBox*>(child)
                             || qobject_cast<QComboBox*>(child) || qobject_cast<QSlider*>(child)) {
@@ -1415,7 +1460,7 @@ int main(int argc, char** argv) {
                 // Retranslation changes height-for-width hints asynchronously.
                 // Let those layout requests settle before requesting a size.
                 settle();
-                for (const QSize size : {QSize(900, 560), QSize(1280, 800)}) {
+                for (const QSize size : {QSize(760, 560), QSize(900, 560), QSize(999, 700), QSize(1000, 700), QSize(1280, 800)}) {
                     window.resize(size);
                     settle();
                     // A width change can invalidate the previous minimum height.
@@ -1434,6 +1479,25 @@ int main(int argc, char** argv) {
                         .arg(locale).arg(window.width()).arg(window.height()));
                     const QString problem = regionError();
                     if (!problem.isEmpty()) return fail(locale + ":" + QString::number(size.width()) + ":" + problem);
+                    if (compactTabs->isVisible()) {
+                        if (compactTabs->tabText(0) != i18n.text("app.workspace.waveform")
+                            || compactTabs->tabText(1) != i18n.text("app.analysis.panel")) return fail("compact_tab_translation");
+                        compactTabs->setCurrentIndex(1); settle();
+                        const QString analysisProblem = regionError();
+                        if (!analysisProblem.isEmpty()) return fail(locale + ":compact_analysis:" + analysisProblem);
+                        auto* pages = window.findChild<QTabWidget*>("eegAnalysisTabs");
+                        if (!pages || pages->count() != 4) return fail("compact_analysis_tabs");
+                        for (int tab = 0; tab < pages->count(); ++tab) {
+                            pages->setCurrentIndex(tab); settle();
+                            const auto problem = analysisReachable(pages->currentWidget(), tab);
+                            if (!problem.isEmpty()) return fail("compact_analysis:" + QString::number(tab) + ":" + problem);
+                        }
+                        pages->setCurrentIndex(0);
+                        if (!screenshotDir.isEmpty() && !window.grab().save(QDir(screenshotDir).filePath(
+                            QString("layout-analysis-%1-%2.png").arg(locale).arg(size.width())))) return fail("compact_screenshot_save");
+                        compactTabs->setCurrentIndex(0); settle();
+                        if (!regionError().isEmpty()) return fail("compact_waveform_restore");
+                    }
                 }
                 auto* toggle = window.findChild<QAction*>("eegToggleAnalysis");
                 if (!toggle || toggle->text() != i18n.text("app.view.analysis")) return fail("untranslated_action");
@@ -1450,7 +1514,7 @@ int main(int argc, char** argv) {
             if (!analysisTabs || analysisTabs->count() != 4) return fail("analysis_tabs");
             for (int tab = 0; tab < 4; ++tab) {
                 analysisTabs->setCurrentIndex(tab); settle();
-                if (analysisTabs->currentIndex() != tab || !accessible(analysisTabs->currentWidget())
+                if (analysisTabs->currentIndex() != tab || !analysisReachable(analysisTabs->currentWidget(), tab).isEmpty()
                     || !regionError().isEmpty()) return fail("analysis_tab_unreachable:" + QString::number(tab));
             }
             analysisTabs->setCurrentIndex(0);
@@ -1474,11 +1538,13 @@ int main(int argc, char** argv) {
             auto* channelFilters = window.findChild<bf::CollapsiblePanel*>("eegPerChannelFilters");
             if (!channelFilters || channelFilters->isExpanded()) return fail("per_channel_default_expanded");
             channelFilters->setExpanded(true); settle();
-            const auto advancedButtons = filters->findChildren<QPushButton*>();
-            if (advancedButtons.isEmpty()) return fail("advanced_filter_buttons");
-            for (auto* button : advancedButtons) {
+            // Expander internals also contain buttons, including deliberately
+            // hidden headers. Check the two actual filter actions by identity.
+            for (const auto* name : {"eegApplyBandpassToSelected", "eegClearChannelBandpass"}) {
+                auto* button = filters->findChild<QPushButton*>(name);
+                if (!button) return fail("advanced_filter_button_missing:" + QString::fromLatin1(name));
                 processingScroll->ensureWidgetVisible(button, 0, 4); settle();
-                if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->text());
+                if (!accessible(button)) return fail("advanced_filter_unreachable:" + button->objectName());
             }
             const auto panelVisible = [&](const QString& suffix, QWidget* panel) {
                 return suffix == "Channels" ? parameters->isTabVisible(0)
@@ -1504,10 +1570,12 @@ int main(int argc, char** argv) {
                     window.resize(900, 560); settle();
                     window.resize(900, 560); settle();
                     app.processEvents();
-                if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
+                    if (!screenshotDir.isEmpty()) window.grab().save(QDir(screenshotDir).filePath("layout-video-900x560.png"));
                     if (window.width() != 900 || window.height() < 560
                         || window.height() > std::max(560, window.minimumHeight()) || !regionError().isEmpty()
                         || bounds(panel).top() <= bounds(waveform).bottom()) return fail("compact_video_layout");
+                    window.resize(1280, 800); settle();
+                    if (!regionError().isEmpty()) return fail("wide_layout_after_video");
                 }
                 action->trigger(); settle();
                 if (panelVisible(suffix, panel) != initial || action->isChecked() != initial) return fail("toggle_restore:" + suffix);
@@ -1549,7 +1617,7 @@ int main(int argc, char** argv) {
                     menu->hide(); break;
                 }
             }
-            std::cout << "smoke-ui-fixed-layout-ok locales=4 panels=true splitters=true controls=true\n";
+            std::cout << "smoke-ui-fixed-layout-ok locales=4 widths=5 compact_tabs=true breakpoint=true panels=true splitters=true controls=true\n";
             return 0;
         }
         if (arg == "--smoke-ui-scrub-file" && i + 1 < argc) {

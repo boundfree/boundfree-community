@@ -2187,9 +2187,11 @@ While paused, drag or use Left/Right to inspect the cached window.</translation>
       <source>app.device.logs_unavailable</source>
       <translation>Could not open acquisition log location: {path}</translation>
     </message>
-    <message><source>app.signal.offline_mode</source><translation>Window: zero phase</translation></message>
-    <message><source>app.signal.causal_mode</source><translation>Continuous: causal</translation></message>
-    <message><source>app.signal.execution_mode</source><translation>Processing execution mode</translation></message>
+    <message><source>app.signal.offline_mode</source><translation>Filtrage par segment</translation></message>
+    <message><source>app.signal.causal_mode</source><translation>Filtrage continu</translation></message>
+    <message><source>app.signal.execution_mode</source><translation>Méthode de filtrage</translation></message>
+    <message><source>app.signal.offline_mode_hint</source><translation>Pour consulter les fichiers : le segment actuel est filtré sans déphasage. Ses extrémités peuvent être affectées.</translation></message>
+    <message><source>app.signal.causal_mode_hint</source><translation>Pour l’acquisition en direct : les nouveaux échantillons sont filtrés en continu de façon causale, ce qui peut décaler le signal dans le temps.</translation></message>
     <message><source>app.signal.live_tools</source><translation>Live signal · processing and analysis use full samples</translation></message>
     <message><source>app.signal.shared_tools</source><translation>Processing, display and analysis share the signal window. Raw recording remains independent.</translation></message>
     <message><source>app.signal.continuous_segment</source><translation>Using the longest valid continuous segment in this window.</translation></message>
@@ -2353,5 +2355,8 @@ The built-in separation example includes teaching labels. The simulator supports
 Ctrl+molette : zoom temporel autour du pointeur. Maj+molette : zoom en amplitude. Molette : défilement des canaux.
 Cliquez sur la forme d’onde, puis Espace : lecture/pause ; +/− : zoom temporel ; 0 ou double-clic : fenêtre de 10 secondes et amplitude 1×.
 En pause, sans mode annotation, faites glisser ou utilisez Gauche/Droite pour parcourir le fichier.</translation></message>
+    <message><source>app.separation.feedback_error</source><translation>Erreur : {message}</translation></message>
+    <message><source>app.separation.feedback_warning</source><translation>Attention : {message}</translation></message>
+    <message><source>app.separation.next_observations</source><translation>Sélectionnez 2 à 32 canaux d’observation pour la séparation. Les canaux de référence ne comptent pas comme observations.</translation></message>
   </context>
 </TS>

@@ -1,4 +1,5 @@
 #include "ui/fluent_controls.h"
+#include "ui/control_bar.h"
 #include "ui/workspace_splitter.h"
 #include "ui/eeg_separation_workspace.h"
 #include "dsp/spectral.h"
@@ -271,13 +272,31 @@ static QString separationStyle() {
     const auto cssColor = [](const QColor& color) {
         return QString("rgba(%1,%2,%3,%4)").arg(color.red()).arg(color.green()).arg(color.blue()).arg(color.alpha());
     };
-    return nativeFluentStyle() + QString(R"(
+    const auto feedbackStyle = [&](const char* name, const QColor& foreground, const QColor& background) {
+        return QString("QLabel[feedbackTone=\"%1\"] { color: %2; background: %3; border-radius: 4px; padding: 8px; }")
+            .arg(QString::fromLatin1(name), cssColor(foreground), cssColor(background));
+    };
+    return nativeFluentStyle() +
+        QString("QLabel[workflowStepLabel=\"true\"][currentStep=\"true\"] { background: %1; color: %2; }")
+            .arg(cssColor(tone.systemInfoBg), cssColor(tone.textAccentPrimary)) +
+        feedbackStyle("error", tone.systemCritical, tone.systemCriticalBg) +
+        feedbackStyle("warning", tone.systemCaution, tone.systemCautionBg) +
+        feedbackStyle("success", tone.systemSuccess, tone.systemSuccessBg) +
+        feedbackStyle("info", tone.textPrimary, tone.systemInfoBg) + QString(R"(
         QScrollBar:vertical { background: %1; width: 12px; margin: 0; border: none; }
         QScrollBar::handle:vertical { background: %2; min-height: 28px; margin: 2px; border-radius: 4px; }
         QScrollBar::handle:vertical:hover { background: %3; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
         QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
     )").arg(cssColor(tone.bgCanvas), cssColor(tone.textSecondary), cssColor(tone.textPrimary));
+}
+static void setFeedbackTone(QLabel* label, const char* tone) {
+    const auto value = QString::fromLatin1(tone);
+    if (label->property("feedbackTone").toString() == value) return;
+    label->setProperty("feedbackTone", value);
+    label->style()->unpolish(label);
+    label->style()->polish(label);
+    label->update();
 }
 static QLabel *wrapped(QWidget *parent) {
     auto *label = new QLabel(parent);
@@ -339,15 +358,32 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
         workflow->addWidget(workflowSteps_[i], 1);
     }
     workflowLayout->addLayout(workflow);
-    liveControls_ = new QWidget(workflowPanel);
-    auto* liveControls = new QHBoxLayout(liveControls_);
-    liveControls->setContentsMargins(0, 0, 0, 0);
-    liveToggle_ = new ActionButton(this);
+    auto* actions = new ControlBar(workflowPanel);
+    actions->setObjectName("separationActionBar");
+    actions->setWrappedMinimum(true);
+    main_ = new ActionButton(actions);
+    main_->setObjectName("separationMainAction");
+    main_->setDefault(true);
+    rerun_ = new ActionButton(actions);
+    rerun_->setObjectName("separationRerun");
+    liveToggle_ = new ActionButton(actions);
     liveToggle_->setObjectName("separationLiveToggle");
-    liveStatus_ = wrapped(this);
+    retry_ = new ActionButton(actions);
+    retry_->setObjectName("separationRetry");
+    cancel_ = new ActionButton(actions);
+    cancel_->setObjectName("separationCancel");
+    for (auto* button : {main_, retry_, rerun_, liveToggle_, cancel_}) {
+        button->setMinimumHeight(34);
+        actions->addWidget(button);
+    }
+    workflowLayout->addWidget(actions);
+    liveControls_ = new QWidget(workflowPanel);
+    auto* liveControls = new QVBoxLayout(liveControls_);
+    liveControls->setContentsMargins(0, 0, 0, 0);
+    liveStatus_ = wrapped(liveControls_);
     liveStatus_->setObjectName("separationLiveStatus");
-    liveControls->addWidget(liveToggle_);
-    liveControls->addWidget(liveStatus_, 1);
+    liveStatus_->setTextFormat(Qt::PlainText);
+    liveControls->addWidget(liveStatus_);
     workflowLayout->addWidget(liveControls_);
     connect(liveToggle_, &QPushButton::clicked, this, [this] {
         if (liveToggleRequested) liveToggleRequested();
@@ -355,8 +391,13 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
     subtitle_ = wrapped(this);
     hint_ = wrapped(workflowPanel);
     hint_->setObjectName("separationNextStep");
-    hint_->setContentsMargins(8, 0, 8, 0);
+    hint_->setTextFormat(Qt::PlainText);
     workflowLayout->addWidget(hint_);
+    status_ = wrapped(workflowPanel);
+    status_->setObjectName("separationStatus");
+    status_->setTextFormat(Qt::PlainText);
+    status_->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    workflowLayout->addWidget(status_);
     root->addWidget(workflowPanel);
     auto *splitter = new WorkspaceSplitter(this);
     splitter->setObjectName("separationSplitter");
@@ -387,9 +428,11 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
     deviceStream_->setObjectName("separationDeviceStream");
     deviceStream_->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
     deviceStream_->setMinimumContentsLength(8);
+    deviceStream_->hide();
     summaryLayout->addWidget(deviceStream_);
     deviceInput_ = new ActionButton(inputSummary);
     deviceInput_->setObjectName("separationDeviceSnapshot");
+    deviceInput_->hide();
     summaryLayout->addWidget(deviceInput_);
     connect(deviceInput_, &QPushButton::clicked, this, [this] {
         if (deviceSnapshotRequested) {
@@ -663,27 +706,6 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
     splitter->addWidget(evidence);
     splitter->setStretchFactor(1, 1);
     splitter->setSizes({265, 610, 335});
-    status_ = wrapped(this);
-    status_->setObjectName("separationStatus");
-    root->addWidget(status_);
-    auto *footer = new QHBoxLayout;
-    retry_ = new ActionButton(this);
-    retry_->setObjectName("separationRetry");
-    cancel_ = new ActionButton(this);
-    cancel_->setObjectName("separationCancel");
-    rerun_ = new ActionButton(this);
-    rerun_->setObjectName("separationRerun");
-    main_ = new ActionButton(this);
-    main_->setProperty("devicePrimary", true);
-    main_->setObjectName("separationMainAction");
-    main_->setDefault(true);
-    main_->setMinimumHeight(34);
-    footer->addWidget(retry_);
-    footer->addStretch();
-    footer->addWidget(cancel_);
-    footer->addWidget(rerun_);
-    footer->addWidget(main_);
-    root->addLayout(footer);
     connect(play_, &QPushButton::clicked, this, &EegSeparationWorkspace::togglePreview);
     connect(restart_, &QPushButton::clicked, this, [this] {
         pausePreview();
@@ -699,7 +721,7 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
             &EegSeparationController::applyTeachingLabels);
     connect(bulkRole_, &QComboBox::currentIndexChanged, this, [this] { refreshRoleHelp(bulkRole_); });
     connect(bulk_, &QPushButton::clicked, this, [this] {
-        if (controller_->isBusy() || channels_->selectionModel()->selectedRows().size() < 2)
+        if (controller_->isBusy() || inputPending_ || liveActive_ || channels_->selectionModel()->selectedRows().size() < 2)
             return;
         auto settings = controller_->settings();
         for (const auto &index : channels_->selectionModel()->selectedRows())
@@ -803,7 +825,7 @@ EegSeparationWorkspace::EegSeparationWorkspace(EegSeparationController *controll
     connect(controller_, &EegSeparationController::failed, this, &EegSeparationWorkspace::showError);
     connect(controller_, &EegSeparationController::sourceReplacementFailed, this, &EegSeparationWorkspace::showInputError);
     connect(controller_, &EegSeparationController::exported, this,
-            [this](const QString &path) { status_->setText(text("exported", {{"path", path}})); });
+            [this](const QString &) { refresh(); });
     connect(i18n_, &I18nService::languageChanged, this, &EegSeparationWorkspace::retranslateUi);
     retranslateUi();
     refreshSource();
@@ -1005,7 +1027,7 @@ void EegSeparationWorkspace::setDeviceInput(const QString& name, const QJsonArra
 void EegSeparationWorkspace::setInputPending(bool pending) {
     inputPending_ = pending;
     inputSeconds_ = -1;
-    if (pending) { pausePreview(); errorCode_.clear(); inputError_ = false; }
+    if (pending) { pausePreview(); errorCode_.clear(); inputError_ = false; stage_.clear(); }
     refresh();
 }
 void EegSeparationWorkspace::setInputProgress(double seconds) {
@@ -1070,6 +1092,7 @@ void EegSeparationWorkspace::applySettings() {
     settings.duration = duration_->value();
     settings.outputRate = rate_->currentData().toInt();
     settings.notchHz = notch_->currentData().toInt();
+    errorCode_.clear();
     controller_->setSettings(settings);
     refresh();
 }
@@ -1180,8 +1203,6 @@ void EegSeparationWorkspace::refresh() {
     exampleLabels_->setEnabled(!busy && controller_->canApplyTeachingLabels());
     teachingHelp_->setVisible(controller_->source().teaching || controller_->source().simulatorIca);
     teachingHelp_->setText(text(controller_->source().simulatorIca ? "simulator_notice" : "teaching_notice"));
-    const bool deviceSource = !controller_->source().metadata.value("signal_provenance").toObject()
-                                  .value("stream_id").toString().isEmpty() && deviceAvailable_;
     const int step = liveActive_ || (result && controller_->isConfirmed()) ? 3
                    : result ? 2 : hasSource ? 1 : 0;
     for (int i = 0; i < 4; ++i) {
@@ -1195,17 +1216,24 @@ void EegSeparationWorkspace::refresh() {
         }
     }
     setProperty("workflowStep", step + 1);
-    liveControls_->setVisible(result && (deviceAvailable_ || liveActive_));
+    const bool showLive = result && (deviceAvailable_ || liveActive_) && (controller_->isConfirmed() || liveActive_);
+    liveToggle_->setVisible(showLive);
+    liveControls_->setVisible(showLive && errorCode_.isEmpty());
     deviceInput_->setText(text(hasSource ? "retake_calibration" : "prepare_calibration"));
     liveToggle_->setText(text(liveActive_ ? "live_stop" : "live_start"));
     liveToggle_->setEnabled(liveActive_ || (!busy && liveAvailable_ && result && controller_->isConfirmed()));
     liveToggle_->setToolTip(text("live_help"));
-    liveStatus_->setText(text(liveActive_ ? liveViewFrozen_ ? "view_frozen" : (liveFrame_ && liveFrame_->hasGaps ? "live_gaps" : "live_running")
+    const bool liveWarning = !liveActive_ && deviceAvailable_ && !liveAvailable_;
+    const bool liveGaps = liveActive_ && liveFrame_ && liveFrame_->hasGaps;
+    auto liveMessage = text(liveActive_ ? liveViewFrozen_ ? "view_frozen" : (liveGaps ? "live_gaps" : "live_running")
                                 : !deviceAvailable_ ? "live_connect"
                                 : !result ? "live_prepare"
                                 : !liveAvailable_ ? "live_incompatible"
                                 : !controller_->isConfirmed() ? "live_review" : "live_ready",
-                                {{"seconds", i18n_->formatNumber(liveFrame_ ? liveFrame_->end : 0, 1)}}));
+                                {{"seconds", i18n_->formatNumber(liveFrame_ ? liveFrame_->end : 0, 1)}});
+    liveStatus_->setText(liveWarning || liveGaps ? text("feedback_warning", {{"message", liveMessage}}) : liveMessage);
+    setFeedbackTone(liveStatus_, liveWarning || liveGaps ? "warning" : "info");
+    liveStatus_->setAccessibleDescription(liveStatus_->text());
     allObservations_->setText(text("all_observations"));
     allObservations_->setToolTip(text("all_observations_help"));
     allObservations_->setVisible(hasSource);
@@ -1227,11 +1255,11 @@ void EegSeparationWorkspace::refresh() {
         const QSignalBlocker blocker(confirmed_);
         confirmed_->setChecked(controller_->isConfirmed());
     }
-    main_->setText(text(result ? "export" : deviceSource ? "fit_model" : "start"));
+    main_->setText(text(result ? "export" : "fit_model"));
     rerun_->setVisible(result);
     cancel_->setVisible(busy);
-    cancel_->setEnabled(stage_ != QStringLiteral("publishing"));
-    retry_->setVisible(!busy && !inputError_ && !errorCode_.isEmpty() && errorCode_ != QStringLiteral("analysis.cancelled"));
+    cancel_->setEnabled(state != EegSeparationController::State::Exporting || stage_ != QStringLiteral("publishing"));
+    retry_->setVisible(!busy && !inputError_ && errorRetryable_ && !errorCode_.isEmpty() && errorCode_ != QStringLiteral("analysis.cancelled"));
     retry_->setEnabled(!result || controller_->isConfirmed());
     retry_->setToolTip(text(result && !controller_->isConfirmed() ? "confirmation_help" : "retry"));
     int observations = 0, unconfirmed = 0, selectedChannels = 0;
@@ -1243,7 +1271,7 @@ void EegSeparationWorkspace::refresh() {
     const auto &cfg = controller_->settings();
     const bool rateValid = controller_->source().fs >= 250 && cfg.outputRate <= controller_->source().fs;
     const bool valid = hasSource && rateValid && selectedChannels <= 40 && observations >= 2 &&
-                       observations <= 32 && !unconfirmed && cfg.duration >= 5 &&
+                       observations <= 32 && !unconfirmed && cfg.duration >= 5 && cfg.duration <= 120 && cfg.start >= 0 &&
                        cfg.start + cfg.duration <= controller_->source().duration() + 1e-8;
     main_->setEnabled(!busy && !liveActive_ && (result ? controller_->isConfirmed() : valid));
     rerun_->setEnabled(!busy && !liveActive_ && result && valid);
@@ -1257,18 +1285,27 @@ void EegSeparationWorkspace::refresh() {
                         : !rateValid            ? "next_rate"
                         : selectedChannels > 40 ? "next_selected"
                         : unconfirmed           ? "next_roles"
+                        : observations < 2 || observations > 32 ? "next_observations"
                         : !valid                ? "next_range"
-                                                : deviceSource ? "workflow_fit" : "next_start"));
+                                                : "workflow_fit"));
+    const bool validationWarning = hasSource && !result && !busy && !valid;
+    if (validationWarning) hint_->setText(text("feedback_warning", {{"message", hint_->text()}}));
+    setFeedbackTone(hint_, validationWarning ? "warning" : "info");
+    hint_->setAccessibleDescription(hint_->text());
     main_->setToolTip(result ? text(controller_->isConfirmed() ? "export_notice" : "confirmation_help")
                             : hint_->text());
+    status_->setToolTip(QString());
     if (!errorCode_.isEmpty()) {
         const QString key = QStringLiteral("error.") + errorCode_;
         QString explanation = i18n_->text(key, errorParams_);
         if (explanation == key)
             explanation = text("error_generic", {{"code", errorCode_}});
-        status_->setText(explanation.section(QStringLiteral("\n\n"), 0, 0));
+        const bool cancelled = errorCode_ == QStringLiteral("analysis.cancelled");
+        const auto summary = explanation.section(QStringLiteral("\n\n"), 0, 0);
+        status_->setText(cancelled ? summary : text("feedback_error", {{"message", summary}}));
         status_->setToolTip(explanation);
-    } else if (busy)
+        setFeedbackTone(status_, cancelled ? "info" : "error");
+    } else if (busy) {
         status_->setText(inputPending_ && inputSeconds_ >= 0
                             ? text("live_collecting", {{"seconds", i18n_->formatNumber(inputSeconds_, 1)}})
                             : text(inputPending_                                          ? "progress_snapshot"
@@ -1276,13 +1313,29 @@ void EegSeparationWorkspace::refresh() {
                               : state == EegSeparationController::State::Inspecting ? "progress_inspecting"
                               : state == EegSeparationController::State::Exporting  ? "progress_exporting"
                                                                                     : "progress_running"));
-    else if (!controller_->exportedPath().isEmpty())
+        setFeedbackTone(status_, "info");
+    } else if (!controller_->exportedPath().isEmpty()) {
         status_->setText(text("exported", {{"path", controller_->exportedPath()}}));
-    else
+        setFeedbackTone(status_, "success");
+    } else {
         status_->clear();
+        setFeedbackTone(status_, "info");
+    }
+    status_->setAccessibleDescription(status_->text());
     status_->setVisible(!status_->text().isEmpty());
-    hint_->setVisible(!(result && deviceAvailable_) && (!busy || inputPending_) && !liveActive_ &&
+    hint_->setVisible(!busy && !liveActive_ &&
                      errorCode_.isEmpty() && controller_->exportedPath().isEmpty());
+    // One emphasized action at a time; all workflow actions stay in one bar.
+    QPushButton* primary = busy ? (cancel_->isEnabled() ? cancel_ : nullptr)
+        : liveActive_ ? liveToggle_
+        : !retry_->isHidden() && retry_->isEnabled() ? retry_
+        : !hasSource && deviceInput_->isEnabled() ? deviceInput_
+        : main_->isEnabled() ? main_ : nullptr;
+    for (auto* button : {main_, rerun_, liveToggle_, retry_, cancel_, deviceInput_}) {
+        button->setProperty("primaryAction", button == primary);
+        static_cast<ActionButton*>(button)->setFluentStyle(button == primary ? ActionButton::Accent : ActionButton::Standard);
+    }
+    main_->setVisible(retry_->isHidden());
     refreshPlots();
     refreshPlaybackControls();
     if (inputActionsChanged) inputActionsChanged();
@@ -1379,9 +1432,10 @@ void EegSeparationWorkspace::resizeEvent(QResizeEvent* event) {
 void EegSeparationWorkspace::refreshBulkActions() {
     const auto count = channels_->selectionModel()->selectedRows().size();
     const bool available = count >= 2 && !controller_->source().path.isEmpty();
+    const bool editable = available && !controller_->isBusy() && !inputPending_ && !liveActive_;
     bulkActions_->setVisible(available);
-    bulkRole_->setEnabled(available && !controller_->isBusy() && !inputPending_);
-    bulk_->setEnabled(available && !controller_->isBusy() && !inputPending_);
+    bulkRole_->setEnabled(editable);
+    bulk_->setEnabled(editable);
     bulkSelection_->setText(text("bulk_selection", {{"count", static_cast<int>(count)}}));
     bulk_->setText(text("bulk"));
     bulk_->setAccessibleName(bulk_->text() + QStringLiteral(" · ") + bulkSelection_->text());
