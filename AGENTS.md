@@ -42,9 +42,10 @@
 
 ## Development Stage
 
-- 本机日常开发源码位于 Linux 主目录 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，当前功能分支为 `feature/fluentqt-integration`；`.worktrees/community-ica` 仅为兼容入口。`F:\workspace\BoudFree\development\boundfree-community` 是从 Linux 单向同步的 Windows 编译副本，不在副本编辑、暂存或提交。副本清单 `.boundfree-windows-mirror.json` 与安全同步操作见 `docs/toolchain-wsl2.md`；不要用旧分支或旧保留工作树覆盖副本。
+- 本机日常开发源码位于 Linux 主目录 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，日常在 `master` 上按开发规范建短分支；`.worktrees/community-ica` 仅为兼容入口。`F:\workspace\BoudFree\development\boundfree-community` 是从 Linux 单向同步的 Windows 编译副本，不在副本编辑、暂存或提交。副本清单 `.boundfree-windows-mirror.json` 与安全同步操作见 `docs/toolchain-wsl2.md`；不要用旧分支或旧保留工作树覆盖副本。
 - 当前版本为 `0.2.2-beta.1`。
-- 当前开发分支 `feature/fluentqt-integration` 已接入固定提交的 Fluent-Qt 核心：设备、工作台与 ICA 的按钮/下拉框、文本输入、复选框、滑块、菜单与折叠区，并以 Fluent token 统一原生数值框和标签页。Windows/WSL Qt6.8.2编译与交互回归通过，入口见 `docs/fluentqt-integration.md`；真实硬件与新安装包仍待验收。
+- 主线已接入固定提交的 Fluent-Qt 核心：设备、工作台与 ICA 的按钮/下拉框、文本输入、复选框、滑块、菜单与折叠区，并以 Fluent token 统一原生数值框和标签页。Windows/WSL Qt6.8.2编译与交互回归通过，入口见 `docs/fluentqt-integration.md`；真实硬件与新安装包仍待验收。
+- 激活窗口只保留在线申请与离线许可证两种方式：打开即查询授权状态，管理员续期后自动领取；在线授权的吊销检查在主窗口显示后后台进行，确认停用即要求重新激活；Linux 机器码读取 `/etc/machine-id`，读不到时禁止激活。实施与审批记录见 `archive/plans/20261104-activation-dialog-simplify.md`；真实授权服务器、Windows 桌面与高 DPI 仍待验收。
 - 开发分支含通用设备采集候选链路、RT-BCI Wi-Fi 适配及菜单栏“设备”中的连接管理窗口（复用应用主题，默认简化、高级参数折叠），连接后自动接入主界面同一个波形组件，入口与限制见 `docs/device-acquisition.md`；BFSP 1.0 为候选线协议，真实设备与新传输方式按各自验收，不把虚拟设备回归当作硬件交付。
 - ICA 开发候选统一使用菜单栏“设备”的连接窗口；连接后波形直接显示，首次进入“脑电/眼电/肌电分离”自动准备建模片段，面板不再提供设备连接入口，文件与教学记录统一放在文件菜单，“打开数据文件”名称固定，行为随浏览/分离工作区切换，设备录制明确为文件夹，合成教学数据明确为内置分离示例，页面分区显示标题、四步流程与提示、当前分析输入与可取样后台设备，波形/分离共用细线与三点拖动分隔条，通道用途提供上下文解释，右上角统一使用说明与输入旁采集信息打开非模态分页窗口，成分检查采用可选列表与分类单选项，支持前后切换及波形/频谱/参考标签，分组标题显示观测通道与贡献IC，左侧/中间/底部重复说明按钮已移除，分组及IC波形支持局部快捷缩放/平移，时间同步、IC幅值独立，坐标显示刻度/实际单位，频谱从零显示PSD，底部设备采集栏在两页共用，查看操作按当前页面处理，连续 ICA 可仅暂停显示并返回最新帧，录制提示移至现有底部状态栏；按准备信号/建立模型/检查成分/查看结果引导，仍可选择多流和重新获取连续原始片段；文件/设备复用既有分离与导出流程，设备缓存最多10秒，至少5秒连续数据，输入精度为float32投影；直接打开原文件保持float64读取。取样后固定输入，再次获取同一流保留用途，失败保留旧结果；真实设备联动效果仍待验收。
 - 本地模拟器支持默认 ICA 混合信号与原周期波形预设。ICA预设含三路固定混合观测和眼电/肌电参考，float32/uV、250/500/1000Hz连续合成；分离页按版本化通道身份预填用途并支持教学分类，250/500Hz可连续ICA。录制保留预设/混合矩阵元数据，回放可再次分离；数学合成验证与生理效果验收分别记录。
