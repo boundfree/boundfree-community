@@ -97,6 +97,8 @@ GitHub 是同一 Community 项目的研发主仓库，统一管理 Issue/PR/验�
 - C++/Qt6 工程变更应运行对应 CMake configure/build。
 - Python 边车变更应运行对应 pytest 或协议冒烟测试。
 - 性能结论必须记录环境、命令、样本和结果，不得把 WSL/Xvfb 软件渲染结果当成真实 GPU 验收。
+- 本机 WSL2 内存约 12GiB，其中 Claude/Codex/Orca 等常驻约 2GiB；`main.cpp`、`main_window.cpp` 等 Qt 大文件单个编译进程可达 1–1.5GiB。构建与测试并行度不超过 4（`cmake --build <dir> --parallel 4`），禁止不带数字的 `-j`/`make -j`，它会同时启动全部编译任务并耗尽内存、导致 WSL 重启。`tests/native/test_m8_license_gate.py` 会在临时目录联网拉取 Fluent-Qt 并完整编译 `bf_app`，最耗内存。
+- 本机完整 pytest 按目录或测试文件分批串行运行，日志写到 `/mnt/boudfree-dev` 下而不是 `/tmp`（WSL 重启会清空 `/tmp`）；长时间运行时监控可用内存，低于约 3GiB 即停止。Python 原生测试默认查找 `native/build`，使用外置构建目录时注意测试的查找规则（见 `docs/toolchain-wsl2.md`）。
 
 ## Safety
 
