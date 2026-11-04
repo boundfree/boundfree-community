@@ -75,6 +75,8 @@ def test_cmake_require_license_fails_without_public_key(tmp_path):
 
 # -- Configure + build + run --smoke-license-gate (full chain in tmp_path) --
 
+# A fresh bf_app build now includes the Fluent-Qt static library; 4-core CI runners need well over 6 minutes.
+@pytest.mark.timeout(1800)
 def test_cmake_require_license_configures_builds_and_runs_smoke_gate(tmp_path):
     """``BF_REQUIRE_LICENSE=ON`` + 合法 RSA-2048 公钥的完整门禁链路:
 
@@ -144,7 +146,7 @@ def test_cmake_require_license_configures_builds_and_runs_smoke_gate(tmp_path):
         [cmake, "--build", str(build), "--target", "bf_app", "--parallel", str(min(os.cpu_count() or 2, 4))],
         capture_output=True,
         text=True,
-        timeout=300,
+        timeout=1500,
     )
     assert r.returncode == 0, (
         f"构建 bf_app 目标应成功:\nstdout: {r.stdout}\nstderr: {r.stderr}"

@@ -2,6 +2,8 @@
 #include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
 #include "ui/fluent_controls.h"
+#include <QImage>
+#include <QPainter>
 #include <QApplication>
 #include <QDialog>
 #include <QTabWidget>
@@ -149,7 +151,22 @@ int main(int argc, char **argv) {
             }
         if (!captureUi(dark ? "separation-error-dark-1280x900.png" : "separation-error-light-1280x900.png"))
             return fail("cannot capture error feedback");
-        if (status->property("feedbackTone") != "error" || redPixels < 10 ||
+        // Hosts without fonts for this text (e.g. CJK on Windows Server CI) draw no glyphs;
+        // the pixel check then cannot apply, while color and semantics are still verified.
+        QImage probe(160, 40, QImage::Format_ARGB32);
+        probe.fill(Qt::white);
+        {
+            QPainter painter(&probe);
+            painter.setFont(status->font());
+            painter.setPen(Qt::black);
+            painter.drawText(probe.rect(), Qt::AlignCenter, status->text().left(4));
+        }
+        bool glyphsRendered = false;
+        for (int y = 0; y < probe.height() && !glyphsRendered; ++y)
+            for (int x = 0; x < probe.width() && !glyphsRendered; ++x)
+                glyphsRendered = probe.pixelColor(x, y) != QColor(Qt::white);
+        if (!glyphsRendered) std::cerr << "feedback pixel check skipped: no glyphs rendered for status text\n";
+        if (status->property("feedbackTone") != "error" || (glyphsRendered && redPixels < 10) ||
             status->palette().color(QPalette::WindowText) != colors.systemCritical ||
             status->textFormat() != Qt::PlainText ||
             status->accessibleDescription() != status->text()) {
