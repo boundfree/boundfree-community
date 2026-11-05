@@ -147,7 +147,7 @@ git ls-remote origin "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
 git ls-remote gitee "refs/tags/$COMMUNITY_TAG" "refs/tags/$COMMUNITY_TAG^{}"
 ```
 
-2. 用 `ge release list --repo BigYellow12138/boundfree-community` 核对目标版本。任何认证/网络错误都停止；已存在时进入补齐核验，不盲目创建、删除或覆盖。发布说明保留同一变更范围、已知限制、激活与签名状态，增加下述国内还原步骤、每个平台原包 SHA256，以及 GitHub Issue/PR 入口。GitHub 仍私有时明确其访问条件。旧候选包若写“仅定向交付”，在本次发布说明中澄清当前安排；不改变原包许可或内容。
+2. 用 `ge release list --repo BigYellow12138/boundfree-community` 核对目标版本。任何认证/网络错误都停止；已存在时进入补齐核验，不盲目创建、删除或覆盖。发布说明保留同一变更范围、已知限制、激活与签名状态，增加下述国内还原步骤、每个平台原包 SHA256，以及 GitHub Issue/PR 入口。旧候选包若写“仅定向交付”，在本次发布说明中澄清当前安排；不改变原包许可或内容。
 3. 把核对完成的说明写入 `$COMMUNITY_MIRROR_DIR/gitee-notes.md`。该文件还应列出预期分卷数量，上传未完成期间标明“附件同步中”。确认 GitHub 已发布且材料齐全后创建 Gitee 发行版并上传：
 
 ```bash

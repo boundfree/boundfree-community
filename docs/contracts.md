@@ -184,14 +184,7 @@ i18n 采用 Qt6 Linguist `.ts/.qm` 双轨制：
 
 - `pseudo`
 
-以下 locale 保留 `.ts` 源文件用于架构扩展和 key 完整性检查，但不产出 `.qm`、不进发布包、不作为 stable 验收项：
-
-- `ko_KR`
-- `de_DE`
-- `fr_FR`
-- `es_ES`
-
-构建期对 `zh_CN`、`en_US`、`ja_JP`、`zh_TW`、`pseudo` 执行 lrelease 产出 `.qm`；安装时仅包含四种正式语言，pseudo 留在构建目录测试。其余 locale 不产出 `.qm`。
+构建期对 `zh_CN`、`en_US`、`ja_JP`、`zh_TW`、`pseudo` 执行 lrelease 产出 `.qm`；安装时仅包含四种正式语言，pseudo 留在构建目录测试。
 
 资源查找顺序（`.qm` 必须命中其一，缺失即失败）：
 

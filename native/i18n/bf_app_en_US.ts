@@ -199,22 +199,6 @@
       <translation>Japanese</translation>
     </message>
     <message>
-      <source>app.language.ko_KR</source>
-      <translation>Korean</translation>
-    </message>
-    <message>
-      <source>app.language.de_DE</source>
-      <translation>German</translation>
-    </message>
-    <message>
-      <source>app.language.fr_FR</source>
-      <translation>French</translation>
-    </message>
-    <message>
-      <source>app.language.es_ES</source>
-      <translation>Spanish</translation>
-    </message>
-    <message>
       <source>app.language.pseudo</source>
       <translation>Pseudo</translation>
     </message>
