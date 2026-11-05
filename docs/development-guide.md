@@ -3,7 +3,7 @@ title: 开发规范
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-05
 ---
 
 # 开发规范
@@ -64,11 +64,15 @@ last_updated: 2026-11-02
 
 ### 平台保护
 
-上述是仓库协作规则，平台强制执行依赖实际套餐和设置。2026-11-05 核对：组织为 GitHub Free，仓库已公开，`master` 的 `protected=false`，没有 Ruleset；公开仓库可以配置分支保护，但尚未配置，目前不能声称已强制阻止直推。
+上述是仓库协作规则。2026-11-05 起 `master` 已开启 GitHub 分支保护（**Settings → Branches**），对包括管理员在内的所有人生效：
 
-具备平台能力后，由管理员在 **Settings → Rules / Branches** 配置 `master`：必须经 PR、两个平台的必要 CI 成功、分支与主线更新、审查对话解决、禁止强推和删除。Required status checks 选用实际成功 PR 中的检查名称。多人协作要求至少一次非作者批准，并使新增改动后的旧批准失效；单人维护时保留人工自审记录，不配置无人能够满足的他人批准人数。允许 merge commit 时不要同时要求 linear history。
+- 必须经 PR 合入，禁止直推、强推和删除 `master`；
+- `build / package (ubuntu-24.04)` 与 `build / package (windows-2022)` 必须成功，且 PR 分支须包含最新 `master`（主线前进后需先更新分支、等新一轮 CI）；
+- 审查对话须全部解决；新增提交使旧批准失效。
 
-配置后核对规则是否实际生效、是否允许绕过及适用范围；不得为启用保护擅自改变仓库可见性或订阅。套餐能力见 [GitHub 分支保护说明](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)，评审限制见 [GitHub PR 批准说明](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/approving-a-pull-request-with-required-reviews)。
+单人维护，必需批准数为 0，评审以 PR 中的人工自审记录为准；多人协作后再调高批准数。仓库允许 merge commit，未要求 linear history。管理员不可绕过；确需紧急处理时由维护者在设置中临时关闭“Do not allow bypassing”，处理后立即恢复并在 PR 或 Issue 中记录。改 CI 任务名时同步更新必需检查名称，否则 PR 将无法合入。
+
+调整规则后核对是否实际生效、是否允许绕过及适用范围；不得为启用保护擅自改变仓库可见性或订阅。套餐能力见 [GitHub 分支保护说明](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)，评审限制见 [GitHub PR 批准说明](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/approving-a-pull-request-with-required-reviews)。
 
 ## Version Rules
 
