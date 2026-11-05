@@ -11,7 +11,7 @@ BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生
 | GitHub · 研发主仓库 | [boundfree/boundfree-community](https://github.com/boundfree/boundfree-community)：Issue、PR、评审、验收、Actions 构建及发布来源 |
 | Gitee · 国内镜像 | [BigYellow12138/boundfree-community](https://gitee.com/BigYellow12138/boundfree-community)：同步已验证源码、发布 tag、版本说明和国内安装包下载 |
 
-GitHub 当前私有、Gitee 当前公开；协作权限、远端配置和单向同步规则统一见提交 SOP。
+GitHub 与 Gitee 均公开；协作权限、远端配置和单向同步规则统一见提交 SOP。
 
 ## 当前状态
 

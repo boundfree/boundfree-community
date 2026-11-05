@@ -199,22 +199,6 @@
       <translation>[!! Jaapaneese !!]</translation>
     </message>
     <message>
-      <source>app.language.ko_KR</source>
-      <translation>[!! Koorean !!]</translation>
-    </message>
-    <message>
-      <source>app.language.de_DE</source>
-      <translation>[!! Geerman !!]</translation>
-    </message>
-    <message>
-      <source>app.language.fr_FR</source>
-      <translation>[!! Freench !!]</translation>
-    </message>
-    <message>
-      <source>app.language.es_ES</source>
-      <translation>[!! Spaanish !!]</translation>
-    </message>
-    <message>
       <source>app.language.pseudo</source>
       <translation>[!! Pseeudoo !!]</translation>
     </message>
