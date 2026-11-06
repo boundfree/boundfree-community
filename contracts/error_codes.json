@@ -805,6 +805,18 @@
       "params": [],
       "retryable": false,
       "description": "The RT-BCI data stream is invalid or did not finish as expected. Check the device and reconnect."
+    },
+    {
+      "code": "device.rt_bci_unrecognized_stream",
+      "params": [],
+      "retryable": true,
+      "description": "The data stream could not be recognized. Diagnostic parameters include received_bytes and reason."
+    },
+    {
+      "code": "device.channel_count_adjusted",
+      "params": [],
+      "retryable": false,
+      "description": "The detected channel count differs from the requested fallback; the detected count is used."
     }
   ],
   "_note": "The params list specifies required localization placeholders. Device acquisition errors may carry additional diagnostic fields; their default UI messages do not interpolate those details."
