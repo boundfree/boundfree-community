@@ -81,3 +81,10 @@ add_dependencies(acquisition_ui_test bf_i18n_qm)
 bf_acquisition_test(acquisition_tcp_source_test ../controller/acquisition_tcp_source_test.cpp bf_device_ui)
 bf_acquisition_test(acquisition_wifi_source_test ../controller/acquisition_wifi_source_test.cpp bf_device_ui)
 bf_acquisition_test(capture_recorder_test ../controller/capture_recorder_test.cpp bf_device_ui)
+
+add_test(NAME rt_bci_decoder_test COMMAND rt_bci_decoder_test)
+add_test(NAME acquisition_wifi_source_test COMMAND acquisition_wifi_source_test "${CMAKE_SOURCE_DIR}/..")
+add_test(NAME acquisition_waveform_test COMMAND acquisition_waveform_test)
+add_test(NAME acquisition_ui_test COMMAND acquisition_ui_test "${CMAKE_SOURCE_DIR}/..")
+set_tests_properties(acquisition_wifi_source_test acquisition_waveform_test acquisition_ui_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 180)

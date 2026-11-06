@@ -1787,7 +1787,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.recent_detail</source>
-      <translation>RT-BCI · Wi-Fi · {channels} 通道 · 上次驗證 {date} · 未即時偵測</translation>
+      <translation>RT-BCI · Wi-Fi · 上次驗證 {date} · 未即時偵測</translation>
     </message>
     <message>
       <source>app.device.reconnect</source>
@@ -1831,11 +1831,11 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_channels</source>
-      <translation>通道數</translation>
+      <translation>強制通道數（僅辨識失敗時使用）</translation>
     </message>
     <message>
       <source>app.device.wifi_choose_channels</source>
-      <translation>請選擇 8 或 16 通道</translation>
+      <translation>自動</translation>
     </message>
     <message>
       <source>app.device.wifi_host</source>
@@ -1923,7 +1923,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_requested</source>
-      <translation>請求參數：{channels} 通道 · {rate} Hz</translation>
+      <translation>請求取樣率：{rate} Hz</translation>
     </message>
     <message>
       <source>app.device.status_streaming_wifi</source>
@@ -2024,10 +2024,6 @@ analysis.json</translation>
     <message>
       <source>app.device.next_network</source>
       <translation>連接裝置熱點後，將自動偵測裝置回應。</translation>
-    </message>
-    <message>
-      <source>app.device.next_channels</source>
-      <translation>請選擇裝置的通道數。</translation>
     </message>
     <message>
       <source>app.device.next_connect</source>
@@ -2143,10 +2139,6 @@ Ctrl＋滾輪：時間縮放；Shift＋滾輪：幅值縮放；一般滾輪：�
     <message>
       <source>app.device.callback_detail</source>
       <translation>裝置需要回連本機 {address}:{port}。請允許此測試版應用程式通過 Windows 防火牆接收入站連線，並檢查所選網路介面。</translation>
-    </message>
-    <message>
-      <source>app.device.channel_conflict_detail</source>
-      <translation>目前選擇 {requested} 通道，模組回報 {reported} 通道。請核對通道選擇。</translation>
     </message>
     <message>
       <source>app.device.response_detail</source>
@@ -2331,5 +2323,10 @@ Ctrl＋滾輪：圍繞指標縮放時間；Shift＋滾輪：縮放幅值；一�
     <message><source>app.separation.feedback_error</source><translation>錯誤：{message}</translation></message>
     <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
     <message><source>app.separation.next_observations</source><translation>請選擇 2–32 路參與分離的觀測通道；參考通道不計入觀測數量。</translation></message>
+    <message><source>app.device.detecting_channels</source><translation>正在辨識通道數…</translation></message>
+    <message><source>app.device.channel_count</source><translation>{count} 通道</translation></message>
+    <message><source>app.device.wifi_power_notice</source><translation>16 通道須連接擴充板後上電。通道數在上電時決定，插拔擴充板後須斷電重啟。</translation></message>
+    <message><source>error.device.rt_bci_unrecognized_stream</source><translation>無法辨識資料流。請檢查裝置，或在進階設定中強制通道數後重試。</translation></message>
+    <message><source>error.device.channel_count_adjusted</source><translation>偵測到的通道數與強制值不同，已使用偵測結果。</translation></message>
   </context>
 </TS>

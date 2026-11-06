@@ -9,7 +9,7 @@ struct RtBciWifiOptions {
     quint16 httpPort = 80;
     QString localAddress; // Empty selects the route to host; never inferred from SSID.
     quint16 listenPort = 6677; // Zero is useful for isolated virtual-device tests.
-    int channels = 0; // Explicit 8/16 selection required when the board cannot report it.
+    int channels = 0; // Auto; 8/16 are fallbacks if wire detection fails.
     int sampleRate = 250;
     int gain = 0; // Zero keeps raw count units; otherwise a user-declared PGA gain.
     double referenceVolts = 4.5; // Nominal/user-declared, never hardware-confirmed.

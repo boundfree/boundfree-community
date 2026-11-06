@@ -13,7 +13,7 @@ struct Sample {
 };
 struct Batch {
     std::vector<Sample> samples;
-    // Bytes discarded in malformed fixed-size packets or an incomplete tail.
+    // Bytes discarded while finding frames or from an incomplete tail.
     // The caller must report an unknown gap when this is nonzero.
     std::size_t discarded_bytes = 0;
     std::optional<DeviceError> error;
@@ -25,18 +25,31 @@ struct Batch {
     std::vector<Diagnostic> diagnostics;
 };
 
-// BrainFlow 5.10.0 Cyton Wi-Fi receive behavior: fixed 33-byte packets,
-// A0 header, C0..C6 footer, skip malformed packets and continue. Counters
-// are diagnostics, not a reason to stop receiving or to invent missing samples.
+enum class Layout { Auto };
+enum class DecodeState { Hunting, Detecting, Locked, Undetermined };
+struct DetectionEvidence {
+    std::size_t frames = 0;
+    std::size_t pairs = 0;
+    std::size_t increments = 0;
+};
+
+// Aligned frames preserve BrainFlow's 8-channel and Daisy decoding. Unlike
+// that receiver, a malformed byte stream is scanned to regain alignment.
 class Decoder {
 public:
     // Only 8 and 16 channels are supported; other values throw invalid_argument.
     explicit Decoder(unsigned channels);
+    explicit Decoder(Layout layout);
     // At most 64 KiB per call. Process samples before handling a returned error.
     // Only caller-contract/size errors are terminal; wire anomalies are logged.
     Batch feed(const std::uint8_t* data, std::size_t size);
     Batch finish(); // Logs incomplete bytes / orphan bank; complete pairs already published.
     void reset();
+    std::optional<unsigned> detectedChannels() const;
+    DecodeState state() const;
+    DetectionEvidence detectionEvidence() const;
+    // Use a user-specified layout after detection failed, replaying buffered frames.
+    Batch useFallback(unsigned channels);
     // First accepted output-group counter, not an ADC conversion counter.
     std::optional<std::uint8_t> firstCounter() const;
     // Abandoned first banks; this is not the number of missing device groups.
