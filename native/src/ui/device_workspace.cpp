@@ -179,6 +179,7 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     auto* networkActions = new QHBoxLayout; networkActions->addWidget(wifiSettings_); networkActions->addWidget(wifiRetry_); networkActions->addStretch();
     network->addWidget(wifiStatus_); network->addWidget(wifiDetail_); network->addLayout(networkActions);
     wifiGainNotice_ = new QLabel(wifiContent); wifiGainNotice_->setWordWrap(true); wifiGainNotice_->setProperty("deviceMuted", true);
+    wifiPowerNotice_ = new QLabel(wifiContent); wifiPowerNotice_->setWordWrap(true); wifiPowerNotice_->setObjectName("deviceWifiPowerNotice");
     wifiError_ = new QLabel(wifiContent); wifiError_->setWordWrap(true); wifiError_->setObjectName("deviceWifiError"); wifiError_->setProperty("deviceNotice", true);
     wifiError_->setTextFormat(Qt::PlainText);
     wifiError_->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -190,8 +191,6 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     wifiChannels_->addItem(QString(), 0); wifiChannels_->addItem(QStringLiteral("8"), 8); wifiChannels_->addItem(QStringLiteral("16"), 16);
     wifiRateLabel_ = new QLabel(wifiContent); wifiRate_ = new ChoiceBox(wifiContent); wifiRate_->setObjectName("deviceWifiRate");
     for (int value : {250, 500, 1000}) wifiRate_->addItem(QString::number(value) + QStringLiteral(" Hz"), value);
-    auto* basic = new QFormLayout; basic->setHorizontalSpacing(24); basic->setVerticalSpacing(14); basic->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow); basic->setRowWrapPolicy(QFormLayout::WrapLongRows);
-    basic->addRow(wifiChannelsLabel_, wifiChannels_);
     wifiAdvancedToggle_ = new QToolButton(wifiContent); wifiAdvancedToggle_->setObjectName("deviceWifiAdvanced");
     wifiAdvancedToggle_->setCheckable(true); wifiAdvancedToggle_->setAutoRaise(true); wifiAdvancedToggle_->setFocusPolicy(Qt::StrongFocus); wifiAdvancedToggle_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon); wifiAdvancedToggle_->setArrowType(Qt::RightArrow);
     wifiAdvanced_ = new QWidget(wifiContent); wifiAdvanced_->setVisible(false);
@@ -207,6 +206,7 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     wifiReferenceLabel_ = new QLabel(wifiAdvanced_); wifiReference_ = new QDoubleSpinBox(wifiAdvanced_); wifiReference_->setObjectName("deviceWifiReference");
     wifiReference_->setRange(0.01, 10.0); wifiReference_->setDecimals(3); wifiReference_->setValue(4.5); wifiReference_->setSuffix(QStringLiteral(" V"));
     advanced->addRow(wifiNameLabel_, wifiName_); advanced->addRow(wifiRateLabel_, wifiRate_);
+    advanced->addRow(wifiChannelsLabel_, wifiChannels_);
     advanced->addRow(wifiHostLabel_, wifiHost_); advanced->addRow(wifiHttpLabel_, wifiHttpPort_); advanced->addRow(wifiListenLabel_, wifiListenPort_);
     advanced->addRow(wifiLocalLabel_, wifiLocal_); advanced->addRow(wifiIdLabel_, wifiExpectedId_); advanced->addRow(wifiGainLabel_, wifiGain_); advanced->addRow(wifiReferenceLabel_, wifiReference_);
 
@@ -221,7 +221,7 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     wifi->addLayout(wifiHeading); wifi->addSpacing(6);
     wifiNetworkHeading_->hide(); wifiParametersHeading_->hide();
     wifi->addWidget(networkPanel); wifi->addWidget(wifiError_);
-    wifi->addWidget(wifiCopyDiagnostics_, 0, Qt::AlignLeft); wifi->addLayout(basic);
+    wifi->addWidget(wifiCopyDiagnostics_, 0, Qt::AlignLeft); wifi->addWidget(wifiPowerNotice_);
     advanced->addRow(wifiGainNotice_);
     wifi->addWidget(wifiAdvancedToggle_, 0, Qt::AlignLeft); wifi->addWidget(wifiAdvanced_); wifi->addStretch();
     pages_->addWidget(wifiPage_);
@@ -380,8 +380,6 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
         probeTimer_->stop(); probeInFlight_ = false;
         probeCompatible_ = result.compatible && result.error.code.isEmpty(); probeError_ = result.error;
         detectedDeviceId_ = result.deviceId; detectedModel_ = result.model; detectedLocalAddress_ = result.localAddress;
-        if (probeCompatible_ && wifiChannels_->currentData().toInt() == 0 && (result.channels == 8 || result.channels == 16))
-            wifiChannels_->setCurrentIndex(wifiChannels_->findData(result.channels));
         if (!probeCompatible_ && probesRemaining_ > 0) probeTimer_->start(2500);
         refreshConnectionPage();
     });
@@ -405,7 +403,7 @@ DeviceWorkspace::DeviceWorkspace(AcquisitionController* controller, I18nService*
     connect(wifiCopyDiagnostics_, &QPushButton::clicked, this, [this] {
         const auto view = controller_->snapshot();
         const auto error = !wifiConnectionError_.code.isEmpty() ? wifiConnectionError_ :
-            !probeError_.code.isEmpty() ? probeError_ : view.error;
+            adapter_ == Adapter::Wifi && !view.error.code.isEmpty() ? view.error : probeError_;
         const QJsonObject diagnostic{{"schema", 1}, {"adapter", "rt-bci.wifi"},
             {"app_version", property("appVersion").toString()},
             {"code", error.code}, {"params", error.params}};
@@ -757,11 +755,7 @@ QString DeviceWorkspace::errorText(const AppError& error) const {
     const QString translated = i18n_->text(key, error.params);
     QString result = translated == key ? text("app.device.error_detail", {{"code", error.code}}) : translated;
     const auto& params = error.params;
-    if (params.value("reason") == "channel_mismatch") {
-        result += QLatin1Char('\n') + text("app.device.channel_conflict_detail", {
-            {"requested", QString::number(params.value("requested_channels").toInt())},
-            {"reported", QString::number(params.value("reported_channels").toInt())}});
-    } else if (params.contains("path")) {
+    if (params.contains("path")) {
         const int status = params.value("http_status").toInt();
         const auto reason = params.value("reason").toString();
         const QString detail = reason == "timeout" ? text("app.device.request_timeout") :
@@ -799,7 +793,7 @@ void DeviceWorkspace::openWifiSettings() {
 }
 
 void DeviceWorkspace::beginWifiConnection() {
-    if (switchBlocked() || !probeCompatible_ || wifiConnecting_ || wifiChannels_->currentData().toInt() == 0) return;
+    if (switchBlocked() || !probeCompatible_ || wifiConnecting_) return;
     const QString host = wifiHost_->text().trimmed();
     if (!validIpv4(host) || (!wifiLocal_->text().trimmed().isEmpty() && !validIpv4(wifiLocal_->text().trimmed()))) {
         wifiConnectionError_ = makeError(QStringLiteral("device.invalid_endpoint"));
@@ -876,7 +870,11 @@ void DeviceWorkspace::refreshConnectionPage() {
         const QString key = QStringLiteral("app.device.wifi_phase_") + view.connectionPhase;
         status = view.connectionPhase.isEmpty() ? text("app.device.connecting") : i18n_->text(key);
         if (status == key) status = text("app.device.connecting");
-    } else if (probeCompatible_) status = text("app.device.wifi_response");
+    } else if (adapter_ == Adapter::Wifi && view.connection == DeviceConnectionState::Connected && view.connectionPhase == QLatin1String("detecting"))
+        status = text("app.device.detecting_channels");
+    else if (adapter_ == Adapter::Wifi && view.connection == DeviceConnectionState::Connected && view.totalChannels)
+        status = text("app.device.channel_count", {{"count", static_cast<int>(view.totalChannels)}});
+    else if (probeCompatible_) status = text("app.device.wifi_response");
     else if (probeInFlight_ || probesRemaining_ > 0) status = text("app.device.wifi_probing");
     else status = text("app.device.wifi_waiting");
     wifiStatus_->setText(status);
@@ -894,18 +892,19 @@ void DeviceWorkspace::refreshConnectionPage() {
     QString error;
     if (networkSettingsError_) error = text("app.device.wifi_settings_failed");
     if (!wifiConnectionError_.code.isEmpty()) error = errorText(wifiConnectionError_);
+    else if (adapter_ == Adapter::Wifi && !view.error.code.isEmpty()) error = errorText(view.error);
     else if (!probeError_.code.isEmpty()) error = errorText(probeError_);
     wifiError_->setText(error); wifiError_->setVisible(!error.isEmpty());
-    wifiCopyDiagnostics_->setVisible(!wifiConnectionError_.code.isEmpty() || !probeError_.code.isEmpty());
+    wifiCopyDiagnostics_->setVisible(!wifiConnectionError_.code.isEmpty() || !probeError_.code.isEmpty() ||
+        (adapter_ == Adapter::Wifi && !view.error.code.isEmpty()));
     const bool editable = !wifiConnecting_ && !blocked;
     for (QWidget* widget : std::initializer_list<QWidget*>{wifiName_, wifiChannels_, wifiRate_, wifiAdvancedToggle_, wifiAdvanced_}) widget->setEnabled(editable);
     wifiSettings_->setEnabled(editable);
     wifiRetry_->setVisible(!probeCompatible_ && !probeInFlight_ && probesRemaining_ == 0 && !wifiConnecting_);
     wifiRetry_->setEnabled(editable);
     wifiConnect_->setText(text(wifiConnecting_ ? "app.device.cancel_connection" : "app.device.wifi_connect"));
-    wifiConnect_->setEnabled(wifiConnecting_ || (editable && probeCompatible_ && wifiChannels_->currentData().toInt() != 0));
-    wifiNext_->setText(text(!probeCompatible_ ? "app.device.next_network" :
-        wifiChannels_->currentData().toInt() == 0 ? "app.device.next_channels" : "app.device.next_connect"));
+    wifiConnect_->setEnabled(wifiConnecting_ || (editable && probeCompatible_));
+    wifiNext_->setText(text(!probeCompatible_ ? "app.device.next_network" : "app.device.next_connect"));
 }
 
 void DeviceWorkspace::loadProfiles() {
@@ -942,7 +941,7 @@ void DeviceWorkspace::loadProfiles() {
             p.deviceId.size() <= 256 && p.model.size() <= 256 && p.options.expectedDeviceId.size() <= 256 &&
             validIpv4(p.options.host) && (p.options.localAddress.isEmpty() || validIpv4(p.options.localAddress)) &&
             http > 0 && http <= 65535 && listen > 0 && listen <= 65535 &&
-            (p.options.channels == 8 || p.options.channels == 16) &&
+            (p.options.channels == 0 || p.options.channels == 8 || p.options.channels == 16) &&
             (p.options.sampleRate == 250 || p.options.sampleRate == 500 || p.options.sampleRate == 1000) &&
             (gain == 0 || gain == 1 || gain == 2 || gain == 4 || gain == 6 || gain == 8 || gain == 12 || gain == 24) &&
             std::isfinite(p.options.referenceVolts) && p.options.referenceVolts >= 0.01 && p.options.referenceVolts <= 10.0 &&
@@ -1017,8 +1016,8 @@ void DeviceWorkspace::rebuildRecent() {
             }
         });
         const auto when = QDateTime::fromString(profile.lastVerified, Qt::ISODate).toLocalTime();
-        auto* detail = new QLabel(text("app.device.recent_detail", {{"channels", profile.options.channels},
-            {"date", i18n_->qlocale().toString(when, QLocale::ShortFormat)}}), row);
+        auto* detail = new QLabel(text("app.device.recent_detail",
+            {{"date", i18n_->qlocale().toString(when, QLocale::ShortFormat)}}), row);
         detail->setWordWrap(true); detail->setTextFormat(Qt::PlainText);
         info->addWidget(name); info->addWidget(detail); layout->addLayout(info, 1);
         auto* reconnect = new ActionButton(text("app.device.reconnect"), row); reconnect->setObjectName("deviceRecentConnect");
@@ -1092,6 +1091,7 @@ void DeviceWorkspace::retranslateUi() {
     wifiNameLabel_->setText(text("app.device.wifi_name")); wifiName_->setAccessibleName(wifiNameLabel_->text());
     wifiChannelsLabel_->setText(text("app.device.wifi_channels")); wifiChannels_->setAccessibleName(wifiChannelsLabel_->text());
     wifiChannels_->setItemText(0, text("app.device.wifi_choose_channels"));
+    wifiPowerNotice_->setText(text("app.device.wifi_power_notice"));
     wifiRateLabel_->setText(text("app.device.sample_rate")); wifiRate_->setAccessibleName(wifiRateLabel_->text());
     wifiHostLabel_->setText(text("app.device.wifi_host")); wifiHost_->setAccessibleName(wifiHostLabel_->text());
     wifiHttpLabel_->setText(text("app.device.wifi_http_port")); wifiHttpPort_->setAccessibleName(wifiHttpLabel_->text());
@@ -1184,7 +1184,11 @@ void DeviceWorkspace::refresh(bool forceStatus) {
                      tcp ? connected ? text("app.device.tcp_connected", {{"device", view.deviceName}}) : text("app.device.tcp_disconnected") :
                      connected ? text("app.device.simulator_connected") : text("app.device.simulator_disconnected");
     if (wifi && connected) {
-        deviceText += QStringLiteral("\n") + text("app.device.wifi_requested", {{"channels", pendingWifiOptions_.channels}, {"rate", view.sampleRate}});
+        deviceText += QStringLiteral("\n") + text("app.device.wifi_requested", {{"rate", view.sampleRate}});
+        deviceText += QStringLiteral("\n") + (view.totalChannels
+            ? text("app.device.channel_count", {{"count", static_cast<int>(view.totalChannels)}})
+            : text("app.device.detecting_channels"));
+        if (!view.warning.code.isEmpty()) deviceText += QStringLiteral("\n") + errorText(view.warning);
         deviceText += QStringLiteral("\n") + text(pendingWifiOptions_.gain == 0 ? "app.device.wifi_raw_gain" : "app.device.wifi_declared_gain");
         if (!view.configurationVerified) deviceText += QStringLiteral("\n") + text("app.device.wifi_config_unverified");
     }
@@ -1212,8 +1216,11 @@ void DeviceWorkspace::refresh(bool forceStatus) {
     const char* statusKey = connecting ? "app.device.status_connecting" : !connected ? "app.device.status_disconnected" : starting ? "app.device.status_starting" :
                         streaming ? (wifi ? "app.device.status_streaming_wifi" : view.simulated ? "app.device.status_streaming" : "app.device.status_streaming_tcp") : stopping ? "app.device.status_stopping" : "app.device.status_idle";
     if (view.acquisition == DeviceAcquisitionState::Faulted || view.connection == DeviceConnectionState::Faulted) statusKey = acquisitionFailureStatusKey(view);
-    status_->setText(text(statusKey));
-    managerState_->setText(text(statusKey));
+    else if (view.connectionPhase == QLatin1String("detecting")) statusKey = "app.device.detecting_channels";
+    const QString statusText = text(statusKey) + (connected && view.totalChannels
+        ? QStringLiteral(" · ") + text("app.device.channel_count", {{"count", static_cast<int>(view.totalChannels)}}) : QString());
+    status_->setText(statusText);
+    managerState_->setText(statusText);
     const QString missing = view.unknownGaps ? text("app.device.gaps_unknown", {{"count", QString::number(view.missingSamples)}}) :
                                              text("app.device.gaps", {{"count", QString::number(view.missingSamples)}});
     const auto& rate = view.exactRate;
@@ -1243,9 +1250,10 @@ void DeviceWorkspace::refresh(bool forceStatus) {
     };
     if (!view.recording.error.code.isEmpty()) recordText += " — " + errorText(view.recording.error);
     if (!view.error.code.isEmpty()) recordText += " — " + errorText(view.error);
+    if (!view.warning.code.isEmpty()) recordText += " — " + errorText(view.warning);
     recordStatus_->setText(recordText);
     const bool notice = recordBusy || view.recording.state == CaptureRecordState::Saved ||
-        view.recording.state == CaptureRecordState::Partial || view.recording.state == CaptureRecordState::Failed || !view.error.code.isEmpty();
+        view.recording.state == CaptureRecordState::Partial || view.recording.state == CaptureRecordState::Failed || !view.error.code.isEmpty() || !view.warning.code.isEmpty();
     if (recordingStatusChanged) {
         recordStatus_->hide(); recordingNotice_->hide();
         recordingStatusChanged(recordText, notice);

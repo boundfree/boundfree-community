@@ -3,7 +3,7 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-06
 ---
 
 # 文档索引
@@ -14,7 +14,7 @@ last_updated: 2026-11-02
 | --- | --- |
 | 了解产品范围、现状和下一步 | [roadmap.md](roadmap.md) |
 | 打开数据文件、设备录制文件夹、内置示例、通道用途、IC切换/分类、分组贡献、波形坐标与滚轮快捷操作 | [analysis-guide.md](analysis-guide.md) |
-| 连接设备并在主波形区查看、RT-BCI 8/16 通道选择与 HTTP 诊断、ICA 模拟信号、周期波形与原始录制 | [device-acquisition.md](device-acquisition.md) |
+| 连接设备并在主波形区查看、RT-BCI 通道自动识别与 HTTP 诊断、ICA 模拟信号、周期波形与原始录制 | [device-acquisition.md](device-acquisition.md) |
 | 开发 BFSP 设备协议与传输适配 | [bfsp-protocol.md](bfsp-protocol.md)、[bfsp-transports.md](bfsp-transports.md) |
 | 理解模块和数据流 | [architecture-design.md](architecture-design.md) |
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |

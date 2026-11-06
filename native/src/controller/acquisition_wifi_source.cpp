@@ -364,14 +364,10 @@ BoardInfo parseBoard(const QByteArray& bytes)
     int channels = 0;
     if (!channelValue.isUndefined() && !channelValue.isNull()) {
         const double n = channelValue.toDouble(-1);
-        if (!channelValue.isDouble() || !std::isfinite(n) || std::floor(n) != n ||
-            (n != 0 && n != 8 && n != 16)) {
-            info.probe.error = makeError("device.rt_bci_incompatible");
-            return info;
-        }
-        channels = static_cast<int>(n);
+        if (channelValue.isDouble() && std::isfinite(n) && std::floor(n) == n &&
+            n >= 0 && n <= std::numeric_limits<int>::max()) channels = static_cast<int>(n);
     }
-    if (type.isEmpty() && !(connected.isBool() && connected.toBool() && channels)) {
+    if (type.isEmpty() && !(connected.isBool() && connected.toBool())) {
         info.probe.error = makeError("device.rt_bci_incompatible");
         return info;
     }
@@ -427,6 +423,8 @@ public:
             return result;
         };
         callbackTimer_ = timer(true, [this] { fail("device.rt_bci_callback"); });
+        detectionTimer_ = timer(true, [this] { detectionFailed("timeout"); });
+        detectionTimer_->setTimerType(Qt::PreciseTimer);
         batchTimer_ = timer(true, [this] { if (!flush()) fail("buffer.budget_exhausted"); });
         silenceTimer_ = timer(false, [this] {
             log("receive_idle", {{"interval_ms", 3000}});
@@ -455,7 +453,7 @@ public:
         boundPort_ = 0;
         QHostAddress host;
         if (!ipv4(options.host, host) || !options.httpPort) { failInitial("device.invalid_endpoint"); return; }
-        if ((options.channels != 8 && options.channels != 16) || !rateAllowed(options.sampleRate) ||
+        if ((options.channels != 0 && options.channels != 8 && options.channels != 16) || !rateAllowed(options.sampleRate) ||
             !gainAllowed(options.gain) || !std::isfinite(options.referenceVolts) || options.referenceVolts <= 0 ||
             !std::isfinite(nominalScale(options)) || nominalScale(options) <= 0) {
             failInitial("acquisition.invalid_configuration"); return;
@@ -470,7 +468,7 @@ public:
             view.connectionPhase = "probing";
             view.sampleRate = options_.sampleRate;
             view.exactRate = {static_cast<std::uint32_t>(options_.sampleRate), 1};
-            view.totalChannels = static_cast<std::size_t>(options_.channels);
+            view.totalChannels = 0;
             view.configurationVerified = false;
             view.deviceName = "RT-BCI";
         });
@@ -481,12 +479,6 @@ public:
             board_ = parseBoard(response.body);
             if (!board_.probe.compatible) { fail("device.rt_bci_incompatible"); return; }
             if (board_.busy) { fail("device.busy"); return; }
-            // The RT-BCI Wi-Fi module can report 8 even when its acquisition
-            // board supplies 16 channels. Like the reference GUI, use the
-            // selected layout; the module's report is diagnostic, not ADC ACK.
-            log("channel_selection", {{"requested_channels", options_.channels},
-                {"reported_channels", board_.probe.channels}, {"channel_layout_source", "user_selected_unverified"},
-                {"channel_report_mismatch", board_.probe.channels != 0 && board_.probe.channels != options_.channels}});
             if (!options_.expectedDeviceId.isEmpty() && options_.expectedDeviceId != board_.probe.deviceId) {
                 fail("device.identity_mismatch"); return;
             }
@@ -518,7 +510,8 @@ public:
             update([](auto& view) { view.error = makeError("device.busy"); ++view.acquisitionCompletion; });
             return;
         }
-        decoder_ = std::make_unique<rt_bci::Decoder>(static_cast<unsigned>(options_.channels));
+        decoder_ = std::make_unique<rt_bci::Decoder>(rt_bci::Layout::Auto);
+        selectedChannels_ = 0; receivedBytes_ = 0; fallback_ = false;
         pending_.clear();
         writeSignalStats();
         log("stream_start_requested", {{"sample_rate", options_.sampleRate}});
@@ -532,7 +525,8 @@ public:
         stage_ = Stage::Starting;
         update([](auto& view) {
             view.acquisition = DeviceAcquisitionState::Starting;
-            view.canConfigure = false; view.error = {}; view.samples = view.missingSamples = view.unknownGaps = 0;
+            view.canConfigure = false; view.error = {}; view.warning = {}; view.connectionPhase = "detecting";
+            view.totalChannels = 0; view.samples = view.missingSamples = view.unknownGaps = 0;
             view.traces.clear();
         });
         const auto gen = generation_;
@@ -541,7 +535,6 @@ public:
             if (!controlAccepted(response)) { failHttp(response); return; }
             startResponse_ = true;
             if (stopRequested_) { beginStop(); return; }
-            if (!makeCapture()) { fail("buffer.budget_exhausted"); return; }
             silenceTimer_->start(3000);
             readSocket();
             streamingIfReady();
@@ -584,6 +577,7 @@ public:
         configuring_ = false;
         update([&](auto& view) {
             view.connection = DeviceConnectionState::Disconnected; view.connectionPhase.clear();
+            view.warning = {};
             view.disconnectionCompletion = disconnectionCompletion_;
             if (faulted || view.acquisition == DeviceAcquisitionState::Faulted)
                 view.acquisition = DeviceAcquisitionState::Faulted;
@@ -746,7 +740,7 @@ private:
     }
     void streamingIfReady()
     {
-        if (stage_ != Stage::Starting || !startResponse_ || stopRequested_) return;
+        if (stage_ != Stage::Starting || !startResponse_ || stopRequested_ || !hub_) return;
         if (!flush()) { fail("buffer.budget_exhausted"); return; }
         stage_ = Stage::Streaming;
         log("stream_started");
@@ -762,12 +756,13 @@ private:
         capture.generation = generation_;
         capture.metadata = {
             {"adapter", "rt-bci.wifi"}, {"configuration_verified", "false"},
-            {"transport_delimiter", "reference_fixed_33_byte_packets_no_stripping"},
+            {"transport_delimiter", "frame_resync_no_stripping"},
             {"configuration_source", "user_requested_http_unverified"},
             {"requested_channels", std::to_string(options_.channels)},
+            {"detected_channels", std::to_string(fallback_ ? 0 : selectedChannels_)},
             {"reported_channels", std::to_string(board_.probe.channels)},
-            {"channel_layout_source", "user_selected_unverified"},
-            {"channel_report_mismatch", board_.probe.channels != 0 && board_.probe.channels != options_.channels ? "true" : "false"},
+            {"channel_layout_source", fallback_ ? "user_forced" : "detected_from_wire"},
+            {"channel_report_mismatch", board_.probe.channels != 0 && board_.probe.channels != selectedChannels_ ? "true" : "false"},
             {"nominal_sample_rate_hz", std::to_string(options_.sampleRate)},
             {"gain", std::to_string(options_.gain)},
             {"gain_source", options_.gain ? "user_declared_unverified" : "unknown_raw_counts"},
@@ -792,7 +787,7 @@ private:
         stream.rate = {static_cast<std::uint32_t>(options_.sampleRate), 1}; stream.dtype = DType::Int24;
         stream.clock = {1, static_cast<std::uint64_t>(options_.sampleRate), 1, ClockSource::Estimated, ClockEpoch::SessionRelative, false};
         stream.sample_index_source = SampleIndexSource::AdapterReceived; stream.max_samples_per_block = 64;
-        for (int i = 0; i < options_.channels; ++i) {
+        for (int i = 0; i < selectedChannels_; ++i) {
             ChannelDescriptor channel;
             channel.channel_id = std::to_string(i + 1); channel.name = "CH" + std::to_string(i + 1);
             channel.signal_type = "biopotential"; channel.valid_adc_bits = 24;
@@ -833,9 +828,15 @@ private:
         while (socket_ && remaining > 0 && socket_->bytesAvailable() > 0 && decoder_) {
             const auto bytes = socket_->read(std::min<qint64>(remaining, 16384));
             if (bytes.isEmpty()) break;
+            if (!receivedBytes_ && !selectedChannels_) detectionTimer_->start(3000);
+            receivedBytes_ += bytes.size();
             remaining -= bytes.size();
             auto batch = decoder_->feed(reinterpret_cast<const std::uint8_t*>(bytes.constData()), static_cast<std::size_t>(bytes.size()));
             if (!consume(batch)) return;
+            if (decoder_ && decoder_->state() == rt_bci::DecodeState::Undetermined) {
+                detectionFailed("undetermined");
+                if (!decoder_) return;
+            }
             if (!batch.samples.empty()) {
                 if (stage_ != Stage::Stopping)
                     silenceTimer_->start(3000);
@@ -848,6 +849,19 @@ private:
     }
     bool consume(const rt_bci::Batch& batch)
     {
+        if (!selectedChannels_ && decoder_ && decoder_->detectedChannels()) {
+            selectedChannels_ = static_cast<int>(*decoder_->detectedChannels());
+            detectionTimer_->stop();
+            const auto evidence = decoder_->detectionEvidence();
+            log("channel_selection", {{"requested_channels", options_.channels}, {"reported_channels", board_.probe.channels},
+                {"detected_channels", fallback_ ? 0 : selectedChannels_}, {"channel_layout_source", fallback_ ? "user_forced" : "detected_from_wire"},
+                {"detect_frames", int(evidence.frames)}, {"detect_pairs", int(evidence.pairs)}});
+            update([&](auto& view) {
+                view.totalChannels = static_cast<std::size_t>(selectedChannels_); view.connectionPhase = "ready";
+                if (!fallback_ && options_.channels && options_.channels != selectedChannels_)
+                    view.warning = makeError("device.channel_count_adjusted");
+            });
+        }
         for (const auto& note : batch.diagnostics) {
             const auto bytes = QByteArray(reinterpret_cast<const char*>(note.bytes.data()), static_cast<qsizetype>(note.bytes.size()));
             log("wire_warning", {{"reason", QString::fromStdString(note.reason)},
@@ -898,15 +912,15 @@ private:
         batchTimer_->stop();
         if (!hub_ || !capture_) return false;
         std::vector<std::int32_t> values;
-        values.reserve(static_cast<std::size_t>(options_.channels) * pending_.size());
-        for (int ch = 0; ch < options_.channels; ++ch)
+        values.reserve(static_cast<std::size_t>(selectedChannels_) * pending_.size());
+        for (int ch = 0; ch < selectedChannels_; ++ch)
             for (const auto& sample : pending_) values.push_back(sample.values[static_cast<std::size_t>(ch)]);
         auto storage = SampleStorage::fromInt32(DType::Int24, values, budget_);
         if (!storage) return false;
         const auto& descriptor = capture_->streams.front();
         SampleBlock block;
         block.stream = descriptor.key; block.capture_id = capture_->capture_id; block.generation = capture_->generation;
-        block.descriptor_revision = descriptor.revision; block.channel_count = static_cast<std::uint32_t>(options_.channels);
+        block.descriptor_revision = descriptor.revision; block.channel_count = static_cast<std::uint32_t>(selectedChannels_);
         block.sample_count = static_cast<std::uint32_t>(pending_.size()); block.first_sample_index = pending_.front().index;
         block.first_timestamp_ticks = block.first_sample_index; block.clock_id = descriptor.clock.clock_id;
         block.timestamp_estimated = true; block.host_received_monotonic_ns = pendingReceivedNs_;
@@ -920,6 +934,7 @@ private:
         if (stage_ != Stage::Starting && stage_ != Stage::Streaming) return;
         stage_ = Stage::Stopping;
         silenceTimer_->stop();
+        detectionTimer_->stop();
         stopAcknowledged_ = false;
         update([](auto& view) { view.acquisition = DeviceAcquisitionState::Stopping; view.canConfigure = false; });
         const auto gen = generation_;
@@ -948,7 +963,7 @@ private:
         const bool stopDone = std::exchange(stopPending_, false);
         stage_ = Stage::Ready;
         update([&](auto& view) {
-            view.acquisition = DeviceAcquisitionState::Idle; view.canConfigure = true;
+            view.acquisition = DeviceAcquisitionState::Idle; view.canConfigure = true; view.connectionPhase = "ready";
             if (startDone) ++view.acquisitionCompletion;
             if (stopDone) ++view.acquisitionCompletion;
         });
@@ -977,7 +992,7 @@ private:
     {
         writeSignalStats();
         if (http_) http_->cancel();
-        for (auto* timer : {callbackTimer_, batchTimer_, silenceTimer_})
+        for (auto* timer : {callbackTimer_, batchTimer_, silenceTimer_, detectionTimer_})
             if (timer) timer->stop();
         if (server_) server_->close();
         if (socket_) {
@@ -997,6 +1012,23 @@ private:
         if (response.ok) diagnostics.insert("reason", "rejected");
         fail(response.diagnostics.value("method") == "POST" && response.diagnostics.value("path") == "/tcp" &&
              response.status == 504 ? "device.rt_bci_callback" : "device.rt_bci_http", diagnostics);
+    }
+    void detectionFailed(const char* reason)
+    {
+        if (!decoder_ || selectedChannels_) return;
+        if (options_.channels && decoder_->detectionEvidence().frames) {
+            fallback_ = true;
+            const auto batch = decoder_->useFallback(static_cast<unsigned>(options_.channels));
+            if (batch.samples.empty() && !batch.error) {
+                fail("device.rt_bci_unrecognized_stream", {{"received_bytes", QString::number(receivedBytes_)},
+                    {"reason", "fallback_no_samples"}});
+                return;
+            }
+            consume(batch);
+            return;
+        }
+        fail("device.rt_bci_unrecognized_stream", {{"received_bytes", QString::number(receivedBytes_)},
+            {"reason", QLatin1String(reason)}});
     }
     void fail(const char* code, QJsonObject diagnostics = {})
     {
@@ -1052,6 +1084,7 @@ private:
     QTcpServer* server_ = nullptr;
     QTcpSocket* socket_ = nullptr;
     QTimer* callbackTimer_ = nullptr;
+    QTimer* detectionTimer_ = nullptr;
     QTimer *batchTimer_ = nullptr, *silenceTimer_ = nullptr, *viewTimer_ = nullptr;
     Stage stage_ = Stage::Disconnected;
     quint64 generation_ = 0;
@@ -1066,6 +1099,9 @@ private:
     bool startPending_ = false, stopPending_ = false, stopRequested_ = false, closeAfterStop_ = false;
     bool startResponse_ = false, observed_ = false, stopAcknowledged_ = false;
     bool pendingFraming_ = false;
+    int selectedChannels_ = 0;
+    qint64 receivedBytes_ = 0;
+    bool fallback_ = false;
     std::unique_ptr<rt_bci::Decoder> decoder_;
     std::vector<rt_bci::Sample> pending_;
     std::uint64_t pendingReceivedNs_ = 0;
