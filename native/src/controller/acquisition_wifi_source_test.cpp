@@ -95,7 +95,7 @@ public:
     {
         RtBciWifiOptions result;
         result.host = "127.0.0.1"; result.httpPort = http.serverPort(); result.listenPort = 0;
-        result.channels = channels; return result;
+        result.channels = 0; return result;
     }
     void sendGroups(int count)
     {
@@ -282,8 +282,10 @@ private:
 
 void expectReady(AcquisitionWifiSource& source, VirtualDevice& device, RtBciWifiOptions options)
 {
+    const auto revision = source.snapshot().connectionRevision;
     source.open(options);
-    CHECK(waitFor([&] { auto s = source.snapshot(); return s.connection == DeviceConnectionState::Connected || s.connection == DeviceConnectionState::Faulted; }));
+    CHECK(waitFor([&] { auto s = source.snapshot(); return s.connectionRevision > revision &&
+        (s.connection == DeviceConnectionState::Connected || s.connection == DeviceConnectionState::Faulted); }));
     auto state = source.snapshot();
     CHECK(state.connection == DeviceConnectionState::Connected);
     CHECK(state.acquisition == DeviceAcquisitionState::Idle && state.connectionPhase == "ready");
@@ -319,7 +321,7 @@ void testProbe()
     device.board = {{"board_connected", true}};
     probe.probe("127.0.0.1", device.options().httpPort);
     CHECK(waitFor([&] { return count == 2; }));
-    CHECK(!result.compatible && result.error.code == "device.rt_bci_incompatible");
+    CHECK(result.compatible && result.channels == 0);
     device.board = {{"board_connected", true}, {"num_channels", 8}, {"board_type", "Ganglion"}};
     probe.probe("127.0.0.1", device.options().httpPort);
     CHECK(waitFor([&] { return count == 3; }));
@@ -373,7 +375,7 @@ void testRefusals()
         auto options = device.options();
         if (scenario == 0) device.board.insert("busy", true);
         if (scenario == 1) options.expectedDeviceId = "expected";
-        if (scenario == 2) device.board.insert("num_channels", 12);
+        if (scenario == 2) device.board.insert("board_connected", false);
         if (scenario == 3) device.board.insert("board_type", "other-board");
         if (scenario == 4) {
             QTcpServer portSelector;
@@ -470,11 +472,104 @@ void testGenerationAndTimeouts()
         expectReady(source, device, device.options());
         const auto completion = source.snapshot().acquisitionCompletion;
         source.startAcquisition();
-        CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Streaming && (device.noStartData || source.captureContext().has_value()); }, 14000));
+        CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Starting; }, 14000));
         CHECK(source.snapshot().samples == 0 && source.snapshot().error.code.isEmpty());
-        CHECK(source.snapshot().acquisitionCompletion == completion + 1);
+        CHECK(source.snapshot().acquisitionCompletion == completion);
         source.stopAcquisition();
         CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
+    }
+}
+
+void testDetectionAndFallback()
+{
+    {
+        VirtualDevice device(8);
+        AcquisitionWifiSource source;
+        expectReady(source, device, device.options()); source.startAcquisition();
+        CHECK(waitFor([&] { return source.captureContext().has_value(); }));
+        CHECK(source.snapshot().totalChannels == 8);
+        source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
+        device.channels = 16;
+        source.startAcquisition();
+        CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Starting; }));
+        CHECK(source.snapshot().totalChannels == 0);
+        CHECK(waitFor([&] { return source.captureContext().has_value(); }));
+        CHECK(source.snapshot().totalChannels == 16);
+        CHECK(source.captureContext()->capture.metadata.at("channel_report_mismatch") == "true");
+        source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
+    }
+    for (int channels : {8, 16}) {
+        VirtualDevice device(channels);
+        device.board.insert("num_channels", channels == 16 ? 8 : 16);
+        AcquisitionWifiSource source;
+        auto options = device.options(); options.channels = channels == 16 ? 8 : 16;
+        expectReady(source, device, options);
+        CHECK(source.snapshot().totalChannels == 0);
+        source.startAcquisition();
+        CHECK(waitFor([&] { return source.captureContext().has_value(); }));
+        const auto view = source.snapshot();
+        const auto context = source.captureContext();
+        CHECK(view.totalChannels == static_cast<unsigned>(channels));
+        CHECK(view.warning.code == "device.channel_count_adjusted");
+        CHECK(context->capture.streams.front().channels.size() == static_cast<unsigned>(channels));
+        CHECK(context->capture.metadata.at("requested_channels") == std::to_string(options.channels));
+        CHECK(context->capture.metadata.at("detected_channels") == std::to_string(channels));
+        CHECK(context->capture.metadata.at("channel_layout_source") == "detected_from_wire");
+        CHECK(context->capture.metadata.at("channel_report_mismatch") == "true");
+        source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
+    }
+    {
+        VirtualDevice device; device.noStartData = true;
+        AcquisitionWifiSource source;
+        auto options = device.options(); options.channels = 8;
+        expectReady(source, device, options); source.startAcquisition();
+        CHECK(waitFor([&] { return device.paths.contains("/stream/start"); }));
+        QByteArray bytes;
+        for (int i = 0; i < 200; ++i) bytes += halfFrame(7, 0, 0);
+        device.data->write(bytes);
+        CHECK(waitFor([&] { return source.captureContext().has_value(); }));
+        const auto context = source.captureContext();
+        CHECK(context->capture.streams.front().channels.size() == 8);
+        CHECK(context->capture.metadata.at("channel_layout_source") == "user_forced");
+        CHECK(context->capture.metadata.at("requested_channels") == "8");
+        CHECK(context->capture.metadata.at("detected_channels") == "0");
+        CHECK(source.snapshot().warning.code.isEmpty());
+        source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
+    }
+    {
+        VirtualDevice device; device.noStartData = true;
+        AcquisitionWifiSource source;
+        auto options = device.options(); options.channels = 16;
+        expectReady(source, device, options); source.startAcquisition();
+        CHECK(waitFor([&] { return device.paths.contains("/stream/start"); }));
+        QByteArray bytes;
+        for (int i = 0; i < 200; ++i) bytes += halfFrame(static_cast<std::uint8_t>(2 * i), i, 0);
+        device.data->write(bytes);
+        CHECK(waitFor([&] { return source.snapshot().connection == DeviceConnectionState::Faulted; }));
+        CHECK(source.snapshot().error.code == "device.rt_bci_unrecognized_stream");
+        CHECK(source.snapshot().error.params.value("reason") == "fallback_no_samples");
+        CHECK(source.snapshot().totalChannels == 0);
+    }
+    {
+        VirtualDevice device; device.noStartData = true;
+        AcquisitionWifiSource source;
+        expectReady(source, device, device.options()); source.startAcquisition();
+        CHECK(waitFor([&] { return device.paths.contains("/stream/start"); }));
+        CHECK(source.snapshot().connectionPhase == "detecting" && source.snapshot().totalChannels == 0);
+        CHECK(!source.captureContext());
+        QElapsedTimer elapsed; elapsed.start();
+        device.data->write(QByteArray(12, '\0'));
+        CHECK(waitFor([&] { return source.snapshot().connection == DeviceConnectionState::Faulted; }, 3400));
+        const auto error = source.snapshot().error;
+        CHECK(elapsed.elapsed() < 3400 && error.code == "device.rt_bci_unrecognized_stream");
+        CHECK(error.params.value("received_bytes").toString() == "12");
+        CHECK(error.params.value("reason") == "timeout");
+        device.noStartData = false;
+        device.paths.clear();
+        expectReady(source, device, device.options()); source.startAcquisition();
+        CHECK(waitFor([&] { return source.captureContext().has_value(); }));
+        CHECK(source.snapshot().totalChannels == 8);
+        source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
     }
 }
 
@@ -496,6 +591,7 @@ void testRaw(int channels, int rate, int reportedChannels = -1)
     VirtualDevice device(channels);
     if (reportedChannels < 0) reportedChannels = channels;
     device.board.insert("num_channels", reportedChannels);
+    if (reportedChannels == 12) device.board.remove("board_type");
     device.tcpDelayMs = 100; // Device connects before /tcp completes.
     device.tcpStatus.insert("ip", "127.0.0.2"); // An old configured IP is not an active connection.
     AcquisitionWifiSource source;
@@ -523,11 +619,12 @@ void testRaw(int channels, int rate, int reportedChannels = -1)
     CHECK(stream.dtype == DType::Int24 && stream.sample_index_source == SampleIndexSource::AdapterReceived);
     CHECK(stream.rate.numerator == static_cast<unsigned>(rate) && stream.rate.denominator == 1);
     CHECK(stream.clock.source == ClockSource::Estimated && stream.clock.epoch == ClockEpoch::SessionRelative);
-    CHECK(context->capture.metadata.at("first_output_counter") == "unknown");
+    CHECK(context->capture.metadata.at("first_output_counter") == "254");
     CHECK(context->capture.metadata.at("configuration_verified") == "false");
-    CHECK(context->capture.metadata.at("requested_channels") == std::to_string(channels));
+    CHECK(context->capture.metadata.at("requested_channels") == "0");
+    CHECK(context->capture.metadata.at("detected_channels") == std::to_string(channels));
     CHECK(context->capture.metadata.at("reported_channels") == std::to_string(reportedChannels));
-    CHECK(context->capture.metadata.at("channel_layout_source") == "user_selected_unverified");
+    CHECK(context->capture.metadata.at("channel_layout_source") == "detected_from_wire");
     CHECK(context->capture.metadata.at("channel_report_mismatch") ==
           (reportedChannels != 0 && reportedChannels != channels ? "true" : "false"));
     CHECK(context->capture.metadata.at("prior_tcp_ownership") == "reported_disconnected_unverified");
@@ -563,10 +660,12 @@ void testRaw(int channels, int rate, int reportedChannels = -1)
     for (const auto& line : log.readAll().split('\n')) {
         const auto event = QJsonDocument::fromJson(line).object();
         if (event.value("kind") != "channel_selection") continue;
-        CHECK(event.value("requested_channels") == channels);
+        CHECK(event.value("requested_channels") == 0);
         CHECK(event.value("reported_channels") == reportedChannels);
-        CHECK(event.value("channel_layout_source") == "user_selected_unverified");
-        CHECK(event.value("channel_report_mismatch").toBool() == (reportedChannels != 0 && reportedChannels != channels));
+        CHECK(event.value("detected_channels") == channels);
+        CHECK(event.value("channel_layout_source") == "detected_from_wire");
+        CHECK(event.value("detect_frames").toInt() == 24);
+        CHECK(event.value("detect_pairs").toInt() == (channels == 8 ? 0 : 12));
         foundSelection = true;
     }
     CHECK(foundSelection);
@@ -607,14 +706,14 @@ void testDataFaultAndSilence()
     CHECK(waitFor([&] { return context->hub->stats().accepted_samples >= before + 3; }));
     CHECK(source.snapshot().acquisition == DeviceAcquisitionState::Streaming && source.snapshot().error.code.isEmpty());
     auto bad = halfFrame(5, 17, 0); bad[32] = char(0xcf);
-    device.data->write(bad + halfFrame(200, 18, 0));
-    CHECK(waitFor([&] { return context->hub->stats().accepted_samples >= before + 4; }));
+    device.data->write(bad + halfFrame(200, 18, 0) + halfFrame(201, 19, 0) + halfFrame(202, 20, 0));
+    CHECK(waitFor([&] { return context->hub->stats().accepted_samples >= before + 6; }));
     QElapsedTimer pause; pause.start();
     while (pause.elapsed() < 3300) { QCoreApplication::processEvents(); QThread::msleep(1); }
     CHECK(source.snapshot().acquisition == DeviceAcquisitionState::Streaming);
     CHECK(context->hub->stats().unknown_gaps >= 1 && context->hub->stats().known_missing_samples == 0);
     device.sendGroups(5);
-    CHECK(waitFor([&] { return context->hub->stats().accepted_samples >= before + 9; }));
+    CHECK(waitFor([&] { return context->hub->stats().accepted_samples >= before + 11; }));
     source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
     // An incomplete final packet is logged, not an acquisition failure.
     source.startAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Streaming && (device.noStartData || source.captureContext().has_value()); }));
@@ -627,7 +726,7 @@ void testDataFaultAndSilence()
     CHECK(source.snapshot().error.code == "device.disconnected");
     const auto logPath = source.snapshot().error.params.value("diagnostic_log").toString();
     QFile log(logPath); CHECK(log.open(QIODevice::ReadOnly)); const auto bytes = log.readAll();
-    CHECK(bytes.contains("duplicate_counter") && bytes.contains("invalid_frame_end") && bytes.contains("raw_hex"));
+    CHECK(bytes.contains("duplicate_counter") && bytes.contains("frame_resync") && bytes.contains("raw_hex"));
     CHECK(bytes.contains("receive_idle") && bytes.contains("truncated_frame"));
 }
 
@@ -639,9 +738,9 @@ void testSignalStatistics()
     VirtualDevice device; device.noStartData = true;
     AcquisitionWifiSource source;
     expectReady(source, device, device.options()); source.startAcquisition();
-    CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Streaming; }));
+    CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Starting; }));
     QByteArray wire;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 24; ++i) {
         QByteArray frame(33, '\0'); frame[0] = char(0xa0); frame[1] = char(i); frame[32] = char(0xc0);
         for (int ch = 0; ch < 8; ++ch) {
             const std::int32_t value = ch == 0 ? 8388607 : ch == 1 ? -8388608 :
@@ -652,7 +751,7 @@ void testSignalStatistics()
         wire += frame;
     }
     device.data->write(wire);
-    CHECK(waitFor([&] { return source.snapshot().samples == 4; }));
+    CHECK(waitFor([&] { return source.snapshot().samples == 24; }));
     source.stopAcquisition(); CHECK(waitFor([&] { return source.snapshot().acquisition == DeviceAcquisitionState::Idle; }));
     const QDir logs(output.path() + "/BoundFree-Acquisition-Logs");
     const auto names = logs.entryList({"*.jsonl"}, QDir::Files); CHECK(names.size() == 1);
@@ -662,7 +761,7 @@ void testSignalStatistics()
         const auto event = QJsonDocument::fromJson(line).object();
         if (event.value("kind") != "signal_stats") continue;
         const auto channels = event.value("channels").toArray();
-        CHECK(event.value("samples") == "4" && event.value("unit") == "raw_sample" && channels.size() == 8);
+        CHECK(event.value("samples") == "24" && event.value("unit") == "raw_sample" && channels.size() == 8);
         for (int ch : {0, 1}) {
             const auto stats = channels[ch].toObject();
             CHECK(stats.value("flat").toBool() && stats.value("rail_fraction").toDouble() == 1.0);
@@ -670,7 +769,7 @@ void testSignalStatistics()
         }
         const auto ripple = channels[2].toObject();
         CHECK(!ripple.value("flat").toBool() && ripple.value("rail_fraction").toDouble() == 0);
-        CHECK(ripple.value("peak_to_peak").toDouble() == 4 && ripple.value("changes") == "3");
+        CHECK(ripple.value("peak_to_peak").toDouble() == 4 && ripple.value("changes") == "23");
         CHECK(std::abs(ripple.value("mean").toDouble() - 5000000) < 1e-9);
         CHECK(std::abs(ripple.value("stddev").toDouble() - 2) < 1e-9);
         found = true;
@@ -861,11 +960,12 @@ void verifyCapture(const QString& path, int channels, int reportedChannels)
     const auto manifest = QJsonDocument::fromJson(file.readAll()).object();
     CHECK(manifest.value("status").toString() == "partial");
     const auto meta = manifest.value("acquisition_metadata").toObject();
-    CHECK(meta.value("first_output_counter").toString() == "unknown");
+    CHECK(meta.value("first_output_counter").toString() == "254");
     CHECK(meta.value("configuration_verified").toString() == "false");
-    CHECK(meta.value("requested_channels").toString() == QString::number(channels));
+    CHECK(meta.value("requested_channels").toString() == "0");
+    CHECK(meta.value("detected_channels").toString() == QString::number(channels));
     CHECK(meta.value("reported_channels").toString() == QString::number(reportedChannels));
-    CHECK(meta.value("channel_layout_source").toString() == "user_selected_unverified");
+    CHECK(meta.value("channel_layout_source").toString() == "detected_from_wire");
     CHECK(meta.value("channel_report_mismatch").toString() ==
           (reportedChannels != 0 && reportedChannels != channels ? "true" : "false"));
     CHECK(meta.value("sample_index_meaning").toString() == "adapter_received_ordinal_not_device_counter");
@@ -939,7 +1039,7 @@ void testControllerAndRecorder(const QString& repoRoot, int channels, int report
     CHECK(controller.snapshot().acquisition == DeviceAcquisitionState::Idle);
     CHECK(!device.paths.contains("/stream/start"));
     controller.startAcquisition();
-    CHECK(waitFor([&] { return controller.snapshot().acquisition == DeviceAcquisitionState::Streaming; }));
+    CHECK(waitFor([&] { return controller.snapshot().acquisition == DeviceAcquisitionState::Streaming && controller.snapshot().totalChannels == static_cast<unsigned>(channels); }));
     controller.startRecording(output.path());
     CHECK(waitFor([&] { return controller.snapshot().recording.state == CaptureRecordState::Recording ||
                                controller.snapshot().recording.state == CaptureRecordState::Failed; }, 15000));
@@ -1269,11 +1369,13 @@ int main(int argc, char** argv)
         testReentrantOverlimit();
         testRefusals();
         testGenerationAndTimeouts();
+        testDetectionAndFallback();
         for (int channels : {8, 16})
             for (int rate : {250, 500, 1000}) testRaw(channels, rate);
         for (int channels : {8, 16}) {
             for (int rate : {250, 500, 1000}) testRaw(channels, rate, channels == 16 ? 8 : 16);
             testRaw(channels, 250, 0);
+            testRaw(channels, 250, 12);
             testControllerAndRecorder(root, channels, channels == 16 ? 8 : 16);
         }
         testUnverifiedConfiguration();

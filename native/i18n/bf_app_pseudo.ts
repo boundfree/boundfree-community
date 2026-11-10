@@ -1786,7 +1786,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.recent_detail</source>
-      <translation>[!! RT-BCI · Wi-Fi · {channels} channels · Last verified {date} · Availability not checked ~~ !!]</translation>
+      <translation>［RT-BCI · Wi-Fi · Vérífíéd {date} · Nôt lívé］</translation>
     </message>
     <message>
       <source>app.device.reconnect</source>
@@ -1830,11 +1830,11 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_channels</source>
-      <translation>[!! Channels ~~ !!]</translation>
+      <translation>［Fôrcé chánnél côûnt (ôñly íf détectíôn fáíls)］</translation>
     </message>
     <message>
       <source>app.device.wifi_choose_channels</source>
-      <translation>[!! Choose 8 or 16 channels ~~ !!]</translation>
+      <translation>［Áûtô］</translation>
     </message>
     <message>
       <source>app.device.wifi_host</source>
@@ -1922,7 +1922,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_requested</source>
-      <translation>[!! Requested: {channels} channels · {rate} Hz ~~ !!]</translation>
+      <translation>［Réqûéstéd ráté: {rate} Hz］</translation>
     </message>
     <message>
       <source>app.device.status_streaming_wifi</source>
@@ -2023,10 +2023,6 @@ analysis.json</translation>
     <message>
       <source>app.device.next_network</source>
       <translation>[!! Join the device hotspot to check its response automatically. ~~ !!]</translation>
-    </message>
-    <message>
-      <source>app.device.next_channels</source>
-      <translation>[!! Choose the device channel count. ~~ !!]</translation>
     </message>
     <message>
       <source>app.device.next_connect</source>
@@ -2142,10 +2138,6 @@ While paused, drag or use Left/Right to inspect the cached window.⟧</translati
     <message>
       <source>app.device.callback_detail</source>
       <translation>[ The device must connect back to {address}:{port}. Allow this test app to receive inbound connections through Windows Firewall and check the selected network interface. ___ ]</translation>
-    </message>
-    <message>
-      <source>app.device.channel_conflict_detail</source>
-      <translation>[ Selected {requested} channels; the module reports {reported}. Check the channel selection. ___ ]</translation>
     </message>
     <message>
       <source>app.device.response_detail</source>
@@ -2330,5 +2322,10 @@ When playback is paused and annotation mode is off, drag or use Left/Right to br
     <message><source>app.separation.feedback_error</source><translation>［Error: {message}］</translation></message>
     <message><source>app.separation.feedback_warning</source><translation>［Warning: {message}］</translation></message>
     <message><source>app.separation.next_observations</source><translation>［Select 2–32 observation channels for separation. Reference channels do not count as observations.］</translation></message>
+    <message><source>app.device.detecting_channels</source><translation>［Détectíng chánnéls…］</translation></message>
+    <message><source>app.device.channel_count</source><translation>［{count} chánnéls］</translation></message>
+    <message><source>app.device.wifi_power_notice</source><translation>［Fôr 16 chánñéls, cônñéct thé éxpañsíôn bôárd béfôré pôwér-ûp. Thé côûnt ís sét át pôwér-ûp; pôwér ôff áñd réstárt áftér cháñgíñg thé bôárd.］</translation></message>
+    <message><source>error.device.rt_bci_unrecognized_stream</source><translation>［Cánñôt récôgnízé thé stréám. Chéck thé dévícé, ôr fôrcé chánnél côûnt íñ Ádváncéd áñd rétry.］</translation></message>
+    <message><source>error.device.channel_count_adjusted</source><translation>［Détected chánñél côûnt dífférs frôm thé fôrcéd válûé. Ûsíñg thé détectéd côûnt.］</translation></message>
   </context>
 </TS>

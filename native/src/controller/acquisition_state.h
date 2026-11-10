@@ -43,6 +43,7 @@ struct AcquisitionViewSnapshot {
     QString deviceName;
     QString diagnosticLogPath; // Current/latest connection log, retained after stop/disconnect.
     AppError error;
+    AppError warning; // Non-blocking, translated by the UI.
     std::vector<AcquisitionTrace> traces;
 };
 
