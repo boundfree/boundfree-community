@@ -72,6 +72,7 @@ git branch -d feature/123-channel-groups
 | 界面文字或翻译 | `python3 scripts/common/check_i18n.py` |
 | 许可、打包声明、新依赖 | `python3 scripts/common/check_release_assets.py`，并按 [许可与扩展边界](../legal/LICENSING.md) 确认归属 |
 | 版本、发布脚本、Actions | `python3 scripts/common/check_release_assets.py`、`python3 -m pytest tests/scripts`；工作流 YAML 另跑 actionlint |
+| 分层依赖（新增或移动 `native/src` 源文件、新增 include） | `python3 scripts/common/check_layering.py`，随 `pytest tests/scripts` 在 CI 执行 |
 | 仅文档 | 检查链接和命令与实际一致 |
 
 本地跑不了的检查写进 PR，并以云端结果为准。没执行的检查不能写成“通过”。普通提交不改产品版本。
