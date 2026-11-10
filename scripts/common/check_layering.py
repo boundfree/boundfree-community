@@ -22,7 +22,7 @@ docs/restructure-plan.md A1。检查两件事：
 from __future__ import annotations
 
 import argparse
-import os
+import posixpath
 import re
 import sys
 from dataclasses import dataclass
@@ -275,12 +275,15 @@ def resolve_target(source_rel: PurePosixPath, include: str) -> PurePosixPath | N
 
     带目录前缀的写法按 native/src 规范化，其余按所在目录规范化，`core/../ui/x.h` 这类
     写法先解析再分层判定，不能靠拼出上层目录名绕过。
+
+    规范化用 posixpath：仓库里的 include 是 POSIX 逻辑路径，而 os.path 在 Windows 上是
+    ntpath，会返回反斜杠并把所有目标都判成非分层路径。
     """
-    rooted = os.path.normpath(include.replace("\\", "/"))
+    rooted = posixpath.normpath(include.replace("\\", "/"))
     rooted_parts = PurePosixPath(rooted).parts
     if rooted_parts and rooted_parts[0] in TOP_LEVEL_DIRS:
         return PurePosixPath(rooted)
-    local = os.path.normpath(str(PurePosixPath(source_rel.parent) / include.replace("\\", "/")))
+    local = posixpath.normpath(str(PurePosixPath(source_rel.parent) / include.replace("\\", "/")))
     local_parts = PurePosixPath(local).parts
     if local_parts and local_parts[0] not in {"..", "."} and local_parts[0] in TOP_LEVEL_DIRS:
         return PurePosixPath(local)

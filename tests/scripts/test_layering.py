@@ -1,5 +1,7 @@
 """Layering check must catch upward includes and dsp calculations inside ui."""
-from pathlib import Path
+import ntpath
+import os
+from pathlib import Path, PurePosixPath
 import sys
 
 import pytest
@@ -98,6 +100,26 @@ def test_path_traversal_include_is_rejected(tmp_path, include):
 def test_relative_traversal_include_is_rejected(tmp_path):
     findings = scan(tmp_path, {'render/inner/view.cpp': '#include "../../core/../ui/main_window.h"\n'})
     assert any('does not depend on ui' in finding for finding in findings), findings
+
+
+def test_windows_host_path_semantics_keep_posix_targets(tmp_path, monkeypatch):
+    # Windows 宿主的 os.path 是 ntpath（返回反斜杠）；规范化不能跟着宿主走，
+    # 否则所有 include 目标都会被判成非分层路径而静默跳过。
+    root = make_tree(tmp_path, {
+        'render/view.cpp': '#include "ui/main_window.h"\n#include "core/../ui/main_window.h"\n',
+    })
+    monkeypatch.setattr(os, 'path', ntpath)
+    assert os.path is ntpath
+    assert check_layering.resolve_target(
+        PurePosixPath('render/view.cpp'), 'ui/main_window.h'
+    ) == PurePosixPath('ui/main_window.h')
+    assert check_layering.resolve_target(
+        PurePosixPath('render/view.cpp'), 'core/../ui/main_window.h'
+    ) == PurePosixPath('ui/main_window.h')
+    findings = check_layering.scan(root, (), ())
+    assert len(findings) == 2, findings
+    assert all('ui/main_window.h' in finding and 'does not depend on ui' in finding
+               for finding in findings)
 
 
 def test_include_inside_raw_string_is_ignored(tmp_path):
