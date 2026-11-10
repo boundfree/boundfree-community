@@ -191,6 +191,8 @@ add_executable(bf_app
     src/ui/activation_dialog.h
     src/ui/analysis_widgets.cpp
     src/ui/analysis_widgets.h
+    src/ui/analysis_panel.cpp
+    src/ui/analysis_panel.h
 )
 # Start the desktop UI with the Windows GUI subsystem so Explorer and Start
 # Menu launches do not create an attached console window. Qt's entry point
