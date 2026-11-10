@@ -47,7 +47,16 @@ Qt、FFmpeg、编译器与环境锁定清单应随构建证据保留。离屏回
 scripts/wsl/verify_m1_foundation.sh
 ```
 
-`--fast` 仅用于已有构建的本地迭代，会跳过 CMake build 和 UI smoke，不是完整验收。外置构建目录没有统一的覆盖方式：`scripts/wsl/verify_m1_foundation.sh` 读 `BF_NATIVE_BUILD_DIR`（默认 `native/build-qt6-baseline`），但它只是总入口自己的产物目录；`tests/native` 里各测试各自决定查找位置，多数只认 `native/build` / `native/build-windows`，只有个别测试（如 `test_bfsp_native.py`）有自己的变量。设置 `BF_NATIVE_BUILD_DIR` 不会让这些 pytest 改到外置目录，构建目录在别处时直接运行该目录里的目标测试，并先看对应测试的查找规则。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
+`--fast` 仅用于已有构建的本地迭代：它跳过 CMake build 和 UI smoke，但内层 `pytest tests --ignore=tests/scripts` 照常执行，仍会把整套回归（含授权门禁的完整构建）跑一遍，不是轻量检查。外层已经单独跑过授权门禁时，给脚本设 `BF_VERIFY_SKIP_LICENSE_GATE=1`：脚本只给内层 pytest 加 `--deselect tests/native/test_m8_license_gate.py`，默认行为与 CI 外层授权检查都不受影响；`tests/scripts/test_verify_script.py` 调用脚本时总是设置它，避免最耗内存的构建重复。
+
+外置构建目录没有统一的覆盖方式：`scripts/wsl/verify_m1_foundation.sh` 与 `tests/scripts/test_verify_script.py` 读同一个 `BF_NATIVE_BUILD_DIR`（默认 `native/build-qt6-baseline`，相对路径按调用时的当前目录展开），但它只是总入口自己的产物目录；`tests/native` 里各测试各自决定查找位置，多数只认 `native/build` / `native/build-windows`，只有个别测试（如 `test_bfsp_native.py`）有自己的变量。设置 `BF_NATIVE_BUILD_DIR` 不会让这些 pytest 改到外置目录，构建目录在别处时直接运行该目录里的目标测试，并先看对应测试的查找规则。构建目录里没有 `bf_app` 时 `test_verify_script.py` 明确 skip 并列出缺的产物路径；产物存在而脚本失败则是测试失败，不会变成 skip。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
+
+本地 `tests/native` 与 `tests/scripts` 的预期结果是全部通过或跳过，不应出现失败。`test_verify_script.py` 会嵌套整套回归，因此耗内存的用例按 [AGENTS.md](../AGENTS.md) 的资源规则分批执行，不连续重复整套。只有真实环境缺项才允许 skip，且理由必须写明缺的是什么：
+
+- `test_m6_video_sync.py` 的两例用 ffmpeg 生成样本 MP4 并跑 `bf_app --smoke-m6-video` / 联合打开。探测走 `ffmpeg -hide_banner -encoders`，要求在编码器名里精确出现 `libx264` 与 `aac`；缺二进制或缺编码器时 skip 并列出缺项（Conda 的 Qt 环境带的 ffmpeg 有 `aac` 但通常没有 `libx264`，在这条 PATH 上两例会 skip；系统 ffmpeg 通常两者都有，会实际执行）。探测命令本身执行失败、或编码器存在但生成媒体/产品冒烟失败，都按失败处理。探测与生成使用同一个可执行文件。
+- `test_verify_script.py`：没有 `<BF_NATIVE_BUILD_DIR>/bf_app` 时 skip；有产物时脚本失败必须失败。
+
+CI 的 Linux 任务额外安装 `ffmpeg` 只作为生成 M6 媒体样本的测试工具，不改产品依赖或许可边界：`bf_app` 自身不链接 libav/x264，媒体解码经 Qt 的多媒体插件，而发布包由 `scripts/ci/package_linux.py` 按应用与 Qt 插件的依赖闭包收集，安装测试工具不等于已经核验了产物来源。该任务的 Linux 打包后诊断步骤会打印 Qt 媒体插件的 `ldd`、运行中的 `ffmpeg -version` 与编码器，并检查暂存树里没有 libx264/libx265 等 GPL 编码器库；实际来源与结论以本轮 CI 的依赖清单和打包结果为准，不把宿主 apt 版本与 SONAME 差异写成长期保证。该任务还在主回归之后单独一步跑 `test_verify_script.py`，用刚构建的 `native/build` 与 CI 的 Python，独立 junit 报告和更长超时容纳内层回归；主回归仍保留 `--ignore=tests/scripts/test_verify_script.py`，避免嵌套时间叠在普通单例 360 秒超时上。随后一步读两份 junit，断言两个 M6 真实媒体用例与该脚本用例都是通过而不是 skipped，环境缺项在 CI 上必须显红而不是默默变绿。Windows 任务边界不变，不执行该 shell 脚本。
 
 ## Windows 本地构建
 

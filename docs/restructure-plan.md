@@ -25,7 +25,6 @@ last_updated: 2026-11-10
 
 | 编号 | 事项 | 优先级 | 执行方式 | 规模 |
 | --- | --- | --- | --- | --- |
-| A3 | `render` 不再依赖 `ipc` | 中 | 机械 | 小 |
 | A4 | 拆分 `MainWindow` | 高 | 需设计 | 大，分多个 PR |
 | A5 | 拆分两个超长构造函数 | 中 | 机械 | 中 |
 | A6 | 自检入口按主题拆文件 | 中 | 机械 | 中 |
@@ -40,21 +39,9 @@ last_updated: 2026-11-10
 | C1 | 文档类 PR 不跑完整构建 | 中 | 需设计 | 小 |
 | C2 | 仓库与工具的零散收尾 | 低 | 机械 | 小 |
 
-建议顺序：A3 → A10 → A4（分步）→ 其余按需。
+建议顺序：A10 → A4（分步）→ 其余按需。
 
 ## A. 代码结构
-
-### A3 `render` 不再依赖 `ipc`
-
-**现状**：`render/waveform_slice.h` 引用 `ipc/sidecar_client.h`，只为了一个转换函数 `waveformSliceFromSidecar(SidecarOpenResult, SidecarSliceResult)`。
-
-**目标**：`render/` 只依赖 `core` 和 `dsp`。
-
-**步骤**：新建 `controller/sidecar_slice.{h,cpp}`，把 `waveformSliceFromSidecar` 的声明与实现移过去。不要放进 `file_open_controller`，因为调用方有四处：`controller/file_open_controller.cpp`、`controller/export_controller.cpp`、`controller/record_controller.cpp` 和 `app/smoke/unified_signal_smoke.h`。更新这四处的 include，把新文件加进 `native/CMakeLists.txt` 的 `BF_CORE_SOURCES`，去掉 `waveform_slice.h` 对 `ipc/sidecar_client.h` 的引用（如果该头文件里还有别的地方用到 `Sidecar*` 类型或 `QJsonObject`，补上它们各自需要的 include），最后从 `scripts/common/check_layering.py` 的白名单删掉这一条。
-
-**验证**：`signal_window_test`、`waveform_viewport_test`、`--smoke-ui-waveform-data-modes`。
-
-**风险**：低。纯移动。
 
 ### A4 拆分 `MainWindow`
 
@@ -116,8 +103,6 @@ last_updated: 2026-11-10
 1. 拆为 `bf_foundation`（`core`、`i18n`）、`bf_ipc`、`bf_license`、`bf_render`、`bf_controller`、`bf_widgets`（三个共享控件）。每个目标只链接它允许依赖的下层目标和必需的 Qt 模块。
 2. 保留一个名为 `bf_core` 的接口库把它们聚合起来，现有测试目标先不用改；之后再逐个把测试改成只链接需要的目标。
 3. 做完后，`scripts/common/check_layering.py` 的检查保留作为快速反馈，CMake 链接关系作为最终约束。
-
-**前置**：A3（否则 `bf_render` 必须依赖 `bf_ipc`）。
 
 **验证**：全量构建与回归；Windows 上确认各目标的导出与链接无误（静态库，风险不大）；对比拆分前后 `bf_app` 安装包内容不变。
 
