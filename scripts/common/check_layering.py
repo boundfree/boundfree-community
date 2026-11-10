@@ -4,15 +4,17 @@
 规则来源见 docs/architecture-design.md 的“分层与依赖规则”，落地要求见
 docs/restructure-plan.md A1。检查两件事：
 
-1. ``native/src`` 下源文件的 ``#include "..."`` 是否越过分层。带目录前缀的写法
-   按 ``native/src`` 解析，不带前缀的写法先按所在目录解析（``../x.h`` 同理），
-   因此 ``acquisition/protocol`` 里的 ``#include "codec.h"`` 视为引用自己。
+1. ``native/src`` 下源文件的 ``#include "..."`` 是否越过分层。include 目标先规范化成
+   相对 ``native/src`` 的路径再判定：带目录前缀的写法直接规范化，不带前缀与 ``../`` 写法
+   按所在目录规范化（``acquisition/protocol`` 里的 ``#include "codec.h"`` 视为引用自己），
+   所以 ``core/../ui/x.h`` 这类写法绕不过去。
 2. ``native/src/ui`` 下是否出现 ``dsp::`` 函数调用。界面不实现算法，只允许读取
    ``dsp::eegBands()`` 这类常量定义；类型引用和类型构造不算函数调用。
 
-注释与字符串字面量内的内容不算引用。现存违规逐条登记在 ``INCLUDE_EXCEPTIONS``
-与 ``DSP_CALL_EXCEPTIONS`` 里，必须写明原因；条目没有命中任何违规时同样报错，
-避免问题解决后留下无用白名单。
+注释整段换成空格，字符串字面量内容不参与判定，但真实的预处理 include 目标照常读取；
+因此原始字符串或多行字面量里的 ``#include`` 不会误报，注释两侧的 token 也不会拼成指令。
+现存违规逐条登记在 ``INCLUDE_EXCEPTIONS`` 与 ``DSP_CALL_EXCEPTIONS`` 里，按精确的
+文件与规范化目标匹配，必须写明原因；条目没有命中任何违规时同样报错，避免白名单残留。
 
 退出码 0 表示全部通过，1 表示存在违规或失效白名单。仓库根目录运行：
 ``python3 scripts/common/check_layering.py``。
@@ -24,7 +26,6 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from fnmatch import fnmatch
 from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -37,10 +38,8 @@ DSP_CALL_RE = re.compile(r"\b(?:bf::)?dsp::(\w+)\s*\(")
 DSP_TYPE_DECL_RE = re.compile(r"\b(?:enum\s+class|struct|class|enum)\s+(\w+)")
 DSP_TYPE_ALIAS_RE = re.compile(r"^[ \t]*using\s+(\w+)\s*=", re.MULTILINE)
 
-# acquisition 的基础子目录与协调子目录分属两层，见分层规则表。
-ACQUISITION_FOUNDATION_DIRS = frozenset(
-    {"adapters", "buffer", "model", "protocol", "session", "transport"}
-)
+# acquisition 下除 control、sources、recording 外都属第 1 层基础部分；新增子目录默认归入
+# 基础层，因此未知子目录既不会被当成豁免，也不会因为未登记而被静默跳过。
 ACQUISITION_COORDINATION_DIRS = frozenset({"control", "sources", "recording"})
 
 FOUNDATION = "acquisition/foundation"
@@ -77,7 +76,11 @@ ALLOWED_GROUPS = {
 
 @dataclass(frozen=True)
 class IncludeException:
-    """登记一条现存的分层例外。source 与 include 都按 fnmatch 匹配。"""
+    """登记一条现存的分层例外。
+
+    source 是相对 ``native/src`` 的文件路径，include 是规范化后的目标路径，两者都按精确值匹配：
+    新增测试文件或新增 ui 头文件不会因为它们的文件名而自动获得豁免。
+    """
 
     source: str
     include: str
@@ -86,7 +89,7 @@ class IncludeException:
 
 @dataclass(frozen=True)
 class DspCallException:
-    """登记一条 ui 里现存的 dsp 函数调用。source 按 fnmatch 匹配。"""
+    """登记一条 ui 里现存的 dsp 函数调用。source 与 function 都按精确值匹配。"""
 
     source: str
     function: str
@@ -101,10 +104,24 @@ INCLUDE_EXCEPTIONS = (
         "A3 把它搬到 controller/sidecar_slice 后删除本条",
     ),
     IncludeException(
-        source="acquisition/control/*_test.cpp",
-        include="ui/*",
-        reason="这两个原生测试直接构造 device_workspace / waveform_widget / plot_style，"
-        "测试文件与源码同目录（A9 不搬迁），因此引用了上一层 ui",
+        source="acquisition/control/acquisition_ui_test.cpp",
+        include="ui/device_workspace.h",
+        reason="acquisition_ui_test 直接构造 DeviceWorkspace 检查采集栏与设备菜单状态，测试与源码同目录（A9 不搬迁）",
+    ),
+    IncludeException(
+        source="acquisition/control/acquisition_ui_test.cpp",
+        include="ui/waveform_widget.h",
+        reason="同一个测试用 WaveformWidget 验证设备采集数据的波形刷新",
+    ),
+    IncludeException(
+        source="acquisition/control/acquisition_waveform_test.cpp",
+        include="ui/plot_style.h",
+        reason="波形控件测试检查 ui 的绘图样式常量，测试与源码同目录（A9 不搬迁）",
+    ),
+    IncludeException(
+        source="acquisition/control/acquisition_waveform_test.cpp",
+        include="ui/waveform_widget.h",
+        reason="波形控件测试直接构造 WaveformWidget 验证绘制路径",
     ),
 )
 
@@ -126,7 +143,11 @@ ALLOWED_DSP_CALLS = frozenset({"eegBands"})
 
 
 def strip_comments(text: str) -> str:
-    """去掉 // 与 /* */ 注释，保留换行以便行号不变；字符串与原始字符串原样保留。"""
+    """把 // 与 /* */ 注释整段换成空格，保留换行以便行号不变。
+
+    替换而不是删除，避免注释两侧的 token 拼在一起（`#inclu/*x*/de` 不是 include 指令）。
+    字符串与原始字符串原样保留；需要排除字面量内容时再调 mask_literals。
+    """
     out: list[str] = []
     i = 0
     length = len(text)
@@ -135,14 +156,17 @@ def strip_comments(text: str) -> str:
         nxt = text[i + 1] if i + 1 < length else ""
         if ch == "/" and nxt == "/":
             while i < length and text[i] != "\n":
+                out.append(" ")
                 i += 1
         elif ch == "/" and nxt == "*":
             i += 2
+            out.append("  ")
             while i < length and not (text[i] == "*" and i + 1 < length and text[i + 1] == "/"):
-                if text[i] == "\n":
-                    out.append("\n")
+                out.append("\n" if text[i] == "\n" else " ")
                 i += 1
-            i += 2
+            if i < length:
+                out.append("  ")
+                i += 2
         elif ch == '"' and _is_raw_string_start(out):
             i = _skip_raw_string(text, i, out)
         elif ch in "\"'":
@@ -230,39 +254,49 @@ def iter_sources(src_root: Path):
 
 
 def group_for(rel_path: PurePosixPath) -> str | None:
-    """返回路径所属分组；未登记的分层目录返回 None。"""
+    """返回路径所属分组；未登记的分层目录返回 None。
+
+    acquisition 下只有 control、sources、recording 属于第 2 层，其余（含新增子目录）都是基础层，
+    所以未知 acquisition 子目录既不会被当成未知目录，也不会落到静默跳过。
+    """
     parts = rel_path.parts
     if not parts:
         return None
     top = parts[0]
     if top == "acquisition":
-        if len(parts) < 2:
-            return None
-        sub = parts[1]
-        if sub in ACQUISITION_FOUNDATION_DIRS:
-            return FOUNDATION
-        if sub in ACQUISITION_COORDINATION_DIRS:
+        if len(parts) > 1 and parts[1] in ACQUISITION_COORDINATION_DIRS:
             return COORDINATION
-        return None
+        return FOUNDATION
     return top if top in TOP_LEVEL_DIRS else None
 
 
 def resolve_target(source_rel: PurePosixPath, include: str) -> PurePosixPath | None:
-    """把 include 解析为相对 native/src 的路径；与分层无关的写法返回 None。"""
-    target = PurePosixPath(include.replace("\\", "/"))
-    if target.parts and target.parts[0] in TOP_LEVEL_DIRS:
-        return target
-    resolved = os.path.normpath(str(PurePosixPath(source_rel.parent) / target))
-    parts = PurePosixPath(resolved).parts
-    if not parts or parts[0] in {"..", "."} or parts[0] not in TOP_LEVEL_DIRS:
-        return None
-    return PurePosixPath(resolved)
+    """把 include 规范化成相对 native/src 的路径；与分层无关的写法返回 None。
+
+    带目录前缀的写法按 native/src 规范化，其余按所在目录规范化，`core/../ui/x.h` 这类
+    写法先解析再分层判定，不能靠拼出上层目录名绕过。
+    """
+    rooted = os.path.normpath(include.replace("\\", "/"))
+    rooted_parts = PurePosixPath(rooted).parts
+    if rooted_parts and rooted_parts[0] in TOP_LEVEL_DIRS:
+        return PurePosixPath(rooted)
+    local = os.path.normpath(str(PurePosixPath(source_rel.parent) / include.replace("\\", "/")))
+    local_parts = PurePosixPath(local).parts
+    if local_parts and local_parts[0] not in {"..", "."} and local_parts[0] in TOP_LEVEL_DIRS:
+        return PurePosixPath(local)
+    return None
 
 
-def iter_includes(stripped: str):
-    """返回 (行号, include 原文)。"""
-    for match in INCLUDE_RE.finditer(stripped):
-        yield stripped.count("\n", 0, match.start()) + 1, match.group(1)
+def iter_includes(code: str, skeleton: str):
+    """返回 (行号, include 原文)。
+
+    code 是只去注释的文本，skeleton 是同一文本再把字面量内容抹成空格的结果。用 skeleton
+    在匹配范围内找不到 `#` 判定该行处在字符串（如原始字符串）内部，不当作真正的预处理指令。
+    """
+    for match in INCLUDE_RE.finditer(code):
+        if skeleton.find("#", match.start(), match.end()) < 0:
+            continue
+        yield code.count("\n", 0, match.start()) + 1, match.group(1)
 
 
 def dsp_type_names(src_root: Path) -> frozenset[str]:
@@ -281,10 +315,10 @@ def dsp_type_names(src_root: Path) -> frozenset[str]:
 
 
 def _match_include_exception(
-    exceptions: tuple[IncludeException, ...], rel: PurePosixPath, include: str
+    exceptions: tuple[IncludeException, ...], rel: PurePosixPath, target: PurePosixPath
 ) -> int | None:
     for index, exception in enumerate(exceptions):
-        if fnmatch(rel.as_posix(), exception.source) and fnmatch(include, exception.include):
+        if rel.as_posix() == exception.source and target.as_posix() == exception.include:
             return index
     return None
 
@@ -303,22 +337,20 @@ def scan_includes(
                 f"add it to scripts/common/check_layering.py and docs/architecture-design.md"
             )
             continue
-        text = strip_comments(path.read_text(encoding="utf-8", errors="replace"))
-        for lineno, include in iter_includes(text):
+        code = strip_comments(path.read_text(encoding="utf-8", errors="replace"))
+        for lineno, include in iter_includes(code, mask_literals(code)):
             target = resolve_target(rel, include)
             if target is None:
                 continue
             target_group = group_for(target)
-            if target_group is None:
-                continue
             if target_group in ALLOWED_GROUPS[source_group]:
                 continue
-            matched = _match_include_exception(exceptions, rel, include)
+            matched = _match_include_exception(exceptions, rel, target)
             if matched is not None:
                 hits[matched] += 1
                 continue
             findings.append(
-                f"{rel}:{lineno}: include \"{include}\" crosses layers: "
+                f"{rel}:{lineno}: include \"{include}\" ({target}) crosses layers: "
                 f"{source_group} does not depend on {target_group}"
             )
     for exception, count in zip(exceptions, hits):
@@ -346,7 +378,7 @@ def scan_dsp_calls(
                 continue
             matched = None
             for index, exception in enumerate(exceptions):
-                if fnmatch(rel.as_posix(), exception.source) and exception.function == function:
+                if rel.as_posix() == exception.source and exception.function == function:
                     matched = index
                     break
             if matched is not None:

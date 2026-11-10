@@ -85,9 +85,75 @@ def test_local_include_resolves_inside_its_directory(tmp_path):
     assert findings == []
 
 
-def test_relative_include_crossing_layers_is_rejected(tmp_path):
-    findings = scan(tmp_path, {'render/inner/view.cpp': '#include "../../ui/main_window.h"\n'})
-    assert any('crosses layers' in finding and 'does not depend on ui' in finding for finding in findings)
+@pytest.mark.parametrize('include', [
+    'core/../ui/main_window.h',
+    'render/../ui/main_window.h',
+    'ipc/../ui/main_window.h',
+])
+def test_path_traversal_include_is_rejected(tmp_path, include):
+    findings = scan(tmp_path, {'render/view.cpp': f'#include "{include}"\n'})
+    assert any('does not depend on ui' in finding for finding in findings), findings
+
+
+def test_relative_traversal_include_is_rejected(tmp_path):
+    findings = scan(tmp_path, {'render/inner/view.cpp': '#include "../../core/../ui/main_window.h"\n'})
+    assert any('does not depend on ui' in finding for finding in findings), findings
+
+
+def test_include_inside_raw_string_is_ignored(tmp_path):
+    findings = scan(tmp_path, {
+        'render/view.cpp': 'auto sample = R"(\n#include "ui/main_window.h"\n)";\n',
+    })
+    assert findings == []
+
+
+def test_include_after_raw_string_is_still_checked(tmp_path):
+    findings = scan(tmp_path, {
+        'render/view.cpp': (
+            'auto sample = R"(\n'
+            '#include "core/version.h"\n'
+            ')";\n'
+            '#include "ui/main_window.h"\n'
+        ),
+    })
+    assert len(findings) == 1, findings
+    assert 'render/view.cpp:4' in findings[0] and 'ui/main_window.h' in findings[0]
+
+
+def test_comment_does_not_join_tokens_into_an_include(tmp_path):
+    findings = scan(tmp_path, {'render/view.cpp': '#inclu/*x*/de "ui/main_window.h"\n'})
+    assert findings == []
+
+
+def test_comment_between_hash_and_include_is_still_a_directive(tmp_path):
+    findings = scan(tmp_path, {'render/view.cpp': '#/* spacing */include "ui/main_window.h"\n'})
+    assert len(findings) == 1, findings
+    assert 'render/view.cpp:1' in findings[0] and 'ui/main_window.h' in findings[0]
+
+
+def test_line_numbers_survive_multiline_block_comments(tmp_path):
+    findings = scan(tmp_path, {
+        'render/view.cpp': '/* banner\n   second line */\n#include "ui/main_window.h"\n',
+    })
+    assert len(findings) == 1, findings
+    assert 'render/view.cpp:3' in findings[0]
+
+
+def test_new_acquisition_subdir_is_foundation(tmp_path):
+    assert scan(tmp_path, {'acquisition/experimental/thing.h': '#include "core/version.h"\n'}) == []
+
+
+def test_new_acquisition_subdir_cannot_reach_coordination(tmp_path):
+    findings = scan(tmp_path, {
+        'acquisition/experimental/thing.h': '#include "acquisition/control/acquisition_controller.h"\n',
+    })
+    assert any('does not depend on acquisition/coordination' in finding for finding in findings)
+
+
+def test_include_into_unknown_acquisition_subdir_is_not_skipped(tmp_path):
+    findings = scan(tmp_path, {'core/types.h': '#include "acquisition/experimental/thing.h"\n'})
+    assert any('acquisition/experimental/thing.h' in finding and 'does not depend on' in finding
+               for finding in findings)
 
 
 def test_test_file_is_checked_as_its_own_directory(tmp_path):
@@ -158,6 +224,18 @@ def test_registered_exception_suppresses_matching_violation(tmp_path):
     assert findings == []
 
 
+def test_exception_matches_normalized_target(tmp_path):
+    exception = check_layering.IncludeException(
+        source='render/waveform_slice.h', include='ipc/sidecar_client.h', reason='A3'
+    )
+    findings = scan(
+        tmp_path,
+        {'render/waveform_slice.h': '#include "core/../ipc/sidecar_client.h"\n'},
+        include_exceptions=(exception,),
+    )
+    assert findings == []
+
+
 def test_stale_include_exception_is_reported(tmp_path):
     exception = check_layering.IncludeException(
         source='render/waveform_slice.h', include='ipc/sidecar_client.h', reason='A3'
@@ -197,3 +275,62 @@ def test_stale_dsp_call_exception_is_reported(tmp_path):
 def test_unregistered_layer_directory_is_reported(tmp_path):
     findings = scan(tmp_path, {'plugin/thing.h': '#include "core/version.h"\n'})
     assert any('unregistered layer directory' in finding for finding in findings)
+
+
+# 白名单按实测的精确 source/target 对登记，新增文件或新增 ui 头不会自动获得豁免。
+WHITELISTED_UI_TEST_PAIRS = [
+    ('acquisition/control/acquisition_ui_test.cpp', 'ui/device_workspace.h'),
+    ('acquisition/control/acquisition_ui_test.cpp', 'ui/waveform_widget.h'),
+    ('acquisition/control/acquisition_waveform_test.cpp', 'ui/plot_style.h'),
+    ('acquisition/control/acquisition_waveform_test.cpp', 'ui/waveform_widget.h'),
+]
+
+
+def pair_files(extra=()):
+    files = {}
+    for source, include in list(WHITELISTED_UI_TEST_PAIRS) + list(extra):
+        files[source] = files.get(source, '') + f'#include "{include}"\n'
+    return files
+
+
+def layer_violations(findings):
+    """丢掉白名单失效提示，只看真实的越层违规。"""
+    return [finding for finding in findings if not finding.startswith('stale exception')]
+
+
+def test_registered_ui_test_exceptions_cover_only_the_measured_pairs(tmp_path):
+    findings = scan(tmp_path, pair_files(), include_exceptions=check_layering.INCLUDE_EXCEPTIONS)
+    assert layer_violations(findings) == []
+
+
+def test_new_test_file_in_control_gets_no_exemption(tmp_path):
+    findings = scan(
+        tmp_path,
+        pair_files([('acquisition/control/new_collector_test.cpp', 'ui/plot_style.h')]),
+        include_exceptions=check_layering.INCLUDE_EXCEPTIONS,
+    )
+    violations = layer_violations(findings)
+    assert len(violations) == 1, violations
+    assert 'new_collector_test.cpp' in violations[0] and 'ui/plot_style.h' in violations[0]
+
+
+def test_new_ui_header_include_gets_no_exemption(tmp_path):
+    findings = scan(
+        tmp_path,
+        pair_files([('acquisition/control/acquisition_ui_test.cpp', 'ui/new_panel.h')]),
+        include_exceptions=check_layering.INCLUDE_EXCEPTIONS,
+    )
+    violations = layer_violations(findings)
+    assert len(violations) == 1, violations
+    assert 'ui/new_panel.h' in violations[0]
+
+
+def test_exception_pair_is_bound_to_its_source_file(tmp_path):
+    findings = scan(
+        tmp_path,
+        pair_files([('acquisition/control/acquisition_waveform_test.cpp', 'ui/device_workspace.h')]),
+        include_exceptions=check_layering.INCLUDE_EXCEPTIONS,
+    )
+    violations = layer_violations(findings)
+    assert len(violations) == 1, violations
+    assert 'acquisition_waveform_test.cpp' in violations[0]
