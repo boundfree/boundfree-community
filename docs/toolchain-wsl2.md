@@ -16,34 +16,28 @@ last_updated: 2026-11-10
 
 Community 的共同 Qt 基线是 **6.8.2**，唯一版本配置为 `config/qt-version.txt`，CMake 默认精确校验，Windows/Linux CI 从同一文件读取版本。Windows 使用 MSVC 2022，WSL 使用 Conda GCC；统一 Qt 版本不表示二进制、媒体后端或系统依赖完全相同。
 
-本机 WSL 是 Ubuntu 22.04，使用独立 Conda 环境，Qt/Python 前缀为 `/mnt/boudfree-dev/qt/6.8.2`，包含匹配的 Qt Multimedia、FFmpeg 7 LGPL 构建与 Python 3.12.12。Python 基线由 `config/python-version.txt` 管理，CI 同时读取 Qt/Python 两个版本文件；托管机器不一定提供每个安全补丁版的安装包（如 Windows 无 3.12.12），CI 按该文件的主次版本（3.12）安装，本机 Conda 环境保持精确版本。可按环境定义重建：
+Linux 侧推荐用独立 Conda 环境提供完整工具链：Qt 6.8.2（含匹配的 Qt Multimedia、FFmpeg 7 LGPL 构建）和基线 Python。环境定义在 `config/qt-wsl-environment.yml`，没有现成环境时按它重建。Python 基线由 `config/python-version.txt` 管理，CI 同时读取 Qt/Python 两个版本文件；托管机器不一定提供每个安全补丁版的安装包（如 Windows 无 3.12.12），CI 按该文件的主次版本（3.12）安装，本地 Conda 环境可以保持精确版本。
+
+下面的路径变量都换成各自的路径，构建目录可以放在仓库外：
 
 ```bash
+export BF_QT_ROOT=/path/to/conda/envs/bf-qt6-6.8.2   # 必须是 6.8.2 的安装
+cd /path/to/boundfree-community                       # 仓库根目录，下面的相对路径都从这里算
 conda env create -f config/qt-wsl-environment.yml
-# BF_QT_ROOT 可指向你自己的同版本安装；本工作空间已设置 toolchains/qt6-community。
-export BF_QT_ROOT=/path/to/conda/envs/bf-qt6-6.8.2
-scripts/wsl/with_qt.sh cmake --preset wsl2-qt6-conda -S native
-scripts/wsl/with_qt.sh cmake --build native/build-qt6-baseline --parallel 3
-scripts/wsl/with_qt.sh native/build-qt6-baseline/bf_app
+export BF_BUILD_DIR=/path/to/community-linux-build    # 构建目录，可在仓库外
+scripts/wsl/with_qt.sh cmake --preset wsl2-qt6-conda -B "$BF_BUILD_DIR" -S native
+scripts/wsl/with_qt.sh cmake --build "$BF_BUILD_DIR" --parallel 4
+scripts/wsl/with_qt.sh "$BF_BUILD_DIR/bf_app"
+BF_NATIVE_BUILD_DIR="$BF_BUILD_DIR" scripts/wsl/with_qt.sh scripts/wsl/verify_m1_foundation.sh
 ```
 
-`wsl2-qt6-conda` 预设使用 `native/cmake/wsl-qt6.cmake`，优先读取 `BF_QT_ROOT`，否则根据 Git common dir 查找工作空间的 `toolchains/qt6-community`，兼容主检出与独立工作树。新构建目录为 `native/build-qt6-baseline`；不要复用指向旧 Qt 的 CMakeCache。工具链与构建目录可通过 `BF_QT_ROOT`、`cmake -B` 覆盖。
+最后一行是完整验证入口：它会重新配置与构建、跑整套 pytest 并做界面自检，内存与并行度按 [AGENTS.md](../AGENTS.md) 的资源规则执行。新环境按 `config/qt-wsl-environment.yml` 只提供 Qt 与基线 Python，文件格式测试还需要 `sidecar/pyproject.toml` 里的 formats 依赖。
 
-`with_qt.sh` 仅为本次命令设置工具路径、运行库、插件目录和环境内 Python，避免混入其他 Qt 的插件。`toolchains/qt6` 与 `toolchains/qt6-community` 统一指向本机 6.8.2 环境。实验新 Qt 须使用独立构建目录和 `-DBF_ALLOW_OTHER_QT=ON`，日志会明确提示非基线版本。
+`wsl2-qt6-conda` 预设使用 `native/cmake/wsl-qt6.cmake`，优先读取 `BF_QT_ROOT`，否则根据 Git common dir 查找工作空间的 `toolchains/qt6-community`，兼容主检出与独立工作树。预设默认构建目录是 `native/build-qt6-baseline`，用 `cmake --preset ... -B <build-dir>` 改到别处；不要复用指向旧 Qt 的 CMakeCache。
 
-本机唯一日常源码目录是 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，日常在 `master` 上建短分支。原保留工作树的未提交改动已备份到 `refs/restore/20261104/ica-preserved-worktree` 后移除。`F:\workspace\BoudFree\development\boundfree-community` 仅为 Windows 编译副本，不在其中修改源码、暂存或提交。
+`with_qt.sh` 仅为本次命令设置工具路径、运行库、插件目录和环境内 Python，避免混入其他 Qt 的插件。`toolchains/qt6` 与 `toolchains/qt6-community` 统一指向同一个 6.8.2 环境。实验新 Qt 须使用独立构建目录和 `-DBF_ALLOW_OTHER_QT=ON`，日志会明确提示非基线版本。
 
-Windows Qt 位于 `F:\workspace\BoudFree\.dev\qt\windows\6.8.2\msvc2022_64`，Python 位于 `.dev\python\windows`。WSL 工具链与构建缓存仍放在 F 盘稀疏 ext4 镜像 `.dev/wsl/linux-dev.ext4`，挂载到 `/mnt/boudfree-dev`，由 `/etc/fstab` 自动挂载。源码恢复 Linux 不需要移动依赖或镜像。不要把编译缓存目录做成跨文件系统的软链接：Qt MOC 生成的相对 include 可能无法定位源码。本机忽略的 `native/CMakeUserPresets.json` 提供 `wsl2-linux` 预设，使用新目录 `/mnt/boudfree-dev/build/community-linux`，旧 F 盘源码对应的构建缓存保留，不复用其绝对路径：
-
-```bash
-cd /home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community
-scripts/wsl/with_qt.sh cmake --preset wsl2-linux -S native
-scripts/wsl/with_qt.sh cmake --build /mnt/boudfree-dev/build/community-linux --parallel 4
-scripts/wsl/with_qt.sh /mnt/boudfree-dev/build/community-linux/bf_app
-BF_NATIVE_BUILD_DIR=/mnt/boudfree-dev/build/community-linux scripts/wsl/with_qt.sh scripts/wsl/verify_m1_foundation.sh
-```
-
-开发终端入口为 `F:\workspace\BoudFree\development\Windows-Dev.cmd` 与 `WSL-Dev.cmd`。旧 `E:\workspace` 兼容目录链接已移除，桌面 workspace 快捷方式已指向 F 盘，配置直接使用 F 路径。共享的 Visual Studio、Inno Setup 和 Conda 管理器保留原安装位置。挂载镜像的机器不应直接复制或移动正在使用的镜像文件。
+源码在 Linux/WSL 侧编辑，Windows 只接收单向同步的编译副本，不在副本里修改源码、暂存或提交，同步与清单保护见下文。工具链和构建缓存可以放在仓库外或单独挂载的磁盘上，位置由 `BF_QT_ROOT` 和构建目录参数决定；构建缓存放在单独挂载的镜像或磁盘上时，不要在挂载期间复制或移动正在使用的镜像文件。不要把构建缓存目录做成跨文件系统的软链接，Qt MOC 生成的相对 include 可能无法定位源码。`native/CMakeUserPresets.json` 是被忽略的机器本地预设文件，不随源码同步。
 
 Qt、FFmpeg、编译器与环境锁定清单应随构建证据保留。离屏回归可用 `QT_QPA_PLATFORM=offscreen`，不提供真实显示/GPU结论。
 
@@ -53,17 +47,17 @@ Qt、FFmpeg、编译器与环境锁定清单应随构建证据保留。离屏回
 scripts/wsl/verify_m1_foundation.sh
 ```
 
-`--fast` 仅用于已有构建的本地迭代，会跳过 CMake build 和 UI smoke，不是完整验收。既有 Python native 测试仍按 `native/build` / `native/build-windows` 查找产物，尚未统一识别本机外置构建目录；应先检查各测试的查找规则。可直接运行 `/mnt/boudfree-dev/build/community-linux` 中的目标测试。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
+`--fast` 仅用于已有构建的本地迭代，会跳过 CMake build 和 UI smoke，不是完整验收。外置构建目录没有统一的覆盖方式：`scripts/wsl/verify_m1_foundation.sh` 读 `BF_NATIVE_BUILD_DIR`（默认 `native/build-qt6-baseline`），但它只是总入口自己的产物目录；`tests/native` 里各测试各自决定查找位置，多数只认 `native/build` / `native/build-windows`，只有个别测试（如 `test_bfsp_native.py`）有自己的变量。设置 `BF_NATIVE_BUILD_DIR` 不会让这些 pytest 改到外置目录，构建目录在别处时直接运行该目录里的目标测试，并先看对应测试的查找规则。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
 
 ## Windows 本地构建
 
-在 Linux/WSL 源码目录开发，通过受保护的单向同步更新 F 盘 Windows 编译副本，再在 Windows 使用 MSVC 构建。首次在 Linux 源码目录创建本机配置：
+在 Linux/WSL 源码目录开发，通过受保护的单向同步更新 Windows 编译副本，再在 Windows 使用 MSVC 构建。首次在 Linux 源码目录创建本机配置：
 
 ```bash
 cp config/windows-dev.example.json config/windows-dev.local.json
 ```
 
-编辑 `config/windows-dev.local.json` 填入 `wsl_sync_target` 和 `qt_root`。本机同步目标为 `/mnt/f/workspace/BoudFree/development/boundfree-community`，不使用旧 E 盘路径。默认通过 Python 3.12 启动器创建 `.venv`；本机以 `python_executable` 直接指定 F 盘 Conda Python，同时将 `bootstrap_python` 指向该解释器、`bootstrap_python_args` 设为空数组。两端的本机配置和 `native/CMakeUserPresets.json` 各自保留，不通过源码同步覆盖。
+编辑 `config/windows-dev.local.json` 填入两项：`wsl_sync_target` 是 Windows 编译副本在 WSL 下的路径（例如 `/mnt/d/dev/boundfree-community`），`qt_root` 是该机 Qt 6.8.2 MSVC 安装目录（例如 `C:\Qt\6.8.2\msvc2022_64`）。示例文件里的路径只是格式示例，必须改成自己的实际路径，其他字段按需调整。默认通过 Python 3.12 启动器创建 `.venv`；也可用可选的 `python_executable` 直接指定解释器，此时把 `bootstrap_python` 指向同一解释器、`bootstrap_python_args` 设为空数组。两端的本机配置和 `native/CMakeUserPresets.json` 各自保留，不通过源码同步覆盖。
 
 从 WSL2 一键同步、构建、自动验收并把安装包复制回当前仓库：
 
@@ -86,7 +80,7 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 ./scripts/wsl/sync_to_windows.sh --init
 ```
 
-同步清单 `.boundfree-windows-mirror.json` 记录源目录、提交基准和逐文件 SHA256，覆盖未提交源码。同步前检查目标的修改、删除和额外源码文件；发现差异立即停止，先把独有修改归集到 Linux。镜像不能反向作为源码，也不能从另一份旧源码覆盖。清单、并发锁、本机配置、私有材料、构建缓存与打包产物不入源码同步。`--dry-run` 只检查并列出变更，不写文件；复制失败会回滚本次触及的源码。首次恢复现有 F 盘副本的清单由经过备份与摘要校验的迁移步骤建立，普通同步不提供强制覆盖开关。
+同步清单 `.boundfree-windows-mirror.json` 记录源目录、提交基准和逐文件 SHA256，覆盖未提交源码。同步前检查目标的修改、删除和额外源码文件；发现差异立即停止，先把独有修改归集到 Linux。镜像不能反向作为源码，也不能从另一份旧源码覆盖。清单、并发锁、本机配置、私有材料、构建缓存与打包产物不入源码同步。`--dry-run` 只检查并列出变更，不写文件；复制失败会回滚本次触及的源码。给已存在的副本首次登记清单时先备份并核对摘要，普通同步不提供强制覆盖开关。
 
 随后在 Windows 10/11 的同步仓库根目录运行：
 
@@ -97,7 +91,7 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 该入口依次执行 MSVC Release 构建、冻结边车、CMake install、`windeployqt`、Inno Setup 安装包，并在最后调用验收脚本；也可分开执行：
 
 ```powershell
-.\scripts\windows\build_release.ps1 -QtRoot "F:\workspace\BoudFree\.dev\qt\windows\6.8.2\msvc2022_64" -LicensePublicKeyFile license_public.pem
+.\scripts\windows\build_release.ps1 -QtRoot "C:\Qt\6.8.2\msvc2022_64" -LicensePublicKeyFile license_public.pem
 .\scripts\windows\verify_windows_release.ps1
 ```
 
@@ -106,7 +100,7 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 执行 Windows 侧步骤时的已知坑：
 
 - 验收脚本同时支持出厂 Windows PowerShell 5.1 与 PowerShell 7；脚本文件带 UTF-8 BOM，改动时不要去掉（5.1 会把中文 here-string 读坏），`param()` 默认值内也不要引用 `$PSScriptRoot`（5.1 下为空）。
-- 不要从 WSL 用相对路径或 Linux 风格路径启动 Windows 侧 `bf_app.exe`。`VersionService::detectRepoRoot(argv[0])` 在解析不到应用目录时会回退到当前工作目录，于是资源根变成 WSL/源码目录：边车会退化为 `python -m boundfree_sidecar`（本机命中 `E:\miniconda3`，没有 mne），EDF/BDF/BrainVision/EEGLAB/FIF 会报 `reader.open_failed`。用完整 Windows 路径（`& 'F:\...\release\stage\BoundFreeEEG\bf_app.exe'`）或在 PowerShell 里调用。
+- 不要从 WSL 用相对路径或 Linux 风格路径启动 Windows 侧 `bf_app.exe`。`VersionService::detectRepoRoot(argv[0])` 在解析不到应用目录时会回退到当前工作目录，于是资源根变成 WSL/源码目录：边车会退化为 `python -m boundfree_sidecar`，命中的解释器没有装 MNE 依赖时，EDF/BDF/BrainVision/EEGLAB/FIF 会报 `reader.open_failed`。用完整 Windows 路径（`& 'D:\dev\boundfree-community\release\stage\BoundFreeEEG\bf_app.exe'`）或在 PowerShell 里调用。
 - 边车冷启动加载 MNE 可能触发 `ipc.sidecar_timeout`。记录首次打开与后续运行差异，检查冻结依赖、启动路径和超时配置；不能只凭热态重跑成功就宣称冷启动验收完成。
 - Windows 工作副本整体改名或移动后，`native\build-windows` 里的 CMakeCache 仍指向老绝对路径，下次 configure 会失败；删除该目录重新配置即可（会触发一次全量构建）。
 

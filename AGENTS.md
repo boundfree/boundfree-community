@@ -104,11 +104,12 @@ BoundFree EEG：脑电（EEG/LFP）信号的滤波、展示、分析与设备接
 
 ## 本机环境
 
-- 日常源码目录是 Linux 侧的 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`。
-- `F:\workspace\BoudFree\development\boundfree-community` 是从 Linux 单向同步的 Windows 编译副本，不在副本里编辑或提交。同步方法见工具链文档。
-- **WSL2 内存约 12GiB。构建与测试并行度不超过 4**（`cmake --build <dir> --parallel 4`），禁止不带数字的 `-j`。否则会耗尽内存导致 WSL 重启。
-- `tests/native/test_m8_license_gate.py` 会在临时目录完整编译 `bf_app`，最耗内存。
-- 完整 pytest 按目录或文件分批串行运行，日志写到 `/mnt/boudfree-dev` 下（WSL 重启会清空 `/tmp`）。可用内存低于约 3GiB 时停止。
+本仓库是公开仓库，路径、内存大小和构建目录属于各机器自己的事实，写在仓库外的本机说明里。以下规则对任何开发机都成立：
+
+- 源码在 Linux/WSL 侧编辑；Windows 编译副本只接收从 Linux 的单向同步，不在副本里编辑、暂存或提交。同步清单、目录和副本冲突处理见[工具链文档](docs/toolchain-wsl2.md)。
+- 构建与测试并行度不超过 4（`cmake --build <build-dir> --parallel 4`），不使用不带数字的 `-j`；内存有限的机器上并行编译会耗尽内存。
+- `tests/native/test_m8_license_gate.py` 会在临时目录完整编译 `bf_app`，是最耗内存的一项，不与其它重构建同时运行。
+- 完整 pytest 按目录或文件分批串行运行；日志写到仓库外、机器重启不会清空的位置，不要用 `/tmp`。可用内存低于约 3GiB 时停止。
 
 ## 安全
 

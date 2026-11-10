@@ -25,7 +25,7 @@ last_updated: 2026-11-10
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
 | 开发 BFSP 设备协议或新的传输方式 | [bfsp-protocol.md](bfsp-protocol.md)、[bfsp-transports.md](bfsp-transports.md) |
 | 使用 Fluent-Qt 控件和统一主题 | [fluentqt-integration.md](fluentqt-integration.md) |
-| 搭建本地环境、构建、同步 Windows 编译副本 | [toolchain-wsl2.md](toolchain-wsl2.md) |
+| 搭建本地环境（路径变量与外置构建目录）、构建、同步 Windows 编译副本 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 
 ## 提交和发布
 
