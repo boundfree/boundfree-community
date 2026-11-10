@@ -163,6 +163,36 @@ Spectrum computeWelchPsd(const std::vector<double>& signal, double fs, int npers
     return out;
 }
 
+Spectrum longestFiniteSegmentPsd(const std::vector<double>& trace, double fs, double fmax) {
+    auto begin = trace.begin();
+    auto end = trace.begin();
+    for (auto it = trace.begin(); it != trace.end();) {
+        if (!std::isfinite(*it)) {
+            ++it;
+            continue;
+        }
+        const auto first = it;
+        while (it != trace.end() && std::isfinite(*it)) {
+            ++it;
+        }
+        // `>=` keeps the later run when both runs are equally long.
+        if (it - first >= end - begin) {
+            begin = first;
+            end = it;
+        }
+    }
+    if (end - begin < 4) {
+        return Spectrum{};
+    }
+    Spectrum psd = computeWelchPsd(std::vector<double>(begin, end), fs, 0, false);
+    const double boundedFmax = std::min(std::max(0.0, fmax), fs / 2.0);
+    const auto limit = std::upper_bound(psd.frequencies.begin(), psd.frequencies.end(), boundedFmax);
+    const auto keep = static_cast<std::size_t>(limit - psd.frequencies.begin());
+    psd.frequencies.resize(keep);
+    psd.values.resize(keep);
+    return psd;
+}
+
 Spectrogram computeSpectrogram(
     const std::vector<double>& signal,
     double fs,

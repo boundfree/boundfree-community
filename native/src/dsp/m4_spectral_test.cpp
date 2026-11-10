@@ -173,11 +173,159 @@ std::vector<std::vector<double>> loadMatrix2d(const std::string& path) {
     return asMatrix2d(bf::dsp::loadNpyFloat64(path));
 }
 
+// Verbatim copy of the pre-refactor EegSeparationWorkspace::refreshPlots loop.
+// Kept here so the extracted helper is proven bit-identical, not merely close.
+bf::dsp::Spectrum legacyWorkspaceSpectrum(const std::vector<double>& trace, double fs) {
+    auto begin = trace.begin(), end = trace.begin();
+    for (auto it = trace.begin(); it != trace.end();) {
+        if (!std::isfinite(*it)) {
+            ++it;
+            continue;
+        }
+        const auto first = it;
+        while (it != trace.end() && std::isfinite(*it)) ++it;
+        if (it - first >= end - begin) {
+            begin = first;
+            end = it;
+        }
+    }
+    const auto psd = end - begin >= 4
+        ? bf::dsp::computeWelchPsd(std::vector<double>(begin, end), fs, 0, false) : bf::dsp::Spectrum{};
+    bf::dsp::Spectrum out;
+    for (std::size_t i = 0; i < psd.frequencies.size(); ++i)
+        if (psd.frequencies[i] <= std::min(100., fs / 2)) {
+            out.values.push_back(psd.values[i]);
+            out.frequencies.push_back(psd.frequencies[i]);
+        }
+    return out;
+}
+
+// Bit-exact comparison: same lengths and every element equal, no tolerance.
+bool bitIdentical(const bf::dsp::Spectrum& a, const bf::dsp::Spectrum& b) {
+    return a.frequencies == b.frequencies && a.values == b.values;
+}
+
+bool report(const std::string& name, bool ok, const std::string& detail = {}) {
+    if (!ok) {
+        std::cerr << "FAIL " << name << (detail.empty() ? std::string() : " " + detail) << "\n";
+        return false;
+    }
+    std::cout << "PASS " << name << "\n";
+    return true;
+}
+
+// Display PSD helper: longest finite run, gap boundaries, inclusion rules,
+// truncation, and bit parity with the code it replaced in the UI.
+int checkLongestFiniteSegmentPsd() {
+    int failures = 0;
+    const double fs = 250.0;
+    const auto trace = [](std::size_t n) {
+        std::vector<double> out(n);
+        for (std::size_t i = 0; i < n; ++i) out[i] = std::sin(0.07 * static_cast<double>(i)) + 0.3 * std::cos(0.31 * static_cast<double>(i));
+        return out;
+    };
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+
+    // No finite sample at all: NaN, +Inf and -Inf runs all yield an empty result.
+    for (double fill : {nan, inf, -inf}) {
+        const bf::dsp::Spectrum empty = bf::dsp::longestFiniteSegmentPsd(std::vector<double>(64, fill), fs, 100.0);
+        failures += !report("longest_finite_segment_all_nonfinite",
+                            empty.frequencies.empty() && empty.values.empty());
+    }
+    failures += !report("longest_finite_segment_empty_trace",
+                        bf::dsp::longestFiniteSegmentPsd({}, fs, 100.0).values.empty());
+
+    // Shortest usable run: 3 finite samples are rejected, 4 are enough for Welch.
+    failures += !report("longest_finite_segment_short_run",
+                        bf::dsp::longestFiniteSegmentPsd(trace(3), fs, 100.0).values.empty());
+    failures += !report("longest_finite_segment_four_samples",
+                        !bf::dsp::longestFiniteSegmentPsd(trace(4), fs, 100.0).values.empty());
+    {   // Finite samples hidden behind NaN edges still count as one run.
+        std::vector<double> padded(2, nan);
+        const auto body = trace(8);
+        padded.insert(padded.end(), body.begin(), body.end());
+        padded.push_back(nan);
+        failures += !report("longest_finite_segment_nan_edges",
+                            !bf::dsp::longestFiniteSegmentPsd(padded, fs, 100.0).values.empty());
+    }
+
+    // An internal gap is a hard boundary: the 96-sample run wins over the 24-sample run.
+    {
+        std::vector<double> gapped = trace(96);
+        gapped.insert(gapped.end(), 5, nan);
+        const auto tail = trace(24);
+        gapped.insert(gapped.end(), tail.begin(), tail.end());
+        const bf::dsp::Spectrum got = bf::dsp::longestFiniteSegmentPsd(gapped, fs, 100.0);
+        failures += !report("longest_finite_segment_internal_gap",
+                            bitIdentical(got, bf::dsp::longestFiniteSegmentPsd(trace(96), fs, 100.0)) &&
+                                !got.values.empty());
+    }
+
+    // Equal-length runs: the later run is selected, so a stale earlier run is not reused.
+    {
+        std::vector<double> first(32, 1.0);
+        std::vector<double> later = trace(32);
+        std::vector<double> tied = first;
+        tied.push_back(nan);
+        tied.insert(tied.end(), later.begin(), later.end());
+        const bf::dsp::Spectrum got = bf::dsp::longestFiniteSegmentPsd(tied, fs, 100.0);
+        const bf::dsp::Spectrum expected = bf::dsp::longestFiniteSegmentPsd(later, fs, 100.0);
+        const bf::dsp::Spectrum stale = bf::dsp::longestFiniteSegmentPsd(first, fs, 100.0);
+        failures += !report("longest_finite_segment_tie_takes_later_run",
+                            bitIdentical(got, expected) && !bitIdentical(got, stale));
+    }
+
+    // Frequency truncation keeps frequencies and values in step and is inclusive.
+    {
+        const auto signal = trace(512);
+        const bf::dsp::Spectrum full = bf::dsp::computeWelchPsd(signal, fs, 0, false);
+        const bf::dsp::Spectrum limited = bf::dsp::longestFiniteSegmentPsd(signal, fs, 20.0);
+        std::size_t keep = 0;
+        while (keep < full.frequencies.size() && full.frequencies[keep] <= 20.0) ++keep;
+        bool synced = limited.frequencies.size() == limited.values.size() && keep == limited.frequencies.size();
+        for (std::size_t i = 0; synced && i < keep; ++i) {
+            synced = limited.frequencies[i] == full.frequencies[i] && limited.values[i] == full.values[i];
+        }
+        failures += !report("longest_finite_segment_truncation",
+                            synced && keep > 0 && limited.frequencies.back() <= 20.0 &&
+                                (keep == full.frequencies.size() || full.frequencies[keep] > 20.0));
+        failures += !report("longest_finite_segment_above_nyquist",
+                            bitIdentical(bf::dsp::longestFiniteSegmentPsd(signal, fs, 1000.0),
+                                         bf::dsp::computeWelchPsd(signal, fs, 0, false)));
+        failures += !report("longest_finite_segment_clamps_fmax",
+                            bf::dsp::longestFiniteSegmentPsd(signal, fs, -1.0).frequencies.size() == 1 &&
+                                bf::dsp::longestFiniteSegmentPsd(signal, fs, -1.0).frequencies.front() == 0.0);
+    }
+
+    // Bit parity with the previous in-UI implementation for every shape above.
+    {
+        std::vector<std::vector<double>> inputs;
+        inputs.push_back(trace(512));
+        inputs.push_back(trace(4));
+        inputs.push_back(trace(3));
+        inputs.push_back({});
+        {   std::vector<double> v(40, nan); v[10] = 1.0; v[11] = 2.0; v[12] = 3.0; inputs.push_back(v); }
+        {   std::vector<double> v = trace(50); v[20] = nan; inputs.push_back(v); }
+        {   std::vector<double> v = trace(200); std::fill(v.begin() + 60, v.begin() + 66, inf); inputs.push_back(v); }
+        {   std::vector<double> v = trace(120); v[0] = nan; v[119] = -inf; inputs.push_back(v); }
+        {   std::vector<double> v(64, 0.0); inputs.push_back(v); }
+        bool identical = true;
+        for (const auto& input : inputs) {
+            const bf::dsp::Spectrum got = bf::dsp::longestFiniteSegmentPsd(input, fs, 100.0);
+            const bf::dsp::Spectrum expected = legacyWorkspaceSpectrum(input, fs);
+            identical = identical && bitIdentical(got, expected);
+        }
+        failures += !report("longest_finite_segment_matches_legacy_ui_bits", identical);
+    }
+    return failures;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     const std::string goldenDir = (argc > 1) ? argv[1] : std::string("tests/golden/m4");
-    int failures = 0;
+    int failures = checkLongestFiniteSegmentPsd();
     Tolerances tol;
 
     try {
