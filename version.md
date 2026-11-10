@@ -10,7 +10,7 @@
 - 默认使用 `dev`、`beta.N`、`stable`；CI 临时追加运行编号、尝试次数和 Git SHA，不回写本文件。
 - PATCH 用于已发布版本修复，MINOR 用于新阶段能力，MAJOR 用于重大不兼容边界。
 - IPC 协议版本独立维护。已公开发布的 tag 和安装包不覆盖。
-- 此前的逐提交记录见 Git 历史（提交 `1c55f6c` 的 `version.md`），后续操作见 `docs/release-sop.md`。
+- 此前的逐提交记录见 Git 历史（提交 `1fe5cec` 的 `version.md`），后续操作见 `docs/release-sop.md`。
 
 ---
 

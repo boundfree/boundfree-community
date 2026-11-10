@@ -44,4 +44,4 @@ CI 已在 Windows runner 验证安装、隔离开发搜索路径后运行与卸�
 
 ## 历史依据
 
-M0–M8 各阶段的计划、报告和旧设计不保留在仓库，可从 Git 提交 `1c55f6c` 的 `docs/archive/` 找回。其中的历史 GPU 基线不能代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。
+M0–M8 各阶段的计划、报告和旧设计不保留在仓库，可从 Git 提交 `1fe5cec` 的 `docs/archive/` 找回。其中的历史 GPU 基线不能代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。
