@@ -55,7 +55,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libssl-dev libegl1 libopengl0 libgl1 libpulse0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libxcb-image0 libxcb-render-util0 libasound2t64 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0
+          # ffmpeg 只给测试用 (M6 媒体样本生成), 不进打包依赖, 也不改变产品链接的 FFmpeg。
+          sudo apt-get install -y ninja-build libssl-dev libegl1 libopengl0 libgl1 libpulse0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libxcb-image0 libxcb-render-util0 libasound2t64 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 ffmpeg
       - uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4
         with:
           setup-python: false
@@ -90,6 +91,47 @@ jobs:
       - name: Full regression tests (Linux)
         if: runner.os == 'Linux'
         run: python -m pytest tests -x -v -ra --ignore=tests/scripts/test_verify_script.py --timeout=360 --junitxml=release/test-results/all.xml
+      # 单独跑 verify 脚本测试: 它内部嵌套整套回归 (--fast), 放在主回归里会叠在单例
+      # 360s 超时上。这里给足超时, 并用刚构建的 native/build 指向同一产物。
+      - name: Verification script integration (Linux)
+        if: runner.os == 'Linux'
+        env:
+          BF_NATIVE_BUILD_DIR: ${{ github.workspace }}/native/build
+          BF_PYTHON_EXECUTABLE: python
+        run: python -m pytest tests/scripts/test_verify_script.py -v -ra --timeout=900 --junitxml=release/test-results/verify-script.xml
+      # 环境缺项只能让本地 skip; CI 有 ffmpeg 与构建产物, 这三例必须真跑并通过。
+      - name: Assert environment-dependent tests ran (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          required = {
+              "release/test-results/all.xml": [
+                  ("tests.native.test_m6_video_sync", "test_smoke_m6_video_real_media_contracts"),
+                  ("tests.native.test_m6_video_sync", "test_smoke_m6_main_window_eeg_plus_video_joint_open"),
+              ],
+              "release/test-results/verify-script.xml": [
+                  ("tests.scripts.test_verify_script", "test_m1_foundation_verify_script_exists_and_supports_fast_mode"),
+              ],
+          }
+          problems = []
+          for report, nodes in required.items():
+              found = {}
+              for case in ET.parse(report).iter("testcase"):
+                  found[(case.get("classname"), case.get("name"))] = case
+              for node in nodes:
+                  case = found.get(node)
+                  if case is None:
+                      problems.append(f"{report}: 缺少 {node[0]}::{node[1]}")
+                      continue
+                  for outcome in ("skipped", "failure", "error"):
+                      if case.find(outcome) is not None:
+                          problems.append(f"{report}: {node[0]}::{node[1]} 结果是 {outcome}")
+          if problems:
+              raise SystemExit("\n".join(problems))
+          print("environment-dependent tests: 3 例实际通过")
+          PY
       - name: Python and contract regression tests (Windows)
         if: runner.os == 'Windows'
         run: python -m pytest tests/scripts tests/sidecar tests/contracts tests/i18n tests/fixtures tests/acquisition -x -v -ra --ignore=tests/scripts/test_verify_script.py --timeout=300 --junitxml=release/test-results/python.xml
