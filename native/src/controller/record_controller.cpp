@@ -1,4 +1,5 @@
 #include "controller/record_controller.h"
+#include "controller/sidecar_slice.h"
 #include "render/waveform_slice.h"
 
 #include <QElapsedTimer>

@@ -2,8 +2,8 @@
 
 #include "render/processing_view_state.h"
 #include "render/waveform_view_state.h"
-#include "ipc/sidecar_client.h"
 
+#include <QJsonObject>
 #include <QStringList>
 #include <vector>
 
@@ -40,7 +40,6 @@ struct WaveformDisplayModel {
     QStringList channelUnits;
 };
 
-WaveformSlice waveformSliceFromSidecar(const SidecarOpenResult& session, const SidecarSliceResult& slice);
 // Common numerical input contract. Explicit coordinates are never treated as
 // uniformly spaced array offsets; display envelopes are not valid inputs here.
 struct SignalRange { std::size_t first = 0, last = 0; double start = 0; };

@@ -1,5 +1,6 @@
 #include "controller/file_open_controller.h"
 
+#include "controller/sidecar_slice.h"
 #include "render/waveform_slice.h"
 
 #include <QMetaObject>
