@@ -123,7 +123,7 @@ private:
     QWidget *listPage_, *wifiPage_, *livePage_, *wifiAdvanced_;
     QVBoxLayout* recentLayout_;
     QLabel *listTitle_, *listIntro_, *addHeading_, *rtTitle_, *rtDescription_, *recentHeading_, *listNotice_,
-           *profileNotice_, *wifiTitle_, *wifiStatus_, *wifiDetail_, *wifiGainNotice_, *wifiError_,
+           *profileNotice_, *wifiTitle_, *wifiStatus_, *wifiDetail_, *wifiPowerNotice_, *wifiGainNotice_, *wifiError_,
            *wifiNameLabel_, *wifiChannelsLabel_, *wifiRateLabel_, *wifiHostLabel_, *wifiHttpLabel_,
            *wifiListenLabel_, *wifiLocalLabel_, *wifiGainLabel_, *wifiReferenceLabel_, *wifiIdLabel_;
     QPushButton *listWifi_, *listSimulator_, *listTcp_, *listCurrent_, *liveList_, *wifiBack_,

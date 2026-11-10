@@ -3,7 +3,7 @@ title: 基础契约
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-10-31
+last_updated: 2026-11-06
 ---
 
 # 基础契约
@@ -123,6 +123,8 @@ M7 `export_segment`：请求包含 `src/t0/t1/path/markers`；标注筛选源区
 错误码是协议契约。后端和边车只返回错误码与参数，UI 通过 i18n 映射为用户文案。
 
 `contracts/error_codes.json` 是错误码注册表。新增、替换或调整错误码参数时，必须先更新该注册表，再同步 C++、Python 和 i18n 文案。
+
+采集状态允许通过 `connectionPhase` 表示 `detecting`，此时尚无已识别通道，`totalChannels` 为 0；非阻塞提示使用 `warning`，不覆盖故障 `error`。RT-BCI 流识别失败返回 `device.rt_bci_unrecognized_stream`，附带诊断参数 `received_bytes` 和 `reason`；它们不进入本地化占位符。识别结果与后备配置不一致时返回通用提示 `device.channel_count_adjusted`。对应验证由 `rt_bci_decoder_test`、`acquisition_wifi_source_test` 和 `acquisition_ui_test` 覆盖。
 
 命名规则：
 
