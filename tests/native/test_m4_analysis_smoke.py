@@ -3,7 +3,9 @@
 被测对象: bf_app --smoke-m4-analysis 与 bf_app --smoke-m4-render (由
 native/src/app/main.cpp 提供, 两个新增 smoke 入口)。
 
-- --smoke-m4-analysis: 在后台线程池上发起 PSD 请求，验证结果非空；连续请求验证 latest-request-wins；取消请求验证没有回调；同通道 Coherence 验证 `analysis.same_channel` 结构化错误码。
+- --smoke-m4-analysis: 在后台线程池上发起 PSD 请求，验证结果非空且频段功率与同一 PSD 逐频段一致；
+  FFT 结果不带频段功率；连续请求验证 latest-request-wins；取消请求验证没有回调；
+  同通道 Coherence 验证 `analysis.same_channel` 结构化错误码。
 - --smoke-m4-render: 离屏渲染 SpectrumWidget / SpectrogramWidget / BandTrendWidget
   三个自绘控件, 统计非背景像素, 证明三个 paintEvent 路径在喂入真实数据后产出
   实际像素 (而非只画空数据占位文本)。
@@ -72,8 +74,8 @@ def test_smoke_m4_analysis_psd_generation_cancel_and_same_channel_contracts():
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == (
-        "smoke-m4-analysis-ok psd=true latest_request=true cancel=true "
-        "same_channel=analysis.same_channel"
+        "smoke-m4-analysis-ok psd=true band_powers=true fft_band_powers=true "
+        "latest_request=true cancel=true same_channel=analysis.same_channel"
     )
     assert "smoke-m4-analysis-failed" not in result.stderr
 

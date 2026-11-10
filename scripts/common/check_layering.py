@@ -126,14 +126,9 @@ INCLUDE_EXCEPTIONS = (
 
 DSP_CALL_EXCEPTIONS = (
     DspCallException(
-        source="ui/main_window.cpp",
-        function="bandPower",
-        reason="分析页按频段现算功率；A2 第 1 步移到 controller 的 AnalysisResult.bandPowers 后删除本条",
-    ),
-    DspCallException(
         source="ui/eeg_separation_workspace.cpp",
         function="computeWelchPsd",
-        reason="分离工作区现算成分频谱；A2 第 2 步提取为 dsp::* 纯函数后删除本条",
+        reason="分离工作区现算成分频谱；A2 第 2 步改为调用 controller 的无状态适配函数后删除本条",
     ),
 )
 

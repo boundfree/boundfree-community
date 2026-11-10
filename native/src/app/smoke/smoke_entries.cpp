@@ -427,9 +427,15 @@ std::optional<int> bf::runCommandLineEntry(int argc, char** argv, const bf::Vers
             QTimer timeout;
             timeout.setSingleShot(true);
             bool completed = false;
+            bool bandsMatch = false;
             QString failure;
             QObject::connect(&service, &bf::AnalysisService::completed, &loop, [&](int, const bf::AnalysisResult& result) {
                 completed = result.kind == bf::AnalysisKind::Psd && !result.spectrum.values.empty();
+                // 频段功率必须是同一 PSD 上逐频段计算的结果，顺序与 eegBands 一致。
+                bandsMatch = completed && result.bandPowers.size() == bf::dsp::eegBands().size();
+                for (std::size_t band = 0; bandsMatch && band < result.bandPowers.size(); ++band)
+                    bandsMatch = result.bandPowers[band] ==
+                        bf::dsp::bandPower(result.spectrum, bf::dsp::eegBands()[band].low, bf::dsp::eegBands()[band].high);
                 loop.quit();
             });
             QObject::connect(&service, &bf::AnalysisService::failed, &loop, [&](int, const QString& code, const QString&) {
@@ -445,8 +451,9 @@ std::optional<int> bf::runCommandLineEntry(int argc, char** argv, const bf::Vers
             service.request(psd);
             timeout.start(3000);
             loop.exec();
-            if (!completed) {
-                std::cerr << "smoke-m4-analysis-failed code=" << failure.toStdString() << "\n";
+            if (!completed || !bandsMatch) {
+                std::cerr << "smoke-m4-analysis-failed code=" << failure.toStdString()
+                          << " band_powers=" << (bandsMatch ? "true" : "false") << "\n";
                 return 1;
             }
             QEventLoop generationLoop;
@@ -503,7 +510,30 @@ std::optional<int> bf::runCommandLineEntry(int argc, char** argv, const bf::Vers
                 std::cerr << "smoke-m4-analysis-failed same_channel=" << errorCode.toStdString() << "\n";
                 return 1;
             }
-            std::cout << "smoke-m4-analysis-ok psd=true latest_request=true cancel=true same_channel=" << errorCode.toStdString() << "\n";
+            // FFT 等其他分析类型不带频段功率，界面也随之不显示频段表。
+            QEventLoop fftLoop;
+            QTimer fftTimeout;
+            fftTimeout.setSingleShot(true);
+            bool fftCompleted = false;
+            bool fftBandsEmpty = false;
+            QObject::connect(&service, &bf::AnalysisService::completed, &fftLoop, [&](int, const bf::AnalysisResult& result) {
+                fftCompleted = result.kind == bf::AnalysisKind::Fft && !result.spectrum.values.empty();
+                fftBandsEmpty = result.bandPowers.empty();
+                fftLoop.quit();
+            });
+            QObject::connect(&fftTimeout, &QTimer::timeout, &fftLoop, &QEventLoop::quit);
+            bf::AnalysisRequest fft = psd;
+            fft.kind = bf::AnalysisKind::Fft;
+            service.request(fft);
+            fftTimeout.start(3000);
+            fftLoop.exec();
+            if (!fftCompleted || !fftBandsEmpty) {
+                std::cerr << "smoke-m4-analysis-failed fft_band_powers="
+                          << (fftBandsEmpty ? "true" : "false") << "\n";
+                return 1;
+            }
+            std::cout << "smoke-m4-analysis-ok psd=true band_powers=true fft_band_powers=true"
+                         " latest_request=true cancel=true same_channel=" << errorCode.toStdString() << "\n";
             return 0;
         }
         if (arg == "--smoke-m4-render") {

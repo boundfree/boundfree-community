@@ -8,6 +8,7 @@
 #include <QImage>
 #include <QTimer>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -128,12 +129,15 @@ inline int smokeAnalysisRefresh(int argc, char** argv, const bf::VersionInfo& ve
         replacement.spectrum.frequencies.push_back(frequency);
         replacement.spectrum.values.push_back(1234.0 + frequency);
     }
+    // 频段功率随结果一起到达。这里故意给出与 spectrum 自行积分不同的数值，
+    // 界面若重新计算就会显示另一组数字。
+    const std::array<double, 5> replacementPowers{4321.0, 4322.0, 4323.0, 4324.0, 4325.0};
+    replacement.bandPowers.assign(replacementPowers.begin(), replacementPowers.end());
     service->completed(heldGeneration, replacement);
     const QString expectedContext = i18n.text("app.analysis.context", {
         {"channel", "alpha"}, {"start", i18n.formatNumber(requestStart, 2)}, {"end", i18n.formatNumber(requestEnd, 2)},
     });
-    const auto& delta = bf::dsp::eegBands().front();
-    const QString expectedPower = i18n.formatNumber(bf::dsp::bandPower(replacement.spectrum, delta.low, delta.high), 2);
+    const QString expectedPower = i18n.formatNumber(replacement.bandPowers.front(), 2);
     if (state() != "ready" || summary->text() == initialSummary || !summary->text().contains(expectedPower)
         || status->text() != i18n.text("app.analysis.ready") + "\n" + expectedContext)
         return fail("replacement_summary_context_not_paired");
