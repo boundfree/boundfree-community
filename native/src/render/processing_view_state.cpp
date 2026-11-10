@@ -1,4 +1,4 @@
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 
 #include "dsp/filter_design.h"
 #include "dsp/reference.h"
