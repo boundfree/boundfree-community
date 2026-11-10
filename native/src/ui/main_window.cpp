@@ -2027,8 +2027,8 @@ void MainWindow::retranslateUi() {
         if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
     }
     waveformTitle_->setText(i18n_->text("app.workspace.waveform"));
-    // 窄窗口标签文案与挂载先更新，再重译面板内的标题、摘要、页签与已算结果；
-    // 与原顺序一致，语言切换不触发新的分析请求。
+    // 窄窗口的标签文案与拆装属于 MainWindow；面板内部标题、摘要、页签与已算结果的重译
+    // 由面板自己负责。两者都是纯文本/布局更新，不发起分析请求。
     updateSignalWorkspaceLayout();
     analysisPanel_->retranslateUi();
     markerModeAction_->setText(i18n_->text("app.marker.mode"));

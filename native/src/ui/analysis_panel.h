@@ -57,9 +57,10 @@ public:
     // 用户操作与设备后台帧共用的请求入口；background 保留原有的
     // “同页且 pending 时合并”与“保留当前结果”语义。
     void requestRefresh(bool background = false);
-    // 播放推进与预取窗口两处的 500ms 节流。计时节拍属于面板：每次请求末尾重启，
-    // 所以“何时调用”留在 MainWindow，“是否到期”在这里判断。
-    void requestPlaybackRefresh(bool background = true);
+    // 播放推进与预取窗口两处的 500ms 节流（后台刷新）。计时节拍属于面板：每次请求末尾重启，
+    // 所以“何时调用”留在 MainWindow，“是否到期”在这里判断；未播放的前台刷新直接走
+    // requestRefresh()，不经过这里。
+    void requestPlaybackRefresh();
     void invalidate();
 
     void retranslateUi();

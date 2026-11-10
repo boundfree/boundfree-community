@@ -367,8 +367,8 @@ void AnalysisPanel::requestRefresh(bool background) {
     analysisElapsed_.restart();
 }
 
-void AnalysisPanel::requestPlaybackRefresh(bool background) {
-    if (!analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestRefresh(background);
+void AnalysisPanel::requestPlaybackRefresh() {
+    if (!analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestRefresh(true);
 }
 
 void AnalysisPanel::invalidate() {
