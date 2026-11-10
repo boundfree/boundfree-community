@@ -42,4 +42,4 @@ CI 已在 Windows runner 验证安装、隔离开发搜索路径后运行与卸�
 
 ## 历史依据
 
-M0–M8、UI 修复、早期产品分线与设计草案均在 [归档索引](archive/README.md)。历史 GPU 基线保留在 [M2 记录](archive/reports/m2-rendering-gpu-gate.md)，不能自动代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。
+M0–M8、UI 修复、早期产品分线与设计草案的历史记录靠 Git 历史追溯（提交 `1c55f6c`）。历史 GPU 基线见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/m2-rendering-gpu-gate.md`），不能自动代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。

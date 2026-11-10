@@ -2,7 +2,7 @@
 
 被测对象: ``bf_app --smoke-m7-record <fixture> <out_dir>`` 与
 ``bf_app --smoke-m7-export <fixture> <out_dir>`` 两个 smoke 入口
-(由 ``native/src/app/main.cpp`` 暴露, 计划见 docs/archive/plans/m7-record-export.md)。
+(由 ``native/src/app/main.cpp`` 暴露)。
 
 - record: 文件回放 chunk 经 Native 有界输入队列、二进制长度前缀 IPC 与边车单写线程,
   同时生成 EDF 与 HDF5; 期间追加一个事件, 停止后边车重新打开产物校验样本数与事件数,

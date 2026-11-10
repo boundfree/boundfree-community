@@ -8,7 +8,7 @@ last_updated: 2026-11-02
 
 # 当前架构与模块边界
 
-本文描述当前源码结构；产品范围见 [路线](roadmap.md)，协议细节以 [基础契约](contracts.md) 为准。最初的迁移设计及其未采用选项保存在 [原设计快照](archive/design/architecture-design-20261020.md)。
+本文描述当前源码结构；产品范围见 [路线](roadmap.md)，协议细节以 [基础契约](contracts.md) 为准。
 
 ## 运行结构
 
@@ -56,7 +56,7 @@ CMake 目标中，`bf_dsp` 是数值静态库，`bf_core` 汇集可复用控制/
 
 `EegSeparationWorkspace` 与浏览工作区使用外层栈切换，设备连接使用菜单栏“设备”的原有管理窗口；设备连接后显示主波形，分离页不重复提供连接入口，首次进入自动准备设备片段，并按四步引导后续处理；切换暂停对应播放并保留内存状态，不提供跨重启项目恢复。`EegSeparationController` 持有独立来源快照、分析设置、任务代次、人工标签、撤销和确认，不继承浏览滤波。文件已加载原始窗口或设备完整原始窗口通过同一 HDF5 接口创建稳定快照后接入分离；设备入口直接异步读当前捕获上下文，独立于主波形来源、暂停查看及处理状态。片段至少5秒连续、不跨缺口；设备缓存最多10秒，文件最多取120秒，来源区间/流/通道身份和单位随快照保留。快照来自float32投影；首次进入不再按默认2秒绘图窗口截断。新片段校验通过后才替换结果，同一来源/流/通道/单位/采样率保留用途，任务代次与捕获代际阻止迟到响应覆盖新来源。直接打开原文件的 float64 读取契约保持独立。
 
-专用输入/输出使用能力协商后的 `float64-le`。边车验证文件、时间轴、单位和指纹；Native 负责抗混叠重采样、可选陷波、拟合副本高通、白化/FastICA 与未做该高通的输出副本重建。相关数值来源的历史对照见 [归档证据](archive/reports/offline-eeg-numerical-provenance.md)。
+专用输入/输出使用能力协商后的 `float64-le`。边车验证文件、时间轴、单位和指纹；Native 负责抗混叠重采样、可选陷波、拟合副本高通、白化/FastICA 与未做该高通的输出副本重建。相关数值来源的历史对照见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/offline-eeg-numerical-provenance.md`）。
 
 读入和计算采用协作取消与任务代次隔离；人工标签只更新缓存贡献，不重新拟合。导出先暂存、逐值回读、验证单次均值重建和源指纹，再以不覆盖语义发布新目录；发布临界区短暂禁止取消。结果播放仅改变游标和视窗，不修改科学数组或确认。
 
@@ -79,7 +79,7 @@ BFSP TCP 与 RT-BCI Wi-Fi 通过最小的 `AcquisitionSource` 接口接入同一
 - 界面已提供 `zh_CN/en_US/ja_JP/zh_TW`，pseudo 仅用于开发测试。后端只返回 `code + params`，UI 统一映射文案。
 - 授权留在 Native，Windows 使用 CNG，Linux 使用 OpenSSL；机器标识采用旧版兼容的 MachineGuid SHA-256 前 32 位大写十六进制，MAC 不参与。
 - `license.dat` 与时间水位 `.last_run` 的校验/原子保存、在线恢复逻辑由授权模块维护。安装包保留 `BF_REQUIRE_LICENSE=ON`；授权签发私钥不进入客户端、仓库或构建环境。
-- 服务端独立维护；[旧在线激活设计](archive/design/online-activation-design.md) 仅供背景追溯，不能直接作为部署指令。当前客户端行为以 `native/src/license/` 和相应回归为准。
+- 服务端独立维护；旧在线激活设计（历史记录见 Git 提交 `1c55f6c` 的 `docs/archive/design/online-activation-design.md`）仅供背景追溯，不能直接作为部署指令。当前客户端行为以 `native/src/license/` 和相应回归为准。
 
 ## 开源核心与扩展边界
 
