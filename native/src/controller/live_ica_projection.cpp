@@ -1,4 +1,4 @@
-#include "render/live_ica_projection.h"
+#include "controller/live_ica_projection.h"
 #include <QJsonArray>
 #include <algorithm>
 #include <cmath>

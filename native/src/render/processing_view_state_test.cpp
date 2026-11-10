@@ -12,7 +12,7 @@
 //   (d) summary() is unchanged when no override is set, and gains a (+N ovr)
 //       suffix once overrides exist
 
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 
 #include <QString>
 #include <iostream>

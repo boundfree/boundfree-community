@@ -1,7 +1,7 @@
 #pragma once
 #include "controller/eeg_separation_controller.h"
 #include "i18n/i18n_service.h"
-#include "render/live_ica_projection.h"
+#include "controller/live_ica_projection.h"
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QWidget>

@@ -96,8 +96,8 @@ set(BF_CORE_SOURCES
     src/controller/file_open_controller.h
     src/controller/file_session.cpp
     src/controller/file_session.h
-    src/controller/processing_view_state.cpp
-    src/controller/processing_view_state.h
+    src/render/processing_view_state.cpp
+    src/render/processing_view_state.h
     src/controller/request_generation.cpp
     src/controller/request_generation.h
     src/controller/marker_store.cpp
@@ -108,8 +108,8 @@ set(BF_CORE_SOURCES
     src/controller/record_controller.h
     src/controller/video_sync_state.cpp
     src/controller/video_sync_state.h
-    src/controller/waveform_view_state.cpp
-    src/controller/waveform_view_state.h
+    src/render/waveform_view_state.cpp
+    src/render/waveform_view_state.h
     src/core/app_error.cpp
     src/core/app_error.h
     src/core/version.cpp
@@ -134,8 +134,8 @@ set(BF_CORE_SOURCES
     src/render/minmax_decimator.h
     src/render/signal_processor.cpp
     src/render/signal_processor.h
-    src/render/live_ica_projection.cpp
-    src/render/live_ica_projection.h
+    src/controller/live_ica_projection.cpp
+    src/controller/live_ica_projection.h
     src/render/waveform_slice.cpp
     src/render/waveform_slice.h
     src/ui/waveform_widget.cpp
@@ -152,7 +152,7 @@ target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_D
 target_link_libraries(bf_core PUBLIC FluentQt::FluentQt Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
 add_executable(signal_window_test src/render/signal_window_test.cpp)
 target_link_libraries(signal_window_test PRIVATE bf_core)
-add_executable(live_ica_projection_test src/render/live_ica_projection_test.cpp)
+add_executable(live_ica_projection_test src/controller/live_ica_projection_test.cpp)
 target_link_libraries(live_ica_projection_test PRIVATE bf_core)
 if(NOT WIN32)
     target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
@@ -357,7 +357,7 @@ target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE
 target_link_libraries(i18n_locale_format_test PRIVATE bf_core)
 add_dependencies(i18n_locale_format_test bf_i18n_qm)
 
-add_executable(processing_view_state_test src/controller/processing_view_state_test.cpp)
+add_executable(processing_view_state_test src/render/processing_view_state_test.cpp)
 target_include_directories(processing_view_state_test PRIVATE src)
 target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
 

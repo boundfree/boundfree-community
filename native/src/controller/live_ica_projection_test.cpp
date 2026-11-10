@@ -1,4 +1,4 @@
-#include "render/live_ica_projection.h"
+#include "controller/live_ica_projection.h"
 #include "dsp/ica_core.h"
 #include <QCoreApplication>
 #include <QJsonArray>

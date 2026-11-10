@@ -1,4 +1,4 @@
-#include "controller/waveform_view_state.h"
+#include "render/waveform_view_state.h"
 
 #include <algorithm>
 

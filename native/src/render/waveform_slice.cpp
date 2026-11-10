@@ -1,6 +1,6 @@
 #include "render/waveform_slice.h"
 
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 #include "dsp/pipeline.h"
 #include "dsp/reference.h"
 

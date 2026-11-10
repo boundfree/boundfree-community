@@ -1,6 +1,6 @@
 #pragma once
 #include "controller/acquisition_controller.h"
-#include "render/live_ica_projection.h"
+#include "controller/live_ica_projection.h"
 #include <QTimer>
 #include <QElapsedTimer>
 

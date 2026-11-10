@@ -1,11 +1,11 @@
 #pragma once
 
 #include "controller/file_open_controller.h"
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 #include "controller/marker_store.h"
 #include "controller/playback_state.h"
 #include "controller/analysis_service.h"
-#include "controller/waveform_view_state.h"
+#include "render/waveform_view_state.h"
 #include "controller/export_controller.h"
 #include "controller/record_controller.h"
 #include "core/app_error.h"

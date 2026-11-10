@@ -9,7 +9,7 @@
 #include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
 
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 #include "render/waveform_slice.h"
 #include "render/signal_processor.h"
 
