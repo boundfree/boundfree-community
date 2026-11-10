@@ -1,35 +1,157 @@
 ---
-title: 当前架构与模块边界
+title: 软件架构
 doc_type: architecture
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-10
 ---
 
-# 当前架构与模块边界
+# 软件架构
 
-本文描述当前源码结构；产品范围见 [路线](roadmap.md)，协议细节以 [基础契约](contracts.md) 为准。最初的迁移设计及其未采用选项保存在 [原设计快照](archive/design/architecture-design-20261020.md)。
+本文回答三个问题：程序由哪些部分组成、代码放在哪里、数据怎么流动。前半部分是结构总览，后半部分是各条链路必须遵守的行为约束。协议与格式细节见 [基础契约](contracts.md)，产品范围见 [路线](roadmap.md)。
 
-## 运行结构
+## 一图看懂
 
-`bf_app` 是 C++17 / Qt6 Widgets 主程序，负责界面、控制、数值计算、授权与国际化；独立 Python 边车负责科研文件的解码、编码与来源校验。主程序通过子进程 stdio 交换有长度前缀的 JSON 与二进制帧。
+BoundFree EEG 是一个桌面程序加一个辅助进程：
 
-| 模块 | 源码位置 | 职责 |
+```mermaid
+flowchart LR
+    subgraph 设备
+        SIM[本机模拟器]
+        BFSP[BFSP 设备<br/>TCP]
+        RTBCI[RT-BCI<br/>Wi-Fi]
+    end
+    subgraph APP["bf_app（C++17 / Qt 6）"]
+        ACQ[设备采集]
+        CTRL[控制器]
+        DSP[数值计算<br/>滤波 / 频谱 / ICA]
+        UI[界面]
+        LIC[授权]
+    end
+    subgraph SIDECAR["边车（Python）"]
+        IO[文件读写<br/>EDF / HDF5 / CSV / Intan]
+    end
+    FILES[(科研数据文件)]
+    SERVER[授权服务器]
+
+    SIM & BFSP & RTBCI --> ACQ --> CTRL
+    CTRL <--> DSP
+    CTRL --> UI
+    CTRL <-- "stdio：JSON + 二进制帧" --> IO <--> FILES
+    LIC <-- HTTPS --> SERVER
+```
+
+- **主程序 `bf_app`** 负责界面、控制、数值计算、设备接入、授权和国际化。
+- **Python 边车** 负责所有科研文件格式的读写。主程序不直接解析这些格式，只通过子进程 stdio 与边车交换带长度前缀的 JSON 和二进制帧。
+- **设备** 经适配器转换成统一的信号块，之后与文件数据走同一套处理、显示和分析工具。
+
+## 代码放在哪里
+
+| 目录 | 职责 | 不该出现的内容 |
 | --- | --- | --- |
-| 应用入口 | `native/src/app/` | 启动、资源定位、授权门禁与 smoke 入口 |
-| UI | `native/src/ui/` | 浏览/分离双工作区、波形和分析绘图、参数与状态展示 |
-| 控制器 | `native/src/controller/` | 文件会话、读片代次、播放、分析、录制和导出协调 |
-| DSP | `native/src/dsp/` | 重参考、SOS 滤波、频谱、自有白化与 FastICA、分组重建 |
-| 数据与绘制辅助 | `native/src/render/` | 波形切片、抽稀与显示模型 |
-| IPC | `native/src/ipc/` | 边车启动、握手、分帧、超时及二进制数组传输 |
-| 授权 / i18n | `native/src/license/`、`native/src/i18n/` | 原生许可证校验和在线激活客户端、翻译与区域格式化 |
-| 文件 I/O | `sidecar/boundfree_sidecar/` | 浏览读取器、专用 `analysis_io/`、录制/导出与错误码 |
+| `native/src/core/` | 错误类型、版本信息 | 任何业务逻辑 |
+| `native/src/dsp/` | 纯数值：重参考、SOS 滤波、频谱（pocketfft）、白化与 FastICA、分组重建 | Qt 界面、文件读写、线程调度 |
+| `native/src/acquisition/` | 设备采集：信号模型（`model/`）、BFSP 编解码（`protocol/`）、传输（`transport/`）、模拟器与 RT-BCI 解码（`adapters/`）、有界缓存与分发（`buffer/`）、采集段身份（`session/`） | 界面控件、文件格式解析 |
+| `native/src/ipc/` | 边车进程的启动、握手、分帧、超时 | 具体文件格式知识 |
+| `native/src/license/` | 许可证校验、机器码、时钟回拨检测、在线激活客户端 | 界面 |
+| `native/src/i18n/` | 翻译加载、区域格式化 | 业务文案的拼接逻辑 |
+| `native/src/render/` | 信号窗口（`WaveformSlice`）、显示前处理（`SignalProcessor`：电压归一化、参考、滤波）、最小最大抽稀、连续 ICA 投影 | 控件绘制代码 |
+| `native/src/controller/` | 协调层：文件会话与读片、播放、标注、分析任务、录制、导出、分离流程 | 像素级绘制、数值算法实现 |
+| `native/src/ui/` | 主窗口、波形与分析控件、分离工作区、设备窗口、对话框 | 文件解析、数值算法、协议解码 |
+| `native/src/app/` | `main()`：启动、资源定位、授权门禁、`--smoke-*` 自检入口 | 业务逻辑 |
+| `native/i18n/`、`native/resources/`、`native/assets/` | 翻译源、Qt 资源、品牌资产 | — |
+| `sidecar/boundfree_sidecar/` | 边车：`readers/` 浏览读取、`analysis_io/` 分离专用 float64 读写、`capture_io/` 设备原始录制、`writers/` 录制与导出、`protocol.py` 方法分发 | 用户可见文案（只返回 `code + params`） |
+| `contracts/` | 跨进程、跨设备的机器可读契约（BFSP 等） | — |
+| `tests/` | `native/` 原生程序回归、`sidecar/` 边车、`contracts/` 契约、`scripts/` 构建发布脚本、`golden/` 黄金数据、`fixtures/` 夹具 | — |
+| `scripts/` | `common/` 版本与发布检查、`ci/`、`windows/`、`wsl/` 构建入口 | — |
+| `installer/`、`release/`、`legal/` | 安装包脚本、发布资源、许可文本 | — |
 
-CMake 目标中，`bf_dsp` 是数值静态库，`bf_core` 汇集可复用控制/IPC/授权/绘制基础，`bf_app` 承载 EEG 主界面；`bf_spike` 是保留的历史原型。实际文件列表以 `native/CMakeLists.txt` 为准。
+### 新代码该放哪里
 
-依赖保持从 UI 到控制层再到数值与 I/O；DSP 不依赖界面，UI 不解析科研文件。当前波形控件是 `QWidget` 绘制路径，不能把早期 `QOpenGLWidget` 方案当成现有实现。频谱已经使用随仓库提供的 pocketfft，滤波和 ICA 为自有 C++ 实现，不能再将这些模块列为待引入。
+| 你要加的东西 | 位置 |
+| --- | --- |
+| 一种新的滤波、频谱或分离算法 | `dsp/`，纯函数加单元测试，不引入 Qt 界面类型 |
+| 一种新设备或新传输方式 | 协议解码放 `acquisition/adapters/`，传输放 `acquisition/transport/`；采集源实现 `AcquisitionSource` 接口并输出规范信号块（该接口目前在 `controller/`，见“已知结构问题”） |
+| 一种新文件格式 | 边车 `readers/` 或 `writers/`，并在 [基础契约](contracts.md) 登记能力；主程序不加解析代码 |
+| 一个新的分析面板或对话框 | `ui/` 放控件，`controller/` 放它背后的任务与状态 |
+| 一条新的用户可见文字 | 源码里用 `tr()`，翻译进 `native/i18n/*.ts`；边车和后端只返回错误码与参数 |
+| 一个新的边车方法 | 边车 `protocol.py` 加分发，主程序在对应控制器里调用；同步更新契约文档并判断 IPC 协议版本是否需要变化 |
 
-## 浏览、分析与导出
+## 分层与依赖规则
+
+上层可以依赖下层，下层不能依赖上层，同层之间尽量不互相依赖：
+
+```mermaid
+flowchart TB
+    L4["第 4 层 · app<br/>启动与自检入口"]
+    L3["第 3 层 · ui<br/>窗口与控件"]
+    L2["第 2 层 · controller<br/>会话、任务与状态协调"]
+    L1["第 1 层 · render · ipc · license · i18n · acquisition<br/>信号窗口、边车通信、授权、翻译、设备采集"]
+    L0["第 0 层 · core · dsp<br/>基础类型与纯数值"]
+    L4 --> L3 --> L2 --> L1 --> L0
+```
+
+三条硬规则：
+
+1. **`dsp/` 不依赖 Qt 界面，也不依赖本仓库其他目录**。它可以被单独编译和测试。
+2. **界面不解析文件、不实现算法、不解码协议**。界面只调用控制器，展示控制器给出的状态。
+3. **主程序不解析科研文件格式**。一律经边车。
+
+### 构建目标
+
+| CMake 目标 | 内容 | 依赖 |
+| --- | --- | --- |
+| `bf_dsp` | `dsp/` 数值静态库 | 无 Qt 界面依赖 |
+| `bf_signal` | `acquisition/model/` 信号模型与时钟映射 | 线程库 |
+| `bf_acquisition` | 模拟器、RT-BCI 解码、信号分发、采集段 | `bf_signal` |
+| `bf_protocol`、`bf_transport` | BFSP 编解码、TCP 传输 | Qt Core / Network |
+| `bf_core` | `core`、`ipc`、`license`、`i18n`、`render`、通用控制器和共享控件 | `bf_dsp`、Qt、Fluent-Qt |
+| `bf_device_ui` | 设备控制器、TCP/Wi-Fi 采集源、原始录制、诊断日志、设备窗口 | `bf_core`、采集各库 |
+| `bf_app` | 主窗口、分析与分离界面、`main()` | `bf_core`、`bf_device_ui` |
+
+实际文件清单以 `native/CMakeLists.txt` 和 `native/src/acquisition/CMakeLists.txt` 为准。
+
+## 数据怎么流动
+
+文件和设备是两种取数方式，但进入同一套工具：
+
+```mermaid
+flowchart LR
+    F[数据文件] --> SC[边车读取] --> FOC[FileOpenController]
+    D[设备] --> SRC[AcquisitionSource<br/>规范 typed 块] --> HUB[SignalHub]
+    HUB --> REC[CaptureRecorder<br/>原始录制]
+    FOC --> WS[WaveformSlice<br/>采样率 · 通道身份 · 单位 · 时间 · 缺口]
+    HUB --> WS
+    WS --> SP[SignalProcessor<br/>参考 · 滤波]
+    SP --> WW[WaveformWidget<br/>波形显示]
+    SP --> AN[分析服务<br/>PSD · FFT · STFT · 相干性]
+    SP --> EX[片段导出] --> SC2[边车编码]
+    WS --> SEP[分离控制器<br/>FastICA] --> SEPUI[分离工作区]
+```
+
+理解这张图需要记住四点：
+
+- **`WaveformSlice` 是公共货币**。它带完整采样率、通道身份、单位、显式时间和缺口，文件与设备都产出它，后面的工具只认它，不按来源区分。
+- **原始录制与显示分开**。`CaptureRecorder` 直接订阅 `SignalHub`，暂停查看、改滤波、切换文件都不影响已录制的数据。
+- **显示用 float32 投影，原始存储保留 typed 数据**。分离工作区直接打开原文件时走独立的 float64 读取。
+- **分析用完整样本，不用绘图抽稀后的包络**。
+
+## 已知结构问题
+
+下面是目录与上述分层不一致的地方。它们不影响功能，但会让人找不到代码。按顺序逐项归位，每项单独一个 PR：
+
+| 问题 | 现状 | 归位方向 |
+| --- | --- | --- |
+| 设备代码分两处 | 设备控制器、TCP/Wi-Fi 采集源、原始录制和诊断日志在 `controller/acquisition_*`、`controller/capture_recorder*`，由 `acquisition/CMakeLists.txt` 用 `../controller/` 引用 | 移入 `acquisition/` |
+| `render/` 反向依赖控制层 | `render/waveform_slice.h` 引用 `controller/` 和 `ipc/` 的头文件，`render/live_ica_projection.h` 引用 `controller/eeg_separation_controller.h` | 把被引用的纯数据类型下沉到 `render/` 或 `core/` |
+| 自检入口挤在 `main.cpp` | `app/main.cpp` 约 2700 行，含 50 多个 `--smoke-*` 入口；另有十余个 `*_smoke.h` 散在 `ui/` 和 `controller/` | 自检入口集中到 `app/smoke/` |
+| `main_window.cpp` 过大 | 约 3100 行，承担浏览、设备、录制、分离切换的全部编排 | 暂不拆分；新增功能不再往里加，放独立的控制器或面板 |
+| `bf_core` 名不副实 | 目标里混装了控制器、授权、通信和部分控件，而 `core/` 目录只有错误与版本 | 暂不拆分；待目录归位后再评估按层拆目标 |
+| 历史 Spike 原型 | `bf_spike` 及相关文件散在 `app/`、`ui/`、`dsp/`、`controller/`、`native/spike/`、`sidecar/spike/` | 从主线删除，靠 Git 历史追溯 |
+
+本表随归位进度更新；某项完成后从表中删除，并同步上面的目录表。
+
+## 行为约束：浏览、分析与导出
 
 文件通过 `FileOpenController` 与边车读取，设备通过 `AcquisitionSource` 将协议转换为规范 typed 块。二者分别提供带采样率、通道身份/单位、显式时间、来源和缺口的完整 `WaveformSlice`，进入同一个 `SignalProcessor`、`WaveformWidget`、分析服务及片段导出。设备不是可随机读取的 FileSession；取数层不同不产生另一套工具。
 
@@ -52,17 +174,17 @@ CMake 目标中，`bf_dsp` 是数值静态库，`bf_core` 汇集可复用控制/
 
 回归入口：`bf_app --smoke-ui-waveform-data-modes` 覆盖文件缩放、显示数据不变、缓存外读取与设备面板不能接管文件显示；`--smoke-ui-device-waveform` 覆盖实时缩放、冻结、平移和后台采集；`--smoke-ui-seek-preview`、`--smoke-ui-continuous-playback` 保留文件定位与播放检查。桌面滚轮/触控板、真实设备和双平台安装态仍分别验收。
 
-## 专用离线分离
+## 行为约束：专用分离
 
 `EegSeparationWorkspace` 与浏览工作区使用外层栈切换，设备连接使用菜单栏“设备”的原有管理窗口；设备连接后显示主波形，分离页不重复提供连接入口，首次进入自动准备设备片段，并按四步引导后续处理；切换暂停对应播放并保留内存状态，不提供跨重启项目恢复。`EegSeparationController` 持有独立来源快照、分析设置、任务代次、人工标签、撤销和确认，不继承浏览滤波。文件已加载原始窗口或设备完整原始窗口通过同一 HDF5 接口创建稳定快照后接入分离；设备入口直接异步读当前捕获上下文，独立于主波形来源、暂停查看及处理状态。片段至少5秒连续、不跨缺口；设备缓存最多10秒，文件最多取120秒，来源区间/流/通道身份和单位随快照保留。快照来自float32投影；首次进入不再按默认2秒绘图窗口截断。新片段校验通过后才替换结果，同一来源/流/通道/单位/采样率保留用途，任务代次与捕获代际阻止迟到响应覆盖新来源。直接打开原文件的 float64 读取契约保持独立。
 
-专用输入/输出使用能力协商后的 `float64-le`。边车验证文件、时间轴、单位和指纹；Native 负责抗混叠重采样、可选陷波、拟合副本高通、白化/FastICA 与未做该高通的输出副本重建。相关数值来源的历史对照见 [归档证据](archive/reports/offline-eeg-numerical-provenance.md)。
+专用输入/输出使用能力协商后的 `float64-le`。边车验证文件、时间轴、单位和指纹；Native 负责抗混叠重采样、可选陷波、拟合副本高通、白化/FastICA 与未做该高通的输出副本重建。
 
 读入和计算采用协作取消与任务代次隔离；人工标签只更新缓存贡献，不重新拟合。导出先暂存、逐值回读、验证单次均值重建和源指纹，再以不覆盖语义发布新目录；发布临界区短暂禁止取消。结果播放仅改变游标和视窗，不修改科学数组或确认。
 
-## 通用设备接入候选链路
+## 行为约束：设备采集
 
-开发分支新增 `native/src/acquisition/`，将纯 C++17 信号模型、原始类型存储、模拟器、采集段身份、有界缓存、BFSP 编解码和 Qt 传输分开。Native 控制器使用唯一格式桥接模型；连接管理位于设备菜单的连接管理窗口，信号接入主界面共享工具；取数接口不把实时设备伪装成可随机读取的 FileSession。
+`native/src/acquisition/` 将纯 C++17 信号模型、原始类型存储、模拟器、采集段身份、有界缓存、BFSP 编解码和 Qt 传输分开。Native 控制器使用唯一格式桥接模型；连接管理位于设备菜单的连接管理窗口，信号接入主界面共享工具；取数接口不把实时设备伪装成可随机读取的 FileSession。
 
 同一原始块通过不可变共享存储交给显示和录制消费者。显示可淘汰旧画面，录制满载必须显式结束并记录不完整；订阅释放后回收缓冲，不累计占用后续录制名额。连接、采集段与本地 generation 隔离迟到回调，录制起点以订阅瞬间的原始样本序号确定。
 
@@ -79,7 +201,7 @@ BFSP TCP 与 RT-BCI Wi-Fi 通过最小的 `AcquisitionSource` 接口接入同一
 - 界面已提供 `zh_CN/en_US/ja_JP/zh_TW`，pseudo 仅用于开发测试。后端只返回 `code + params`，UI 统一映射文案。
 - 授权留在 Native，Windows 使用 CNG，Linux 使用 OpenSSL；机器标识采用旧版兼容的 MachineGuid SHA-256 前 32 位大写十六进制，MAC 不参与。
 - `license.dat` 与时间水位 `.last_run` 的校验/原子保存、在线恢复逻辑由授权模块维护。安装包保留 `BF_REQUIRE_LICENSE=ON`；授权签发私钥不进入客户端、仓库或构建环境。
-- 服务端独立维护；[旧在线激活设计](archive/design/online-activation-design.md) 仅供背景追溯，不能直接作为部署指令。当前客户端行为以 `native/src/license/` 和相应回归为准。
+- 授权服务端在独立私有仓库维护；客户端行为以 `native/src/license/` 和相应回归为准。
 
 ## 开源核心与扩展边界
 
