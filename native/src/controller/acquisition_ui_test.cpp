@@ -303,6 +303,10 @@ int main(int argc, char** argv) {
     for (const QString& locale : {QString("zh_CN"), QString("en_US"), QString("ja_JP"), QString("zh_TW"), QString("pseudo")}) {
         if (!i18n.loadLocale(locale, &message)) return fail("center locale", controller);
         ui->retranslateUi();
+        for (const char* key : {"app.device.detecting_channels", "app.device.channel_count", "app.device.wifi_power_notice",
+                                "app.device.wifi_channels", "error.device.rt_bci_unrecognized_stream",
+                                "error.device.channel_count_adjusted"})
+            if (i18n.text(key) == QLatin1String(key)) return fail("channel detection translations", controller);
         for (const auto size : {QSize(1280, 800), QSize(900, 620), QSize(760, 560)}) {
             stack.resize(size); QApplication::processEvents();
             if (stack.size() != size) return fail("center minimum size", controller);
@@ -355,16 +359,16 @@ int main(int argc, char** argv) {
     const auto firstGeneration = probe->property("activeGeneration").toULongLong();
     RtBciProbeResult response; response.compatible = true; response.channels = 0;
     probe->finished(firstGeneration, response);
-    if (pages->currentWidget()->objectName() != "deviceWifiPage" || channels->currentData().toInt() != 0 || wifiConnect->isEnabled())
-        return fail("unknown channels require explicit selection", controller);
-    channels->setCurrentIndex(channels->findData(16));
-    if (!wifiConnect->isEnabled()) return fail("compatible response enables explicit selection", controller);
+    if (pages->currentWidget()->objectName() != "deviceWifiPage" || channels->currentData().toInt() != 0 || !wifiConnect->isEnabled())
+        return fail("automatic channel connection enabled", controller);
     if (!stack.rect().contains(QRect(wifiConnect->mapTo(&stack, QPoint()), wifiConnect->size())))
         return fail("Wi-Fi primary action stays visible", controller);
     if (!screenshot("device-wifi-compatible.png")) return fail("Wi-Fi compatible screenshot", controller);
     // Advanced fields live in the same scrollable center, not a second dialog.
     auto* advanced = ui->findChild<QToolButton*>("deviceWifiAdvanced");
     advanced->setChecked(true);
+    if (!channels->isVisible() || channels->findData(8) < 0 || channels->findData(16) < 0)
+        return fail("advanced fallback channel choices", controller);
     if (!screenshot("center-wifi-advanced.png")) return fail("Wi-Fi advanced screenshot", controller);
     advanced->setChecked(false);
     stack.resize(1100, 720);
@@ -383,13 +387,13 @@ int main(int argc, char** argv) {
     while (silentDevice.hasPendingConnections()) delete silentDevice.nextPendingConnection();
     if (!waitUntil([&] { return silentDevice.hasPendingConnections(); })) return fail("busy probe retries automatically", controller);
     back->click();
-    // A reported channel count is a hint and may be preselected on a new page.
+    // A module report must not preselect a layout.
     while (silentDevice.hasPendingConnections()) delete silentDevice.nextPendingConnection();
     selectWifi->click(); wifiHost->setText("127.0.0.1"); wifiPort->setValue(silentDevice.serverPort());
     if (!waitUntil([&] { return silentDevice.hasPendingConnections(); })) return fail("third probe start", controller);
     response.error = {};
     probe->finished(probe->property("activeGeneration").toULongLong(), response);
-    if (channels->currentData().toInt() != 8 || !wifiConnect->isEnabled()) return fail("reported channel hint", controller);
+    if (channels->currentData().toInt() != 0 || !wifiConnect->isEnabled()) return fail("reported channel remains diagnostic", controller);
     back->click();
 
     while (silentDevice.hasPendingConnections()) delete silentDevice.nextPendingConnection();
@@ -407,7 +411,7 @@ int main(int argc, char** argv) {
     // explicit connection may issue control requests; opening a saved profile
     // performs read-only detection and leaves the current session intact.
     while (silentDevice.hasPendingConnections()) delete silentDevice.nextPendingConnection();
-    bool rejectWifiTcp = true;
+    bool rejectWifiTcp = true, wifiBadStream = false;
     int wifiReportedChannels = 0, wifiWireChannels = 8;
     QStringList wifiPaths, wifiRequests;
     QPointer<QTcpSocket> wifiData;
@@ -466,7 +470,13 @@ int main(int argc, char** argv) {
                     wifiData = new QTcpSocket(&silentDevice);
                     wifiData->connectToHost(body.value("ip").toString(), static_cast<quint16>(body.value("port").toInt()));
                 }
-                if (path == QLatin1String("/stream/start")) { wifiCounter = 0; wifiSamples.start(); }
+                if (path == QLatin1String("/stream/start")) {
+                    wifiCounter = 0;
+                    if (wifiBadStream) QTimer::singleShot(100, &wifiSamples, [&] {
+                        if (wifiData) wifiData->write(QByteArray(12, '\0'));
+                    });
+                    else QTimer::singleShot(250, &wifiSamples, [&] { wifiSamples.start(); });
+                }
                 if (path == QLatin1String("/stream/stop")) wifiSamples.stop();
                 socket->write(QByteArray("HTTP/1.1 ") + QByteArray::number(httpStatus) + " test\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: " +
                               QByteArray::number(payload.size()) + "\r\n\r\n" + payload);
@@ -486,7 +496,7 @@ int main(int argc, char** argv) {
     if (!waitUntil([&] { return wifiStatus->text() == i18n.text("app.device.wifi_response"); })) return fail("real read-only probe", controller);
     if (!wifiRequests.contains(QStringLiteral("GET /board")) ||
         std::any_of(wifiRequests.cbegin(), wifiRequests.cend(), [](const QString& request) { return !request.startsWith(QLatin1String("GET ")); }) ||
-        channels->currentData().toInt() != 0 || wifiConnect->isEnabled() || QFile::exists(profileFile))
+        channels->currentData().toInt() != 0 || !wifiConnect->isEnabled() || QFile::exists(profileFile))
         return fail("probe is read-only and does not save", controller);
     channels->setCurrentIndex(channels->findData(8)); wifiConnect->click();
     if (!waitUntil([&] { return connection() == DeviceConnectionState::Faulted; }, 15000)) return fail("callback rejection", controller);
@@ -509,17 +519,23 @@ int main(int argc, char** argv) {
         diagnostic.value("params").toObject().value("path") != "/tcp" ||
         !diagnostic.value("params").toObject().value("tcp_request").toObject().value("delimiter").toBool()) return fail("copied diagnostics", controller);
     rejectWifiTcp = false;
-    // Regression for the user's board: the module reports 8, while the chosen
-    // 16-channel layout must still connect, open live view and receive both banks.
+    // The module reports 8 while the wire has 16 channels; leave Auto selected.
     wifiReportedChannels = 8; wifiWireChannels = 16;
-    channels->setCurrentIndex(channels->findData(16));
+    channels->setCurrentIndex(channels->findData(0));
     wifiConnect->click();
     if (!waitUntil([&] { return connection() == DeviceConnectionState::Connected; }, 20000) ||
         connection() != DeviceConnectionState::Connected) return fail("virtual Wi-Fi connect", controller);
+    if (!waitUntil([&] {
+        return controller.snapshot().connectionPhase == "detecting" &&
+            ui->findChild<QLabel*>("deviceManagerState")->text() == i18n.text("app.device.detecting_channels");
+    }) || controller.snapshot().totalChannels != 0) return fail("recognition phase before samples", controller);
     if (!waitUntil([&] { return pages->currentWidget()->objectName() == "deviceLivePage" && acquisition() == DeviceAcquisitionState::Streaming; }, 20000) ||
         !wifiPaths.contains("/stream/start")) return fail("Wi-Fi connects directly to live signals", controller);
     if (!waitUntil([&] { const auto view = controller.snapshot(); return view.totalChannels == 16 && view.traces.size() == 16 && view.samples >= 20; }))
-        return fail("selected 16 channels override module's 8-channel report", controller);
+        return fail("automatic 16 channels override module's 8-channel report", controller);
+    if (!waitUntil([&] { return ui->findChild<QLabel*>("deviceManagerState")->text().contains(
+            i18n.text("app.device.channel_count", {{"count", 16}})); }))
+        return fail("recognized channel count shown", controller);
     if (!screenshot("device-wifi-selected16-reported8.png")) return fail("16-channel compatibility screenshot", controller);
     if (!ui->findChild<QWidget*>("deviceLiveDetails")->isHidden() || !ui->findChild<WaveformWidget*>("deviceTraceView"))
         return fail("live defaults reuse waveform and hide advanced settings", controller);
@@ -532,8 +548,23 @@ int main(int argc, char** argv) {
     const auto savedProfiles = savedObject.value("profiles").toArray();
     if (savedObject.value("schema").toInt() != 1 || savedProfiles.size() != 1 ||
         savedProfiles.first().toObject().value("adapter").toString() != "rt-bci.wifi" ||
-        savedProfiles.first().toObject().value("channels").toInt() != 16 || savedBytes.toLower().contains("password"))
+        savedProfiles.first().toObject().value("channels").toInt(-1) != 0 || savedBytes.toLower().contains("password"))
         return fail("safe profile schema", controller);
+    for (int savedChannels : {0, 8, 16}) {
+        auto item = savedProfiles.first().toObject(); item.insert("channels", savedChannels);
+        QFile legacy(profileFile);
+        if (!legacy.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+            legacy.write(QJsonDocument(QJsonObject{{"schema", 1}, {"profiles", QJsonArray{item}}}).toJson()) < 0)
+            return fail("saved profile fixture", controller);
+        legacy.close();
+        DeviceWorkspace restored(&controller, &i18n);
+        auto* reconnect = restored.findChild<QPushButton*>("deviceRecentConnect");
+        if (!reconnect) return fail("saved profile loaded", controller);
+        reconnect->click();
+        auto* restoredChannels = restored.findChild<QComboBox*>("deviceWifiChannels");
+        if (!restoredChannels || restoredChannels->currentData().toInt() != savedChannels)
+            return fail("saved automatic and legacy channel options", controller);
+    }
     QJsonArray mixedProfiles;
     mixedProfiles.append(QJsonObject{{"id", "unknown"}, {"adapter", "future.adapter"}});
     for (int index = 0; index < 17; ++index) {
@@ -808,6 +839,37 @@ int main(int argc, char** argv) {
     if (!removedProfile.open(QIODevice::ReadOnly) ||
         !QJsonDocument::fromJson(removedProfile.readAll()).object().value("profiles").toArray().isEmpty() ||
         ui->findChild<QPushButton*>("deviceRecentConnect")) return fail("saved profile removal persists", controller);
+
+    // A detected layout overrides a conflicting fallback with a visible,
+    // non-blocking warning; an unrecognizable stream shows recovery guidance.
+    selectWifi->click(); wifiHost->setText("127.0.0.1"); wifiPort->setValue(silentDevice.serverPort()); wifiListen->setValue(listenPort);
+    if (!waitUntil([&] { return wifiConnect->isEnabled(); })) return fail("warning probe", controller);
+    channels->setCurrentIndex(channels->findData(8)); wifiConnect->click();
+    if (!waitUntil([&] { return controller.snapshot().totalChannels == 16 &&
+                                controller.snapshot().warning.code == "device.channel_count_adjusted"; }, 15000) ||
+        !waitUntil([&] { return ui->findChild<QLabel*>("deviceRecordStatus")->text().contains(
+                                i18n.text("error.device.channel_count_adjusted")); }))
+        return fail("detected count warning shown", controller);
+    controller.stopAcquisition();
+    if (!waitUntil([&] { return acquisition() == DeviceAcquisitionState::Idle; })) return fail("stop warning case", controller);
+    controller.disconnectDevice();
+    if (!waitUntil([&] { return connection() == DeviceConnectionState::Disconnected; })) return fail("disconnect warning case", controller);
+    ui->findChild<QPushButton*>("deviceLiveList")->click();
+    wifiBadStream = true;
+    selectWifi->click(); wifiHost->setText("127.0.0.1"); wifiPort->setValue(silentDevice.serverPort()); wifiListen->setValue(listenPort);
+    if (!waitUntil([&] { return wifiConnect->isEnabled(); })) return fail("unrecognized probe", controller);
+    channels->setCurrentIndex(channels->findData(0)); wifiConnect->click();
+    if (!waitUntil([&] { return controller.snapshot().error.code == "device.rt_bci_unrecognized_stream"; }, 10000) ||
+        !waitUntil([&] { return ui->findChild<QLabel*>("deviceRecordStatus")->text().contains(
+                                i18n.text("error.device.rt_bci_unrecognized_stream")); }))
+        return fail("unrecognized stream guidance shown", controller);
+    ui->findChild<QPushButton*>("deviceLiveList")->click();
+    selectWifi->click();
+    if (!wifiError->text().contains(i18n.text("error.device.rt_bci_unrecognized_stream")) ||
+        copyDiagnostics->isHidden()) return fail("unrecognized diagnostics on connection page", controller);
+    copyDiagnostics->click();
+    if (QJsonDocument::fromJson(QGuiApplication::clipboard()->text().toUtf8()).object().value("code")
+        != "device.rt_bci_unrecognized_stream") return fail("copy unrecognized diagnostics", controller);
     server.terminate();
     if (!server.waitForFinished(3000)) { server.kill(); server.waitForFinished(3000); }
     qInfo("PASS: shared multi-stream time axis; simulator 20 start/stop cycles; coalesced TCP configuration/cancel/stop; failure retry; frozen/background acquisition; local and TCP stdio readback; TCP stop/save on shutdown");

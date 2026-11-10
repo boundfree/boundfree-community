@@ -1787,7 +1787,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.recent_detail</source>
-      <translation>RT-BCI · Wi-Fi · {channels} チャンネル · 最終確認 {date} · 現在の接続状態は未確認</translation>
+      <translation>RT-BCI · Wi-Fi · 最終確認 {date} · 接続状態は未確認</translation>
     </message>
     <message>
       <source>app.device.reconnect</source>
@@ -1831,11 +1831,11 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_channels</source>
-      <translation>チャンネル数</translation>
+      <translation>チャンネル数を強制（検出失敗時のみ）</translation>
     </message>
     <message>
       <source>app.device.wifi_choose_channels</source>
-      <translation>8 または 16 チャンネルを選択</translation>
+      <translation>自動</translation>
     </message>
     <message>
       <source>app.device.wifi_host</source>
@@ -1923,7 +1923,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_requested</source>
-      <translation>要求値：{channels} チャンネル · {rate} Hz</translation>
+      <translation>要求サンプリング周波数：{rate} Hz</translation>
     </message>
     <message>
       <source>app.device.status_streaming_wifi</source>
@@ -2024,10 +2024,6 @@ analysis.json</translation>
     <message>
       <source>app.device.next_network</source>
       <translation>ホットスポット接続後に応答を自動確認します。</translation>
-    </message>
-    <message>
-      <source>app.device.next_channels</source>
-      <translation>デバイスのチャンネル数を選択してください。</translation>
     </message>
     <message>
       <source>app.device.next_connect</source>
@@ -2143,10 +2139,6 @@ Ctrl＋ホイール：時間軸の拡大縮小。Shift＋ホイール：振幅�
     <message>
       <source>app.device.callback_detail</source>
       <translation>デバイスから {address}:{port} への接続が必要です。Windows ファイアウォールでこのテストアプリの受信接続を許可し、選択したネットワークを確認してください。</translation>
-    </message>
-    <message>
-      <source>app.device.channel_conflict_detail</source>
-      <translation>選択は {requested} チャンネル、モジュールの報告は {reported} チャンネルです。選択を確認してください。</translation>
     </message>
     <message>
       <source>app.device.response_detail</source>
@@ -2331,5 +2323,10 @@ Ctrl＋ホイール：ポインターを中心に時間軸を拡大・縮小。S
     <message><source>app.separation.feedback_error</source><translation>エラー：{message}</translation></message>
     <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
     <message><source>app.separation.next_observations</source><translation>分離に使用する観測チャンネルを2～32個選択してください。参照チャンネルは観測数に含まれません。</translation></message>
+    <message><source>app.device.detecting_channels</source><translation>チャンネル数を検出中…</translation></message>
+    <message><source>app.device.channel_count</source><translation>{count} チャンネル</translation></message>
+    <message><source>app.device.wifi_power_notice</source><translation>16 チャンネルでは拡張基板を接続してから電源を入れてください。チャンネル数は電源投入時に決まります。基板の着脱後は電源を入れ直してください。</translation></message>
+    <message><source>error.device.rt_bci_unrecognized_stream</source><translation>データを認識できません。機器を確認するか、詳細設定でチャンネル数を指定して再試行してください。</translation></message>
+    <message><source>error.device.channel_count_adjusted</source><translation>検出したチャンネル数が指定値と異なるため、検出値を使用します。</translation></message>
   </context>
 </TS>
