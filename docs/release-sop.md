@@ -103,7 +103,7 @@ stable：完成承诺功能验收，无已知数据丢失、错误结果和高�
 
 ## 6. 失败、重跑与版本不可变
 
-- 日常 PR / master CI 的定位和重跑按 [提交 SOP 第 4 节](contribution-sop.md#4-检查-pr合入与主线包)。
+- 日常 PR / master CI 的定位和重跑按 [提交 SOP 第 2.4 节](contribution-sop.md#24-评审与合入)。
 - Release 构建失败且尚无草稿：若是环境问题，在同一 tag 上重跑；若需修改源码，创建新 beta.N 或新 PATCH，不移动 tag。直接依赖版本已固定，但 runner 和传递依赖仍可能变化，不承诺逐字节可复现。
 - 已有草稿或已发布 Release：预检分页列出 Release 并按 tag 拦截，编译前拒绝覆盖。按 tag 查询可能对草稿返回 404，只读 token 的列表也可能隐藏草稿，不能据此判断该版本不存在。使用本工作流配置的凭据；接口失败时停止。改用新版本；不替换已经对外分发的同版本安装包。
 - 默认和构建任务使用只读 token；仅手动 Release 中的预检与草稿 job 有 `contents: write`。GitHub 要求 push 权限才返回草稿，因此预检需要该配置，脚本只读取数据、不写入仓库或 Release；预检 job 仅在 `master` 执行，其他分支跳过后续任务。配置回归约束此权限及分支范围，不使用仓库用户权限字段推断 GitHub 自动 token 的实际授权；最终以 runner 能枚举并拒绝已有草稿验收。
@@ -137,7 +137,7 @@ python3 scripts/common/prepare_gitee_release.py \
 
 ### 7.2 同步 tag、说明与附件
 
-1. 源码同步按 [提交 SOP 第 5 节](contribution-sop.md#5-同步-gitee-与收尾) 完成后，只在此同步发布 tag，核对两端 tag 对象和 peeled commit 相同；不让 Gitee 在默认分支自动创建替代 tag：
+1. 源码同步按 [提交 SOP 第 2.6 节](contribution-sop.md#26-同步-gitee) 完成后，只在此同步发布 tag，核对两端 tag 对象和 peeled commit 相同；不让 Gitee 在默认分支自动创建替代 tag：
 
 ```bash
 git fetch origin master --tags
@@ -177,6 +177,6 @@ ge release download "$COMMUNITY_TAG" --repo BigYellow12138/boundfree-community \
 
 ## 8. 首次接入的验证边界
 
-先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 [归档记录](archive/reports/community-release-automation.md)，流程验证及后续证据见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
+先通过真实 GitHub PR 运行验证构建、测试与产物。合入默认分支后再验证手动 CI 和 Release 入口。未经实际运行的入口必须在验收报告注明“待验证”；不能为了演练直接发布正式版或把开发版本改成稳定版。首次实施快照见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/community-release-automation.md`），流程验证及后续证据见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)；当前待验收项以 [清单](feature-parity-checklist.md) 为准。
 
 参考：[GitHub 触发事件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)、[Artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data)、[SemVer](https://semver.org/)。

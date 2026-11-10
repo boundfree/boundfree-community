@@ -1,6 +1,6 @@
 # BoundFree EEG Native
 
-BoundFree Community 的 C++17 / Qt6 EEG/LFP 科研文件分析上位机。原生主程序负责界面、绘图、DSP、授权与国际化，Python 边车负责科研文件读写。
+BoundFree Community 的 C++17 / Qt6 脑电（EEG/LFP）上位机：信号滤波、波形展示、频谱分析、设备接入，以及脑电/眼电/肌电分离。原生主程序负责界面、绘图、DSP、授权与国际化，Python 边车负责科研文件读写。
 
 ## GitHub 与 Gitee 的关系
 
@@ -51,11 +51,13 @@ GitHub 与 Gitee 均公开；协作权限、远端配置和单向同步规则统
 | 浏览、导出、脑电/眼电分离 | [分析操作说明](docs/analysis-guide.md) |
 | 功能需求、建分支、PR 评审合入、同步与清理 | [提交与交付 SOP](docs/contribution-sop.md) |
 | 本地 WSL2 / Windows 构建 | [工具链说明](docs/toolchain-wsl2.md) |
-| 架构、契约、当前路线与验收边界 | [文档索引](docs/README.md) |
+| 程序组成、代码位置与数据流 | [软件架构](docs/architecture-design.md) |
+| 连接设备、实时查看与原始录制 | [设备采集说明](docs/device-acquisition.md) |
+| 契约、当前路线与验收边界 | [文档索引](docs/README.md) |
 | 代码代理 | [AGENTS.md](AGENTS.md) 与 [community-delivery skill](.agents/skills/community-delivery/SKILL.md)，支持 `$community-delivery` |
 
-首次体验分离可点击“打开教学记录 → 开始分离”；教学记录是自有数学混合源，不是 EEGdenoiseNet。真实记录需要确认通道用途、检查成分并人工标记来源，零线可能表示该组尚无成分；操作与限制见分析说明。
+首次体验分离可从菜单“文件 → 加载内置分离示例”开始；内置示例是自有数学混合源，不是 EEGdenoiseNet。真实记录需要确认通道用途、检查成分并人工标记来源，零线可能表示该组尚无成分；操作与限制见分析说明。
 
 
 
-目录：`native/` 原生程序，`sidecar/` 编解码边车，`tests/` 回归，`docs/` 当前文档，`docs/archive/` 历史计划/设计/验收。构建产物和本机配置不入库。
+目录：`native/` 原生程序，`sidecar/` 编解码边车，`tests/` 回归，`docs/` 当前文档。历史计划、报告和旧设计不保留在仓库，靠 Git 历史追溯。构建产物和本机配置不入库。
