@@ -1,4 +1,4 @@
-#include "controller/acquisition_tcp_source.h"
+#include "acquisition/sources/acquisition_tcp_source.h"
 
 #include <QCoreApplication>
 #include <QDebug>

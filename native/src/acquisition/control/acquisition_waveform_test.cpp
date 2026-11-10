@@ -1,5 +1,5 @@
 #include "acquisition/adapters/rt_bci_decoder.h"
-#include "controller/acquisition_view.h"
+#include "acquisition/control/acquisition_view.h"
 #include "ui/plot_style.h"
 #include "ui/waveform_widget.h"
 #include <QApplication>

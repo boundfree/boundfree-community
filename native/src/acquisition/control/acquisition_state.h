@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/capture_recorder.h"
+#include "acquisition/recording/capture_recorder.h"
 #include <vector>
 
 namespace bf {

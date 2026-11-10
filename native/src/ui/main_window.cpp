@@ -1,7 +1,7 @@
 #include "ui/fluent_controls.h"
 #include "ui/workspace_splitter.h"
 #include "ui/main_window.h"
-#include "controller/acquisition_view.h"
+#include "acquisition/control/acquisition_view.h"
 #include "ui/preset_spin_box.h"
 #include "ui/analysis_properties.h"
 #include "ui/analysis_band_table.h"

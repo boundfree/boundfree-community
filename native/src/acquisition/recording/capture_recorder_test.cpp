@@ -1,4 +1,4 @@
-#include "controller/capture_recorder.h"
+#include "acquisition/recording/capture_recorder.h"
 
 #include <QCoreApplication>
 #include <QDir>

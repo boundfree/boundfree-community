@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/acquisition_source.h"
+#include "acquisition/control/acquisition_source.h"
 
 namespace bf {
 
