@@ -114,6 +114,7 @@ last_updated: 2026-07-06
 - 一次提交只做一类事；不要把无关改动混在同一提交。
 - 不写无信息量的 subject，例如 `更新`、`修复 bug`、`wip`、`update`。
 - type 保持英文小写；subject 与 body 使用中文。
+- 不加 AI 署名：不写 `Co-Authored-By` AI 条目或生成工具标记。
 
 ### 允许的 type
 

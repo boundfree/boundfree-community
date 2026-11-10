@@ -79,6 +79,7 @@ git branch -d feature/123-channel-groups
 ### 2.3 提交与 PR
 
 - 提交信息用中文 Conventional Commits，格式见 [开发规范](development-guide.md#commit-rules)。PR 标题同样格式。
+- 提交信息、PR 正文和评论不加 AI 署名，不写 `Co-Authored-By` AI 条目或“Generated with …”之类的生成工具标记。
 - 暂存时写明确路径，不用 `git add -A` 把安装包、环境文件或私钥带进去。
 - PR 正文写清关联 Issue、验收项、版本判断、已执行的验证和未验收项。合入后确实完成的 Issue 用 `Closes #编号`，部分实现用 `Refs #编号`。
 - 实现未完成时加 `--draft`，完成后 `gh pr ready <PR编号>`。同一任务持续更新同一个 PR。

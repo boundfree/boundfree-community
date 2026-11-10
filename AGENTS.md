@@ -79,7 +79,7 @@ BoundFree EEG：脑电（EEG/LFP）信号的滤波、展示、分析与设备接
 
 1. 从最新 `origin/master` 建短分支，一个任务一个分支一个 PR。
 2. 所有改动经 GitHub PR 合入 `master`，不直推。`master` 有分支保护，双平台 CI 必须通过。
-3. 提交信息用中文 Conventional Commits：`type: 中文摘要`，type 为 `feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。
+3. 提交信息用中文 Conventional Commits：`type: 中文摘要`，type 为 `feat`、`fix`、`docs`、`test`、`chore`、`spike`、`refactor`、`perf`。提交信息、PR 标题与正文、评论都不加 AI 署名（如 `Co-Authored-By: Claude …`、`Generated with …`）。
 4. 普通提交不改产品版本。阶段变更按 [发布 SOP](docs/release-sop.md) 用 `scripts/common/version_sync.py`。
 5. 合入后核对主线 CI，再把已验证的提交快进同步到 Gitee 镜像。
 
