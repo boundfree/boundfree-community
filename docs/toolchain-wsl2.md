@@ -21,17 +21,19 @@ Linux 侧推荐用独立 Conda 环境提供完整工具链：Qt 6.8.2（含匹�
 下面的路径变量都换成各自的路径，构建目录可以放在仓库外：
 
 ```bash
-conda env create -f config/qt-wsl-environment.yml
 export BF_QT_ROOT=/path/to/conda/envs/bf-qt6-6.8.2   # 必须是 6.8.2 的安装
-cd /path/to/boundfree-community                      # 仓库根目录
-export BF_BUILD_DIR=/path/to/community-linux-build   # 构建目录，可在仓库外
+cd /path/to/boundfree-community                       # 仓库根目录，下面的相对路径都从这里算
+conda env create -f config/qt-wsl-environment.yml
+export BF_BUILD_DIR=/path/to/community-linux-build    # 构建目录，可在仓库外
 scripts/wsl/with_qt.sh cmake --preset wsl2-qt6-conda -B "$BF_BUILD_DIR" -S native
 scripts/wsl/with_qt.sh cmake --build "$BF_BUILD_DIR" --parallel 4
 scripts/wsl/with_qt.sh "$BF_BUILD_DIR/bf_app"
 BF_NATIVE_BUILD_DIR="$BF_BUILD_DIR" scripts/wsl/with_qt.sh scripts/wsl/verify_m1_foundation.sh
 ```
 
-`wsl2-qt6-conda` 预设使用 `native/cmake/wsl-qt6.cmake`，优先读取 `BF_QT_ROOT`，否则根据 Git common dir 查找工作空间的 `toolchains/qt6-community`，兼容主检出与独立工作树。预设默认构建目录是 `native/build-qt6-baseline`，用 `cmake --preset ... -B <build-dir>` 改到别处；不要复用指向旧 Qt 的 CMakeCache。构建与测试并行度按 [AGENTS.md](../AGENTS.md) 的限制执行。
+最后一行是完整验证入口：它会重新配置与构建、跑整套 pytest 并做界面自检，内存与并行度按 [AGENTS.md](../AGENTS.md) 的资源规则执行。新环境按 `config/qt-wsl-environment.yml` 只提供 Qt 与基线 Python，文件格式测试还需要 `sidecar/pyproject.toml` 里的 formats 依赖。
+
+`wsl2-qt6-conda` 预设使用 `native/cmake/wsl-qt6.cmake`，优先读取 `BF_QT_ROOT`，否则根据 Git common dir 查找工作空间的 `toolchains/qt6-community`，兼容主检出与独立工作树。预设默认构建目录是 `native/build-qt6-baseline`，用 `cmake --preset ... -B <build-dir>` 改到别处；不要复用指向旧 Qt 的 CMakeCache。
 
 `with_qt.sh` 仅为本次命令设置工具路径、运行库、插件目录和环境内 Python，避免混入其他 Qt 的插件。`toolchains/qt6` 与 `toolchains/qt6-community` 统一指向同一个 6.8.2 环境。实验新 Qt 须使用独立构建目录和 `-DBF_ALLOW_OTHER_QT=ON`，日志会明确提示非基线版本。
 
@@ -45,7 +47,7 @@ Qt、FFmpeg、编译器与环境锁定清单应随构建证据保留。离屏回
 scripts/wsl/verify_m1_foundation.sh
 ```
 
-`--fast` 仅用于已有构建的本地迭代，会跳过 CMake build 和 UI smoke，不是完整验收。既有 Python native 测试默认按 `native/build` / `native/build-windows` 查找产物；构建目录在别处时用对应的 `BF_NATIVE_BUILD_DIR` 一类变量指定，动手前先看该测试的查找规则。也可以直接运行构建目录里的目标测试。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
+`--fast` 仅用于已有构建的本地迭代，会跳过 CMake build 和 UI smoke，不是完整验收。外置构建目录没有统一的覆盖方式：`scripts/wsl/verify_m1_foundation.sh` 读 `BF_NATIVE_BUILD_DIR`（默认 `native/build-qt6-baseline`），但它只是总入口自己的产物目录；`tests/native` 里各测试各自决定查找位置，多数只认 `native/build` / `native/build-windows`，只有个别测试（如 `test_bfsp_native.py`）有自己的变量。设置 `BF_NATIVE_BUILD_DIR` 不会让这些 pytest 改到外置目录，构建目录在别处时直接运行该目录里的目标测试，并先看对应测试的查找规则。历史记录保留了总入口因两个模块在缺少可发现二进制时使用模块级 `pytest.skip` 不当而失败的结果，不将该失败或未运行的测试计作通过。Python/native 回归使用含所需格式依赖的解释器；使用 `BF_PYTHON_EXECUTABLE` 时明确它指向哪个环境。离屏回归可设置 `QT_QPA_PLATFORM=offscreen`，但它不提供真实显示/GPU结论。
 
 ## Windows 本地构建
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """静态分层检查。
 
-规则来源见 docs/architecture-design.md 的“分层与依赖规则”，落地要求见
-docs/restructure-plan.md A1。检查两件事：
+规则来源见 docs/architecture-design.md 的“分层与依赖规则”。检查两件事：
 
 1. ``native/src`` 下源文件的 ``#include "..."`` 是否越过分层。include 目标先规范化成
    相对 ``native/src`` 的路径再判定：带目录前缀的写法直接规范化，不带前缀与 ``../`` 写法
