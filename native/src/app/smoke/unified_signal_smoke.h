@@ -1,5 +1,6 @@
 #pragma once
 #include "ui/main_window.h"
+#include "controller/sidecar_slice.h"
 #include "dsp/spectral.h"
 #include <QApplication>
 #include <QCryptographicHash>

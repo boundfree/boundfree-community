@@ -25,7 +25,6 @@ last_updated: 2026-11-10
 
 | 编号 | 事项 | 优先级 | 执行方式 | 规模 |
 | --- | --- | --- | --- | --- |
-| A2 | 界面层里的数值计算下沉 | 高 | 需设计 | 小 |
 | A3 | `render` 不再依赖 `ipc` | 中 | 机械 | 小 |
 | A4 | 拆分 `MainWindow` | 高 | 需设计 | 大，分多个 PR |
 | A5 | 拆分两个超长构造函数 | 中 | 机械 | 中 |
@@ -41,23 +40,9 @@ last_updated: 2026-11-10
 | C1 | 文档类 PR 不跑完整构建 | 中 | 需设计 | 小 |
 | C2 | 仓库与工具的零散收尾 | 低 | 机械 | 小 |
 
-建议顺序：A2 → A3 → A10 → A4（分步）→ 其余按需。
+建议顺序：A3 → A10 → A4（分步）→ 其余按需。
 
 ## A. 代码结构
-
-### A2 界面层里的数值计算下沉
-
-**现状**：数值计算已按要求移出界面文件，正在等 PR 评审与双平台 CI：
-
-- 频段功率由分析任务放进 `AnalysisResult::bandPowers`（顺序与 `dsp::eegBands()` 一致，只有 `Psd` 类型填充）；`MainWindow::renderAnalysisResult` 只读取该字段。
-- 成分频谱由 `dsp::longestFiniteSegmentPsd(trace, fs, fmax)` 计算，界面经 `controller/eeg_separation_controller.h` 的无状态适配函数 `separationComponentSpectrum(output, component, maxFrequency)` 取结果，只保留 `output` 指针与成分的缓存判断，把返回的 `Spectrum` 映射到图形。
-- 界面只剩 `dsp::eegBands()` 这类常量读取，`scripts/common/check_layering.py` 的 `DSP_CALL_EXCEPTIONS` 已清空。
-
-**为什么不按最初写法让界面直接调用 DSP 纯函数**：那份步骤既要求工作区调用 `dsp::longestFiniteSegmentPsd`，又要求删掉 ui 的 DSP 调用白名单，两条互相矛盾。分层规则是界面不调 `dsp::` 函数，所以数值入口放在控制层的无状态适配函数里：它只读传入的 `SeparationOutput` 与成分下标，离线结果和连续 ICA 帧共用，不持有实时数据，也不改变计算发生的线程。
-
-**当前限制**：成分频谱仍随 `output` 或所选成分变化在界面线程上同步计算，实时刷新时与绘图一起执行。最初设想的可选异步方案——让离线结果和 `LiveIcaFrame` 各自带上频谱——没有做；只有确认实时刷新出现实际卡顿，并用性能数据说明时再考虑，届时仍不得把实时帧的频谱放进 `EegSeparationController`。
-
-**验证**：`m4_spectral_test`（含与改动前界面实现的逐位对比）、`eeg_separation_controller_test`、`eeg_separation_workspace_test`、`--smoke-m4-analysis`、`--smoke-ui-analysis-*`。
 
 ### A3 `render` 不再依赖 `ipc`
 
@@ -79,7 +64,7 @@ last_updated: 2026-11-10
 
 **步骤**（每步一个 PR，前一步合入后再做下一步）：
 
-1. **分析面板**：把 `buildAnalysisDock`、`requestCurrentAnalysis`、`renderAnalysisResult`、`refreshAnalysisPage` 及相关成员提取为 `ui/analysis_panel.{h,cpp}`。面板对外只暴露“设置输入窗口”“请求刷新”和“语言变化”三类接口。先做这一步，因为它与其他部分耦合最少，且 A2 已经把计算移走。
+1. **分析面板**：把 `buildAnalysisDock`、`requestCurrentAnalysis`、`renderAnalysisResult`、`refreshAnalysisPage` 及相关成员提取为 `ui/analysis_panel.{h,cpp}`。面板对外只暴露“设置输入窗口”“请求刷新”和“语言变化”三类接口。先做这一步，因为它与其他部分耦合最少，且数值计算已经移走。
 2. **浏览控制面板**：提取 `buildBrowserControls`、`rebuildChannelControls` 和通道显隐、窗口、幅值相关的槽函数为 `ui/browser_controls_panel.{h,cpp}`。
 3. **录制与导出**：提取 `buildRecordControls`、`exportSegment` 及其状态为 `ui/record_export_panel.{h,cpp}`，或并入已有的 `eeg_playback_panel`。
 4. **来源协调**：把“当前浏览来源是文件还是设备”的状态与切换逻辑（`showFileOpenResult`、`refreshSignalTools` 及设备接入相关槽）提取为 `controller/browse_source_coordinator.{h,cpp}`，不含任何控件。
@@ -132,7 +117,7 @@ last_updated: 2026-11-10
 2. 保留一个名为 `bf_core` 的接口库把它们聚合起来，现有测试目标先不用改；之后再逐个把测试改成只链接需要的目标。
 3. 做完后，`scripts/common/check_layering.py` 的检查保留作为快速反馈，CMake 链接关系作为最终约束。
 
-**前置**：A3（否则 `bf_render` 必须依赖 `bf_ipc`）。A2 做完后 `bf_widgets` 对 `bf_dsp` 的依赖也更干净。
+**前置**：A3（否则 `bf_render` 必须依赖 `bf_ipc`）。
 
 **验证**：全量构建与回归；Windows 上确认各目标的导出与链接无误（静态库，风险不大）；对比拆分前后 `bf_app` 安装包内容不变。
 

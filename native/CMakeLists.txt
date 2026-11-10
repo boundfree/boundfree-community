@@ -103,6 +103,8 @@ set(BF_CORE_SOURCES
     src/controller/playback_state.h
     src/controller/record_controller.cpp
     src/controller/record_controller.h
+    src/controller/sidecar_slice.cpp
+    src/controller/sidecar_slice.h
     src/controller/video_sync_state.cpp
     src/controller/video_sync_state.h
     src/render/waveform_view_state.cpp

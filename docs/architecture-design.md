@@ -146,7 +146,6 @@ flowchart LR
 | 问题 | 现状 |
 | --- | --- |
 | `main_window.cpp` 过大 | 约 3100 行，承担浏览、分析、录制、导出、来源切换的全部编排。新增功能不要往里加 |
-| `render/` 依赖 `ipc/` | `waveform_slice.h` 为一个转换函数引用了边车客户端 |
 | `bf_core` 名不副实 | 一个目标混装了多层代码和共享控件，构建系统无法强制分层 |
 | 自检入口仍是一个大函数 | `app/smoke/smoke_entries.cpp` 约 2500 行、54 个分支 |
 
@@ -182,6 +181,8 @@ flowchart LR
 专用输入/输出使用能力协商后的 `float64-le`。边车验证文件、时间轴、单位和指纹；Native 负责抗混叠重采样、可选陷波、拟合副本高通、白化/FastICA 与未做该高通的输出副本重建。
 
 读入和计算采用协作取消与任务代次隔离；人工标签只更新缓存贡献，不重新拟合。导出先暂存、逐值回读、验证单次均值重建和源指纹，再以不覆盖语义发布新目录；发布临界区短暂禁止取消。结果播放仅改变游标和视窗，不修改科学数组或确认。
+
+成分频谱由 `controller/eeg_separation_controller.h` 的无状态适配函数 `separationComponentSpectrum` 内部调用 `dsp::longestFiniteSegmentPsd`，界面侧只做 `output` 指针与所选成分的缓存判断。该计算目前仍随 `output` 或所选成分变化在界面线程上同步执行，与绘图在同一次刷新里完成；只有实时刷新出现实际卡顿并有性能数据时才考虑异步，届时也不得把实时帧的频谱放进 `EegSeparationController`。
 
 ## 行为约束：设备采集
 

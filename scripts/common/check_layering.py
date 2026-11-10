@@ -97,12 +97,6 @@ class DspCallException:
 
 INCLUDE_EXCEPTIONS = (
     IncludeException(
-        source="render/waveform_slice.h",
-        include="ipc/sidecar_client.h",
-        reason="waveformSliceFromSidecar 转换函数只为两个边车类型留在 render 头文件里；"
-        "A3 把它搬到 controller/sidecar_slice 后删除本条",
-    ),
-    IncludeException(
         source="acquisition/control/acquisition_ui_test.cpp",
         include="ui/device_workspace.h",
         reason="acquisition_ui_test 直接构造 DeviceWorkspace 检查采集栏与设备菜单状态，测试与源码同目录（A9 不搬迁）",
