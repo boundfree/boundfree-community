@@ -56,7 +56,7 @@ scripts/wsl/verify_m1_foundation.sh
 - `test_m6_video_sync.py` 的两例用 ffmpeg 生成样本 MP4 并跑 `bf_app --smoke-m6-video` / 联合打开。探测走 `ffmpeg -hide_banner -encoders`，要求在编码器名里精确出现 `libx264` 与 `aac`；缺二进制或缺编码器时 skip 并列出缺项（Conda 的 Qt 环境带的 ffmpeg 有 `aac` 但通常没有 `libx264`，在这条 PATH 上两例会 skip；系统 ffmpeg 通常两者都有，会实际执行）。探测命令本身执行失败、或编码器存在但生成媒体/产品冒烟失败，都按失败处理。探测与生成使用同一个可执行文件。
 - `test_verify_script.py`：没有 `<BF_NATIVE_BUILD_DIR>/bf_app` 时 skip；有产物时脚本失败必须失败。
 
-CI 的 Linux 任务额外安装 `ffmpeg` 只作为 runner 测试工具（不进打包依赖，也不改产品链接的 FFmpeg 许可），并在主回归之后单独一步跑 `test_verify_script.py`，用刚构建的 `native/build` 与 CI 的 Python，独立 junit 报告和更长超时容纳内层回归；主回归仍保留 `--ignore=tests/scripts/test_verify_script.py`，避免嵌套时间叠在普通单例 360 秒超时上。随后一步读两份 junit，断言两个 M6 真实媒体用例与该脚本用例都是通过而不是 skipped，环境缺项在 CI 上必须显红而不是默默变绿。Windows 任务边界不变，不执行该 shell 脚本。
+CI 的 Linux 任务额外安装 `ffmpeg` 只作为 runner 测试工具，不改产品依赖或许可边界：`bf_app` 不直接链接 libav/x264，媒体解码走 Qt 自带的 LGPL FFmpeg（FFmpeg 7，`libavcodec.so.61`）；`scripts/ci/package_linux.py` 只按 `ldd` 闭包收集库并对缺项直接失败，而 Ubuntu 24.04 的 apt ffmpeg 是 6.1（`libavcodec.so.60`），既满足不了这个 SONAME 也不会被复制进包。该任务还在主回归之后单独一步跑 `test_verify_script.py`，用刚构建的 `native/build` 与 CI 的 Python，独立 junit 报告和更长超时容纳内层回归；主回归仍保留 `--ignore=tests/scripts/test_verify_script.py`，避免嵌套时间叠在普通单例 360 秒超时上。随后一步读两份 junit，断言两个 M6 真实媒体用例与该脚本用例都是通过而不是 skipped，环境缺项在 CI 上必须显红而不是默默变绿。Windows 任务边界不变，不执行该 shell 脚本。
 
 ## Windows 本地构建
 

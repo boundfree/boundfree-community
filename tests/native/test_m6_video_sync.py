@@ -27,11 +27,13 @@
 
 不假设不存在的固定文本: 只断言成功/失败标记子串与退出码, 不锁定任意字段名
 或数值格式 (实现者可自由选择 ``thresholds=...`` / ``fps=~20`` 等措辞)。
+
+编码器探测的用例不依赖 bf_app, 没有构建产物时照常运行; 三个 smoke 用例通过
+``app`` fixture 逐个 skip 并说明缺哪个产物。
 """
 
 import os
 import re
-import shlex
 import shutil
 import subprocess
 from pathlib import Path
@@ -58,15 +60,18 @@ def _resolve_app() -> Path:
     existing = [path for path in _candidate_apps() if path.exists()]
     if not existing:
         listed = "\n".join(f"- {path}" for path in _candidate_apps())
-        # 模块级 skip 必须声明 allow_module_level, 否则 pytest 把它当成收集错误。
-        pytest.skip(
-            f"bf_app 可执行程序未找到, 请先构建 native。\nChecked:\n{listed}",
-            allow_module_level=True,
-        )
+        pytest.skip(f"bf_app 可执行程序未找到, 请先构建 native。\nChecked:\n{listed}")
     return existing[0]
 
 
-APP = _resolve_app()
+@pytest.fixture(scope="module")
+def app() -> Path:
+    """已构建的 bf_app, 只供真正调用应用的用例使用。
+
+    不在导入时解析: 本文件的编码器探测用例不依赖 bf_app, 没有构建产物时也应
+    照常执行; 三个 smoke 用例各自 skip 并给出缺产物说明。
+    """
+    return _resolve_app()
 
 
 def _run(args, check: bool = False) -> subprocess.CompletedProcess:
@@ -200,7 +205,7 @@ def _generate_short_mp4(ffmpeg: str, path: Path) -> None:
     )
 
 
-# -- 编码器探测的行为测试 (用假 ffmpeg 可执行文件, 不读源码文本) ----------------
+# -- 编码器探测的行为测试 (替身代替真实进程, 不读源码文本) ----------------------
 
 _ENCODER_HEADER = (
     "Encoders:\n"
@@ -208,35 +213,52 @@ _ENCODER_HEADER = (
     " A..... = Audio\n"
     " ------\n"
 )
+_LIBX264_LINE = " V..... libx264              libx264 H.264 / AVC / MPEG-4 part 10 (codec h264)"
+_LIBX264RGB_LINE = " V..... libx264rgb           libx264 H.264 / AVC / MPEG-4 AVC (codec h264)"
+_AAC_LINE = " A..... aac                  AAC (Advanced Audio Coding)"
 
 
-def _fake_ffmpeg(
-    tmp_path: Path,
-    listing: str,
-    probe_rc: int = 0,
-    generation_rc: int = 0,
-    stderr: str = "",
-) -> Path:
-    """写一个假 ffmpeg: 探测参数回放固定编码器列表, 生成参数 (``-y``) 按需失败。
+def _encoders_listing(*lines: str) -> str:
+    return _ENCODER_HEADER + "".join(f"{line}\n" for line in lines)
 
-    列表放在同目录的 encoders.txt, 避免把多行文本拼进 shell 引号。
+
+class _RunRecorder:
+    """``subprocess.run`` 的行为替身: 按顺序回放结果并记录每次的真实 argv。
+
+    用替身而不是写一个假可执行文件: Windows 上的 Python 不按 POSIX shebang 运行
+    无扩展名的脚本, 用真实进程会让这组纯逻辑用例在 Windows 直接失败。替身也能
+    精确断言探测与生成两次调用用的是同一个绝对路径和完整参数。
     """
-    (tmp_path / "encoders.txt").write_text(listing, encoding="utf-8")
-    body = [
-        'if [[ "${1:-}" == "-y" ]]; then exit ' + str(generation_rc) + "; fi",
-        'cat "$(dirname "$0")/encoders.txt"',
-    ]
-    if stderr:
-        body.append(f"printf '%s\\n' {shlex.quote(stderr)} >&2")
-    body.append(f"exit {probe_rc}")
-    path = tmp_path / "ffmpeg"
-    path.write_text("#!/usr/bin/env bash\n" + "\n".join(body) + "\n", encoding="utf-8")
-    path.chmod(0o755)
-    return path
+
+    def __init__(self, results: list) -> None:
+        # 每项是 (returncode, stdout, stderr) 或一个待抛出的异常。
+        self._results = list(results)
+        self.calls: list[tuple[list[str], dict]] = []
+
+    def __call__(self, args, **kwargs):
+        argv = [str(arg) for arg in args]
+        self.calls.append((argv, kwargs))
+        assert self._results, f"unexpected subprocess.run: {argv}"
+        result = self._results.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        returncode, stdout, stderr = result
+        return subprocess.CompletedProcess(argv, returncode, stdout, stderr)
 
 
-def _prepend_path(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ['PATH']}")
+def _stub_which(monkeypatch, tmp_path: Path) -> str:
+    """假装 PATH 上有 ffmpeg, 返回一个绝对路径, 不执行任何真实程序。"""
+    executable = str(tmp_path / "qt-bin" / "ffmpeg")
+    monkeypatch.setattr(
+        shutil, "which", lambda name: executable if name == "ffmpeg" else None
+    )
+    return executable
+
+
+def _stub_run(monkeypatch, results: list) -> _RunRecorder:
+    recorder = _RunRecorder(results)
+    monkeypatch.setattr(subprocess, "run", recorder)
+    return recorder
 
 
 def _missing_part(reason: str) -> str:
@@ -244,24 +266,17 @@ def _missing_part(reason: str) -> str:
     return reason.split("缺编码器", 1)[1].split(";", 1)[0]
 
 
-def test_ffmpeg_absent_skips_with_reason(tmp_path, monkeypatch):
-    empty = tmp_path / "empty-path"
-    empty.mkdir()
-    monkeypatch.setenv("PATH", str(empty))
+def test_ffmpeg_absent_skips_with_reason(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
     with pytest.raises(pytest.skip.Exception) as excinfo:
         _require_ffmpeg()
     assert "ffmpeg 不在 PATH" in str(excinfo.value)
 
 
 def test_missing_libx264_skips_and_names_it(tmp_path, monkeypatch):
-    # libx264rgb 的描述里也含 libx264; 只有第二列的精确名字才算数。
-    _fake_ffmpeg(
-        tmp_path,
-        _ENCODER_HEADER
-        + " V..... libx264rgb           libx264 H.264 / AVC / MPEG-4 part 10 (codec h264)\n"
-        + " A..... aac                  AAC (Advanced Audio Coding)\n",
-    )
-    _prepend_path(tmp_path, monkeypatch)
+    # libx264rgb 的描述里也含 libx264; 只有第二列的精确编码器名才算数。
+    _stub_which(monkeypatch, tmp_path)
+    _stub_run(monkeypatch, [(0, _encoders_listing(_LIBX264RGB_LINE, _AAC_LINE), "")])
     with pytest.raises(pytest.skip.Exception) as excinfo:
         _require_ffmpeg()
     missing = _missing_part(str(excinfo.value))
@@ -270,12 +285,8 @@ def test_missing_libx264_skips_and_names_it(tmp_path, monkeypatch):
 
 
 def test_missing_aac_skips_and_names_it(tmp_path, monkeypatch):
-    _fake_ffmpeg(
-        tmp_path,
-        _ENCODER_HEADER
-        + " V..... libx264              libx264 H.264 / AVC / MPEG-4 part 10 (codec h264)\n",
-    )
-    _prepend_path(tmp_path, monkeypatch)
+    _stub_which(monkeypatch, tmp_path)
+    _stub_run(monkeypatch, [(0, _encoders_listing(_LIBX264_LINE), "")])
     with pytest.raises(pytest.skip.Exception) as excinfo:
         _require_ffmpeg()
     missing = _missing_part(str(excinfo.value))
@@ -283,20 +294,47 @@ def test_missing_aac_skips_and_names_it(tmp_path, monkeypatch):
     assert "libx264" not in missing
 
 
-def test_ffmpeg_with_both_encoders_is_used(tmp_path, monkeypatch):
-    expected = _fake_ffmpeg(
-        tmp_path,
-        _ENCODER_HEADER
-        + " V..... libx264              libx264 H.264 / AVC / MPEG-4 part 10 (codec h264)\n"
-        + " A..... aac                  AAC (Advanced Audio Coding)\n",
+def test_probe_and_generation_use_the_same_absolute_ffmpeg(tmp_path, monkeypatch):
+    executable = _stub_which(monkeypatch, tmp_path)
+    recorder = _stub_run(
+        monkeypatch,
+        [
+            (0, _encoders_listing(_LIBX264_LINE, _AAC_LINE), ""),
+            (0, "", ""),
+        ],
     )
-    _prepend_path(tmp_path, monkeypatch)
-    assert Path(_require_ffmpeg()) == expected
+
+    assert _require_ffmpeg() == executable
+    assert Path(executable).is_absolute()
+
+    mp4 = tmp_path / "probe.mp4"
+    _generate_short_mp4(executable, mp4)
+
+    probe_argv, probe_kwargs = recorder.calls[0]
+    generate_argv, generate_kwargs = recorder.calls[1]
+    assert probe_argv == [executable, "-hide_banner", "-encoders"]
+    assert generate_argv == [
+        executable,
+        "-y",
+        "-f", "lavfi",
+        "-i", "color=c=red:s=64x48:d=1.0:r=25",
+        "-f", "lavfi",
+        "-i", "sine=frequency=440:duration=1.0:sample_rate=44100",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-shortest",
+        str(mp4),
+    ]
+    assert probe_kwargs.get("text") is True
+    # 生成必须带 check=True: 已确认有编码器时的失败要冒泡成错误。
+    assert generate_kwargs.get("check") is True
 
 
 def test_probe_failure_is_an_error_not_a_skip(tmp_path, monkeypatch):
-    _fake_ffmpeg(tmp_path, "", probe_rc=1, stderr="Unknown option -encoders")
-    _prepend_path(tmp_path, monkeypatch)
+    _stub_which(monkeypatch, tmp_path)
+    _stub_run(monkeypatch, [(1, "", "Unknown option -encoders")])
     with pytest.raises(RuntimeError) as excinfo:
         _require_ffmpeg()
     message = str(excinfo.value)
@@ -305,22 +343,24 @@ def test_probe_failure_is_an_error_not_a_skip(tmp_path, monkeypatch):
 
 
 def test_generation_failure_is_an_error_not_a_skip(tmp_path, monkeypatch):
-    # 探测能通过 (有 libx264/aac), 但生成失败: 环境看起来齐备时失败就是真失败。
-    _fake_ffmpeg(
-        tmp_path,
-        _ENCODER_HEADER
-        + " V..... libx264              libx264 H.264 / AVC / MPEG-4 part 10 (codec h264)\n"
-        + " A..... aac                  AAC (Advanced Audio Coding)\n",
-        generation_rc=8,
+    executable = _stub_which(monkeypatch, tmp_path)
+    generation_error = subprocess.CalledProcessError(8, [executable, "-y"])
+    recorder = _stub_run(
+        monkeypatch,
+        [
+            (0, _encoders_listing(_LIBX264_LINE, _AAC_LINE), ""),
+            generation_error,
+        ],
     )
-    _prepend_path(tmp_path, monkeypatch)
+
     ffmpeg = _require_ffmpeg()
     with pytest.raises(subprocess.CalledProcessError) as excinfo:
         _generate_short_mp4(ffmpeg, tmp_path / "out.mp4")
     assert excinfo.value.returncode == 8
+    assert recorder.calls[-1][0][0] == executable
 
 
-def test_smoke_m6_sync_state_contracts():
+def test_smoke_m6_sync_state_contracts(app: Path):
     """VideoSyncState 纯同步状态机覆盖 M6 验收标准 1。
 
     契约 (对应 video_sync_state.h 与 M6 验收标准 1):
@@ -337,7 +377,7 @@ def test_smoke_m6_sync_state_contracts():
     不锁定具体字段文本, 只断言: 退出码 0 + stdout 含 ok 标记 + stderr 不含
     failed 标记。这足以证明 smoke 真的跑了状态机路径而非橡皮图章。
     """
-    result = _run([str(APP), "--smoke-m6-sync"])
+    result = _run([str(app), "--smoke-m6-sync"])
 
     if _flag_is_unsupported(result, "--smoke-m6-sync"):
         pytest.skip("--smoke-m6-sync 尚未实现 (bf_app 报 Unknown option)")
@@ -354,7 +394,7 @@ def test_smoke_m6_sync_state_contracts():
     )
 
 
-def test_smoke_m6_video_real_media_contracts(tmp_path: Path):
+def test_smoke_m6_video_real_media_contracts(app: Path, tmp_path: Path):
     """真实媒体冒烟覆盖 M6 验收标准 2。
 
     契约 (对应 VideoPanel + QMediaPlayer 与 M6 验收标准 2):
@@ -377,7 +417,7 @@ def test_smoke_m6_video_real_media_contracts(tmp_path: Path):
     # 确认生成的文件非空且确为可探测的 MP4; ffmpeg 失败时上面已 check=True 抛错。
     assert mp4_path.stat().st_size > 0
 
-    result = _run([str(APP), "--smoke-m6-video", str(mp4_path)])
+    result = _run([str(app), "--smoke-m6-video", str(mp4_path)])
 
     if _flag_is_unsupported(result, "--smoke-m6-video"):
         pytest.skip("--smoke-m6-video 尚未实现 (bf_app 报 Unknown option)")
@@ -394,7 +434,7 @@ def test_smoke_m6_video_real_media_contracts(tmp_path: Path):
     )
 
 
-def test_smoke_m6_main_window_eeg_plus_video_joint_open(tmp_path: Path):
+def test_smoke_m6_main_window_eeg_plus_video_joint_open(app: Path, tmp_path: Path):
     """主窗口 EEG+视频联合打开集成测试 (M6 验收: 联合打开)。
 
     契约: ``bf_app --smoke-ui --open-file <csv> --open-video <mp4>`` 在主窗口
@@ -417,7 +457,7 @@ def test_smoke_m6_main_window_eeg_plus_video_joint_open(tmp_path: Path):
     assert mp4_path.stat().st_size > 0
 
     result = _run(
-        [str(APP), "--smoke-ui", "--open-file", str(csv_path), "--open-video", str(mp4_path)]
+        [str(app), "--smoke-ui", "--open-file", str(csv_path), "--open-video", str(mp4_path)]
     )
 
     if _flag_is_unsupported(result, "--open-video"):

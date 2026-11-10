@@ -46,18 +46,21 @@ def _usable_bash() -> str | None:
     return bash
 
 
-def _build_dir(env: dict[str, str] | None = None, cwd: Path = ROOT) -> Path:
-    """与脚本一致: ``BF_NATIVE_BUILD_DIR`` 优先, 相对路径按调用者目录展开。
+def _build_dir(env: dict[str, str] | None = None, cwd: Path | None = None) -> Path:
+    """与脚本同一规则: 未设置或空字符串取默认目录, 相对路径按调用目录展开。
 
-    ``cwd`` 默认是仓库根目录, 也就是 ``_run_script`` 启动脚本时的工作目录;
-    脚本对相对路径用的正是这个目录, 两边的产物查找不能各按自己的解释。
+    不做 strip 也不展开 ``~``: 脚本拿原始字符串比较开头是不是 ``/``, 再拼上
+    ``$PWD``, 所以全空格的值或字面 ``~`` 在那里就是目录名的一部分。这里不做
+    额外规范化, 避免两边的产物查找规则悄悄分叉。
+
+    ``cwd`` 默认取当前工作目录, 即调用方启动脚本时所在的目录。
     """
     source = os.environ if env is None else env
-    raw = source.get(BUILD_DIR_ENV, "").strip()
-    if not raw:
+    value = source.get(BUILD_DIR_ENV)
+    if not value:
         return DEFAULT_BUILD_DIR
-    path = Path(raw).expanduser()
-    return path if path.is_absolute() else cwd / path
+    path = Path(value)
+    return path if path.is_absolute() else Path(cwd or Path.cwd()) / path
 
 
 def _require_built_app(build_dir: Path) -> Path:
@@ -71,7 +74,12 @@ def _require_built_app(build_dir: Path) -> Path:
     return app
 
 
-def _script_env(build_dir: Path, python: str, extra: dict[str, str] | None = None) -> dict[str, str]:
+def _script_env(
+    build_dir: Path,
+    python: str,
+    extra: dict[str, str] | None = None,
+    unset: tuple[str, ...] = (),
+) -> dict[str, str]:
     env = {
         **os.environ,
         "PYTHONPATH": str(ROOT / "sidecar"),
@@ -82,13 +90,18 @@ def _script_env(build_dir: Path, python: str, extra: dict[str, str] | None = Non
         "BF_VERIFY_SKIP_LICENSE_GATE": "1",
     }
     env.pop("BF_VERIFY_FAKE_CALL_LOG", None)
+    for key in unset:
+        env.pop(key, None)
     if extra:
         env.update(extra)
     return env
 
 
 def _run_script(
-    build_dir: Path, python: str, extra_env: dict[str, str] | None = None
+    build_dir: Path,
+    python: str,
+    extra_env: dict[str, str] | None = None,
+    unset_env: tuple[str, ...] = (),
 ) -> subprocess.CompletedProcess:
     """运行脚本的 ``--fast`` 路径; 脚本非 0 退出时抛 CalledProcessError, 不吞成 skip。"""
     bash = _usable_bash()
@@ -98,7 +111,7 @@ def _run_script(
     return subprocess.run(
         [bash, str(SCRIPT), "--fast"],
         cwd=ROOT,
-        env=_script_env(build_dir, python, extra_env),
+        env=_script_env(build_dir, python, extra_env, unset_env),
         text=True,
         encoding="utf-8",
         errors="replace",
@@ -138,16 +151,31 @@ def _pytest_calls(log: Path) -> list[list[str]]:
     return [call for call in calls if len(call) >= 2 and call[0] == "-m" and call[1] == "pytest"]
 
 
-def test_build_dir_defaults_to_baseline_build_directory():
+def test_build_dir_falls_back_to_baseline_build_directory():
     assert _build_dir({}) == ROOT / "native" / "build-qt6-baseline"
-    assert _build_dir({BUILD_DIR_ENV: "   "}) == DEFAULT_BUILD_DIR
+    # 脚本用 ${VAR:-default}: 未设置与空字符串都取默认目录。
+    assert _build_dir({BUILD_DIR_ENV: ""}) == DEFAULT_BUILD_DIR
 
 
-def test_build_dir_honors_override_and_relative_paths(tmp_path):
+def test_relative_build_dir_is_resolved_from_the_calling_directory(tmp_path):
+    # 相对路径真的能找到调用目录下的产物 (而不是落到默认目录), 与脚本拼接 $PWD 一致。
+    caller = tmp_path / "caller"
+    build = caller / "out" / "build"
+    build.mkdir(parents=True)
+    (build / "bf_app").write_bytes(b"")
+
+    assert _require_built_app(_build_dir({BUILD_DIR_ENV: "out/build"}, cwd=caller)) == build / "bf_app"
+
+
+def test_build_dir_keeps_values_the_script_would_not_normalize(tmp_path):
+    # 脚本不做 strip, 也不展开 ~: 全空格的值就是空格目录名, 字面 ~ 就是 ~ 目录。
+    assert _build_dir({BUILD_DIR_ENV: " "}, cwd=tmp_path) == tmp_path / " "
+    assert _build_dir({BUILD_DIR_ENV: "~/native/build"}, cwd=tmp_path) == tmp_path / "~" / "native" / "build"
+
+
+def test_absolute_build_dir_is_used_as_given(tmp_path):
     absolute = tmp_path / "community-a10"
     assert _build_dir({BUILD_DIR_ENV: str(absolute)}) == absolute
-    # 相对路径按脚本被调用时的目录展开, 与脚本实际查找产物的位置一致。
-    assert _build_dir({BUILD_DIR_ENV: "native/build"}, cwd=tmp_path) == tmp_path / "native" / "build"
 
 
 def test_missing_bf_app_skips_with_explicit_reason(tmp_path):
@@ -161,17 +189,26 @@ def test_missing_bf_app_skips_with_explicit_reason(tmp_path):
     assert BUILD_DIR_ENV in reason
 
 
-def test_license_gate_is_deselected_only_when_switch_is_set(tmp_path):
+def _fake_call_log_run(tmp_path: Path, extra_env=None, unset_env=()) -> list[list[str]]:
+    """用假解释器跑一次脚本, 返回内层 pytest 收到的参数。"""
     build_dir = tmp_path / "build"
-    build_dir.mkdir()
+    build_dir.mkdir(exist_ok=True)
     (build_dir / "bf_app").write_bytes(b"")
     fake_python = _write_fake_python(tmp_path / "fake-python")
     log = tmp_path / "calls.log"
+    extra = {"BF_VERIFY_FAKE_CALL_LOG": str(log)}
+    if extra_env:
+        extra.update(extra_env)
 
-    _run_script(build_dir, str(fake_python), {"BF_VERIFY_FAKE_CALL_LOG": str(log)})
-    switched = _pytest_calls(log)
-    assert len(switched) == 1, switched
-    assert switched[0] == [
+    _run_script(build_dir, str(fake_python), extra, unset_env)
+
+    calls = _pytest_calls(log)
+    assert len(calls) == 1, calls
+    return calls[0]
+
+
+def test_license_gate_is_deselected_when_switch_is_one(tmp_path):
+    assert _fake_call_log_run(tmp_path, {"BF_VERIFY_SKIP_LICENSE_GATE": "1"}) == [
         "-m",
         "pytest",
         "tests",
@@ -181,17 +218,20 @@ def test_license_gate_is_deselected_only_when_switch_is_set(tmp_path):
         LICENSE_GATE_TEST,
     ]
 
-    log.unlink()
-    _run_script(
-        build_dir,
-        str(fake_python),
-        {"BF_VERIFY_FAKE_CALL_LOG": str(log), "BF_VERIFY_SKIP_LICENSE_GATE": "0"},
-    )
-    default = _pytest_calls(log)
-    assert len(default) == 1, default
-    assert LICENSE_GATE_TEST not in default[0]
-    # --fast 只跳过构建与界面自检, 内层回归必须仍在参数里。
-    assert default[0][:5] == ["-m", "pytest", "tests", "-q", "--ignore=tests/scripts"]
+
+@pytest.mark.parametrize(
+    "extra_env, unset_env",
+    [
+        ({"BF_VERIFY_SKIP_LICENSE_GATE": "0"}, ()),
+        ({}, ("BF_VERIFY_SKIP_LICENSE_GATE",)),
+    ],
+    ids=["explicit-zero", "unset"],
+)
+def test_license_gate_runs_unless_switch_is_one(tmp_path, extra_env, unset_env):
+    # 显式 0 与完全未设置都必须保持默认: 内层仍跑授权门禁, 且 --fast 不裁掉回归。
+    args = _fake_call_log_run(tmp_path, extra_env, unset_env)
+    assert args[:5] == ["-m", "pytest", "tests", "-q", "--ignore=tests/scripts"]
+    assert LICENSE_GATE_TEST not in args
 
 
 def test_script_failure_with_built_app_is_an_error_not_a_skip(tmp_path):
@@ -213,7 +253,8 @@ def test_script_failure_with_built_app_is_an_error_not_a_skip(tmp_path):
 def test_m1_foundation_verify_script_exists_and_supports_fast_mode():
     assert SCRIPT.exists()
 
-    build_dir = _build_dir()
+    # 脚本以仓库根目录为工作目录启动, 相对 BF_NATIVE_BUILD_DIR 也按它展开。
+    build_dir = _build_dir(cwd=ROOT)
     _require_built_app(build_dir)
 
     # 内层是 ``pytest tests --ignore=tests/scripts`` 的嵌套回归, 用当前解释器保证
