@@ -481,10 +481,6 @@
     <message><source>app.activation.error_signing_failed</source><translation>[!! Thee seerveer caannoot iissuuee aa liiceensee riight noow. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
     <message><source>app.activation.error_invalid_machine_id</source><translation>[!! Thiis coompuuteer’s maachiinee IID iis iinvaaliid. Coontaact yoouur aadmiiniistraatoor. !!]</translation></message>
     <message><source>app.activation.error_rate_limited</source><translation>[!! Toooo maany aatteempts. Try aagaaiin iin {retry_after} seecoonds. !!]</translation></message>
-    <message><source>app.spike.export.action</source><translation>[!! Eexpoort Spiikee Reesuultss... !!]</translation></message>
-    <message><source>app.spike.export.no_result</source><translation>[!! Noo spiikee reesuult too eexpoort !!]</translation></message>
-    <message><source>app.spike.export.completed</source><translation>[!! Eexpoorteed {rows} spiikee eeveentss too {path} !!]</translation></message>
-    <message><source>app.spike.export.failed</source><translation>[!! Spiikee eexpoort faileed: {reason} !!]</translation></message>
     <message><source>app.browser.auto_amplitude</source><translation>[!! Aauto aamplitude !!]</translation></message>
     <message><source>app.processing.per_channel</source><translation>[!! Peer-chaannel baandpaass !!]</translation></message>
     <message><source>app.processing.inherit</source><translation>[!! Iinheeriit gloobaal !!]</translation></message>

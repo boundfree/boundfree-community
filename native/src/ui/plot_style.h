@@ -1,12 +1,12 @@
 #pragma once
 
-// 绘图区共享口径：波形浏览器、频谱、时频、Spike 四个绘图组件共用同一套边距、主题
+// 绘图区共享口径：波形浏览器、频谱、时频等绘图组件共用同一套边距、主题
 // 配色与坐标轴刻度算法，避免各组件各自复制常量导致同一窗口内的画面不成套。
 //
 // 约定：
 //   - 所有坐标轴文字（轴标题、刻度数字、通道名）统一使用 Palette::label 单色；
 //   - 边框与网格线使用 Palette::grid，需要更淡的内部线条时就地对 grid setAlpha()，
-//     不新增配色角色（与 spike_widgets.cpp 的既有做法一致）；
+//     不新增配色角色（保持既有绘图组件的做法一致）；
 //   - 刻度数值必须按调用方传入的 QLocale 渲染（UI 侧取 I18nService::qlocale()），
 //     不使用系统 locale，否则轴数字与状态栏/标注时间等其它数值口径不一致。
 
@@ -32,7 +32,7 @@ struct Margins {
     int bottom;
 };
 
-// 频谱 / 时频 / Spike 图：保持既有画面不变。
+// 频谱 / 时频图：保持既有画面不变。
 inline constexpr Margins kAnalysisMargins{54, 28, 16, 36};
 
 // 波形浏览器：左栏要容纳通道名与 ±幅度刻度数字（超长通道名按可用宽度省略），底部
@@ -70,8 +70,8 @@ inline Palette palette(bool dark) {
     };
 }
 
-// EEG uses the archived PySide6 theme. Keep the generic palette above for
-// the separate Spike executable and its existing rendering contract.
+// EEG uses the archived PySide6 theme. The generic palette above stays as a
+// reusable base for other plot consumers.
 inline Palette eegPalette(bool dark) {
     if (dark) return {QColor("#181828"), QColor("#555577"), QColor("#DDE0FF"),
                       QColor("#AAAAC0"), QColor("#FF5252"), QColor("#00CFFF")};
@@ -97,7 +97,7 @@ inline QRectF plotArea(const QWidget& widget, Margins margins) {
                   std::max(1, widget.height() - margins.top - margins.bottom));
 }
 
-// 整数绘图区：供直接 drawRect（频谱 / 时频 / Spike）使用。
+// 整数绘图区：供直接 drawRect（频谱 / 时频）使用。
 inline QRect plotRect(const QWidget& widget, Margins margins = kAnalysisMargins) {
     return plotArea(widget, margins).toAlignedRect();
 }
