@@ -170,6 +170,8 @@ add_subdirectory(src/acquisition)
 
 add_executable(bf_app
     src/app/main.cpp
+    src/app/smoke/smoke_entries.cpp
+    src/app/smoke/smoke_entries.h
     src/controller/analysis_service.cpp
     src/controller/analysis_service.h
     src/controller/eeg_separation_controller.cpp

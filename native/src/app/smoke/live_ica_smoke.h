@@ -1,7 +1,7 @@
 #pragma once
 #include "ui/main_window.h"
 #include "dsp/ica_core.h"
-#include "ui/live_ica_wifi_smoke.h"
+#include "app/smoke/live_ica_wifi_smoke.h"
 #include <QApplication>
 #include <QWheelEvent>
 #include <QRadioButton>
