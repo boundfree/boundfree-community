@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "wsl_sync_target": "/mnt/f/workspace/BoudFree/development/boundfree-community",
-  "qt_root": "F:\\workspace\\BoudFree\\.dev\\qt\\windows\\6.8.2\\msvc2022_64",
+  "wsl_sync_target": "/mnt/c/dev/boundfree-community",
+  "qt_root": "C:\\Qt\\6.8.2\\msvc2022_64",
   "bootstrap_python": "py",
   "bootstrap_python_args": [
     "-3.12"

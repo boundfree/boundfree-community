@@ -25,7 +25,6 @@ last_updated: 2026-11-10
 
 | 编号 | 事项 | 优先级 | 执行方式 | 规模 |
 | --- | --- | --- | --- | --- |
-| A1 | 分层自动检查接入 CI | 高 | 机械 | 小 |
 | A2 | 界面层里的数值计算下沉 | 高 | 需设计 | 小 |
 | A3 | `render` 不再依赖 `ipc` | 中 | 机械 | 小 |
 | A4 | 拆分 `MainWindow` | 高 | 需设计 | 大，分多个 PR |
@@ -43,39 +42,9 @@ last_updated: 2026-11-10
 | C1 | 文档类 PR 不跑完整构建 | 中 | 需设计 | 小 |
 | C2 | 仓库与工具的零散收尾 | 低 | 机械 | 小 |
 
-建议顺序：A1 → B1 → A2 → A3 → A10 → A4（分步）→ 其余按需。A1 先做，是为了让后面每一步都有自动检查兜底。
+建议顺序：B1 → A2 → A3 → A10 → A4（分步）→ 其余按需。
 
 ## A. 代码结构
-
-### A1 分层自动检查接入 CI
-
-**现状**：分层规则只写在文档里。这次整理前，`render/` 有三处引用 `controller/` 而没人发现。
-
-**目标**：违反分层的 include 在 PR 阶段被自动拦下。
-
-**步骤**：
-
-1. 新增 `scripts/common/check_layering.py`：扫描 `native/src/**/*.h|cpp` 的 `#include "<目录>/..."`，按下表判断是否允许。
-
-   | 目录 | 允许引用 |
-   | --- | --- |
-   | `core`、`dsp` | 只能引用自己 |
-   | `render`、`ipc`、`license`、`i18n` | `core`、`dsp`，以及自己 |
-   | `acquisition`（`control/`、`sources/`、`recording/` 除外） | `core`、`dsp`，以及自己 |
-   | `acquisition/control`、`sources`、`recording` | 以上全部 |
-   | `controller` | 以上全部 |
-   | `ui` | 以上全部 |
-   | `app` | 全部 |
-
-2. 脚本内设白名单，每条带原因。2026-11-10 按上表实测，现存违反只有一处：`render/waveform_slice.h → ipc/sidecar_client.h`（A3 解决后删除这条白名单）。`app/smoke/` 下的自检代码按 `app` 对待，测试文件（`*_test.cpp`）按所在目录对待。
-3. 注意两种写法都要识别：带目录前缀的 `#include "render/x.h"`，以及 `acquisition/` 内部不带前缀的 `#include "codec.h"`（后者只在同一子目录内解析，视为引用自己）。
-4. 上表只管 include。“界面不实现算法”靠另一条规则检查：`native/src/ui/` 下除 `dsp::eegBands()` 外不得出现 `dsp::` 函数调用（类型引用允许）。这条规则在 A2 完成前先列两处白名单。
-5. 加 `tests/scripts/test_layering.py` 调用脚本，使其随现有 pytest 在 CI 运行。
-6. 在 `AGENTS.md` 的验证表加一行。
-
-**验证**：故意加一条 `render → ui` 的 include，确认脚本报错；恢复后通过。
-
-**风险**：低。白名单要保持短，每解决一项就删一条。
 
 ### A2 界面层里的数值计算下沉
 
@@ -91,7 +60,7 @@ last_updated: 2026-11-10
 1. 频段功率：在 `controller/analysis_service.h` 的 `AnalysisResult` 里增加 `std::vector<double> bandPowers` 字段，`AnalysisKind::Psd` 的任务在后台线程算完频谱后顺带填好（顺序与 `dsp::eegBands()` 一致）；`MainWindow::renderAnalysisResult` 改为读取该字段。FFT 等其他类型保持为空。
 2. 成分频谱，第一步（必做）：把“取最长连续有限片段 → Welch PSD → 截到上限频率”提取为 `dsp/` 里的一个纯函数（例如 `dsp::longestFiniteSegmentPsd(trace, fs, maxFrequency)`），不依赖 Qt，并在 `dsp/` 加单元测试（含全 NaN、片段短于 4 个样本、中间有缺口三种输入）。工作区改为调用这个函数。这一步不改变计算发生的线程，只是把算法移出界面文件并让它可测。
 3. 成分频谱，第二步（可选，视实时刷新是否卡顿再做）：让产生数据的一方带上频谱。离线结果由 `EegSeparationController` 在结果就绪时算好所选成分的 PSD；实时帧由 `LiveIcaController` 在生成 `LiveIcaFrame` 时附带。**不要**把实时帧的频谱计算放进 `EegSeparationController`，它只管离线的固定输入和模型，不持有实时数据。
-4. 改完后，界面里只应剩下 `dsp::eegBands()` 这类读取常量定义的调用，可以删掉 A1 第 4 步的两条白名单。
+4. 改完后，界面里只应剩下 `dsp::eegBands()` 这类读取常量定义的调用，可以删掉 `scripts/common/check_layering.py` 里对应的两条白名单。
 
 **验证**：`m4_spectral_test`、`eeg_separation_controller_test`、`eeg_separation_workspace_test`、`--smoke-ui-analysis-*` 相关回归通过；对同一输入，改动前后频段功率与 PSD 数值逐位一致（写一个临时对比或在测试里断言）。
 
@@ -103,7 +72,7 @@ last_updated: 2026-11-10
 
 **目标**：`render/` 只依赖 `core` 和 `dsp`。
 
-**步骤**：新建 `controller/sidecar_slice.{h,cpp}`，把 `waveformSliceFromSidecar` 的声明与实现移过去。不要放进 `file_open_controller`，因为调用方有四处：`controller/file_open_controller.cpp`、`controller/export_controller.cpp`、`controller/record_controller.cpp` 和 `app/smoke/unified_signal_smoke.h`。更新这四处的 include，把新文件加进 `native/CMakeLists.txt` 的 `BF_CORE_SOURCES`，去掉 `waveform_slice.h` 对 `ipc/sidecar_client.h` 的引用（如果该头文件里还有别的地方用到 `Sidecar*` 类型或 `QJsonObject`，补上它们各自需要的 include），最后从 A1 的白名单删掉这一条。
+**步骤**：新建 `controller/sidecar_slice.{h,cpp}`，把 `waveformSliceFromSidecar` 的声明与实现移过去。不要放进 `file_open_controller`，因为调用方有四处：`controller/file_open_controller.cpp`、`controller/export_controller.cpp`、`controller/record_controller.cpp` 和 `app/smoke/unified_signal_smoke.h`。更新这四处的 include，把新文件加进 `native/CMakeLists.txt` 的 `BF_CORE_SOURCES`，去掉 `waveform_slice.h` 对 `ipc/sidecar_client.h` 的引用（如果该头文件里还有别的地方用到 `Sidecar*` 类型或 `QJsonObject`，补上它们各自需要的 include），最后从 `scripts/common/check_layering.py` 的白名单删掉这一条。
 
 **验证**：`signal_window_test`、`waveform_viewport_test`、`--smoke-ui-waveform-data-modes`。
 
@@ -168,7 +137,7 @@ last_updated: 2026-11-10
 
 1. 拆为 `bf_foundation`（`core`、`i18n`）、`bf_ipc`、`bf_license`、`bf_render`、`bf_controller`、`bf_widgets`（三个共享控件）。每个目标只链接它允许依赖的下层目标和必需的 Qt 模块。
 2. 保留一个名为 `bf_core` 的接口库把它们聚合起来，现有测试目标先不用改；之后再逐个把测试改成只链接需要的目标。
-3. 做完后，A1 的脚本检查可以保留作为快速反馈，CMake 链接关系作为最终约束。
+3. 做完后，`scripts/common/check_layering.py` 的检查保留作为快速反馈，CMake 链接关系作为最终约束。
 
 **前置**：A3（否则 `bf_render` 必须依赖 `bf_ipc`）。A2 做完后 `bf_widgets` 对 `bf_dsp` 的依赖也更干净。
 
@@ -226,7 +195,7 @@ last_updated: 2026-11-10
 
 ### B1 公开文档里的本机路径移出仓库
 
-**现状**：仓库是公开的，但 `AGENTS.md` 的“本机环境”一节和 `docs/toolchain-wsl2.md` 写着维护者个人机器的路径（`/home/vsonic12138/...`、`F:\workspace\BoudFree\...`、`/mnt/boudfree-dev/...`）和内存大小。这些对其他贡献者没有用，也不该是公开文档的内容。
+**现状**：仓库是公开的，但 `AGENTS.md` 的“本机环境”一节和 `docs/toolchain-wsl2.md` 写着维护者个人机器的绝对路径（Linux 用户主目录、Windows 数据盘目录、单独挂载的缓存盘）和内存大小，`config/windows-dev.example.json` 的示例值也是真实路径。这些对其他贡献者没有用，也不该是公开文档的内容。
 
 **目标**：仓库文档只写对任何人都成立的内容；个人机器的事实放在工作区根目录的 `AGENTS.md`（不在任何仓库里）。
 
@@ -234,7 +203,7 @@ last_updated: 2026-11-10
 
 1. `AGENTS.md`：把“本机环境”一节改成通用规则（“源码在 Linux/WSL 侧编辑，Windows 编译副本只接收单向同步”“内存有限的机器上限制构建并行度，命令是……”），具体路径和 12GiB 这个数字移到工作区根 `AGENTS.md`（那里已经有）。
 2. `docs/toolchain-wsl2.md`：路径改为占位（`<workspace>`、`<build-dir>`）或环境变量，`config/windows-dev.example.json` 里的示例路径改为明显的示例值。
-3. 全仓库 `git grep -nE '/home/vsonic12138|F:\\\\workspace|/mnt/boudfree-dev'` 应无命中（测试夹具里的除外）。
+3. 全仓库检索上述三类个人路径应无命中（测试夹具里的固定路径除外）。
 
 **风险**：低。注意代理依赖这些路径干活，所以移走的内容必须确实已经在工作区根 `AGENTS.md` 里。
 
@@ -304,8 +273,8 @@ last_updated: 2026-11-10
 - **根目录的 `license_public.pem`**：评估是否移到 `config/` 或 `native/resources/`，需同步 CMake 里的嵌入路径和发布资产检查。
 - **`local-samples/`、`samples/`**：两个样本目录职责相近，确认后合并或在 README 写明区别。
 - **Orca 项目登记**：Community 主目录在 Orca 里登记成了“文件夹项目”，不能为它新建工作树；这次是借同仓库的 `community-rtbci` 项目入口绕过去的。在 Orca 里把主目录改登记为 Git 项目。
-- **pi 的目录信任**：pi 每进入一个新工作树都会询问是否信任，导致 Orca 派发超时。在 pi 里信任父目录 `~/orca/workspaces/community-rtbci` 一次即可。
-- **工作树清理**：这次整理留下的 Orca 工作树 `docs-remove-archive`、`refactor-render-deps` 和构建目录 `/mnt/boudfree-dev/build/community-restructure`，对应 PR 合入后删除。
+- **pi 的目录信任**：pi 每进入一个新工作树都会询问是否信任，导致 Orca 派发超时。在 pi 里信任工作树的父目录一次即可。
+- **工作树清理**：这次整理留下的 Orca 工作树 `docs-remove-archive`、`refactor-render-deps` 和外置构建目录下的 `community-restructure`，对应 PR 合入后删除。
 
 ## 不建议做的事
 
