@@ -29,6 +29,7 @@ BoundFree EEG：脑电（EEG/LFP）信号的滤波、展示、分析与设备接
 | IPC、数值格式、错误码、翻译契约 | [docs/contracts.md](docs/contracts.md) |
 | 设备接入、BFSP 协议 | [docs/device-acquisition.md](docs/device-acquisition.md)、[docs/bfsp-protocol.md](docs/bfsp-protocol.md) |
 | 产品范围、现状、未验收项 | [docs/roadmap.md](docs/roadmap.md)、[docs/feature-parity-checklist.md](docs/feature-parity-checklist.md) |
+| 接下来要做的结构与文档调整 | [docs/restructure-plan.md](docs/restructure-plan.md) |
 | 版本、安装包、发布 | [docs/release-sop.md](docs/release-sop.md) |
 | 许可与扩展边界 | [legal/LICENSING.md](legal/LICENSING.md) |
 
@@ -50,11 +51,11 @@ BoundFree EEG：脑电（EEG/LFP）信号的滤波、展示、分析与设备接
 
 架构：
 
-- 上层依赖下层，下层不依赖上层：`app → ui → controller → render / ipc / license / i18n / acquisition → core / dsp`。
+- 上层依赖下层，下层不依赖上层：`app → ui → controller → render / ipc / license / i18n / acquisition → core / dsp`。`acquisition/` 的 `control/`、`sources/`、`recording/` 与 `controller` 同层。
 - `dsp/` 是纯数值代码，不依赖 Qt，也不依赖本仓库其他目录。
 - 界面不解析文件、不实现算法、不解码协议。
 - 主程序不直接解析科研文件格式，一律经 Python 边车。
-- `main_window.cpp` 和 `main.cpp` 已经过大，新功能放独立的控制器或面板，不往这两个文件里加。
+- `ui/main_window.cpp` 已经过大，新功能放独立的控制器或面板，不往里加。`app/main.cpp` 只负责启动，自检入口放 `app/smoke/`。
 
 数据：
 

@@ -42,6 +42,7 @@ last_updated: 2026-11-10
 | --- | --- |
 | 产品范围、已有能力、当前优先事项 | [roadmap.md](roadmap.md) |
 | 哪些已实现、哪些还没验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
+| 接下来要做的结构与文档调整（临时计划，做完即删） | [restructure-plan.md](restructure-plan.md) |
 
 代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载仓库技能 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准。
 
