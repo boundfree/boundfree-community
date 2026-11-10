@@ -1,7 +1,7 @@
 """M5 回放状态机与标注载入的 smoke CLI 契约测试。
 
 被测对象: ``bf_app --smoke-m5-playback`` 与 ``bf_app --smoke-m5-markers <path>``
-两个计划新增的 smoke 入口 (M5 计划 docs/archive/plans/m5-playback-annotations.md)。
+两个计划新增的 smoke 入口 (M5 计划)。
 底层被测代码为 ``native/src/controller/playback_state.*`` 与
 ``native/src/controller/marker_store.*``, 由 ``native/src/app/main.cpp`` 暴露为
 smoke 子命令。
