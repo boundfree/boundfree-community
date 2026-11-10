@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/acquisition_state.h"
+#include "acquisition/control/acquisition_state.h"
 #include "render/signal_processor.h"
 #include <QJsonArray>
 #include <mutex>

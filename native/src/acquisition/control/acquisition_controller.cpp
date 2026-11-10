@@ -1,8 +1,8 @@
-#include "controller/acquisition_controller.h"
-#include "controller/acquisition_view.h"
-#include "controller/acquisition_diagnostic_log.h"
-#include "controller/acquisition_tcp_source.h"
-#include "controller/acquisition_wifi_source.h"
+#include "acquisition/control/acquisition_controller.h"
+#include "acquisition/control/acquisition_view.h"
+#include "acquisition/control/acquisition_diagnostic_log.h"
+#include "acquisition/sources/acquisition_tcp_source.h"
+#include "acquisition/sources/acquisition_wifi_source.h"
 
 #include "acquisition/adapters/simulator.h"
 #include "acquisition/session/acquisition_session.h"

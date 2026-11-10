@@ -1,4 +1,4 @@
-#include "controller/acquisition_format.h"
+#include "acquisition/control/acquisition_format.h"
 
 #include <QJsonArray>
 #include <QtEndian>

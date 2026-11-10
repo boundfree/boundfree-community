@@ -1,8 +1,8 @@
-#include "controller/acquisition_wifi_source.h"
+#include "acquisition/sources/acquisition_wifi_source.h"
 
 #include "acquisition/adapters/rt_bci_decoder.h"
-#include "controller/acquisition_view.h"
-#include "controller/acquisition_diagnostic_log.h"
+#include "acquisition/control/acquisition_view.h"
+#include "acquisition/control/acquisition_diagnostic_log.h"
 #include "core/app_error.h"
 
 #include <QHostAddress>

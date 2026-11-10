@@ -47,40 +47,40 @@ bf_acquisition_test(rt_bci_decoder_test adapters/rt_bci_decoder_test.cpp bf_acqu
 bf_acquisition_test(bfsp_protocol_test protocol/bfsp_protocol_test.cpp bf_protocol)
 bf_acquisition_test(bfsp_tcp_client_test transport/bfsp_tcp_client_test.cpp bf_transport)
 
-add_library(bf_acquisition_format STATIC ../controller/acquisition_format.cpp)
+add_library(bf_acquisition_format STATIC control/acquisition_format.cpp)
 target_include_directories(bf_acquisition_format PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(bf_acquisition_format PUBLIC bf_signal bf_protocol)
-bf_acquisition_test(acquisition_format_test ../controller/acquisition_format_test.cpp bf_acquisition_format)
+bf_acquisition_test(acquisition_format_test control/acquisition_format_test.cpp bf_acquisition_format)
 
 add_library(bf_device_ui STATIC
     ../controller/live_ica_controller.cpp
     ../controller/live_ica_controller.h
-    ../controller/acquisition_diagnostic_log.cpp
-    ../controller/acquisition_diagnostic_log.h
-    ../controller/acquisition_controller.cpp
-    ../controller/acquisition_controller.h
-    ../controller/acquisition_state.h
-    ../controller/acquisition_source.h
-    ../controller/acquisition_wifi_source.cpp
-    ../controller/acquisition_wifi_source.h
-    ../controller/acquisition_tcp_source.cpp
-    ../controller/acquisition_tcp_source.h
-    ../controller/acquisition_view.cpp
-    ../controller/acquisition_view.h
-    ../controller/capture_recorder.cpp
-    ../controller/capture_recorder.h
+    control/acquisition_diagnostic_log.cpp
+    control/acquisition_diagnostic_log.h
+    control/acquisition_controller.cpp
+    control/acquisition_controller.h
+    control/acquisition_state.h
+    control/acquisition_source.h
+    sources/acquisition_wifi_source.cpp
+    sources/acquisition_wifi_source.h
+    sources/acquisition_tcp_source.cpp
+    sources/acquisition_tcp_source.h
+    control/acquisition_view.cpp
+    control/acquisition_view.h
+    recording/capture_recorder.cpp
+    recording/capture_recorder.h
     ../ui/device_workspace.cpp
     ../ui/device_workspace.h
 )
 target_link_libraries(bf_device_ui PUBLIC bf_core bf_acquisition bf_acquisition_format bf_transport)
 
-bf_acquisition_test(acquisition_ui_test ../controller/acquisition_ui_test.cpp bf_device_ui)
-bf_acquisition_test(acquisition_diagnostic_log_test ../controller/acquisition_diagnostic_log_test.cpp bf_device_ui)
-bf_acquisition_test(acquisition_waveform_test ../controller/acquisition_waveform_test.cpp bf_device_ui)
+bf_acquisition_test(acquisition_ui_test control/acquisition_ui_test.cpp bf_device_ui)
+bf_acquisition_test(acquisition_diagnostic_log_test control/acquisition_diagnostic_log_test.cpp bf_device_ui)
+bf_acquisition_test(acquisition_waveform_test control/acquisition_waveform_test.cpp bf_device_ui)
 add_dependencies(acquisition_ui_test bf_i18n_qm)
-bf_acquisition_test(acquisition_tcp_source_test ../controller/acquisition_tcp_source_test.cpp bf_device_ui)
-bf_acquisition_test(acquisition_wifi_source_test ../controller/acquisition_wifi_source_test.cpp bf_device_ui)
-bf_acquisition_test(capture_recorder_test ../controller/capture_recorder_test.cpp bf_device_ui)
+bf_acquisition_test(acquisition_tcp_source_test sources/acquisition_tcp_source_test.cpp bf_device_ui)
+bf_acquisition_test(acquisition_wifi_source_test sources/acquisition_wifi_source_test.cpp bf_device_ui)
+bf_acquisition_test(capture_recorder_test recording/capture_recorder_test.cpp bf_device_ui)
 
 add_test(NAME rt_bci_decoder_test COMMAND rt_bci_decoder_test)
 add_test(NAME acquisition_wifi_source_test COMMAND acquisition_wifi_source_test "${CMAKE_SOURCE_DIR}/..")

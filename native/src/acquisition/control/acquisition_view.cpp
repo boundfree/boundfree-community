@@ -1,5 +1,5 @@
-#include "controller/acquisition_view.h"
-#include "controller/acquisition_format.h"
+#include "acquisition/control/acquisition_view.h"
+#include "acquisition/control/acquisition_format.h"
 
 #include <algorithm>
 #include <array>

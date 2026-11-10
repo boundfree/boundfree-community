@@ -1,7 +1,7 @@
 #pragma once
 
 #include "acquisition/buffer/signal_hub.h"
-#include "controller/acquisition_source.h"
+#include "acquisition/control/acquisition_source.h"
 #include "core/version.h"
 
 #include <QObject>

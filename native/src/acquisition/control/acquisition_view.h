@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/acquisition_controller.h"
+#include "acquisition/control/acquisition_controller.h"
 #include "render/waveform_slice.h"
 #include <optional>
 

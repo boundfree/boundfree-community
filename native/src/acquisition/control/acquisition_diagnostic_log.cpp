@@ -1,5 +1,5 @@
-#include "controller/acquisition_diagnostic_log.h"
-#include "controller/acquisition_format.h"
+#include "acquisition/control/acquisition_diagnostic_log.h"
+#include "acquisition/control/acquisition_format.h"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>

@@ -1,5 +1,5 @@
 #pragma once
-#include "controller/acquisition_controller.h"
+#include "acquisition/control/acquisition_controller.h"
 #include "controller/live_ica_projection.h"
 #include <QTimer>
 #include <QElapsedTimer>

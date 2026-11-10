@@ -1,5 +1,5 @@
-#include "controller/acquisition_diagnostic_log.h"
-#include "controller/acquisition_controller.h"
+#include "acquisition/control/acquisition_diagnostic_log.h"
+#include "acquisition/control/acquisition_controller.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QJsonArray>

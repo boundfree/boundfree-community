@@ -1,9 +1,9 @@
-#include "controller/acquisition_tcp_source.h"
-#include "controller/acquisition_diagnostic_log.h"
+#include "acquisition/sources/acquisition_tcp_source.h"
+#include "acquisition/control/acquisition_diagnostic_log.h"
 
 #include "acquisition/transport/bfsp_tcp_client.h"
-#include "controller/acquisition_format.h"
-#include "controller/acquisition_view.h"
+#include "acquisition/control/acquisition_format.h"
+#include "acquisition/control/acquisition_view.h"
 #include "core/app_error.h"
 
 #include <QJsonArray>

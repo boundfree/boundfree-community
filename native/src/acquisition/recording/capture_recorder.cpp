@@ -1,5 +1,5 @@
-#include "controller/capture_recorder.h"
-#include "controller/acquisition_format.h"
+#include "acquisition/recording/capture_recorder.h"
+#include "acquisition/control/acquisition_format.h"
 
 #include "ipc/sidecar_client.h"
 
