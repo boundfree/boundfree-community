@@ -112,7 +112,7 @@ cp config/windows-dev.example.json config/windows-dev.local.json
 
 ## GPU / 桌面验证
 
-历史 64/128/256 通道、1 kHz、4 秒窗口的 GPU 基线保存在 [原验收记录](archive/reports/m2-rendering-gpu-gate.md)。需要对当前版本复测时，在真实显示环境使用现有采集脚本，先检查当前参数：
+历史 64/128/256 通道、1 kHz、4 秒窗口的 GPU 基线见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/m2-rendering-gpu-gate.md`）。需要对当前版本复测时，在真实显示环境使用现有采集脚本，先检查当前参数：
 
 ```bash
 python3 scripts/common/collect_m2_gpu_gate_evidence.py --help

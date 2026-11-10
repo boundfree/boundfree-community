@@ -1,7 +1,7 @@
 """M5 export_markers_csv 边车协议往返与错误契约测试。
 
 被测对象: ``boundfree_sidecar.protocol.handle_request`` 中的
-``export_markers_csv`` 方法 (M5 计划 docs/archive/plans/m5-playback-annotations.md)。
+``export_markers_csv`` 方法 (M5 计划)。
 该方法接受 ``path`` (数据 CSV 路径) 与 ``markers`` (对象数组), 把 markers 写为
 ``{stem}_markers.csv`` (表头 ``time_s,label``), 复用 ``CsvReader._load_events``
 既有侧车读取路径, 由 ``open`` 的 ``events`` 字段回读。

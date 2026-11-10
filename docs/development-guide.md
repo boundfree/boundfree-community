@@ -8,7 +8,7 @@ last_updated: 2026-11-05
 
 # 开发规范
 
-本文收口分支、版本、文档格式和验证规则。历史细节见 [`archive/git-development.md`](archive/git-development.md) 与 [`archive/documentation-style.md`](archive/documentation-style.md)。
+本文收口分支、版本、文档格式和验证规则。
 
 日常操作按 [提交与交付 SOP](contribution-sop.md)；版本、构建与发版按 [版本与发布 SOP](release-sop.md)。代码代理使用仓库技能 [community-delivery](../.agents/skills/community-delivery/SKILL.md)，PR 使用仓库模板。修改流程时在同一 PR 同步受影响的入口、规范与模板，避免维护多套规则。
 
@@ -84,9 +84,9 @@ last_updated: 2026-11-05
 
 ## Documentation Rules
 
-当前有效文档集中在 `docs/` 根目录。`docs/archive/` 仅用于历史追溯。
+当前有效文档集中在 `docs/` 根目录，历史计划、报告和旧设计不保留在仓库，靠 Git 历史追溯。
 
-目录索引只列当前入口；完成、失效或被替代的计划、逐次报告、旧设计和配图按类型进入 `archive/`。归档前先把操作说明、有效约束和未验收项收口到当前文档，保留历史证据与来源，不把归档等同于验收完成。只有实际存在未执行任务时再创建 `plans/`，不维护空目录或并行的旧计划树。移动文档同步修复链接以及脚本/测试中的路径引用。
+目录索引只列当前入口；完成、失效或被替代的计划、逐次报告、旧设计和配图直接删除，靠 Git 历史追溯。删除前先把操作说明、有效约束和未验收项收口到当前文档，不把删除等同于验收完成。只有实际存在未执行任务时才临时创建计划，不维护空目录或并行的旧计划树。移动文档同步修复链接以及脚本/测试中的路径引用。
 
 `docs/` 中当前 Markdown 文档要求（根目录约定文件、PR 模板和 skill 按各自格式维护）：
 
