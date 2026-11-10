@@ -3,8 +3,7 @@
 #include "ui/main_window.h"
 #include "acquisition/control/acquisition_view.h"
 #include "ui/preset_spin_box.h"
-#include "ui/analysis_properties.h"
-#include "ui/analysis_band_table.h"
+#include "ui/analysis_panel.h"
 #include "ui/record_metadata_dialog.h"
 #include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
@@ -14,7 +13,6 @@
 #include "render/signal_processor.h"
 
 #include <QActionGroup>
-#include <QScopeGuard>
 #include <QPalette>
 #include <QCheckBox>
 #include <QComboBox>
@@ -127,11 +125,6 @@ MainWindow::MainWindow(const VersionInfo& version, I18nService* i18n, const QStr
     buildMarkerDock();
     buildVideoDock();
     buildRecordControls();
-    for (auto* combo : {psdChannelCombo_, psdModeCombo_, stftChannelCombo_, stftResolutionCombo_,
-                        trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
-        combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-        combo->setMinimumContentsLength(6);
-    }
     buildFixedWorkspace();
     connect(waveformWidget_, &WaveformWidget::timeZoomRequested, this, [this](int steps, double anchor) {
         if (deviceWaveformActive_) { deviceWorkspace_->zoomViewTime(steps, anchor); return; }
@@ -299,7 +292,7 @@ void MainWindow::showDeviceWaveform() {
         const QSignalBlocker block(processingModeCombo_);processingModeCombo_->setCurrentIndex(1);
         viewState_=WaveformViewState{};viewState_.setWindowSeconds(2);
     }
-    playback_.pause();playbackTimer_.stop();cancelScrubPreview();invalidateAnalysis();syncVideoToPlayback();
+    playback_.pause();playbackTimer_.stop();cancelScrubPreview();analysisPanel_->invalidate();syncVideoToPlayback();
     deviceWaveformActive_=true;setProperty("deviceWaveformActive",true);
     parameterTabs_->show();if(!compactSignalLayout_)findChild<QSplitter*>("eegAnalysisSplitter")->show();analysisDock_->show();
     videoDock_->hide();playbackBar_->hide();browserToolbar_->show();waveformTitle_->show();deviceLiveControls_->show();
@@ -459,7 +452,7 @@ void MainWindow::buildFixedWorkspace() {
     connect(captureStreamCombo_, &QComboBox::currentIndexChanged, this, [this] {
         if(deviceWaveformActive_) {
             liveStreamKey_=captureStreamCombo_->currentData().toString();liveRawSignal_={};liveProcessedSignal_={};
-            acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();invalidateAnalysis();return;
+            acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();analysisPanel_->invalidate();return;
         }
         if (!isCaptureReplay() || !openCaptureHandler_ || openingFile_) return;
         const auto key = captureStreamCombo_->currentData().toString();
@@ -601,18 +594,18 @@ void MainWindow::buildFixedWorkspace() {
     connect(acquisitionController_,&AcquisitionController::signalWindowReady,this,[this](const WaveformSlice& raw,const WaveformSlice& processed){
         if(!deviceWaveformActive_ || liveFrozen_)return;
         const bool changed=liveRawSignal_.sourceId!=raw.sourceId || liveRawSignal_.streamId!=raw.streamId || liveRawSignal_.channelNames!=raw.channelNames || liveRawSignal_.channelIds!=raw.channelIds || liveRawSignal_.channelUnits!=raw.channelUnits || liveRawSignal_.fs!=raw.fs;
-        if(changed){invalidateAnalysis();liveStreamKey_=raw.streamId;processingState_.clearAllChannelBandpass();resetBrowserChannelSelections();
+        if(changed){analysisPanel_->invalidate();liveStreamKey_=raw.streamId;processingState_.clearAllChannelBandpass();resetBrowserChannelSelections();
             const auto markerSource=raw.sourceId+"/"+raw.streamId;
             if(liveMarkerSource_!=markerSource){liveMarkerSource_=markerSource;markerStore_.replaceFromEvents({});}
         }
         liveRawSignal_=raw;liveProcessedSignal_=processed;if(!processed.data.empty())processingError_.clear();
         if(processed.data.empty()){liveProcessedSignal_=raw;waveformProcessed_=false;const QSignalBlocker block(waveformDataCombo_);waveformDataCombo_->setCurrentIndex(0);}
-        if(changed){refreshSignalTools();refreshAnalysisControls();rebuildChannelControls();refreshBrowserControls();}
+        if(changed){refreshSignalTools();analysisPanel_->refreshInputControls();rebuildChannelControls();refreshBrowserControls();}
         displayLiveSignal();
-        requestCurrentAnalysis(true);
+        analysisPanel_->requestRefresh(true);
     });
     connect(acquisitionController_,&AcquisitionController::signalWindowFailed,this,[this](const AppError& error){
-        if(deviceWaveformActive_){processingError_=error.code;refreshAnalysisInputSummary();statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code)),5000);}
+        if(deviceWaveformActive_){processingError_=error.code;analysisPanel_->refreshInputSummary();statusBar()->showMessage(i18n_->text(QString("error.%1").arg(error.code)),5000);}
     });
     deviceWorkspace_->liveRequested = [this] { showDeviceWaveform(); deviceDialog_->hide(); };
     deviceWorkspace_->connectionsRequested = [this] { openDeviceConnections(); };
@@ -925,10 +918,7 @@ void MainWindow::applyTheme(bool dark) {
     }
     if (separationWorkspace_) separationWorkspace_->setDarkTheme(darkTheme_);
     if (deviceWorkspace_) deviceWorkspace_->setDarkTheme(darkTheme_);
-    if (spectrumWidget_ != nullptr) spectrumWidget_->setDarkTheme(darkTheme_);
-    if (spectrogramWidget_ != nullptr) spectrogramWidget_->setDarkTheme(darkTheme_);
-    if (trendWidget_ != nullptr) trendWidget_->setDarkTheme(darkTheme_);
-    if (coherenceWidget_ != nullptr) coherenceWidget_->setDarkTheme(darkTheme_);
+    if (analysisPanel_ != nullptr) analysisPanel_->setDarkTheme(darkTheme_);
     update();
 }
 
@@ -948,16 +938,16 @@ void MainWindow::refreshPersistentStatus() {
     statusModeLabel_->setText(i18n_->text(currentModeKey()));
 }
 
-void MainWindow::refreshAnalysisInputSummary() {
-    if (!analysisInputSummary_) return;
+// 输入摘要只描述当前处理链；文本拼接属于处理链状态，仍留在 MainWindow，
+// 由 provider 交给面板显示。
+QString MainWindow::analysisInputSummaryText() const {
     if (!waveformProcessed_) {
-        analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
+        return i18n_->text("app.analysis.input_signal") + "\n"
             + i18n_->text("app.signal.raw") + "\n" + i18n_->text("app.signal.raw_hint")
-            + (processingError_.isEmpty()?QString():"\n"+i18n_->text(QString("error.%1").arg(processingError_))));
-        return;
+            + (processingError_.isEmpty()?QString():"\n"+i18n_->text(QString("error.%1").arg(processingError_)));
     }
-    analysisInputSummary_->setText(i18n_->text("app.analysis.input_signal") + "\n"
-        + processingDescription() + "\n" + i18n_->text("app.analysis.preprocessing_hint"));
+    return i18n_->text("app.analysis.input_signal") + "\n"
+        + processingDescription() + "\n" + i18n_->text("app.analysis.preprocessing_hint");
 }
 
 QString MainWindow::processingDescription() const {
@@ -1042,7 +1032,7 @@ void MainWindow::buildBrowserControls() {
         scrubPreviewPosition_ = playback_.position();
         scrubPreviewDisplayed_ = false;
         scrubRequestPending_ = playbackPrefetchPending_ || windowRequestPending_;
-        invalidateAnalysis();
+        analysisPanel_->invalidate();
         syncVideoToPlayback();
     });
     connect(positionSpin_, &QDoubleSpinBox::editingFinished, this, [this]() {
@@ -1397,518 +1387,21 @@ void MainWindow::buildProcessingControls() {
 void MainWindow::buildAnalysisDock() {
     analysisDock_ = new QDockWidget(this);
     analysisDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-    analysisTabs_ = new QTabWidget(analysisDock_);
-    analysisTabs_->setObjectName("eegAnalysisTabs");
-    auto* analysisPage = new QWidget(analysisDock_);
-    auto* analysisLayout = new QVBoxLayout(analysisPage);
-    analysisLayout->setContentsMargins(4, 4, 4, 4);
-    analysisLayout->setSpacing(8);
-    analysisHeading_ = new QLabel(analysisPage);
-    analysisHeading_->setObjectName("eegAnalysisHeading");
-    auto headingFont = analysisHeading_->font(); headingFont.setBold(true);
-    analysisHeading_->setFont(headingFont);
-    analysisLayout->addWidget(analysisHeading_);
-    analysisLayout->addWidget(analysisTabs_, 1);
-    analysisInputSummary_ = new QLabel(analysisPage);
-    analysisInputSummary_->setObjectName("eegAnalysisInputSummary");
-    analysisInputSummary_->setWordWrap(true);
-    analysisInputSummary_->setTextFormat(Qt::PlainText);
-    analysisInputSummary_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-    analysisLayout->addWidget(analysisInputSummary_);
-    auto* selection=new ActionButton(analysisPage);selection->setObjectName("signalSendToSeparation");
-    selection->hide(); // Workspace navigation already opens the same current-selection snapshot.
-    connect(selection,&QPushButton::clicked,this,[this]{prepareSeparationSnapshot();switchWorkspace(1);});
-    auto* analysisScroll=new QScrollArea(analysisDock_);analysisScroll->setObjectName("signalAnalysisScroll");
-    analysisScroll->setWidgetResizable(true);analysisScroll->setFrameShape(QFrame::NoFrame);
-    analysisScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);analysisScroll->setMinimumSize(180,100);
-    analysisScroll->setWidget(analysisPage);analysisDock_->setWidget(analysisScroll);
-    analysisDock_->hide();
-
-    const auto addHeader = [this](QWidget* page, QVBoxLayout* layout, int index) {
-        auto* row = new QHBoxLayout;
-        auto* title = new QLabel(page);
-        title->setObjectName(QString("eegAnalysisTitle_%1").arg(index));
-        title->setTextFormat(Qt::PlainText);
-        QFont font = title->font();
-        font.setBold(true);
-        title->setFont(font);
-        title->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-        auto* status = new QLabel(page);
-        status->setObjectName(QString("eegAnalysisStatus_%1").arg(index));
-        status->setTextFormat(Qt::PlainText);
-        status->setWordWrap(true);
-        status->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-        row->addWidget(title, 1);
-        layout->addLayout(row);
-        analysisTitleLabels_[index] = title;
-        analysisStatusLabels_[index] = status;
-    };
-    const auto addFooter = [this](QWidget* page, QVBoxLayout* layout, int index, QLabel* summary = nullptr) {
-        // Reserve the full wrapped text height outside the graph. Analysis
-        // metadata is part of the visible result, not a nested scroll region.
-        auto* content = new AnalysisProperties(page);
-        content->setObjectName(QString("eegAnalysisProperties_%1").arg(index));
-        auto* properties = new QVBoxLayout(content);
-        properties->setContentsMargins(2, 0, 2, 0);
-        properties->setSpacing(2);
-        properties->addWidget(analysisStatusLabels_[index]);
-        auto* legend = new QLabel(content);
-        legend->setObjectName(QString("eegAnalysisLegend_%1").arg(index));
-        legend->setWordWrap(true);
-        legend->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
-        properties->addWidget(legend);
-        analysisLegendLabels_[index] = legend;
-        if (summary == nullptr) summary = new AnalysisSummaryLabel(content);
-        summary->setObjectName(QString("eegAnalysisSummary_%1").arg(index));
-        // The window style sheet stops setFont() propagation; keep result tables at workbench size.
-        summary->setFont(workbenchFont());
-        summary->setTextFormat(Qt::RichText);
-        summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        summary->setWordWrap(true);
-        summary->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
-        properties->addWidget(summary);
-        analysisSummaryLabels_[index] = summary;
-        layout->addWidget(content);
-    };
-    auto* psdPage = new QWidget(analysisTabs_);
-    auto* psdLayout = new QVBoxLayout(psdPage);
-    addHeader(psdPage, psdLayout, 0);
-    auto* psdControls = new ControlFlowLayout(nullptr);
-    psdChannelCombo_ = new ChoiceBox(psdPage);
-    psdModeCombo_ = new ChoiceBox(psdPage);
-    psdDbCheck_ = new CheckOption(psdPage);
-    psdFmaxSpin_ = new QSpinBox(psdPage);
-    psdFmaxSpin_->setRange(5, 500);
-    psdFmaxSpin_->setValue(100);
-    psdFmaxSpin_->setSuffix(" Hz");
-    psdControls->addWidget(psdChannelCombo_);
-    psdControls->addWidget(psdModeCombo_);
-    psdControls->addWidget(psdDbCheck_);
-    psdModeCombo_->addItem(QString());
-    psdModeCombo_->addItem(QString());
-    psdControls->addWidget(psdFmaxSpin_);
-    spectrumWidget_ = new SpectrumWidget(psdPage);
-    spectrumWidget_->setObjectName("eegAnalysisPlot_0");
-    spectrumWidget_->setMinimumSize(180, 160);
-    spectrumWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    psdLayout->addLayout(psdControls);
-    psdLayout->addWidget(spectrumWidget_, 1);
-    psdBandSummaryLabel_ = new AnalysisSummaryLabel(psdPage);
-    psdBandSummaryLabel_->setWordWrap(true);
-    psdBandSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    addFooter(psdPage, psdLayout, 0, psdBandSummaryLabel_);
-    analysisTabs_->addTab(psdPage, QString());
-
-    auto* stftPage = new QWidget(analysisTabs_);
-    auto* stftLayout = new QVBoxLayout(stftPage);
-    addHeader(stftPage, stftLayout, 1);
-    auto* stftControls = new ControlFlowLayout(nullptr);
-    stftChannelCombo_ = new ChoiceBox(stftPage);
-    stftResolutionCombo_ = new ChoiceBox(stftPage);
-    stftFmaxSpin_ = new QSpinBox(stftPage);
-    stftFmaxSpin_->setRange(5, 500);
-    stftFmaxSpin_->setValue(100);
-    stftFmaxSpin_->setSuffix(" Hz");
-    stftControls->addWidget(stftChannelCombo_);
-    stftControls->addWidget(stftResolutionCombo_);
-    stftControls->addWidget(stftFmaxSpin_);
-    spectrogramWidget_ = new SpectrogramWidget(stftPage);
-    spectrogramWidget_->setObjectName("eegAnalysisPlot_1");
-    spectrogramWidget_->setMinimumSize(180, 160);
-    spectrogramWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    stftLayout->addLayout(stftControls);
-    stftLayout->addWidget(spectrogramWidget_, 1);
-    addFooter(stftPage, stftLayout, 1);
-    analysisTabs_->addTab(stftPage, QString());
-
-    auto* trendPage = new QWidget(analysisTabs_);
-    stftResolutionCombo_->addItem(QString());
-    stftResolutionCombo_->addItem(QString());
-    stftResolutionCombo_->addItem(QString());
-    auto* trendLayout = new QVBoxLayout(trendPage);
-    addHeader(trendPage, trendLayout, 2);
-    auto* trendControls = new ControlFlowLayout(nullptr);
-    trendChannelCombo_ = new ChoiceBox(trendPage);
-    trendEpochSpin_ = new QDoubleSpinBox(trendPage);
-    trendEpochSpin_->setRange(0.5, 30.0);
-    trendEpochSpin_->setValue(1.0);
-    trendEpochSpin_->setSuffix(" s");
-    trendControls->addWidget(trendChannelCombo_);
-    trendControls->addWidget(trendEpochSpin_);
-    trendWidget_ = new BandTrendWidget(trendPage);
-    trendWidget_->setObjectName("eegAnalysisPlot_2");
-    trendWidget_->setMinimumSize(180, 160);
-    trendWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    trendLayout->addLayout(trendControls);
-    trendLayout->addWidget(trendWidget_, 1);
-    addFooter(trendPage, trendLayout, 2);
-    analysisTabs_->addTab(trendPage, QString());
-
-    auto* coherencePage = new QWidget(analysisTabs_);
-    auto* coherenceLayout = new QVBoxLayout(coherencePage);
-    addHeader(coherencePage, coherenceLayout, 3);
-    auto* coherenceControls = new ControlFlowLayout(nullptr);
-    coherenceACombo_ = new ChoiceBox(coherencePage);
-    coherenceBCombo_ = new ChoiceBox(coherencePage);
-    coherenceFmaxSpin_ = new QSpinBox(coherencePage);
-    coherenceFmaxSpin_->setRange(5, 500);
-    coherenceFmaxSpin_->setValue(100);
-    coherenceFmaxSpin_->setSuffix(" Hz");
-    const auto labeledControl = [coherencePage, coherenceControls](QLabel*& label, QWidget* control) {
-        auto* pair = new QWidget(coherencePage);
-        auto* row = new QVBoxLayout(pair);
-        row->setContentsMargins(0, 0, 0, 0); row->setSpacing(4);
-        label = new QLabel(pair); label->setBuddy(control);
-        row->addWidget(label); row->addWidget(control);
-        coherenceControls->addWidget(pair);
-    };
-    coherenceACombo_->setObjectName("eegCoherenceChannelA");
-    coherenceBCombo_->setObjectName("eegCoherenceChannelB");
-    coherenceFmaxSpin_->setObjectName("eegCoherenceFmax");
-    labeledControl(coherenceALabel_, coherenceACombo_);
-    labeledControl(coherenceBLabel_, coherenceBCombo_);
-    labeledControl(coherenceFmaxLabel_, coherenceFmaxSpin_);
-    coherenceWidget_ = new SpectrumWidget(coherencePage);
-    coherenceWidget_->setObjectName("eegAnalysisPlot_3");
-    coherenceWidget_->setMinimumSize(180, 160);
-    coherenceWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    coherenceSummaryLabel_ = new AnalysisSummaryLabel(coherencePage);
-    coherenceSummaryLabel_->setWordWrap(true);
-    coherenceSummaryLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    coherenceLayout->addLayout(coherenceControls);
-    coherenceLayout->addWidget(coherenceWidget_, 1);
-    addFooter(coherencePage, coherenceLayout, 3, coherenceSummaryLabel_);
-    analysisTabs_->addTab(coherencePage, QString());
-
-    analysisService_ = new AnalysisService(this);
-    connect(analysisService_, &AnalysisService::completed, this, &MainWindow::handleAnalysisCompleted);
-    connect(analysisService_, &AnalysisService::failed, this, &MainWindow::handleAnalysisFailed);
-    connect(analysisTabs_, &QTabWidget::currentChanged, this, [this](int) { requestCurrentAnalysis(); });
-    const auto reanalyze = [this]() { if (!refreshingAnalysisControls_) requestCurrentAnalysis(); };
-    for (QComboBox* combo : {psdChannelCombo_, psdModeCombo_, stftChannelCombo_, stftResolutionCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
-        connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this, reanalyze);
-    }
-    for (QSpinBox* spin : {psdFmaxSpin_, stftFmaxSpin_, coherenceFmaxSpin_}) {
-        connect(spin, qOverload<int>(&QSpinBox::valueChanged), this, reanalyze);
-    }
-    connect(psdDbCheck_, &QCheckBox::toggled, this, reanalyze);
-    connect(trendEpochSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, reanalyze);
-}
-
-void MainWindow::refreshAnalysisControls() {
-    if (analysisTabs_ == nullptr) {
-        return;
-    }
-    refreshingAnalysisControls_ = true;
-    const QStringList names = hasActiveSignal() ? activeSignal().channelNames : QStringList{};
-    for (QComboBox* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
-        const int selected = combo->currentIndex();
-        combo->clear();
-        combo->addItems(names);
-        combo->setCurrentIndex(std::clamp(selected, 0, std::max(0, combo->count() - 1)));
-    }
-    if (coherenceBCombo_->count() > 1 && coherenceBCombo_->currentIndex() == coherenceACombo_->currentIndex()) {
-        coherenceBCombo_->setCurrentIndex(1);
-    }
-    const int nyquist = hasActiveSignal() ? std::max(1, static_cast<int>(activeSignal().fs / 2.0)) : 500;
-    for (QSpinBox* spin : {psdFmaxSpin_, stftFmaxSpin_, coherenceFmaxSpin_}) {
-        spin->setMinimum(std::min(5,nyquist));
-        spin->setMaximum(nyquist);
-        spin->setValue(std::min(spin->value(), nyquist));
-    }
-    refreshingAnalysisControls_ = false;
-}
-
-void MainWindow::requestCurrentAnalysis(bool background) {
-    if (!hasActiveSignal() || refreshingAnalysisControls_ || analysisService_ == nullptr
-        || (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown())) {
-        return;
-    }
-    const int currentTab = analysisTabs_->currentIndex();
-    if (currentTab < 0 || currentTab >= 4) return;
-    // Automatic playback updates must let an expensive analysis finish. User
-    // changes still supersede work immediately via a new generation.
-    if (background && requestedAnalysisPage_ == currentTab && analysisRequestPending_) return;
-    AnalysisRequest request;
-    request.fs = activeSignal().fs;
-    if (!(request.fs > 0.0) || windowRequestPending_ || openingFile_) return;
-    const auto range = waveformWidget_->timeRange();
-    const double start = range.first;
-    const double end = range.second;
-    const auto window=signalWindowRange(activeSignal(),start,end);
-    if (currentTab == 0) {
-        request.kind = psdModeCombo_->currentIndex() == 1 ? AnalysisKind::Fft : AnalysisKind::Psd;
-        request.channel = psdChannelCombo_->currentIndex();
-        request.fmax = psdFmaxSpin_->value();
-    } else if (currentTab == 1) {
-        request.kind = AnalysisKind::Stft;
-        request.channel = stftChannelCombo_->currentIndex();
-        request.fmax = stftFmaxSpin_->value();
-        const int base = std::max(16, static_cast<int>(request.fs / 2.0));
-        const int factors[] = {1, 2, 4};
-        request.nperseg = base * factors[std::clamp(stftResolutionCombo_->currentIndex(), 0, 2)];
-    } else if (currentTab == 2) {
-        request.kind = AnalysisKind::BandTrend;
-        request.channel = trendChannelCombo_->currentIndex();
-        request.epochSamples = std::max(2, static_cast<int>(trendEpochSpin_->value() * request.fs));
-    } else {
-        request.kind = AnalysisKind::Coherence;
-        request.channel = coherenceACombo_->currentIndex();
-        request.channelB = coherenceBCombo_->currentIndex();
-        request.fmax = coherenceFmaxSpin_->value();
-    }
-    std::vector<int> selected{request.channel};
-    if(request.kind==AnalysisKind::Coherence)selected.push_back(request.channelB);
-    const auto spans=signalContinuousRanges(window,selected);
-    if(spans.empty()) {
-        auto& page=analysisPages_[currentTab];page={};page.state=AnalysisDisplayState::Empty;
-        clearAnalysisPlot(currentTab);refreshAnalysisPage(currentTab);return;
-    }
-    const auto span=*std::max_element(spans.begin(),spans.end(),[](const auto& a,const auto& b){return a.last-a.first<b.last-b.first;});
-    if(span.last-span.first<2)return;
-    for(const auto& channel:window.data) {
-        if(span.last>channel.size())return;
-        request.data.emplace_back(channel.begin()+span.first,channel.begin()+span.last);
-    }
-    request.tStart=span.start;
-    request.unit=signalUnit(window,request.channel);request.sourceId=window.sourceId;request.streamId=window.streamId;request.sourceContext=window.metadata;
-    if (requestedAnalysisPage_ >= 0 && requestedAnalysisPage_ != currentTab)
-        analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
-    // Every request owns one page and its exact input context. A pending result
-    // from a previously selected page must never repopulate a different page.
-    if (requestedAnalysisPage_ >= 0 && requestedAnalysisPage_ != currentTab
-        && analysisPages_[requestedAnalysisPage_].state == AnalysisDisplayState::Pending) {
-        analysisPages_[requestedAnalysisPage_] = {};
-        analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisGeneration", 0);
-        clearAnalysisPlot(requestedAnalysisPage_);
-        refreshAnalysisPage(requestedAnalysisPage_);
-    }
-    auto& displayed = analysisPages_[currentTab];
-    const bool retainResult = background && displayed.state == AnalysisDisplayState::Ready;
-    AnalysisPageState page;
-    page.state = AnalysisDisplayState::Pending;
-    page.kind = request.kind;
-    page.start = request.tStart;
-    page.end = request.tStart + (request.data.empty() ? 0.0 : request.data.front().size() / request.fs);
-    page.fmax = request.fmax;
-    page.asDb = request.kind == AnalysisKind::Psd && psdDbCheck_->isChecked();
-    page.unit=request.unit;page.partialWindow=spans.size()>1;
-    page.channel = activeSignal().channelNames.value(request.channel);
-    if (request.kind == AnalysisKind::Coherence) {
-        page.channel += QStringLiteral(" / ") + activeSignal().channelNames.value(request.channelB);
-    }
-    requestedAnalysisPage_ = currentTab;
-    pendingAnalysis_ = std::move(page);
-    analysisRequestPending_ = true;
-    // Background playback work keeps the complete last result on screen.
-    // Its time interval belongs to that displayed result until completion.
-    if (!retainResult) {
-        displayed = pendingAnalysis_;
-        clearAnalysisPlot(currentTab);
-        refreshAnalysisPage(currentTab);
-    }
-    analysisStatusLabels_[currentTab]->setProperty("analysisUpdating", retainResult);
-    analysisGeneration_ = analysisService_->request(request);
-    analysisStatusLabels_[currentTab]->setProperty("analysisGeneration", analysisGeneration_);
-    analysisElapsed_.restart();
-}
-
-void MainWindow::invalidateAnalysis() {
-    if (analysisService_ != nullptr) analysisService_->cancel();
-    analysisGeneration_ = 0;
-    requestedAnalysisPage_ = -1;
-    analysisRequestPending_ = false;
-    pendingAnalysis_ = {};
-    for (int index = 0; index < 4; ++index) {
-        analysisPages_[index] = {};
-        if (analysisStatusLabels_[index] != nullptr) {
-            analysisStatusLabels_[index]->setProperty("analysisGeneration", 0);
-            analysisStatusLabels_[index]->setProperty("analysisUpdating", false);
-        }
-        clearAnalysisPlot(index);
-        refreshAnalysisPage(index);
-    }
-}
-
-void MainWindow::clearAnalysisPlot(int page) {
-    if (page == 0) spectrumWidget_->setSpectrum({}, {}, {});
-    else if (page == 1) spectrogramWidget_->setSpectrogram({});
-    else if (page == 2) trendWidget_->setTrend({}, {});
-    else coherenceWidget_->setSpectrum({}, {}, {}, true);
-    if (analysisSummaryLabels_[page] != nullptr) analysisSummaryLabels_[page]->clear();
-}
-
-void MainWindow::refreshAnalysisPage(int index) {
-    if (analysisStatusLabels_[index] == nullptr) return;
-    const auto& page = analysisPages_[index];
-    const QString titleKey = index == 0
-        ? (page.kind == AnalysisKind::Fft ? "app.analysis.fft" : "app.analysis.psd")
-        : (index == 1 ? "app.analysis.stft" : (index == 2 ? "app.analysis.trend" : "app.analysis.coherence"));
-    analysisTitleLabels_[index]->setText(i18n_->text(titleKey));
-    QString stateText;
-    switch (page.state) {
-    case AnalysisDisplayState::Idle:
-    case AnalysisDisplayState::Empty: stateText = i18n_->text("app.analysis.empty"); break;
-    case AnalysisDisplayState::Pending: stateText = i18n_->text("app.analysis.pending"); break;
-    case AnalysisDisplayState::Failed:
-        stateText = i18n_->text("app.analysis.failed", {{"reason", i18n_->text(QString("error.%1").arg(page.errorCode))}});
-        break;
-    case AnalysisDisplayState::Ready:
-        stateText = i18n_->text("app.analysis.ready");
-        break;
-    }
-    const QString context = page.state == AnalysisDisplayState::Idle ? QString() : i18n_->text("app.analysis.context", {
-        {"channel", page.channel}, {"start", i18n_->formatNumber(page.start, 2)}, {"end", i18n_->formatNumber(page.end, 2)},
+    // 面板取代原来的 analysisPage：dock 的创建、固定化、加入分隔器和显隐仍归这里，
+    // 面板本身持有 dock 内容与标题，并通过 provider 读取当前输入与处理链摘要。
+    analysisPanel_ = new AnalysisPanel(analysisDock_, i18n_);
+    analysisPanel_->sendSelectionRequested = [this] { prepareSeparationSnapshot(); switchWorkspace(1); };
+    analysisPanel_->setInputProvider([this] {
+        AnalysisInputContext context;
+        if (hasActiveSignal()) context.signal = &activeSignal();
+        const auto range = waveformWidget_->timeRange();
+        context.windowStart = range.first;
+        context.windowEnd = range.second;
+        context.requestBlocked = openingFile_ || windowRequestPending_
+            || (playbackPanel_ != nullptr && playbackPanel_->isProgressSliderDown());
+        context.inputSummary = analysisInputSummaryText();
+        return context;
     });
-    analysisStatusLabels_[index]->setText(stateText + (context.isEmpty() ? QString() : QStringLiteral("\n") + context) + (page.partialWindow?QStringLiteral("\n")+i18n_->text("app.signal.continuous_segment"):QString()));
-    analysisStatusLabels_[index]->setToolTip(analysisStatusLabels_[index]->text());
-    const char* states[] = {"idle", "pending", "ready", "empty", "failed"};
-    analysisStatusLabels_[index]->setProperty("analysisState", states[static_cast<int>(page.state)]);
-    // Legends are ordinary wrapping labels outside the graph. Their colors use
-    // the exact EEG-band colors used by the plot widgets.
-    QStringList bands;
-    if (index != 1 && !(index == 0 && page.kind == AnalysisKind::Fft)) {
-        for (const auto& band : dsp::eegBands()) {
-            const QString name = i18n_->text("app.analysis.band_legend", {
-                {"band", QString::fromLatin1(band.key)}, {"low", i18n_->formatNumber(band.low, 1)},
-                {"high", i18n_->formatNumber(band.high, 1)},
-            });
-            const QColor color(band.rgba[0], band.rgba[1], band.rgba[2]);
-            bands.push_back(QString("<span style='background-color:%1'>&nbsp;&nbsp;</span> %2").arg(color.name(), name.toHtmlEscaped()));
-        }
-    }
-    analysisLegendLabels_[index]->setText(bands.join(QStringLiteral(" &nbsp; ")));
-    const bool hasBandTable = page.state == AnalysisDisplayState::Ready
-        && (page.kind == AnalysisKind::Psd || page.kind == AnalysisKind::Coherence);
-    analysisLegendLabels_[index]->setVisible(!bands.isEmpty() && !hasBandTable);
-    QString yLabel;
-    if (index == 0) yLabel = analysisUnitLabel(page.kind,page.unit,page.asDb);
-    else if (index == 1) yLabel = i18n_->text("app.analysis.frequency");
-    else if (index == 2) yLabel = analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false);
-    else yLabel = i18n_->text("app.analysis.coherence");
-    const QString empty = QString();
-    if (index == 0) spectrumWidget_->setAxisLabels(i18n_->text("app.analysis.frequency"), yLabel, empty);
-    else if (index == 1) spectrogramWidget_->setLabels(i18n_->text(titleKey), i18n_->text("app.analysis.time"), yLabel, empty);
-    else if (index == 2) trendWidget_->setAxisLabels(i18n_->text("app.analysis.time"), yLabel, empty);
-    else coherenceWidget_->setAxisLabels(i18n_->text("app.analysis.frequency"), yLabel, empty);
-    const std::array<QWidget*, 4> plots{spectrumWidget_, spectrogramWidget_, trendWidget_, coherenceWidget_};
-    plots[index]->setLocale(i18n_->qlocale());
-}
-
-void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& result) {
-    if (generation != analysisGeneration_ || requestedAnalysisPage_ < 0) return;
-    if (!analysisRequestPending_ || result.kind != pendingAnalysis_.kind) return;
-    auto& page = analysisPages_[requestedAnalysisPage_];
-    const auto finiteVector = [](const std::vector<double>& values) {
-        return !values.empty() && std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
-    };
-    bool valid = false;
-    switch (result.kind) {
-    case AnalysisKind::Psd:
-        // 频段功率由分析任务按 PSD 算好；数量不符说明生产者与展示契约不一致，
-        // 不能退化为界面自行计算，否则重新回到“界面实现算法”。
-        valid = finiteVector(result.spectrum.frequencies) && finiteVector(result.spectrum.values)
-            && result.spectrum.frequencies.size() == result.spectrum.values.size()
-            && result.bandPowers.size() == dsp::eegBands().size() && finiteVector(result.bandPowers);
-        break;
-    case AnalysisKind::Fft:
-    case AnalysisKind::Coherence:
-        valid = finiteVector(result.spectrum.frequencies) && finiteVector(result.spectrum.values)
-            && result.spectrum.frequencies.size() == result.spectrum.values.size();
-        break;
-    case AnalysisKind::Stft:
-        valid = finiteVector(result.spectrogram.times) && finiteVector(result.spectrogram.frequencies)
-            && result.spectrogram.values.size() == result.spectrogram.frequencies.size()
-            && std::all_of(result.spectrogram.values.begin(), result.spectrogram.values.end(), [&](const auto& row) {
-                return row.size() == result.spectrogram.times.size() && finiteVector(row);
-            });
-        break;
-    case AnalysisKind::BandTrend:
-        valid = finiteVector(result.trend.times) && result.trend.powers.size() == dsp::eegBands().size()
-            && std::all_of(result.trend.powers.begin(), result.trend.powers.end(), [&](const auto& row) {
-                return row.size() == result.trend.times.size() && finiteVector(row);
-            });
-        break;
-    }
-    QWidget* surface = analysisTabs_->widget(requestedAnalysisPage_);
-    const bool updatesEnabled = surface->updatesEnabled();
-    if (updatesEnabled) surface->setUpdatesEnabled(false);
-    const auto restoreUpdates = qScopeGuard([surface, updatesEnabled]() { if (updatesEnabled) surface->setUpdatesEnabled(true); });
-    page = pendingAnalysis_;
-    analysisRequestPending_ = false;
-    analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
-    page.state = valid ? AnalysisDisplayState::Ready : AnalysisDisplayState::Empty;
-    if (valid) { page.result = result; renderAnalysisResult(requestedAnalysisPage_); }
-    else { page.result = {}; clearAnalysisPlot(requestedAnalysisPage_); }
-    refreshAnalysisPage(requestedAnalysisPage_);
-}
-
-void MainWindow::renderAnalysisResult(int index) {
-    const auto& page = analysisPages_[index];
-    if (page.state != AnalysisDisplayState::Ready) return;
-    const auto& result = page.result;
-    switch (result.kind) {
-    case AnalysisKind::Psd:
-    case AnalysisKind::Fft: {
-        const bool fft = result.kind == AnalysisKind::Fft;
-        const bool asDb = !fft && page.asDb;
-        dsp::Spectrum spectrum = result.spectrum;
-        if (asDb) {
-            for (double& value : spectrum.values) {
-                value = 10.0 * std::log10(std::max(value, 1e-12));
-            }
-        }
-        const auto limit = std::upper_bound(spectrum.frequencies.begin(), spectrum.frequencies.end(), page.fmax);
-        const std::size_t keep = static_cast<std::size_t>(limit - spectrum.frequencies.begin());
-        spectrum.frequencies.resize(keep);
-        spectrum.values.resize(keep);
-        spectrumWidget_->setSpectrum(
-            spectrum,
-            fft ? i18n_->text("app.analysis.fft") : i18n_->text("app.analysis.psd"),
-            analysisUnitLabel(result.kind,page.unit,asDb));
-        if (!fft) {
-            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false), result.bandPowers));
-        } else {
-            psdBandSummaryLabel_->clear();
-        }
-        break;
-    }
-    case AnalysisKind::Stft: {
-        spectrogramWidget_->setSpectrogram(result.spectrogram);
-        double low = result.spectrogram.values.front().front();
-        double high = low;
-        for (const auto& row : result.spectrogram.values) {
-            for (double value : row) { low = std::min(low, value); high = std::max(high, value); }
-        }
-        analysisSummaryLabels_[1]->setText(i18n_->text(page.unit=="uV"?"app.analysis.color_range":"app.signal.color_range", {
-            {"unit",page.unit},
-            {"min", i18n_->formatNumber(low, 1)}, {"max", i18n_->formatNumber(high, 1)},
-        }));
-        break;
-    }
-    case AnalysisKind::BandTrend:
-        trendWidget_->setTrend(result.trend.times, result.trend.powers);
-        analysisSummaryLabels_[2]->setText(analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false));
-        break;
-
-    case AnalysisKind::Coherence: {
-        coherenceWidget_->setSpectrum(result.spectrum, i18n_->text("app.analysis.coherence"), i18n_->text("app.analysis.coherence"), true);
-        std::vector<double> values;
-        for (const dsp::Band& band : dsp::eegBands()) {
-            double sum = 0.0;
-            int count = 0;
-            for (std::size_t i = 0; i < result.spectrum.frequencies.size(); ++i) {
-                if (result.spectrum.frequencies[i] >= band.low && result.spectrum.frequencies[i] <= band.high) {
-                    sum += result.spectrum.values[i];
-                    ++count;
-                }
-            }
-            values.push_back(count > 0 ? sum / count : 0.0);
-        }
-        coherenceSummaryLabel_->setText(analysisBandTable(i18n_, i18n_->text("app.analysis.coherence"), values));
-        break;
-    }
-    }
 }
 
 double MainWindow::viewportStart(double position) const {
@@ -1950,7 +1443,7 @@ void MainWindow::togglePlayback() {
     if (playback_.isPlaying()) {
         playback_.pause();
         playbackTimer_.stop();
-        requestCurrentAnalysis();
+        analysisPanel_->requestRefresh();
     } else {
         playbackViewportActive_ = true;
         playback_.play();
@@ -1992,7 +1485,7 @@ void MainWindow::advancePlayback() {
         const double lead = std::clamp(viewState_.windowSeconds * 0.5, 2.0, 8.0);
         const double end = std::min(signalDurationSeconds_, viewportStart(playback_.position()) + viewState_.windowSeconds);
         if (rawWaveform_.t1 < signalDurationSeconds_ && rawWaveform_.t1 - end <= lead * 0.5) requestPlaybackPrefetch();
-        if (!analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestCurrentAnalysis(true);
+        analysisPanel_->requestPlaybackRefresh();
     }
     if (!playback_.isPlaying()) playbackTimer_.stop();
     syncVideoToPlayback();
@@ -2085,19 +1578,6 @@ void MainWindow::exportMarkers() {
     for (const Marker& marker : markerStore_.markers()) events.push_back({marker.time, marker.label});
     const SidecarResponse response = exportMarkersHandler_(currentFile_.session.path, events);
     if (!response.ok) statusBar()->showMessage(i18n_->text(QString("error.%1").arg(response.error.code), response.error.params));
-}
-
-void MainWindow::handleAnalysisFailed(int generation, const QString& code, const QString&) {
-    if (generation != analysisGeneration_ || requestedAnalysisPage_ < 0) return;
-    auto& page = analysisPages_[requestedAnalysisPage_];
-    if (analysisRequestPending_) page = pendingAnalysis_;
-    analysisRequestPending_ = false;
-    analysisStatusLabels_[requestedAnalysisPage_]->setProperty("analysisUpdating", false);
-    page.state = AnalysisDisplayState::Failed;
-    page.errorCode = code;
-    page.result = {};
-    clearAnalysisPlot(requestedAnalysisPage_);
-    refreshAnalysisPage(requestedAnalysisPage_);
 }
 
 void MainWindow::chooseFile() {
@@ -2216,7 +1696,7 @@ void MainWindow::setFileViewport(double start, double seconds) {
     applyBrowserStateToWaveform();
     if (windowRequestHandler_ && (!cacheCoversPosition(playback_.position()) || windowRequestPending_ || playbackPrefetchPending_))
         requestWindow(playback_.position(), true);
-    else requestCurrentAnalysis();
+    else analysisPanel_->requestRefresh();
     refreshPlaybackControls();
     syncVideoToPlayback();
 }
@@ -2231,12 +1711,7 @@ void MainWindow::resetWaveformView() {
 void MainWindow::resetBrowserChannelSelections() {
     viewState_.firstVisibleChannel = 0;
     viewState_.hiddenChannels.clear();
-    for (auto* combo : {psdChannelCombo_, stftChannelCombo_, trendChannelCombo_, coherenceACombo_, coherenceBCombo_}) {
-        const QSignalBlocker blocker(combo);
-        combo->setCurrentIndex(0);
-    }
-    const QSignalBlocker blocker(coherenceBCombo_);
-    if (coherenceBCombo_->count() > 1) coherenceBCombo_->setCurrentIndex(1);
+    analysisPanel_->resetChannelSelections();
 }
 
 void MainWindow::chooseVideo() {
@@ -2328,7 +1803,7 @@ void MainWindow::requestWindow(double t0, bool keepViewport) {
     playbackPrefetchPending_ = false;
     windowRequestPending_ = true;
     waitingForPlaybackData_ = playback_.isPlaying();
-    invalidateAnalysis();
+    analysisPanel_->invalidate();
     updatePlaybackViewport();
     syncVideoToPlayback();
     statusKey_ = "app.status.file_opening";
@@ -2457,7 +1932,6 @@ void MainWindow::retranslateUi() {
 
     if (openCaptureAction_) openCaptureAction_->setText(i18n_->text("app.capture.open"));
     refreshSignalTools();
-    const QScopedValueRollback<bool> analysisTranslationGuard(refreshingAnalysisControls_, true);
     const QString productTitle = i18n_->text("app.window_title", {{"product_name", version_.productName}, {"version", version_.version}});
     setWindowTitle(deviceWaveformActive_ ? acquisitionController_->snapshot().deviceName + " — " + productTitle :
         hasCurrentFile_ ? QFileInfo(currentFile_.session.path).fileName() + " — " + productTitle : productTitle);
@@ -2553,31 +2027,10 @@ void MainWindow::retranslateUi() {
         if (filterPanel_) filterPanel_->setTitle(i18n_->text("app.processing.panel"));
     }
     waveformTitle_->setText(i18n_->text("app.workspace.waveform"));
-    analysisHeading_->setText(i18n_->text("app.analysis.panel"));
-    findChild<QPushButton*>("signalSendToSeparation")->setText(i18n_->text("app.signal.separate_selection"));
-    coherenceALabel_->setText(i18n_->text("app.analysis.channel_a"));
-    coherenceBLabel_->setText(i18n_->text("app.analysis.channel_b"));
-    coherenceFmaxLabel_->setText(i18n_->text("app.analysis.frequency_limit"));
-    coherenceACombo_->setAccessibleName(coherenceALabel_->text());
-    coherenceBCombo_->setAccessibleName(coherenceBLabel_->text());
-    coherenceFmaxSpin_->setAccessibleName(coherenceFmaxLabel_->text());
+    // 窄窗口的标签文案与拆装属于 MainWindow；面板内部标题、摘要、页签与已算结果的重译
+    // 由面板自己负责。两者都是纯文本/布局更新，不发起分析请求。
     updateSignalWorkspaceLayout();
-    refreshAnalysisInputSummary();
-    analysisDock_->setWindowTitle(i18n_->text("app.analysis.panel"));
-    analysisTabs_->setTabText(0, i18n_->text("app.analysis.psd"));
-    analysisTabs_->setTabText(1, i18n_->text("app.analysis.stft"));
-    analysisTabs_->setTabText(2, i18n_->text("app.analysis.trend"));
-    for (int page = 0; page < 4; ++page) {
-        renderAnalysisResult(page);
-        refreshAnalysisPage(page);
-    }
-    analysisTabs_->setTabText(3, i18n_->text("app.analysis.coherence"));
-    psdModeCombo_->setItemText(0, i18n_->text("app.analysis.welch"));
-    psdModeCombo_->setItemText(1, i18n_->text("app.analysis.fft"));
-    psdDbCheck_->setText(i18n_->text("app.analysis.db_display"));
-    stftResolutionCombo_->setItemText(0, i18n_->text("app.analysis.high_time"));
-    stftResolutionCombo_->setItemText(1, i18n_->text("app.analysis.balanced"));
-    stftResolutionCombo_->setItemText(2, i18n_->text("app.analysis.high_frequency"));
+    analysisPanel_->retranslateUi();
     markerModeAction_->setText(i18n_->text("app.marker.mode"));
     markerModeAction_->setToolTip(i18n_->text("app.marker.mode_tooltip"));
     playAction_->setText(i18n_->text(playback_.isPlaying() ? "app.playback.pause" : "app.playback.play"));
@@ -2662,7 +2115,7 @@ void MainWindow::showFileOpenLoading(const QString& path) {
     playbackPrefetchPending_ = false;
     windowRequestPending_ = false;
     waitingForPlaybackData_ = false;
-    invalidateAnalysis();
+    analysisPanel_->invalidate();
     syncVideoToPlayback();
     setLoading(true);
     statusKey_ = "app.status.file_opening";
@@ -2755,7 +2208,9 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
         currentFile_.waveform = selectedWaveform();
         waveformWidget_->setSlice(currentFile_.waveform);
         updatePlaybackViewport();
-        if (!playback_.isPlaying() || !analysisElapsed_.isValid() || analysisElapsed_.elapsed() >= 500) requestCurrentAnalysis(playback_.isPlaying());
+        // 未播放时立即重算；播放中的预取结果仍按 500ms 节流合并。
+        if (!playback_.isPlaying()) analysisPanel_->requestRefresh();
+        else analysisPanel_->requestPlaybackRefresh();
         playbackElapsed_.restart();
         syncVideoToPlayback();
         return;
@@ -2796,7 +2251,7 @@ void MainWindow::showFileOpenResult(const FileOpenResult& result) {
     refreshBrowserControls();
     refreshProcessingControls();
     applyProcessingAndDisplay();
-    refreshAnalysisControls();
+    analysisPanel_->refreshInputControls();
     if (!sameSession) {
         analysisDock_->show();
         if(!compactSignalLayout_)findChild<QSplitter*>("eegAnalysisSplitter")->show();
@@ -2997,7 +2452,7 @@ void MainWindow::refreshLiveSignal(double start,double end,bool frozen,int chann
     {const QSignalBlocker block(timeWindowSpin_);timeWindowSpin_->setValue(seconds);}
     const bool redraw=liveFrozen_!=frozen || liveRange_!=std::make_pair(start,end) || liveChannel_!=channel;
     liveFrozen_=frozen;liveRange_={start,end};liveChannel_=channel;
-    if(redraw && frozen){displayLiveSignal();requestCurrentAnalysis();}
+    if(redraw && frozen){displayLiveSignal();analysisPanel_->requestRefresh();}
     if(!frozen && (!liveReadElapsed_.isValid() || liveReadElapsed_.elapsed()>=200)){
         liveReadElapsed_.start();acquisitionController_->requestSignalWindow(liveStreamKey_,processingState_,processingModeCombo_->currentIndex()==1,viewState_.windowSeconds);
     }
@@ -3013,13 +2468,6 @@ void MainWindow::displayLiveSignal(){
     refreshWaveformInteractions();
     waveformWidget_->setAxisLabels(i18n_->text("app.analysis.time"),i18n_->text(activeSignal().unit=="uV"?"app.analysis.amplitude":"app.device.signal_amplitude"));
 }
-QString MainWindow::analysisUnitLabel(AnalysisKind kind,const QString& unit,bool db) const {
-    const bool voltage=unit=="uV" || unit==QString::fromUtf8("µV") || unit==QString::fromUtf8("μV");
-    if(kind==AnalysisKind::Coherence)return i18n_->text("app.analysis.coherence");
-    if(voltage)return i18n_->text(kind==AnalysisKind::Fft?"app.analysis.amplitude":kind==AnalysisKind::BandTrend?"app.analysis.trend_unit":db?"app.analysis.db_unit":"app.analysis.psd_unit");
-    return i18n_->text(kind==AnalysisKind::Fft?"app.signal.amplitude_unit":kind==AnalysisKind::BandTrend?"app.signal.power_unit":db?"app.signal.db_unit":"app.signal.psd_unit",{{"unit",unit.isEmpty() || unit=="unknown"?i18n_->text("app.device.unknown_unit"):unit}});
-}
-
 WaveformSlice MainWindow::selectedWaveform() {
     if(!waveformProcessed_)return rawWaveform_;
     try {
@@ -3036,26 +2484,26 @@ WaveformSlice MainWindow::selectedWaveform() {
 
 void MainWindow::applyProcessingAndDisplay() {
     if(deviceWaveformActive_) {
-        acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();invalidateAnalysis();
+        acquisitionController_->cancelSignalWindow();liveReadElapsed_.invalidate();analysisPanel_->invalidate();
         if(liveFrozen_ && !liveRawSignal_.data.empty()) {
-            try{SignalProcessor p;liveProcessedSignal_=p.process(liveRawSignal_,processingState_,processingModeCombo_->currentIndex()==1);displayLiveSignal();requestCurrentAnalysis();}
+            try{SignalProcessor p;liveProcessedSignal_=p.process(liveRawSignal_,processingState_,processingModeCombo_->currentIndex()==1);displayLiveSignal();analysisPanel_->requestRefresh();}
             catch(const std::exception& e){statusBar()->showMessage(i18n_->text(QString("error.%1").arg(QString::fromUtf8(e.what()))),5000);}
         }
-        refreshAnalysisInputSummary();return;
+        analysisPanel_->refreshInputSummary();return;
     }
     if (!hasCurrentFile_) {
         return;
     }
-    invalidateAnalysis();
+    analysisPanel_->invalidate();
     try{currentFile_.waveform=selectedWaveform();}
     catch(const std::exception& e){statusBar()->showMessage(i18n_->text(QString("error.%1").arg(QString::fromUtf8(e.what()))),5000);return;}
     waveformWidget_->setSlice(currentFile_.waveform);
-    refreshAnalysisControls();
+    analysisPanel_->refreshInputControls();
     rebuildChannelControls();
     viewState_.firstVisibleChannel = std::clamp(viewState_.firstVisibleChannel, 0, std::max(0, channelCount() - 1));
     refreshBrowserControls();
     applyBrowserStateToWaveform();
-    requestCurrentAnalysis();
+    analysisPanel_->requestRefresh();
 }
 
 void MainWindow::setProcessingViewStateForBrowser(const ProcessingViewState& state) {

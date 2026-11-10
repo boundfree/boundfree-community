@@ -1,5 +1,6 @@
 #pragma once
 
+#include "controller/analysis_service.h"
 #include "ui/main_window.h"
 
 #include <QApplication>

@@ -31,7 +31,6 @@ last_updated: 2026-11-10
 | A7 | `bf_core` 按层拆成多个构建目标 | 中 | 需设计 | 中 |
 | A8 | 设备构建目标重新划分 | 低 | 需设计 | 小 |
 | A9 | 原生测试统一注册并改按功能命名 | 低 | 机械 | 中 |
-| A10 | 本机必然失败的三个测试改为按环境跳过 | 中 | 机械 | 小 |
 | B2 | 用户说明与开发入口分开 | 中 | 需设计 | 中 |
 | B3 | 发布 SOP 按提交 SOP 的方式精简 | 中 | 需设计 | 小 |
 | B4 | 契约文档拆分 | 低 | 机械 | 小 |
@@ -39,25 +38,27 @@ last_updated: 2026-11-10
 | C1 | 文档类 PR 不跑完整构建 | 中 | 需设计 | 小 |
 | C2 | 仓库与工具的零散收尾 | 低 | 机械 | 小 |
 
-建议顺序：A10 → A4（分步）→ 其余按需。
+建议顺序：A4（分步）→ 其余按需。
 
 ## A. 代码结构
 
 ### A4 拆分 `MainWindow`
 
-**现状**：`ui/main_window.cpp` 3104 行、107 个成员函数、约 120 个成员指针、92 处 `connect`。它同时负责：搭建整个界面（`buildFixedWorkspace` 370 行、`buildAnalysisDock` 199 行、`buildBrowserControls` 163 行）、文件打开与显示、分析任务调度与结果渲染、录制、片段导出、设备与文件来源切换、浏览与分离工作区切换、全部界面文字刷新（`retranslateUi` 161 行）。
+**现状**：`ui/main_window.cpp` 3104 行、107 个成员函数、约 120 个成员指针、92 处 `connect`（第 1 步完成后为 2556 行，分析页已移入 `ui/analysis_panel.{h,cpp}`）。它同时负责：搭建整个界面（`buildFixedWorkspace` 370 行、`buildAnalysisDock` 199 行、`buildBrowserControls` 163 行）、文件打开与显示、分析任务调度与结果渲染、录制、片段导出、设备与文件来源切换、浏览与分离工作区切换、全部界面文字刷新（`retranslateUi` 161 行）。
 
 **目标**：`MainWindow` 只做三件事：装配各面板、在面板之间转发信号、管理当前来源与工作区切换。目标规模 1000 行以内。
 
 **步骤**（每步一个 PR，前一步合入后再做下一步）：
 
-1. **分析面板**：把 `buildAnalysisDock`、`requestCurrentAnalysis`、`renderAnalysisResult`、`refreshAnalysisPage` 及相关成员提取为 `ui/analysis_panel.{h,cpp}`。面板对外只暴露“设置输入窗口”“请求刷新”和“语言变化”三类接口。先做这一步，因为它与其他部分耦合最少，且数值计算已经移走。
+1. **分析面板**：把 `buildAnalysisDock`、`requestCurrentAnalysis`、`renderAnalysisResult`、`refreshAnalysisPage` 及相关成员提取为 `ui/analysis_panel.{h,cpp}`。面板对外只暴露“设置输入窗口”“请求刷新”和“语言变化”三类接口；按现有调用点，输入摘要与通道控件重建是两条独立语义（语言切换只更新摘要），因此分别保留 `refreshInputSummary`、`refreshInputControls`，另有 `invalidate`、`requestPlaybackRefresh`、`setDarkTheme`、`resetChannelSelections` 和“发送选区到分离工作区”回调。先做这一步，因为它与其他部分耦合最少，且数值计算已经移走。
 2. **浏览控制面板**：提取 `buildBrowserControls`、`rebuildChannelControls` 和通道显隐、窗口、幅值相关的槽函数为 `ui/browser_controls_panel.{h,cpp}`。
 3. **录制与导出**：提取 `buildRecordControls`、`exportSegment` 及其状态为 `ui/record_export_panel.{h,cpp}`，或并入已有的 `eeg_playback_panel`。
 4. **来源协调**：把“当前浏览来源是文件还是设备”的状态与切换逻辑（`showFileOpenResult`、`refreshSignalTools` 及设备接入相关槽）提取为 `controller/browse_source_coordinator.{h,cpp}`，不含任何控件。
 5. **收尾**：`buildFixedWorkspace` 只剩装配；`retranslateUi` 拆到各面板自己的 `retranslateUi`。
 
 每一步的做法相同：先列出要搬走的成员变量和函数清单，确认它们对 `MainWindow` 其余部分的引用点，再定面板接口，最后搬迁。不在搬迁的同时改行为或改界面。
+
+**进度**：第 1 步（分析面板）已实现，本地回归与离屏截图证据见该步骤提交；第 2–5 步未开始，本文在全部步骤完成后删除。
 
 **验证**：每步都跑全部 `--smoke-ui-*` 入口和 `eeg_separation_workspace_test`；四种语言切换、明暗主题、窄窗口（波形/分析标签切换）各手动或用现有离屏截图检查一次。
 
@@ -134,25 +135,6 @@ last_updated: 2026-11-10
 3. 是否把 `*_test.cpp` 移到 `native/tests/`：暂不建议。与源码同目录便于对照，移走的收益小于改动量。
 
 **风险**：低，但改名波及面广，用 `git grep` 逐个确认引用。分两个 PR：先注册，再改名。
-
-### A10 本机必然失败的三个测试改为按环境跳过
-
-**现状**：在本机 WSL 环境下有三个测试必然失败，都与被测代码无关：
-
-- `tests/native/test_m6_video_sync.py` 的两个真实媒体测试：测试用 ffmpeg 生成样本 MP4，本机 Conda 的 ffmpeg 没有 `libx264` 编码器，生成步骤返回码 8。测试已有“ffmpeg 不可用则跳过”的逻辑，但没有检测编码器。
-- `tests/scripts/test_verify_script.py`：它调用 `scripts/wsl/verify_m1_foundation.sh --fast`。`--fast` 只是跳过 CMake 构建和界面自检，仍会执行 `pytest tests -q --ignore=tests/scripts`，也就是在一个测试里嵌套跑整套测试，包含最耗内存的授权门禁完整构建；并且默认到 `native/build-qt6-baseline` 找构建产物（可用 `BF_NATIVE_BUILD_DIR` 改），本机的外置构建目录不在那里。
-
-每次本地回归都要人工解释“这几个失败是已知的”，也容易掩盖真正的新失败。
-
-**步骤**：
-
-1. 视频测试：把 `_ffmpeg_available()` 改为同时检查编码器，用 `ffmpeg -hide_banner -encoders` 的输出里是否有 `libx264` 和 `aac`；缺任何一个就 `pytest.skip` 并写明缺的是什么。函数上方那句“libx264/aac 在主流发行版默认启用”的注释同步改掉。
-2. `test_verify_script.py`：脚本要找的构建目录里没有 `bf_app` 时跳过。再给脚本加一个环境变量开关（例如 `BF_VERIFY_SKIP_LICENSE_GATE=1`），设置后给内层 pytest 加 `--deselect tests/native/test_m8_license_gate.py`；这个测试自己调用脚本时设置该变量，因为授权门禁测试在外层 pytest 里本来就会单独跑一次，嵌套再跑是重复的。
-3. 在 `docs/toolchain-wsl2.md` 写明本机回归的预期结果：全部通过或跳过，不应有失败。
-
-**验证**：本机 `tests/native` 与 `tests/scripts` 结果为 0 失败；CI 上这三个测试仍然实际执行并通过（检查 CI 日志里它们是 passed 而不是 skipped）。
-
-**风险**：低。唯一要防的是 CI 上也被跳过，所以第二条验证必须做。
 
 ## B. 文档
 
