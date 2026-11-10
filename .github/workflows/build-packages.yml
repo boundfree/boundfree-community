@@ -159,6 +159,42 @@ jobs:
       - name: Package and smoke test Linux archive
         if: runner.os == 'Linux'
         run: python scripts/ci/package_linux.py
+      # apt ffmpeg 只是测试样本生成器: 这里用打包后的实际证据核对依赖闭包,
+      # 不靠文档推断。发现 GPL 编码器库混入直接失败, 不掩盖。
+      - name: Audit bundled media libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          stage=release/stage/BoundFreeEEG
+          echo "== runner ffmpeg (test sample generator only)"
+          ffmpeg -version | head -n 1
+          ffmpeg -version | grep -o -- '--enable-gpl\|--enable-libx264\|--enable-libx265' | sort -u || true
+          echo "== staged Qt multimedia plugins"
+          for plugin in "$stage"/plugins/multimedia/*.so; do
+            [ -e "$plugin" ] || { echo "(no multimedia plugin staged)"; continue; }
+            echo "$plugin"
+            readelf -d "$plugin" | grep -E 'RPATH|RUNPATH|NEEDED.*(avcodec|avformat|avutil|swresample|swscale)' || true
+          done
+          echo "== staged plugin resolution"
+          ldd "$stage"/plugins/multimedia/*.so 2>/dev/null | grep -E 'libav|libsw|libx26|not found' || true
+          echo "== bundled media libraries"
+          ls -1 "$stage"/lib | grep -E '^(libav|libsw|libx26)' || echo "(none)"
+          for bundled in "$stage"/lib/libx264* "$stage"/lib/libx265* "$stage"/lib/libfdk-aac*; do
+            if [ -e "$bundled" ]; then
+              echo "FAIL: GPL/extra encoder library bundled: $bundled"
+              exit 1
+            fi
+          done
+          for codec in "$stage"/lib/libavcodec.so.*; do
+            [ -e "$codec" ] || continue
+            for marker in libx264 libx265 --enable-gpl --enable-libx264 --enable-libx265; do
+              hits=$(grep -a -c -- "$marker" "$codec" || true)
+              echo "$codec: $marker hits=${hits:-0}"
+              if [ "${hits:-0}" != "0" ]; then
+                echo "FAIL: bundled $codec references $marker; 媒体库来源需人工核对"
+                exit 1
+              fi
+            done
+          done
       - name: Install Inno Setup
         if: runner.os == 'Windows'
         shell: pwsh
