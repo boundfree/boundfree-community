@@ -173,9 +173,12 @@ std::vector<std::vector<double>> loadMatrix2d(const std::string& path) {
     return asMatrix2d(bf::dsp::loadNpyFloat64(path));
 }
 
-// Verbatim copy of the pre-refactor EegSeparationWorkspace::refreshPlots loop.
+// Verbatim copy of the pre-refactor EegSeparationWorkspace::refreshPlots loop,
+// with the display limit parameterized so the parity check can cover values the
+// UI never passed (negative, zero, non-bin boundary, NaN).
 // Kept here so the extracted helper is proven bit-identical, not merely close.
-bf::dsp::Spectrum legacyWorkspaceSpectrum(const std::vector<double>& trace, double fs) {
+bf::dsp::Spectrum legacyWorkspaceSpectrum(
+    const std::vector<double>& trace, double fs, double fmax = 100.0) {
     auto begin = trace.begin(), end = trace.begin();
     for (auto it = trace.begin(); it != trace.end();) {
         if (!std::isfinite(*it)) {
@@ -193,7 +196,7 @@ bf::dsp::Spectrum legacyWorkspaceSpectrum(const std::vector<double>& trace, doub
         ? bf::dsp::computeWelchPsd(std::vector<double>(begin, end), fs, 0, false) : bf::dsp::Spectrum{};
     bf::dsp::Spectrum out;
     for (std::size_t i = 0; i < psd.frequencies.size(); ++i)
-        if (psd.frequencies[i] <= std::min(100., fs / 2)) {
+        if (psd.frequencies[i] <= std::min(fmax, fs / 2)) {
             out.values.push_back(psd.values[i]);
             out.frequencies.push_back(psd.frequencies[i]);
         }
@@ -293,12 +296,17 @@ int checkLongestFiniteSegmentPsd() {
         failures += !report("longest_finite_segment_above_nyquist",
                             bitIdentical(bf::dsp::longestFiniteSegmentPsd(signal, fs, 1000.0),
                                          bf::dsp::computeWelchPsd(signal, fs, 0, false)));
-        failures += !report("longest_finite_segment_clamps_fmax",
-                            bf::dsp::longestFiniteSegmentPsd(signal, fs, -1.0).frequencies.size() == 1 &&
-                                bf::dsp::longestFiniteSegmentPsd(signal, fs, -1.0).frequencies.front() == 0.0);
+        // No cutoff clamping: a negative or NaN limit selects no bin, exactly as
+        // the original `frequency <= min(fmax, fs/2)` filter did.
+        failures += !report("longest_finite_segment_negative_fmax_selects_nothing",
+                            bf::dsp::longestFiniteSegmentPsd(signal, fs, -1.0).values.empty());
+        failures += !report("longest_finite_segment_nan_fmax_selects_nothing",
+                            bf::dsp::longestFiniteSegmentPsd(signal, fs, nan).frequencies.empty() &&
+                                bf::dsp::longestFiniteSegmentPsd(signal, fs, nan).values.empty());
     }
 
-    // Bit parity with the previous in-UI implementation for every shape above.
+    // Bit parity with the previous in-UI implementation for every shape above
+    // and for the cutoff values the shared helper must not reinterpret.
     {
         std::vector<std::vector<double>> inputs;
         inputs.push_back(trace(512));
@@ -310,11 +318,15 @@ int checkLongestFiniteSegmentPsd() {
         {   std::vector<double> v = trace(200); std::fill(v.begin() + 60, v.begin() + 66, inf); inputs.push_back(v); }
         {   std::vector<double> v = trace(120); v[0] = nan; v[119] = -inf; inputs.push_back(v); }
         {   std::vector<double> v(64, 0.0); inputs.push_back(v); }
+        // 37.3 Hz is not a bin centre for this fs, and 0 / negative / NaN are
+        // cutoffs the original filter handled without any special casing.
         bool identical = true;
-        for (const auto& input : inputs) {
-            const bf::dsp::Spectrum got = bf::dsp::longestFiniteSegmentPsd(input, fs, 100.0);
-            const bf::dsp::Spectrum expected = legacyWorkspaceSpectrum(input, fs);
-            identical = identical && bitIdentical(got, expected);
+        for (double fmax : {100.0, 20.0, 37.3, 0.0, -1.0, nan}) {
+            for (const auto& input : inputs) {
+                const bf::dsp::Spectrum got = bf::dsp::longestFiniteSegmentPsd(input, fs, fmax);
+                const bf::dsp::Spectrum expected = legacyWorkspaceSpectrum(input, fs, fmax);
+                identical = identical && bitIdentical(got, expected);
+            }
         }
         failures += !report("longest_finite_segment_matches_legacy_ui_bits", identical);
     }
