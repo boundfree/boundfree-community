@@ -3,14 +3,14 @@ title: 当前能力与待验收清单
 doc_type: checklist
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-10
 ---
 
 # 当前能力与待验收清单
 
-本清单区分已有实现/自动化覆盖和仍待独立验收的事项。勾选不代表所有真实设备、样本和目标桌面均已通过。原逐项 M1–M8 清单与测试细节见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/feature-parity-checklist-20261020.md` 和 `docs/archive/README.md`）。
+本清单区分已有实现/自动化覆盖和仍待独立验收的事项。勾选不代表所有真实设备、样本和目标桌面均已通过。
 
-通用设备采集在 `feature/bfsp-acquisition` 候选分支实施；其模拟器、TCP、RT-BCI Wi-Fi 适配、设备选择与原始录制的软件能力见 [设备采集说明](device-acquisition.md)。它尚未发布，RT-BCI 实机与目标 Windows 桌面仍待验收，不将既有安装包或 CI 证据视为新增能力的验收。
+通用设备采集已合入 `master`，尚未随正式版本发布；其模拟器、TCP、RT-BCI Wi-Fi 适配、设备选择与原始录制的软件能力见 [设备采集说明](device-acquisition.md)。它尚未发布，RT-BCI 实机与目标 Windows 桌面仍待验收，不将既有安装包或 CI 证据视为新增能力的验收。
 
 ## 已有实现与回归
 

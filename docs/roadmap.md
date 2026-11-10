@@ -3,7 +3,7 @@ title: 产品范围与当前路线
 doc_type: plan
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-10
 ---
 
 # 产品范围与当前路线
@@ -14,6 +14,9 @@ Community 主线面向 EEG/LFP 文件浏览与科研分析，使用 C++/Qt6 主�
 
 - 多通道文件浏览、原始/处理后来源切换、重参考、陷波、全局及逐通道带通。
 - PSD、FFT、STFT、频段趋势、相干性、连续播放、标注、视频同步、双格式录制骨架和 EDF/HDF5/CSV 片段导出。
+- 设备接入：本机模拟器、BFSP TCP、RT-BCI Wi-Fi 经统一连接窗口接入，与文件共用同一套波形、处理和分析工具；原始 typed 录制与采集诊断日志独立于显示。
+- 设备连续 ICA：用设备片段建立并人工检查模型后，把固定模型持续应用于新样本。
+- Fluent-Qt 界面控件与统一主题；激活窗口支持在线申请与离线许可证两种方式。
 - 专用脑电/眼电离线分离工作区：独立输入、FastICA、人工成分检查与撤销、同步分组预览、结果播放和可追溯 float64 导出。
 - 四语界面、原生授权校验、冻结边车及 Windows/Linux 云端构建。主线更新生成内部安装包，正式 Release 由人工选择版本并检查草稿。
 
@@ -21,7 +24,7 @@ Community 主线面向 EEG/LFP 文件浏览与科研分析，使用 C++/Qt6 主�
 
 ## 当前优先事项
 
-`feature/bfsp-acquisition` 正在实现通用设备接入候选能力：规范信号模型、BFSP、模拟器/TCP、RT-BCI Wi-Fi 适配、简化设备选择与连接、共用工作区和原始录制。它使用独立采集模块，不引入 Pro 设备控制代码；实现入口与验证边界见 [设备采集说明](device-acquisition.md)。该分支尚未发布，真实硬件、其他传输方式和长稳仍待分别验收。
+通用设备接入已合入 `master`，尚未随正式版本发布，包括：规范信号模型、BFSP、模拟器/TCP、RT-BCI Wi-Fi 适配、简化设备选择与连接、共用工作区和原始录制。它使用独立采集模块（`native/src/acquisition/`），不引入 Pro 设备控制代码；实现入口与验证边界见 [设备采集说明](device-acquisition.md)。真实硬件、其他传输方式和长稳仍待分别验收。
 
 | 工作 | 需要取得的证据 |
 | --- | --- |
@@ -37,9 +40,9 @@ CI 已在 Windows runner 验证安装、隔离开发搜索路径后运行与卸�
 
 - Community 当前交付聚焦 EEG/LFP 与眼电/肌电混合信号的离线分析；Pro 是独立的 Spike 采集与观测产品，两者不互相迁入设备控制和商业代码。
 - 本仓库仍保留 `bf_spike` 底座原型及其测试，属于历史探索，不作为 Community 当前发布承诺。本次文档收口不改变代码目标。
-- BLE、自研硬件、真实设备采集闭环与长期采集验收尚未完成；当前候选分支的模拟器和 TCP 验证不替代这些证据，也不沿用旧规划中的时间估计或阶段承诺。
+- BLE、自研硬件、真实设备采集闭环与长期采集验收尚未完成；模拟器和 TCP 验证不替代这些证据，也不沿用旧规划中的时间估计或阶段承诺。
 - 供应商格式需区分“有读取入口”“合成样本回归”“真实样本验收”与“事件支持”；不能互相替代。BBK/DAT/LSD 当前没有正式读取实现。
 
 ## 历史依据
 
-M0–M8、UI 修复、早期产品分线与设计草案的历史记录靠 Git 历史追溯（提交 `1c55f6c`）。历史 GPU 基线见 Git 历史（提交 `1c55f6c` 的 `docs/archive/reports/m2-rendering-gpu-gate.md`），不能自动代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。
+M0–M8 各阶段的计划、报告和旧设计不保留在仓库，可从 Git 提交 `1c55f6c` 的 `docs/archive/` 找回。其中的历史 GPU 基线不能代表当前所有桌面负载的性能结论。云端流程验收见 [Issue #2](https://github.com/boundfree/boundfree-community/issues/2)，具体发版仍需独立验收 Issue。

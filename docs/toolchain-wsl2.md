@@ -3,7 +3,7 @@ title: 本地工具链与构建验证
 doc_type: process
 status: active
 owner: BoundFree
-last_updated: 2026-11-04
+last_updated: 2026-11-10
 ---
 
 # 本地工具链与构建验证
@@ -31,7 +31,7 @@ scripts/wsl/with_qt.sh native/build-qt6-baseline/bf_app
 
 `with_qt.sh` 仅为本次命令设置工具路径、运行库、插件目录和环境内 Python，避免混入其他 Qt 的插件。`toolchains/qt6` 与 `toolchains/qt6-community` 统一指向本机 6.8.2 环境。实验新 Qt 须使用独立构建目录和 `-DBF_ALLOW_OTHER_QT=ON`，日志会明确提示非基线版本。
 
-本机唯一日常源码目录是 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，日常在 `master` 上建短分支，`.worktrees/community-ica` 兼容链接指向该 Linux 主目录。原保留工作树的未提交改动已备份到 `refs/restore/20261104/ica-preserved-worktree` 后移除。`F:\workspace\BoudFree\development\boundfree-community` 仅为 Windows 编译副本，不在其中修改源码、暂存或提交。
+本机唯一日常源码目录是 `/home/vsonic12138/workspace/BoundFree_Workspace/boundfree-community`，日常在 `master` 上建短分支。原保留工作树的未提交改动已备份到 `refs/restore/20261104/ica-preserved-worktree` 后移除。`F:\workspace\BoudFree\development\boundfree-community` 仅为 Windows 编译副本，不在其中修改源码、暂存或提交。
 
 Windows Qt 位于 `F:\workspace\BoudFree\.dev\qt\windows\6.8.2\msvc2022_64`，Python 位于 `.dev\python\windows`。WSL 工具链与构建缓存仍放在 F 盘稀疏 ext4 镜像 `.dev/wsl/linux-dev.ext4`，挂载到 `/mnt/boudfree-dev`，由 `/etc/fstab` 自动挂载。源码恢复 Linux 不需要移动依赖或镜像。不要把编译缓存目录做成跨文件系统的软链接：Qt MOC 生成的相对 include 可能无法定位源码。本机忽略的 `native/CMakeUserPresets.json` 提供 `wsl2-linux` 预设，使用新目录 `/mnt/boudfree-dev/build/community-linux`，旧 F 盘源码对应的构建缓存保留，不复用其绝对路径：
 

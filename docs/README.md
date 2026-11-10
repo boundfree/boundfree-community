@@ -3,37 +3,67 @@ title: 文档索引
 doc_type: index
 status: active
 owner: BoundFree
-last_updated: 2026-11-02
+last_updated: 2026-11-10
 ---
 
 # 文档索引
 
-日常只读本目录的当前文档。历史计划、报告和旧设计不保留在仓库，完成或被替代后直接删除，靠 Git 历史追溯；删除前把仍有效的说明、约束和未验收项并入当前文档。
+本目录只放当前有效的文档。按你要做的事找入口：
 
-| 要做什么 | 阅读入口 |
+## 使用软件
+
+| 要做什么 | 文档 |
 | --- | --- |
-| 了解产品范围、现状和下一步 | [roadmap.md](roadmap.md) |
-| 打开数据文件、设备录制文件夹、内置示例、通道用途、IC切换/分类、分组贡献、波形坐标与滚轮快捷操作 | [analysis-guide.md](analysis-guide.md) |
-| 连接设备并在主波形区查看、RT-BCI 8/16 通道选择与 HTTP 诊断、ICA 模拟信号、周期波形与原始录制 | [device-acquisition.md](device-acquisition.md) |
-| 开发 BFSP 设备协议与传输适配 | [bfsp-protocol.md](bfsp-protocol.md)、[bfsp-transports.md](bfsp-transports.md) |
-| 理解模块和数据流 | [architecture-design.md](architecture-design.md) |
+| 打开数据文件、浏览波形、滤波、频谱分析、导出、脑电/眼电/肌电分离 | [analysis-guide.md](analysis-guide.md) |
+| 连接设备（模拟器、BFSP、RT-BCI）、实时查看、原始录制、设备连续 ICA | [device-acquisition.md](device-acquisition.md) |
+
+## 理解和修改代码
+
+| 要做什么 | 文档 |
+| --- | --- |
+| 了解程序组成、代码放在哪里、数据怎么流动 | [architecture-design.md](architecture-design.md) |
 | 修改 IPC、数值格式、错误码或翻译 | [contracts.md](contracts.md) |
-| 查询分支命名、评审合入规则、平台保护与提交格式 | [development-guide.md](development-guide.md) |
-| 从功能需求建分支、提交 PR、评审返修、合入、主线 CI、镜像同步与清理 | [contribution-sop.md](contribution-sop.md) |
-| 版本规则/更新、安装包核验、Release 与 Gitee 国内下载 | [release-sop.md](release-sop.md) |
-| 配置统一 Qt 基线、Linux 源码 / Windows 编译副本分工、安全同步与验证 | [toolchain-wsl2.md](toolchain-wsl2.md) |
-| 检查能力覆盖和仍未完成的验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
-| 确定开源许可、贡献与商业扩展归属 | [许可与扩展边界](../legal/LICENSING.md) |
+| 开发 BFSP 设备协议或新的传输方式 | [bfsp-protocol.md](bfsp-protocol.md)、[bfsp-transports.md](bfsp-transports.md) |
+| 使用 Fluent-Qt 控件和统一主题 | [fluentqt-integration.md](fluentqt-integration.md) |
+| 搭建本地环境、构建、同步 Windows 编译副本 | [toolchain-wsl2.md](toolchain-wsl2.md) |
 
-Fluent-Qt 控件、统一主题、分离页分区、共用拖动分隔条与回归入口见 [fluentqt-integration.md](fluentqt-integration.md)。
+## 提交和发布
 
-代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准；具体发布证据保存在该版本的验收 Issue，不能把旧报告里的包名当作最新下载入口。
+| 要做什么 | 文档 |
+| --- | --- |
+| 从建分支到合入主线的步骤 | [contribution-sop.md](contribution-sop.md) |
+| 分支命名、提交格式、评审规则、文档格式 | [development-guide.md](development-guide.md) |
+| 版本规则、安装包核验、Release、Gitee 国内下载 | [release-sop.md](release-sop.md) |
+| 开源许可、贡献归属、商业扩展边界 | [../legal/LICENSING.md](../legal/LICENSING.md) |
 
-同一规则只在所属文档展开：开发规范管约束，提交 SOP 管日常交付，发布 SOP 管版本和发布。README、代理入口和技能保留导航与关键约束；跨流程用链接交接，不复制整套步骤。
+## 了解现状
+
+| 要做什么 | 文档 |
+| --- | --- |
+| 产品范围、已有能力、当前优先事项 | [roadmap.md](roadmap.md) |
+| 哪些已实现、哪些还没验收 | [feature-parity-checklist.md](feature-parity-checklist.md) |
+
+代码代理先读根目录 [AGENTS.md](../AGENTS.md)，再加载仓库技能 [community-delivery](../.agents/skills/community-delivery/SKILL.md)。版本以 [version.json](../version.json) 为准。
+
+## 每份文档管什么
+
+同一件事只在一份文档里展开，其他地方用链接指过去：
+
+| 文档 | 只管 | 不管 |
+| --- | --- | --- |
+| `AGENTS.md` | 规则和入口 | 功能现状、进度 |
+| `architecture-design.md` | 结构、分层、数据流、行为约束 | 测试计数、安装包名称、操作步骤 |
+| `roadmap.md` | 范围、已有能力、优先事项 | 实现细节 |
+| `feature-parity-checklist.md` | 已实现与未验收的清单 | 流程 |
+| `development-guide.md` | 规则 | 操作命令 |
+| `contribution-sop.md` | 日常交付步骤 | 版本与发版 |
+| `release-sop.md` | 版本、打包、发布 | 日常提交 |
+| `analysis-guide.md`、`device-acquisition.md` | 怎么用 | 内部实现 |
 
 ## 维护规则
 
-- 本目录描述当前状态和可复用流程；历史命令、测试计数和逐次交付记录不保留在仓库，结论性证据记录在相应 Issue。
-- 仅在确有未执行任务时临时创建计划；完成或被替代后直接删除，不预建空目录，也不在当前索引列出逐次报告。
-- 删除前将仍有效的使用说明、约束和未验收项合并到上述当前文档；删除不表示验收通过。
-- 规则变更在同一 PR 核对规范、SOP、skill 和模板，保持一份操作真值；修改文档路径时同步检查链接和脚本/测试引用。
+- 本目录描述当前状态。完成或被替代的计划、报告和旧设计直接删除，靠 Git 历史追溯；删除前把仍有效的说明、约束和未验收项并入当前文档。删除不表示验收通过。
+- 逐次交付的命令、测试计数和证据记录在对应的 PR 或验收 Issue，不写进本目录。
+- 确有未执行的任务时才临时建计划文档，完成后删除。
+- 新增、改名或删除文档时更新本索引，并检查链接和脚本、测试里的路径引用。
+- 流程规则变化时，在同一个 PR 里核对规范、SOP、技能和模板。
