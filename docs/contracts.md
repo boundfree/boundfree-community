@@ -382,7 +382,7 @@ Native 数值流程增量错误码（全部无参数、不可重试）：
 
 `export_samples` 增量接受 `channel_units`（长度匹配通道）、`sample_times`（长度匹配样本）和 `provenance` 对象。HDF5 保存 `eeg`、可选 `sample_times` 和单位/来源属性；时间按选区起点重基准。CSV 单独保存 `<path>.meta.json` 的单位与来源，读取器有界读取此元数据；无配套文件仍按旧 uV 默认处理。`record_open.meta` 也可携带 `signal_unit/channel_units/provenance`，不改变旧 float32 写入帧。
 
-分析请求携带 `unit/sourceId/streamId/sourceContext`，计算使用完整连续片段，显示功率/PSD 按实际单位的平方标注。PSD 结果的频段功率随结果一并返回，顺序与频段定义一致；FFT、STFT、趋势和相干结果不带频段功率。混合单位参考、无效滤波参数、无有效连续片段或超预算分别返回 `signal.*` 条件错误，来源类型不参与工具禁用。连续因果与窗口零相位为不同执行模式，不承诺跨模式数值相同；相同输入与模式跨来源结果应一致。
+分析请求携带 `unit/sourceId/streamId/sourceContext`，计算使用完整连续片段，显示功率/PSD 按实际单位的平方标注。只有 PSD 结果填充 `AnalysisResult.bandPowers`（顺序与频段定义一致），其余分析类型的该字段为空；趋势结果的分段频段功率仍在 `BandTrendResult.powers`，两处不要混用。混合单位参考、无效滤波参数、无有效连续片段或超预算分别返回 `signal.*` 条件错误，来源类型不参与工具禁用。连续因果与窗口零相位为不同执行模式，不承诺跨模式数值相同；相同输入与模式跨来源结果应一致。
 
 浏览选区分离快照使用同一 HDF5 派生接口，保留来源、模拟标记和原始选区坐标；其输入精度为 float32 投影。专用分离原文件读取的 float64 能力、指纹和导出验证保持原契约。相同非电压单位的 count/1/degC/A/mA/Pa/kPa 可进入通用分离计算，结果保留原单位；混合单位被拒绝，工具不会将其改名为 uV。
 
