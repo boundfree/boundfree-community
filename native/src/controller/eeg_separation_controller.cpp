@@ -431,6 +431,13 @@ const SeparationMatrix& EegSeparationController::projection(int group) const {
     static const SeparationMatrix empty;
     return group >= 0 && group < 4 && output_ ? projections_[group] : empty;
 }
+
+dsp::Spectrum separationComponentSpectrum(const SeparationOutput& output, int component, double maxFrequency) {
+    if (component < 0 || component >= static_cast<int>(output.sources.size())) {
+        return {};
+    }
+    return dsp::longestFiniteSegmentPsd(output.sources[static_cast<std::size_t>(component)], output.fs, maxFrequency);
+}
 void EegSeparationController::exportBundle(const QString& destination) {
     if (isBusy() || !confirmed_ || !output_ || destination.isEmpty()) return;
     const auto output = output_; const auto labels = labels_; const auto root = repoRoot_; const auto version = version_;

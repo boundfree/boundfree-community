@@ -2,6 +2,7 @@
 
 #include "core/app_error.h"
 #include "core/version.h"
+#include "dsp/spectral.h"
 #include <QObject>
 #include <QJsonObject>
 #include <QStringList>
@@ -55,6 +56,10 @@ struct SeparationOutput {
     double convergence = 0.0;
     QJsonObject manifest;
 };
+// 分离成分的显示频谱。无状态：只读传入的输出（离线结果或连续 ICA 实时帧）
+// 和成分下标，不持有实时数据、不递延计算，界面只负责把结果映射到图形。
+// component 越界时返回空频谱，与没有有效连续片段一致。
+dsp::Spectrum separationComponentSpectrum(const SeparationOutput& output, int component, double maxFrequency);
 
 class EegSeparationController final : public QObject {
     Q_OBJECT

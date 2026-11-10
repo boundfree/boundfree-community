@@ -1805,6 +1805,12 @@ void MainWindow::handleAnalysisCompleted(int generation, const AnalysisResult& r
     bool valid = false;
     switch (result.kind) {
     case AnalysisKind::Psd:
+        // 频段功率由分析任务按 PSD 算好；数量不符说明生产者与展示契约不一致，
+        // 不能退化为界面自行计算，否则重新回到“界面实现算法”。
+        valid = finiteVector(result.spectrum.frequencies) && finiteVector(result.spectrum.values)
+            && result.spectrum.frequencies.size() == result.spectrum.values.size()
+            && result.bandPowers.size() == dsp::eegBands().size() && finiteVector(result.bandPowers);
+        break;
     case AnalysisKind::Fft:
     case AnalysisKind::Coherence:
         valid = finiteVector(result.spectrum.frequencies) && finiteVector(result.spectrum.values)
@@ -1861,10 +1867,7 @@ void MainWindow::renderAnalysisResult(int index) {
             fft ? i18n_->text("app.analysis.fft") : i18n_->text("app.analysis.psd"),
             analysisUnitLabel(result.kind,page.unit,asDb));
         if (!fft) {
-            std::vector<double> powers;
-            for (const dsp::Band& band : dsp::eegBands())
-                powers.push_back(dsp::bandPower(result.spectrum, band.low, band.high));
-            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false), powers));
+            psdBandSummaryLabel_->setText(analysisBandTable(i18n_, analysisUnitLabel(AnalysisKind::BandTrend,page.unit,false), result.bandPowers));
         } else {
             psdBandSummaryLabel_->clear();
         }

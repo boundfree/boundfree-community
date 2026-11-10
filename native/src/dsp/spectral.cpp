@@ -163,6 +163,42 @@ Spectrum computeWelchPsd(const std::vector<double>& signal, double fs, int npers
     return out;
 }
 
+Spectrum longestFiniteSegmentPsd(const std::vector<double>& trace, double fs, double fmax) {
+    auto begin = trace.begin();
+    auto end = trace.begin();
+    for (auto it = trace.begin(); it != trace.end();) {
+        if (!std::isfinite(*it)) {
+            ++it;
+            continue;
+        }
+        const auto first = it;
+        while (it != trace.end() && std::isfinite(*it)) {
+            ++it;
+        }
+        // `>=` keeps the later run when both runs are equally long.
+        if (it - first >= end - begin) {
+            begin = first;
+            end = it;
+        }
+    }
+    if (end - begin < 4) {
+        return Spectrum{};
+    }
+    Spectrum psd = computeWelchPsd(std::vector<double>(begin, end), fs, 0, false);
+    // Keep the original inclusive `frequency <= min(fmax, fs/2)` filter instead
+    // of a bounded search: a negative or NaN fmax must select no bin, not be
+    // silently clamped to the DC bin or to the whole spectrum.
+    const double cutoff = std::min(fmax, fs / 2.0);
+    Spectrum out;
+    for (std::size_t i = 0; i < psd.frequencies.size(); ++i) {
+        if (psd.frequencies[i] <= cutoff) {
+            out.frequencies.push_back(psd.frequencies[i]);
+            out.values.push_back(psd.values[i]);
+        }
+    }
+    return out;
+}
+
 Spectrogram computeSpectrogram(
     const std::vector<double>& signal,
     double fs,

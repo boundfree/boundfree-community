@@ -124,18 +124,7 @@ INCLUDE_EXCEPTIONS = (
     ),
 )
 
-DSP_CALL_EXCEPTIONS = (
-    DspCallException(
-        source="ui/main_window.cpp",
-        function="bandPower",
-        reason="分析页按频段现算功率；A2 第 1 步移到 controller 的 AnalysisResult.bandPowers 后删除本条",
-    ),
-    DspCallException(
-        source="ui/eeg_separation_workspace.cpp",
-        function="computeWelchPsd",
-        reason="分离工作区现算成分频谱；A2 第 2 步提取为 dsp::* 纯函数后删除本条",
-    ),
-)
+DSP_CALL_EXCEPTIONS: tuple[DspCallException, ...] = ()
 
 # ui 里允许调用的 dsp 函数：读取常量定义，不做数值计算。
 ALLOWED_DSP_CALLS = frozenset({"eegBands"})

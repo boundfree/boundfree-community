@@ -34,7 +34,6 @@ last_updated: 2026-11-10
 | A8 | 设备构建目标重新划分 | 低 | 需设计 | 小 |
 | A9 | 原生测试统一注册并改按功能命名 | 低 | 机械 | 中 |
 | A10 | 本机必然失败的三个测试改为按环境跳过 | 中 | 机械 | 小 |
-| B1 | 公开文档里的本机路径移出仓库 | 高 | 机械 | 小 |
 | B2 | 用户说明与开发入口分开 | 中 | 需设计 | 中 |
 | B3 | 发布 SOP 按提交 SOP 的方式精简 | 中 | 需设计 | 小 |
 | B4 | 契约文档拆分 | 低 | 机械 | 小 |
@@ -42,29 +41,23 @@ last_updated: 2026-11-10
 | C1 | 文档类 PR 不跑完整构建 | 中 | 需设计 | 小 |
 | C2 | 仓库与工具的零散收尾 | 低 | 机械 | 小 |
 
-建议顺序：B1 → A2 → A3 → A10 → A4（分步）→ 其余按需。
+建议顺序：A2 → A3 → A10 → A4（分步）→ 其余按需。
 
 ## A. 代码结构
 
 ### A2 界面层里的数值计算下沉
 
-**现状**：规则是“界面不实现算法”，但有两处在界面代码里直接做数值计算：
+**现状**：数值计算已按要求移出界面文件，正在等 PR 评审与双平台 CI：
 
-- `MainWindow::renderAnalysisResult` 在显示 PSD 时调用 `dsp::bandPower(result.spectrum, ...)` 逐频段计算功率，再填进频段表。
-- `EegSeparationWorkspace::refreshPlots` 在刷新绘图时现算所选成分的频谱：先在轨迹里找最长的连续有限片段（跳过缺口的 NaN），再调用 `dsp::computeWelchPsd(...)`，然后截到 100 Hz 以内。这段逻辑同时服务离线结果和连续 ICA 的实时帧（`liveActive_` 时 `output` 是实时帧），所以它在界面线程上随每次实时刷新执行。
+- 频段功率由分析任务放进 `AnalysisResult::bandPowers`（顺序与 `dsp::eegBands()` 一致，只有 `Psd` 类型填充）；`MainWindow::renderAnalysisResult` 只读取该字段。
+- 成分频谱由 `dsp::longestFiniteSegmentPsd(trace, fs, fmax)` 计算，界面经 `controller/eeg_separation_controller.h` 的无状态适配函数 `separationComponentSpectrum(output, component, maxFrequency)` 取结果，只保留 `output` 指针与成分的缓存判断，把返回的 `Spectrum` 映射到图形。
+- 界面只剩 `dsp::eegBands()` 这类常量读取，`scripts/common/check_layering.py` 的 `DSP_CALL_EXCEPTIONS` 已清空。
 
-**目标**：界面只展示控制器给出的结果。
+**为什么不按最初写法让界面直接调用 DSP 纯函数**：那份步骤既要求工作区调用 `dsp::longestFiniteSegmentPsd`，又要求删掉 ui 的 DSP 调用白名单，两条互相矛盾。分层规则是界面不调 `dsp::` 函数，所以数值入口放在控制层的无状态适配函数里：它只读传入的 `SeparationOutput` 与成分下标，离线结果和连续 ICA 帧共用，不持有实时数据，也不改变计算发生的线程。
 
-**步骤**：
+**当前限制**：成分频谱仍随 `output` 或所选成分变化在界面线程上同步计算，实时刷新时与绘图一起执行。最初设想的可选异步方案——让离线结果和 `LiveIcaFrame` 各自带上频谱——没有做；只有确认实时刷新出现实际卡顿，并用性能数据说明时再考虑，届时仍不得把实时帧的频谱放进 `EegSeparationController`。
 
-1. 频段功率：在 `controller/analysis_service.h` 的 `AnalysisResult` 里增加 `std::vector<double> bandPowers` 字段，`AnalysisKind::Psd` 的任务在后台线程算完频谱后顺带填好（顺序与 `dsp::eegBands()` 一致）；`MainWindow::renderAnalysisResult` 改为读取该字段。FFT 等其他类型保持为空。
-2. 成分频谱，第一步（必做）：把“取最长连续有限片段 → Welch PSD → 截到上限频率”提取为 `dsp/` 里的一个纯函数（例如 `dsp::longestFiniteSegmentPsd(trace, fs, maxFrequency)`），不依赖 Qt，并在 `dsp/` 加单元测试（含全 NaN、片段短于 4 个样本、中间有缺口三种输入）。工作区改为调用这个函数。这一步不改变计算发生的线程，只是把算法移出界面文件并让它可测。
-3. 成分频谱，第二步（可选，视实时刷新是否卡顿再做）：让产生数据的一方带上频谱。离线结果由 `EegSeparationController` 在结果就绪时算好所选成分的 PSD；实时帧由 `LiveIcaController` 在生成 `LiveIcaFrame` 时附带。**不要**把实时帧的频谱计算放进 `EegSeparationController`，它只管离线的固定输入和模型，不持有实时数据。
-4. 改完后，界面里只应剩下 `dsp::eegBands()` 这类读取常量定义的调用，可以删掉 `scripts/common/check_layering.py` 里对应的两条白名单。
-
-**验证**：`m4_spectral_test`、`eeg_separation_controller_test`、`eeg_separation_workspace_test`、`--smoke-ui-analysis-*` 相关回归通过；对同一输入，改动前后频段功率与 PSD 数值逐位一致（写一个临时对比或在测试里断言）。
-
-**风险**：第 1、2 步低，都是把同一段计算换个位置，数值必须逐位不变。第 3 步中等：涉及任务线程与界面线程之间传递结果，要沿用控制器现有的任务代次机制丢弃过期结果；没有性能问题时不必做。
+**验证**：`m4_spectral_test`（含与改动前界面实现的逐位对比）、`eeg_separation_controller_test`、`eeg_separation_workspace_test`、`--smoke-m4-analysis`、`--smoke-ui-analysis-*`。
 
 ### A3 `render` 不再依赖 `ipc`
 
@@ -193,20 +186,6 @@ last_updated: 2026-11-10
 
 ## B. 文档
 
-### B1 公开文档里的本机路径移出仓库
-
-**现状**：仓库是公开的，但 `AGENTS.md` 的“本机环境”一节和 `docs/toolchain-wsl2.md` 写着维护者个人机器的绝对路径（Linux 用户主目录、Windows 数据盘目录、单独挂载的缓存盘）和内存大小，`config/windows-dev.example.json` 的示例值也是真实路径。这些对其他贡献者没有用，也不该是公开文档的内容。
-
-**目标**：仓库文档只写对任何人都成立的内容；个人机器的事实放在工作区根目录的 `AGENTS.md`（不在任何仓库里）。
-
-**步骤**：
-
-1. `AGENTS.md`：把“本机环境”一节改成通用规则（“源码在 Linux/WSL 侧编辑，Windows 编译副本只接收单向同步”“内存有限的机器上限制构建并行度，命令是……”），具体路径和 12GiB 这个数字移到工作区根 `AGENTS.md`（那里已经有）。
-2. `docs/toolchain-wsl2.md`：路径改为占位（`<workspace>`、`<build-dir>`）或环境变量，`config/windows-dev.example.json` 里的示例路径改为明显的示例值。
-3. 全仓库检索上述三类个人路径应无命中（测试夹具里的固定路径除外）。
-
-**风险**：低。注意代理依赖这些路径干活，所以移走的内容必须确实已经在工作区根 `AGENTS.md` 里。
-
 ### B2 用户说明与开发入口分开
 
 **现状**：`docs/analysis-guide.md` 和 `docs/device-acquisition.md` 把三类内容混在一起：给使用者的操作说明、给开发者的实现边界和回归入口、验收状态。`device-acquisition.md` 的原标题就是“候选能力与开发入口”。另外，`docs/quick-user-guide` 分支上有一份未提交的简明版 PDF 说明书，内容与这两份有重叠。
@@ -242,7 +221,7 @@ last_updated: 2026-11-10
 
 **现状**：`docs/toolchain-wsl2.md` 同时讲 WSL2/Linux 和 Windows 本地构建，名字只提 WSL2。
 
-**步骤**：改名为 `docs/toolchain.md`，更新全部引用（`AGENTS.md`、SOP、README、技能、脚本注释）。可与 B1 合并成一个 PR。
+**步骤**：改名为 `docs/toolchain.md`，更新全部引用（`AGENTS.md`、SOP、README、技能、脚本注释）。
 
 ## C. 流程与工具
 

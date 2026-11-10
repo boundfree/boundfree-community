@@ -98,7 +98,7 @@ flowchart TB
 2. **界面不解析文件、不实现算法、不解码协议**。界面只调用控制器，展示控制器给出的状态。
 3. **主程序不解析科研文件格式**。一律经边车。
 
-这三条与上面的分层表由 `scripts/common/check_layering.py` 静态检查：`native/src` 的 include 不得越层，`ui/` 里不得出现 `dsp::` 函数调用（读取 `dsp::eegBands()` 这类常量定义除外，类型引用不算调用）。检查通过 `tests/scripts/test_layering.py` 随现有 pytest 在 CI 执行。现存例外逐条登记在脚本里并写明原因，随对应改造完成删除。
+这三条与上面的分层表由 `scripts/common/check_layering.py` 静态检查：`native/src` 的 include 不得越层，`ui/` 里不得出现 `dsp::` 函数调用（读取 `dsp::eegBands()` 这类常量定义除外，类型引用不算调用）。检查通过 `tests/scripts/test_layering.py` 随现有 pytest 在 CI 执行。`ui` 调用 `dsp::` 函数的例外已全部清除；include 例外逐条登记在脚本里并写明原因，随对应改造完成删除。界面需要的数值结果由控制器随结果返回，例如分析任务的频段功率和 `separationComponentSpectrum` 返回的成分频谱。
 
 ### 构建目标
 
@@ -146,7 +146,6 @@ flowchart LR
 | 问题 | 现状 |
 | --- | --- |
 | `main_window.cpp` 过大 | 约 3100 行，承担浏览、分析、录制、导出、来源切换的全部编排。新增功能不要往里加 |
-| 界面里有数值计算 | 分析页计算频段功率、分离页计算成分频谱，违反“界面不实现算法” |
 | `render/` 依赖 `ipc/` | `waveform_slice.h` 为一个转换函数引用了边车客户端 |
 | `bf_core` 名不副实 | 一个目标混装了多层代码和共享控件，构建系统无法强制分层 |
 | 自检入口仍是一个大函数 | `app/smoke/smoke_entries.cpp` 约 2500 行、54 个分支 |

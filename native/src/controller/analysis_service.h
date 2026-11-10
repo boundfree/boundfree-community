@@ -44,6 +44,9 @@ struct AnalysisResult {
     dsp::Spectrum spectrum;
     dsp::Spectrogram spectrogram;
     BandTrendResult trend;
+    // 线性 PSD 的频段功率，顺序与 dsp::eegBands() 一致；非 PSD 结果为空。
+    // 界面只读取，不再自己按频段积分。
+    std::vector<double> bandPowers;
     int channel = 0;
     int channelB = 0;
 };

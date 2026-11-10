@@ -16,6 +16,7 @@
 #include <cmath>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -128,11 +129,43 @@ void appendChange(const QString& path) {
     QFile file(path); require(file.open(QIODevice::Append), "Open disposable source for fingerprint change");
     require(file.write("fingerprint-change") == 18, "Modify disposable source bytes"); file.close();
 }
+
+// 成分频谱适配函数：无状态，越界返回空，取最长连续有限片段并截断。
+// 离线结果与连续 ICA 帧都是 SeparationOutput，所以两者走同一个入口。
+void checkComponentSpectrum() {
+    bf::SeparationOutput output;
+    output.fs = 250.0;
+    output.channels = {"obs0"};
+    std::vector<double> gapped(200);
+    for (std::size_t i = 0; i < gapped.size(); ++i) gapped[i] = std::sin(0.05 * static_cast<double>(i));
+    // 中间缺口后接一段更短的有效数据的轨迹。
+    for (std::size_t i = 120; i < 124; ++i) gapped[i] = std::numeric_limits<double>::quiet_NaN();
+    const std::vector<double> flat(64, 0.5);
+    output.sources = {gapped, flat};
+
+    const bf::dsp::Spectrum first = bf::separationComponentSpectrum(output, 0, 100.0);
+    const bf::dsp::Spectrum expected = bf::dsp::longestFiniteSegmentPsd(gapped, output.fs, 100.0);
+    require(!first.frequencies.empty() && first.frequencies == expected.frequencies &&
+                first.values == expected.values, "Component spectrum uses the longest finite run of that component");
+    require(first.frequencies.size() == first.values.size() && first.frequencies.back() <= 100.0 &&
+                first.frequencies.back() > 90.0, "Component spectrum stops at the display limit with matched axes");
+    const bf::dsp::Spectrum second = bf::separationComponentSpectrum(output, 1, 100.0);
+    require(!second.values.empty() && second.frequencies != first.frequencies,
+            "Component spectrum follows the selected component");
+    require(bf::separationComponentSpectrum(output, -1, 100.0).values.empty() &&
+                bf::separationComponentSpectrum(output, 2, 100.0).values.empty(),
+            "Out-of-range component returns an empty spectrum");
+    std::vector<double> allBad(64, std::numeric_limits<double>::infinity());
+    output.sources = {allBad};
+    require(bf::separationComponentSpectrum(output, 0, 100.0).values.empty(),
+            "Component without finite samples returns an empty spectrum");
+}
 } // namespace
 
 int main(int argc, char** argv) {
     QCoreApplication application(argc, argv);
     try {
+        checkComponentSpectrum();
         const QString repoRoot = argc > 1 ? QFileInfo(QString::fromLocal8Bit(argv[1])).absoluteFilePath() : bf::VersionService::detectRepoRoot();
         const QString outputRoot = argc > 2 ? QFileInfo(QString::fromLocal8Bit(argv[2])).absoluteFilePath() : QDir::tempPath();
         const QString sourceRoot = argc > 3 ? QFileInfo(QString::fromLocal8Bit(argv[3])).absoluteFilePath() :

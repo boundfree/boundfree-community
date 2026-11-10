@@ -31,6 +31,10 @@ AnalysisResult calculate(const AnalysisRequest& request, const std::shared_ptr<s
     switch (request.kind) {
     case AnalysisKind::Psd:
         result.spectrum = dsp::computeWelchPsd(channel(request.channel), request.fs, request.nperseg);
+        result.bandPowers.reserve(dsp::eegBands().size());
+        for (const dsp::Band& band : dsp::eegBands()) {
+            result.bandPowers.push_back(dsp::bandPower(result.spectrum, band.low, band.high));
+        }
         break;
     case AnalysisKind::Fft:
         result.spectrum = dsp::computeFftAmplitude(channel(request.channel), request.fs);
