@@ -286,17 +286,13 @@ def check_branding_assets() -> CheckResult:
         failures.append("Windows resource file does not reference application ICO")
     if "target_sources(bf_app PRIVATE ${BF_BRANDING_QRC})" not in cmake_text:
         failures.append("bf_app does not embed branding qrc")
-    if "target_sources(bf_spike PRIVATE ${BF_BRANDING_QRC})" not in cmake_text:
-        failures.append("bf_spike does not embed branding qrc")
     if "target_sources(bf_app PRIVATE ${BF_WINDOWS_APP_ICON_RC})" not in cmake_text:
         failures.append("bf_app does not embed Windows application icon")
-    if "target_sources(bf_spike PRIVATE ${BF_WINDOWS_APP_ICON_RC})" not in cmake_text:
-        failures.append("bf_spike does not embed Windows application icon")
     if not re.search(r"^SetupIconFile\s*=\s*native\\assets\\branding\\BoundFree_app_icon\.ico\s*$", iss_text, re.MULTILINE):
         failures.append("SetupIconFile must reference the application ICO")
     if failures:
         return CheckResult(name, False, "; ".join(failures))
-    return CheckResult(name, True, "embedded in both apps and referenced by Windows installer")
+    return CheckResult(name, True, "embedded in bf_app and referenced by Windows installer")
 
 
 # ---------------------------------------------------------------------------

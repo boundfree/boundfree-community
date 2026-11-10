@@ -448,11 +448,6 @@
     <message><source>app.license.prompt</source><translation>机器码：{machine_id}&#10;&#10;当前状态：{error}&#10;&#10;请输入离线许可证：</translation></message>
     <message><source>app.license.save_failed</source><translation>许可证有效，但无法保存授权文件。</translation></message>
     <message><source>app.license.activated</source><translation>离线授权已激活。</translation></message>
-
-    <message><source>app.spike.export.action</source><translation>导出 Spike 结果</translation></message>
-    <message><source>app.spike.export.no_result</source><translation>无可导出的 Spike 结果</translation></message>
-    <message><source>app.spike.export.completed</source><translation>已导出 {rows} 个 Spike 事件到 {path}</translation></message>
-    <message><source>app.spike.export.failed</source><translation>Spike 导出失败：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>激活 BoundFree EEG</translation></message>
     <message><source>app.activation.revoked_on_server</source><translation>本机授权已被管理员停用，需要重新激活才能继续使用。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本机机器码</translation></message>

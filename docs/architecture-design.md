@@ -51,14 +51,14 @@ flowchart LR
 | --- | --- | --- |
 | `native/src/core/` | 错误类型、版本信息 | 任何业务逻辑 |
 | `native/src/dsp/` | 纯数值：重参考、SOS 滤波、频谱（pocketfft）、白化与 FastICA、分组重建 | Qt 界面、文件读写、线程调度 |
-| `native/src/acquisition/` | 设备采集：信号模型（`model/`）、BFSP 编解码（`protocol/`）、传输（`transport/`）、模拟器与 RT-BCI 解码（`adapters/`）、有界缓存与分发（`buffer/`）、采集段身份（`session/`） | 界面控件、文件格式解析 |
+| `native/src/acquisition/` | 设备采集。基础部分：信号模型（`model/`）、BFSP 编解码（`protocol/`）、传输（`transport/`）、模拟器与 RT-BCI 解码（`adapters/`）、有界缓存与分发（`buffer/`）、采集段身份（`session/`）。协调部分：设备控制器、状态、视图、格式桥接与诊断日志（`control/`）、TCP 与 Wi-Fi 采集源（`sources/`）、原始录制（`recording/`） | 界面控件、文件格式解析 |
 | `native/src/ipc/` | 边车进程的启动、握手、分帧、超时 | 具体文件格式知识 |
 | `native/src/license/` | 许可证校验、机器码、时钟回拨检测、在线激活客户端 | 界面 |
 | `native/src/i18n/` | 翻译加载、区域格式化 | 业务文案的拼接逻辑 |
-| `native/src/render/` | 信号窗口（`WaveformSlice`）、显示前处理（`SignalProcessor`：电压归一化、参考、滤波）、最小最大抽稀、连续 ICA 投影 | 控件绘制代码 |
-| `native/src/controller/` | 协调层：文件会话与读片、播放、标注、分析任务、录制、导出、分离流程 | 像素级绘制、数值算法实现 |
+| `native/src/render/` | 信号窗口（`WaveformSlice`）、显示前处理（`SignalProcessor`：电压归一化、参考、滤波）、处理与视图状态（`ProcessingViewState`、`WaveformViewState`）、最小最大抽稀 | 控件绘制代码、对 `controller/` 的引用 |
+| `native/src/controller/` | 协调层：文件会话与读片、播放、标注、分析任务、录制、导出、分离流程、连续 ICA 的控制与投影 | 像素级绘制、数值算法实现 |
 | `native/src/ui/` | 主窗口、波形与分析控件、分离工作区、设备窗口、对话框 | 文件解析、数值算法、协议解码 |
-| `native/src/app/` | `main()`：启动、资源定位、授权门禁、`--smoke-*` 自检入口 | 业务逻辑 |
+| `native/src/app/` | `main.cpp`：启动、资源定位、授权门禁、创建主窗口。`smoke/`：`--version` 与全部 `--smoke-*` 自检入口 | 业务逻辑 |
 | `native/i18n/`、`native/resources/`、`native/assets/` | 翻译源、Qt 资源、品牌资产 | — |
 | `sidecar/boundfree_sidecar/` | 边车：`readers/` 浏览读取、`analysis_io/` 分离专用 float64 读写、`capture_io/` 设备原始录制、`writers/` 录制与导出、`protocol.py` 方法分发 | 用户可见文案（只返回 `code + params`） |
 | `contracts/` | 跨进程、跨设备的机器可读契约（BFSP 等） | — |
@@ -71,9 +71,10 @@ flowchart LR
 | 你要加的东西 | 位置 |
 | --- | --- |
 | 一种新的滤波、频谱或分离算法 | `dsp/`，纯函数加单元测试，不引入 Qt 界面类型 |
-| 一种新设备或新传输方式 | 协议解码放 `acquisition/adapters/`，传输放 `acquisition/transport/`；采集源实现 `AcquisitionSource` 接口并输出规范信号块（该接口目前在 `controller/`，见“已知结构问题”） |
+| 一种新设备或新传输方式 | 协议解码放 `acquisition/adapters/`，传输放 `acquisition/transport/`；采集源放 `acquisition/sources/`，实现 `acquisition/control/acquisition_source.h` 的 `AcquisitionSource` 接口并输出规范信号块 |
 | 一种新文件格式 | 边车 `readers/` 或 `writers/`，并在 [基础契约](contracts.md) 登记能力；主程序不加解析代码 |
 | 一个新的分析面板或对话框 | `ui/` 放控件，`controller/` 放它背后的任务与状态 |
+| 一个新的自检入口 | `app/smoke/`，不放进 `main.cpp` |
 | 一条新的用户可见文字 | 源码里用 `tr()`，翻译进 `native/i18n/*.ts`；边车和后端只返回错误码与参数 |
 | 一个新的边车方法 | 边车 `protocol.py` 加分发，主程序在对应控制器里调用；同步更新契约文档并判断 IPC 协议版本是否需要变化 |
 
@@ -85,8 +86,8 @@ flowchart LR
 flowchart TB
     L4["第 4 层 · app<br/>启动与自检入口"]
     L3["第 3 层 · ui<br/>窗口与控件"]
-    L2["第 2 层 · controller<br/>会话、任务与状态协调"]
-    L1["第 1 层 · render · ipc · license · i18n · acquisition<br/>信号窗口、边车通信、授权、翻译、设备采集"]
+    L2["第 2 层 · controller · acquisition 协调部分<br/>会话、任务与状态协调"]
+    L1["第 1 层 · render · ipc · license · i18n · acquisition 基础部分<br/>信号窗口、边车通信、授权、翻译、设备采集"]
     L0["第 0 层 · core · dsp<br/>基础类型与纯数值"]
     L4 --> L3 --> L2 --> L1 --> L0
 ```
@@ -106,7 +107,7 @@ flowchart TB
 | `bf_acquisition` | 模拟器、RT-BCI 解码、信号分发、采集段 | `bf_signal` |
 | `bf_protocol`、`bf_transport` | BFSP 编解码、TCP 传输 | Qt Core / Network |
 | `bf_core` | `core`、`ipc`、`license`、`i18n`、`render`、通用控制器和共享控件 | `bf_dsp`、Qt、Fluent-Qt |
-| `bf_device_ui` | 设备控制器、TCP/Wi-Fi 采集源、原始录制、诊断日志、设备窗口 | `bf_core`、采集各库 |
+| `bf_device_ui` | `acquisition/control`、`sources`、`recording`，以及连续 ICA 控制器和设备窗口 | `bf_core`、采集各库 |
 | `bf_app` | 主窗口、分析与分离界面、`main()` | `bf_core`、`bf_device_ui` |
 
 实际文件清单以 `native/CMakeLists.txt` 和 `native/src/acquisition/CMakeLists.txt` 为准。
@@ -138,18 +139,18 @@ flowchart LR
 
 ## 已知结构问题
 
-下面是目录与上述分层不一致的地方。它们不影响功能，但会让人找不到代码。按顺序逐项归位，每项单独一个 PR：
+2026-11-10 的第一轮整理已经解决了目录归属问题：设备文件归到 `acquisition/`、`render/` 不再引用 `controller/`、自检入口移出 `main.cpp`、删除历史 Spike 原型。仍然存在的问题：
 
-| 问题 | 现状 | 归位方向 |
-| --- | --- | --- |
-| 设备代码分两处 | 设备控制器、TCP/Wi-Fi 采集源、原始录制和诊断日志在 `controller/acquisition_*`、`controller/capture_recorder*`，由 `acquisition/CMakeLists.txt` 用 `../controller/` 引用 | 移入 `acquisition/` |
-| `render/` 反向依赖控制层 | `render/waveform_slice.h` 引用 `controller/` 和 `ipc/` 的头文件，`render/live_ica_projection.h` 引用 `controller/eeg_separation_controller.h` | 把被引用的纯数据类型下沉到 `render/` 或 `core/` |
-| 自检入口挤在 `main.cpp` | `app/main.cpp` 约 2700 行，含 50 多个 `--smoke-*` 入口；另有十余个 `*_smoke.h` 散在 `ui/` 和 `controller/` | 自检入口集中到 `app/smoke/` |
-| `main_window.cpp` 过大 | 约 3100 行，承担浏览、设备、录制、分离切换的全部编排 | 暂不拆分；新增功能不再往里加，放独立的控制器或面板 |
-| `bf_core` 名不副实 | 目标里混装了控制器、授权、通信和部分控件，而 `core/` 目录只有错误与版本 | 暂不拆分；待目录归位后再评估按层拆目标 |
-| 历史 Spike 原型 | `bf_spike` 及相关文件散在 `app/`、`ui/`、`dsp/`、`controller/`、`native/spike/`、`sidecar/spike/` | 从主线删除，靠 Git 历史追溯 |
+| 问题 | 现状 |
+| --- | --- |
+| `main_window.cpp` 过大 | 约 3100 行，承担浏览、分析、录制、导出、来源切换的全部编排。新增功能不要往里加 |
+| 界面里有数值计算 | 分析页计算频段功率、分离页计算成分频谱，违反“界面不实现算法” |
+| `render/` 依赖 `ipc/` | `waveform_slice.h` 为一个转换函数引用了边车客户端 |
+| `bf_core` 名不副实 | 一个目标混装了多层代码和共享控件，构建系统无法强制分层 |
+| 自检入口仍是一个大函数 | `app/smoke/smoke_entries.cpp` 约 2500 行、54 个分支 |
+| 分层规则没有自动检查 | 只写在文档里 |
 
-本表随归位进度更新；某项完成后从表中删除，并同步上面的目录表。
+每一项的做法、验证方法和风险见 [后续调整实施计划](restructure-plan.md)。某项完成后从本表和计划里同时删除。
 
 ## 行为约束：浏览、分析与导出
 

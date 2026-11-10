@@ -448,11 +448,6 @@
     <message><source>app.license.prompt</source><translation>マシン ID：{machine_id}&#10;&#10;現在の状態：{error}&#10;&#10;オフラインライセンスを入力してください：</translation></message>
     <message><source>app.license.save_failed</source><translation>ライセンスは有効ですが、ライセンスファイルを保存できませんでした。</translation></message>
     <message><source>app.license.activated</source><translation>オフラインライセンスがアクティベートされました。</translation></message>
-
-    <message><source>app.spike.export.action</source><translation>Spike 結果をエクスポート...</translation></message>
-    <message><source>app.spike.export.no_result</source><translation>エクスポートする Spike 結果がありません</translation></message>
-    <message><source>app.spike.export.completed</source><translation>{rows} 件の Spike イベントを {path} にエクスポートしました</translation></message>
-    <message><source>app.spike.export.failed</source><translation>Spike のエクスポートに失敗しました：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>BoundFree EEG を有効化</translation></message>
     <message><source>app.activation.revoked_on_server</source><translation>管理者がライセンスを停止しました。続行するには再度有効化してください。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>このコンピューターの識別コード</translation></message>

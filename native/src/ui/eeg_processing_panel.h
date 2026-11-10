@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 #include "i18n/i18n_service.h"
 
 #include <QCheckBox>

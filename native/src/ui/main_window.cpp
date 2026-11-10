@@ -1,7 +1,7 @@
 #include "ui/fluent_controls.h"
 #include "ui/workspace_splitter.h"
 #include "ui/main_window.h"
-#include "controller/acquisition_view.h"
+#include "acquisition/control/acquisition_view.h"
 #include "ui/preset_spin_box.h"
 #include "ui/analysis_properties.h"
 #include "ui/analysis_band_table.h"
@@ -9,7 +9,7 @@
 #include "ui/export_segment_dialog.h"
 #include "ui/collapsible_panel.h"
 
-#include "controller/processing_view_state.h"
+#include "render/processing_view_state.h"
 #include "render/waveform_slice.h"
 #include "render/signal_processor.h"
 

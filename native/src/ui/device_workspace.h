@@ -1,7 +1,7 @@
 #pragma once
 
-#include "controller/acquisition_controller.h"
-#include "controller/acquisition_wifi_source.h"
+#include "acquisition/control/acquisition_controller.h"
+#include "acquisition/sources/acquisition_wifi_source.h"
 #include "i18n/i18n_service.h"
 
 #include <QElapsedTimer>

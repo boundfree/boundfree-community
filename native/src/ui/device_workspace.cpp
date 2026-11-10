@@ -1,6 +1,6 @@
 #include "ui/fluent_controls.h"
 #include "ui/device_workspace.h"
-#include "controller/acquisition_view.h"
+#include "acquisition/control/acquisition_view.h"
 #include "ui/waveform_widget.h"
 #include "ui/control_bar.h"
 

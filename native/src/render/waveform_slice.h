@@ -1,7 +1,7 @@
 #pragma once
 
-#include "controller/processing_view_state.h"
-#include "controller/waveform_view_state.h"
+#include "render/processing_view_state.h"
+#include "render/waveform_view_state.h"
 #include "ipc/sidecar_client.h"
 
 #include <QStringList>

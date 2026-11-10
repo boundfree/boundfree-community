@@ -1,5 +1,5 @@
 // I18nService locale-aware formatting + load/set/persist/signal self-test.
-// Style references m3_dsp_test.cpp / spike_dsp_test.cpp: custom main, returns
+// Style references m3_dsp_test.cpp: custom main, returns
 // non-zero on failure, prints PASS/FAIL lines. Derives expected strings from
 // QLocale in-test so expectations are not fragile across Qt versions.
 //

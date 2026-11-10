@@ -76,8 +76,6 @@ set(BF_DSP_SOURCES
     src/dsp/pipeline.cpp
     src/dsp/reference.cpp
     src/dsp/spectral.cpp
-    src/dsp/spike_detect.cpp
-    src/dsp/spike_sort.cpp
 )
 
 add_library(bf_dsp STATIC ${BF_DSP_SOURCES})
@@ -85,11 +83,8 @@ target_include_directories(bf_dsp PUBLIC src third_party)
 
 # ---------------------------------------------------------------------------
 # bf_core: shared base (controller/ipc/license/render/i18n/core + shared UI
-# widgets) reused by both the EEG executable (bf_app) and the Spike executable
-# (bf_spike). EEG-specific sources (main window, spectral analysis widgets,
-# analysis_service) stay in bf_app; Spike-specific sources live in bf_spike.
-# This keeps the working EEG product unchanged while enabling a second product
-# line to reuse the same base without a rewrite.
+# widgets) reused by the EEG executable (bf_app). EEG-specific sources (main
+# window, spectral analysis widgets, analysis_service) stay in bf_app.
 # ---------------------------------------------------------------------------
 set(BF_CORE_SOURCES
     src/controller/export_controller.cpp
@@ -98,8 +93,8 @@ set(BF_CORE_SOURCES
     src/controller/file_open_controller.h
     src/controller/file_session.cpp
     src/controller/file_session.h
-    src/controller/processing_view_state.cpp
-    src/controller/processing_view_state.h
+    src/render/processing_view_state.cpp
+    src/render/processing_view_state.h
     src/controller/request_generation.cpp
     src/controller/request_generation.h
     src/controller/marker_store.cpp
@@ -110,8 +105,8 @@ set(BF_CORE_SOURCES
     src/controller/record_controller.h
     src/controller/video_sync_state.cpp
     src/controller/video_sync_state.h
-    src/controller/waveform_view_state.cpp
-    src/controller/waveform_view_state.h
+    src/render/waveform_view_state.cpp
+    src/render/waveform_view_state.h
     src/core/app_error.cpp
     src/core/app_error.h
     src/core/version.cpp
@@ -136,8 +131,8 @@ set(BF_CORE_SOURCES
     src/render/minmax_decimator.h
     src/render/signal_processor.cpp
     src/render/signal_processor.h
-    src/render/live_ica_projection.cpp
-    src/render/live_ica_projection.h
+    src/controller/live_ica_projection.cpp
+    src/controller/live_ica_projection.h
     src/render/waveform_slice.cpp
     src/render/waveform_slice.h
     src/ui/waveform_widget.cpp
@@ -154,7 +149,7 @@ target_compile_definitions(bf_core PUBLIC BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_D
 target_link_libraries(bf_core PUBLIC FluentQt::FluentQt Qt6::Core Qt6::Widgets Qt6::Multimedia Qt6::Network bf_dsp)
 add_executable(signal_window_test src/render/signal_window_test.cpp)
 target_link_libraries(signal_window_test PRIVATE bf_core)
-add_executable(live_ica_projection_test src/render/live_ica_projection_test.cpp)
+add_executable(live_ica_projection_test src/controller/live_ica_projection_test.cpp)
 target_link_libraries(live_ica_projection_test PRIVATE bf_core)
 if(NOT WIN32)
     target_link_libraries(bf_core PUBLIC OpenSSL::Crypto)
@@ -172,6 +167,8 @@ add_subdirectory(src/acquisition)
 
 add_executable(bf_app
     src/app/main.cpp
+    src/app/smoke/smoke_entries.cpp
+    src/app/smoke/smoke_entries.h
     src/controller/analysis_service.cpp
     src/controller/analysis_service.h
     src/controller/eeg_separation_controller.cpp
@@ -215,39 +212,6 @@ if(CMAKE_CONFIGURATION_TYPES)
             ${BF_I18N_QM_FILES} "$<TARGET_FILE_DIR:bf_app>/i18n"
         VERBATIM
     )
-endif()
-
-# ---------------------------------------------------------------------------
-# bf_spike: Spike analysis executable (next-generation product line). Reuses
-# bf_core for base UI/IPC/license/i18n/render and bf_dsp for spike detection
-# and sorting. Spike-specific window, widgets and analysis service live here.
-# ---------------------------------------------------------------------------
-set(BF_SPIKE_SOURCES
-    src/app/spike_main.cpp
-    src/controller/spike_analysis_service.cpp
-    src/controller/spike_analysis_service.h
-    src/ui/spike_widgets.cpp
-    src/ui/spike_widgets.h
-    src/ui/spike_window.cpp
-    src/ui/spike_window.h
-)
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/app/spike_main.cpp")
-    add_executable(bf_spike ${BF_SPIKE_SOURCES})
-    target_include_directories(bf_spike PRIVATE src)
-    target_link_libraries(bf_spike PRIVATE bf_core)
-    target_sources(bf_spike PRIVATE ${BF_BRANDING_QRC})
-    if(WIN32)
-        target_sources(bf_spike PRIVATE ${BF_WINDOWS_APP_ICON_RC})
-    endif()
-    add_dependencies(bf_spike bf_i18n_qm)
-    if(CMAKE_CONFIGURATION_TYPES)
-        add_custom_command(TARGET bf_spike POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:bf_spike>/i18n"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                ${BF_I18N_QM_FILES} "$<TARGET_FILE_DIR:bf_spike>/i18n"
-            VERBATIM
-        )
-    endif()
 endif()
 
 add_executable(bf_license_smoke
@@ -341,9 +305,6 @@ add_executable(spectrum_render_test src/ui/spectrum_render_test.cpp src/ui/analy
 target_include_directories(spectrum_render_test PRIVATE src)
 target_link_libraries(spectrum_render_test PRIVATE bf_dsp Qt6::Widgets)
 
-add_executable(spike_dsp_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/spike_dsp_test.cpp)
-target_include_directories(spike_dsp_test PRIVATE src third_party)
-
 add_executable(collapsible_panel_test src/ui/collapsible_panel_test.cpp)
 target_include_directories(collapsible_panel_test PRIVATE src)
 target_link_libraries(collapsible_panel_test PRIVATE bf_core)
@@ -359,7 +320,7 @@ target_compile_definitions(i18n_locale_format_test PRIVATE BF_REPO_ROOT="${CMAKE
 target_link_libraries(i18n_locale_format_test PRIVATE bf_core)
 add_dependencies(i18n_locale_format_test bf_i18n_qm)
 
-add_executable(processing_view_state_test src/controller/processing_view_state_test.cpp)
+add_executable(processing_view_state_test src/render/processing_view_state_test.cpp)
 target_include_directories(processing_view_state_test PRIVATE src)
 target_link_libraries(processing_view_state_test PRIVATE bf_core Qt6::Core)
 
@@ -385,9 +346,6 @@ target_include_directories(activation_dialog_test PRIVATE src)
 target_compile_definitions(activation_dialog_test PRIVATE BF_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(activation_dialog_test PRIVATE bf_core FluentQt::FluentQt Qt6::Widgets Qt6::Network)
 add_dependencies(activation_dialog_test bf_i18n_qm)
-
-add_executable(spike_golden_test src/dsp/spike_detect.cpp src/dsp/spike_sort.cpp src/dsp/npy_io.cpp src/dsp/spike_golden_test.cpp)
-target_include_directories(spike_golden_test PRIVATE src third_party)
 
 # ---------------------------------------------------------------------------
 # Install rules: stage bf_app + source-tree assets into a release tree.
