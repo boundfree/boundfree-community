@@ -97,6 +97,7 @@ BoundFree EEG：脑电（EEG/LFP）信号的滤波、展示、分析与设备接
 | JSON | `python3 -m json.tool <file>` |
 | 界面文字或翻译 | `python3 scripts/common/check_i18n.py` |
 | 版本、发布脚本、许可 | `python3 scripts/common/check_release_assets.py` |
+| 分层：`native/src` 的 include、`ui` 里的 `dsp::` 调用 | `python3 scripts/common/check_layering.py` |
 
 - 性能结论必须记录环境、命令、样本和结果。WSL 或 Xvfb 软件渲染的结果不能当作真实 GPU 验收。
 - 模拟器、runner smoke 和合成数据的通过，不能当作真实设备、干净机或算法效果的验收。

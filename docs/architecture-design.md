@@ -98,6 +98,8 @@ flowchart TB
 2. **界面不解析文件、不实现算法、不解码协议**。界面只调用控制器，展示控制器给出的状态。
 3. **主程序不解析科研文件格式**。一律经边车。
 
+这三条与上面的分层表由 `scripts/common/check_layering.py` 静态检查：`native/src` 的 include 不得越层，`ui/` 里不得出现 `dsp::` 函数调用（读取 `dsp::eegBands()` 这类常量定义除外，类型引用不算调用）。检查通过 `tests/scripts/test_layering.py` 随现有 pytest 在 CI 执行。现存例外逐条登记在脚本里并写明原因，随对应改造完成删除。
+
 ### 构建目标
 
 | CMake 目标 | 内容 | 依赖 |
@@ -148,7 +150,6 @@ flowchart LR
 | `render/` 依赖 `ipc/` | `waveform_slice.h` 为一个转换函数引用了边车客户端 |
 | `bf_core` 名不副实 | 一个目标混装了多层代码和共享控件，构建系统无法强制分层 |
 | 自检入口仍是一个大函数 | `app/smoke/smoke_entries.cpp` 约 2500 行、54 个分支 |
-| 分层规则没有自动检查 | 只写在文档里 |
 
 每一项的做法、验证方法和风险见 [后续调整实施计划](restructure-plan.md)。某项完成后从本表和计划里同时删除。
 
