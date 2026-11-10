@@ -34,7 +34,7 @@ class IntanReader(Reader):
     """通过 neo 读取 Intan ``.rhd`` / ``.rhs`` 文件。
 
     neo 的 IntanIO 覆盖 RHD 与 RHS 两种变体（按 magic number 自动识别）。
-    这里只导出放大器通道（amplifier）波形——Spike 线关注的高采样率放电数据。
+    这里只导出放大器通道（amplifier）波形——高采样率放电数据另有分析线。
     """
 
     SUPPORTED_SUFFIXES = {".rhd", ".rhs"}

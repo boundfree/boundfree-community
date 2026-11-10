@@ -31,16 +31,6 @@ CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 # Qt Linguist 用 type="unfinished"/"vanished"/"obsolete" 标记问题条目。
 BAD_TRANSLATION_TYPES = {"unfinished", "vanished", "obsolete"}
 
-# Spike UI 硬编码英文的已知豁免路径（精确到文件级，非目录级）。
-# v1 Spike 为非发布线产品（独立可执行 bf_spike），其 UI 文案暂不接入 i18n。
-# 按批准口径：不全面翻译 Spike UI，其硬编码英文作为已知范围以窄路径豁免，
-# 不产生大范围误报。spike_widgets 的 paintEvent 标题/轴标签同理。
-# 仅豁免这两个文件；spike_widgets.h 的成员默认值不匹配 user-visible API 模式，无需豁免。
-SPIKE_EXEMPT_FILES = {
-    "ui/spike_window.cpp",
-    "ui/spike_widgets.cpp",
-}
-
 
 def load_error_codes() -> list[dict[str, object]]:
     registry = json.loads(ERROR_CODES_PATH.read_text(encoding="utf-8"))
@@ -223,8 +213,7 @@ def check_literal_key_references() -> None:
 #   - 协议/文件 filter（含通配符 *.* 的过滤器串）
 #   - 单位符号（uV/Hz/s/dB/ms 等）
 #   - 色值/样式表（#RRGGBB、QPalette 键）
-#   - 技术词白名单（CSV/PSD/FFT/STFT/ISI/PSTH/Cluster 等纯技术标识）
-#   - Spike UI 已知硬编码范围（spike_window.cpp/spike_widgets.*）
+#   - 技术词白名单（CSV/PSD/FFT/STFT/ISI/PSTH 等纯技术标识）
 # ---------------------------------------------------------------------------
 
 # 用户可见 API 调用模式：捕获第一个字符串字面量参数。
@@ -260,18 +249,14 @@ SKIP_LINE_CONTEXT = (
 # 纯技术标识白名单：这些是通用技术术语/缩写，不是需要本地化的用户文案。
 TECHNICAL_WHITELIST = {
     "CSV", "PSD", "FFT", "STFT", "ISI", "PSTH", "CAR", "EEG",
-    "Cluster", "Raster",  # Spike 标签页技术名（已知豁免范围）
 }
 
 # 单位/量纲符号：不本地化。
 UNIT_PATTERN = re.compile(r'^[a-zA-Zμ]+/?[a-zA-Zμ]*$')
 
 
-def _is_exempt_english(s: str, line: str, rel_path: str) -> bool:
+def _is_exempt_english(s: str, line: str) -> bool:
     """判断一个捕获到的英文字符串是否应豁免硬编码检查。"""
-    # Spike UI 已知硬编码范围。
-    if rel_path in SPIKE_EXEMPT_FILES:
-        return True
     # 空/纯空白。
     stripped = s.strip()
     if not stripped:
@@ -279,8 +264,7 @@ def _is_exempt_english(s: str, line: str, rel_path: str) -> bool:
     # 技术词白名单（精确匹配）。
     if stripped in TECHNICAL_WHITELIST:
         return True
-    # 带 mnemonics 的 &File 等（技术上需本地化，但 Spike 已豁免；非 Spike 路径
-    # 若出现 &X 单字母也豁免——属于 Qt 快捷键助记符，非完整文案）。
+    # 带 mnemonics 的 &File 等：&X 单字母属于 Qt 快捷键助记符，非完整文案。
     if re.fullmatch(r'&[A-Za-z]', stripped) or re.fullmatch(r'&[A-Za-z]\.{3}', stripped):
         return True
     # 文件过滤器（含通配符或 ;; 分隔的多 filter）。
@@ -336,7 +320,6 @@ def check_no_hardcoded_english_in_ui() -> None:
     """检测用户可见 API 调用中的硬编码英文文案。
 
     仅扫描明确的用户可见 Qt API 模式，不扫描日志/CLI/协议/文件 filter/单位。
-    Spike UI 硬编码作为已知范围以窄路径豁免。
     """
     violations: list[str] = []
     for path in NATIVE_SRC.rglob("*"):
@@ -359,7 +342,7 @@ def check_no_hardcoded_english_in_ui() -> None:
                     captured = m.group(1) if m.lastindex else ""
                     if not captured:
                         continue
-                    if _is_exempt_english(captured, line, rel_path):
+                    if _is_exempt_english(captured, line):
                         continue
                     # 仅检测含拉丁字母且像英文文案的串。
                     if not re.search(r'[A-Za-z]', captured):

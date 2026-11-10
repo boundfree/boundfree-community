@@ -34,8 +34,6 @@ def excluded(relative):
         return True
     if len(parts) > 1 and parts[0] == 'native' and (parts[1] == 'build' or parts[1].startswith('build-')):
         return True
-    if len(parts) > 2 and parts[:2] == ('native', 'spike') and (parts[2] == 'build' or parts[2].startswith('build-')):
-        return True
     if parts[:2] in {('installer', 'Output'), ('sidecar', 'build')}:
         return True
     lower = path.name.lower()

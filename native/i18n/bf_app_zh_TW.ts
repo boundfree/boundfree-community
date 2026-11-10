@@ -448,11 +448,6 @@
     <message><source>app.license.prompt</source><translation>機器碼：{machine_id}&#10;&#10;目前狀態：{error}&#10;&#10;請輸入離線授權碼：</translation></message>
     <message><source>app.license.save_failed</source><translation>授權有效，但無法儲存授權檔案。</translation></message>
     <message><source>app.license.activated</source><translation>離線授權已啟用。</translation></message>
-
-    <message><source>app.spike.export.action</source><translation>匯出 Spike 結果</translation></message>
-    <message><source>app.spike.export.no_result</source><translation>無可匯出的 Spike 結果</translation></message>
-    <message><source>app.spike.export.completed</source><translation>已匯出 {rows} 個 Spike 事件到 {path}</translation></message>
-    <message><source>app.spike.export.failed</source><translation>Spike 匯出失敗：{reason}</translation></message>
     <message><source>app.activation.title</source><translation>啟用 BoundFree EEG</translation></message>
     <message><source>app.activation.revoked_on_server</source><translation>本機授權已被管理員停用，請重新啟用以繼續使用。</translation></message>
     <message><source>app.activation.machine_id_label</source><translation>本機機器碼</translation></message>

@@ -1,8 +1,6 @@
 # Build outputs (native)
 native/build/
 native/build-*/
-native/spike/build/
-native/spike/build-*/
 native/**/*_autogen/
 
 # Release and packaging artifacts (never commit built binaries or frozen sidecar)

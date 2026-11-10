@@ -270,7 +270,7 @@ void WaveformWidget::paintEvent(QPaintEvent*) {
 
     // Inner grid lines (time ticks, per-row zero lines and separators) use a
     // softened grid color; the plot frame uses the solid grid color, matching
-    // the spectrum/spectrogram/spike plots. Axes are drawn even when no channel
+    // the spectrum/spectrogram plots. Axes are drawn even when no channel
     // is visible so an empty plot still shows its coordinate system.
     QColor innerGrid = theme.grid;
     innerGrid.setAlpha(70);
