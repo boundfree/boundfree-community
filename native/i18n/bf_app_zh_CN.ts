@@ -1787,7 +1787,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.recent_detail</source>
-      <translation>RT-BCI · Wi-Fi · {channels} 通道 · 上次验证 {date} · 未实时检测</translation>
+      <translation>RT-BCI · Wi-Fi · 上次验证 {date} · 未实时检测</translation>
     </message>
     <message>
       <source>app.device.reconnect</source>
@@ -1831,11 +1831,11 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_channels</source>
-      <translation>通道数</translation>
+      <translation>强制通道数（仅识别失败时使用）</translation>
     </message>
     <message>
       <source>app.device.wifi_choose_channels</source>
-      <translation>请选择 8 或 16 通道</translation>
+      <translation>自动</translation>
     </message>
     <message>
       <source>app.device.wifi_host</source>
@@ -1923,7 +1923,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_requested</source>
-      <translation>请求参数：{channels} 通道 · {rate} Hz</translation>
+      <translation>请求采样率：{rate} Hz</translation>
     </message>
     <message>
       <source>app.device.status_streaming_wifi</source>
@@ -2024,10 +2024,6 @@ analysis.json</translation>
     <message>
       <source>app.device.next_network</source>
       <translation>连接设备热点后，将自动检测设备响应。</translation>
-    </message>
-    <message>
-      <source>app.device.next_channels</source>
-      <translation>请选择设备的通道数。</translation>
     </message>
     <message>
       <source>app.device.next_connect</source>
@@ -2143,10 +2139,6 @@ Ctrl＋滚轮：时间缩放；Shift＋滚轮：幅值缩放；普通滚轮：�
     <message>
       <source>app.device.callback_detail</source>
       <translation>设备需要回连本机 {address}:{port}。请允许此测试版应用通过 Windows 防火墙接收入站连接，并检查所选网卡。</translation>
-    </message>
-    <message>
-      <source>app.device.channel_conflict_detail</source>
-      <translation>当前选择 {requested} 通道，模块报告 {reported} 通道。请核对通道选择。</translation>
     </message>
     <message>
       <source>app.device.response_detail</source>
@@ -2331,5 +2323,10 @@ Ctrl＋滚轮：围绕指针缩放时间；Shift＋滚轮：缩放幅值；普�
     <message><source>app.separation.feedback_error</source><translation>错误：{message}</translation></message>
     <message><source>app.separation.feedback_warning</source><translation>注意：{message}</translation></message>
     <message><source>app.separation.next_observations</source><translation>请选择 2–32 路参与分离的观测通道；参考通道不计入观测数量。</translation></message>
+    <message><source>app.device.detecting_channels</source><translation>正在识别通道数…</translation></message>
+    <message><source>app.device.channel_count</source><translation>{count} 通道</translation></message>
+    <message><source>app.device.wifi_power_notice</source><translation>16 通道需带扩展板上电。通道数在上电时确定，插拔扩展板后需断电重启。</translation></message>
+    <message><source>error.device.rt_bci_unrecognized_stream</source><translation>无法识别数据流。请检查设备，或在高级设置中强制通道数后重试。</translation></message>
+    <message><source>error.device.channel_count_adjusted</source><translation>检测到的通道数与强制值不同，已使用检测结果。</translation></message>
   </context>
 </TS>
