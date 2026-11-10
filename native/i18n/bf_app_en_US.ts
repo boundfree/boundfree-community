@@ -1786,7 +1786,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.recent_detail</source>
-      <translation>RT-BCI · Wi-Fi · {channels} channels · Last verified {date} · Availability not checked</translation>
+      <translation>RT-BCI · Wi-Fi · Last verified {date} · Not checked live</translation>
     </message>
     <message>
       <source>app.device.reconnect</source>
@@ -1830,11 +1830,11 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_channels</source>
-      <translation>Channels</translation>
+      <translation>Force channel count (only if detection fails)</translation>
     </message>
     <message>
       <source>app.device.wifi_choose_channels</source>
-      <translation>Choose 8 or 16 channels</translation>
+      <translation>Auto</translation>
     </message>
     <message>
       <source>app.device.wifi_host</source>
@@ -1922,7 +1922,7 @@ analysis.json</translation>
     </message>
     <message>
       <source>app.device.wifi_requested</source>
-      <translation>Requested: {channels} channels · {rate} Hz</translation>
+      <translation>Requested rate: {rate} Hz</translation>
     </message>
     <message>
       <source>app.device.status_streaming_wifi</source>
@@ -2023,10 +2023,6 @@ analysis.json</translation>
     <message>
       <source>app.device.next_network</source>
       <translation>Join the device hotspot to check its response automatically.</translation>
-    </message>
-    <message>
-      <source>app.device.next_channels</source>
-      <translation>Choose the device channel count.</translation>
     </message>
     <message>
       <source>app.device.next_connect</source>
@@ -2142,10 +2138,6 @@ While paused, drag or use Left/Right to inspect the cached window.</translation>
     <message>
       <source>app.device.callback_detail</source>
       <translation>The device must connect back to {address}:{port}. Allow this test app to receive inbound connections through Windows Firewall and check the selected network interface.</translation>
-    </message>
-    <message>
-      <source>app.device.channel_conflict_detail</source>
-      <translation>Selected {requested} channels; the module reports {reported}. Check the channel selection.</translation>
     </message>
     <message>
       <source>app.device.response_detail</source>
@@ -2330,5 +2322,10 @@ When playback is paused and annotation mode is off, drag or use Left/Right to br
     <message><source>app.separation.feedback_error</source><translation>Error: {message}</translation></message>
     <message><source>app.separation.feedback_warning</source><translation>Warning: {message}</translation></message>
     <message><source>app.separation.next_observations</source><translation>Select 2–32 observation channels for separation. Reference channels do not count as observations.</translation></message>
+    <message><source>app.device.detecting_channels</source><translation>Detecting channels…</translation></message>
+    <message><source>app.device.channel_count</source><translation>{count} channels</translation></message>
+    <message><source>app.device.wifi_power_notice</source><translation>For 16 channels, connect the expansion board before power-up. The count is set at power-up; power off and restart after changing the board.</translation></message>
+    <message><source>error.device.rt_bci_unrecognized_stream</source><translation>Cannot recognize the data stream. Check the device, or force the channel count in Advanced and retry.</translation></message>
+    <message><source>error.device.channel_count_adjusted</source><translation>Detected channel count differs from the forced value. Using the detected count.</translation></message>
   </context>
 </TS>
