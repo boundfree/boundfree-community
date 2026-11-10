@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <memory>
 
 int main(int argc, char **argv) {
     QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
@@ -643,6 +644,32 @@ int main(int argc, char **argv) {
     if (psdRange[0].toDouble()!=0 || psdRange[1].toDouble()<=0 || frequencyRange[0].toDouble()!=0 ||
         frequencyRange[1].toDouble()!=100 || !spectrum->property("axisYLabel").toString().contains("a.u.²/Hz"))
         return fail("PSD axes must show frequency and nonnegative power density");
+    // The plotted PSD must be the one the controller derives from the component
+    // that is actually selected, and switching components must re-derive it.
+    auto componentSpectrumPeak = [](const bf::SeparationOutput& output, int component) {
+        double peak = 0;
+        for (double value : bf::separationComponentSpectrum(output, component, 100.0).values)
+            peak = std::max(peak, std::abs(value));
+        return peak;
+    };
+    const auto shownOutput = controller.output();
+    const int shownComponent = componentTable->currentRow();
+    const double shownPeak = componentSpectrumPeak(*shownOutput, shownComponent);
+    if (shownPeak <= 1e-12 || std::abs(psdRange[1].toDouble() - shownPeak) > 1e-9)
+        return fail("component spectrum is not the current output and component");
+    const int otherComponent = (shownComponent + 1) % componentTable->rowCount();
+    componentTable->setCurrentCell(otherComponent, 0);
+    app.processEvents();
+    spectrum->grab();
+    const auto switchedRange = spectrum->property("axisYRanges").toList()[0].toList();
+    if (std::abs(switchedRange[1].toDouble() - componentSpectrumPeak(*shownOutput, otherComponent)) > 1e-9 ||
+        spectrum->property("axisXRange").toList()[1].toDouble() != 100)
+        return fail("switching component keeps the previous spectrum");
+    componentTable->setCurrentCell(shownComponent, 0);
+    app.processEvents();
+    spectrum->grab();
+    if (std::abs(spectrum->property("axisYRanges").toList()[0].toList()[1].toDouble() - shownPeak) > 1e-9)
+        return fail("switching back does not restore the previous component spectrum");
     const auto axesCapture=qEnvironmentVariable("BF_UI_CAPTURE_DIR");
     if (!axesCapture.isEmpty()) spectrum->grab().save(QDir(axesCapture).filePath("component-spectrum-axes.png"));
     views->setCurrentIndex(0);app.processEvents();
@@ -1182,6 +1209,43 @@ for fs, count in [(2000,24576),(2000,24577),(1024,12583),(256,3073)]:
         if (lastPosition > sourceEnd + 1e-12 || std::abs(lastPosition - sourceEnd) > .0041)
             return fail("resampled preview playback ends past the analyzed source interval");
     }
+    // 连续 ICA 帧经同一个无状态适配函数取频谱：图形跟的是当前显示的帧，
+    // 而不是离线结果；停止实时后回到离线结果。
+    const auto liveModel = controller.output();
+    if (!liveModel || liveModel->sources.empty()) return fail("live spectrum check needs a reviewed output");
+    const std::size_t liveSamples = 640;
+    auto frame = std::make_shared<bf::LiveIcaFrame>();
+    frame->end = liveSamples / liveModel->fs;
+    frame->hasGaps = true;
+    auto &live = frame->signal;
+    live.fs = liveModel->fs;
+    live.start = 0;
+    live.channels = {liveModel->channels.front()};
+    live.mean = {0.0};
+    live.analysis = {std::vector<double>(liveSamples, 0.0)};
+    live.sources.assign(liveModel->sources.size(), std::vector<double>(liveSamples, 0.0));
+    for (std::size_t ic = 0; ic < live.sources.size(); ++ic)
+        for (std::size_t i = 0; i < liveSamples; ++i)
+            live.sources[ic][i] = (double(ic) + 1.0) * std::sin(0.02 * double(ic + 1) * double(i));
+    for (std::size_t i = 100; i < 120; ++i) live.sources.front()[i] = std::nan("");
+    componentTable->setCurrentCell(0, 0);
+    views->setCurrentIndex(1);
+    ui.setLiveAvailable(true);
+    ui.setLiveActive(true);
+    ui.setLiveFrame(frame);
+    app.processEvents();
+    spectrum->grab();
+    const double livePeak = componentSpectrumPeak(frame->signal, 0);
+    if (livePeak <= 1e-12 ||
+        std::abs(spectrum->property("axisYRanges").toList()[0].toList()[1].toDouble() - livePeak) > 1e-9 ||
+        spectrum->property("axisXRange").toList()[1].toDouble() != 100)
+        return fail("live spectrum is not derived from the displayed frame");
+    ui.setLiveActive(false);
+    app.processEvents();
+    spectrum->grab();
+    if (std::abs(spectrum->property("axisYRanges").toList()[0].toList()[1].toDouble() -
+                 componentSpectrumPeak(*liveModel, 0)) > 1e-9)
+        return fail("leaving live view keeps the live frame spectrum");
     std::cout << "eeg-separation-ui-ok real_signal=true roles=true labels=true undo=true confirmation=true "
                  "export=true contextual_batch=true splitter_drag=true amplitude_controls=true "
                  "visible_peak_to_peak=true fixed_interval_scales=true preview_playback_1x=true "

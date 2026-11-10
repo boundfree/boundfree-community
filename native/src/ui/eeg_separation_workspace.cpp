@@ -2,7 +2,6 @@
 #include "ui/control_bar.h"
 #include "ui/workspace_splitter.h"
 #include "ui/eeg_separation_workspace.h"
-#include "dsp/spectral.h"
 #include "ui/collapsible_panel.h"
 #include <QCheckBox>
 #include <QRadioButton>
@@ -44,6 +43,10 @@
 #include <algorithm>
 #include <cmath>
 namespace bf {
+namespace {
+// 成分频谱的显示上限。采样率更低时由控制层按 fs/2 截止，界面不做数值判断。
+constexpr double kSpectrumMaxFrequency = 100.0;
+}  // namespace
 class SeparationTraceView final : public QWidget {
   public:
     explicit SeparationTraceView(QWidget *parent = nullptr) : QWidget(parent) {
@@ -1556,27 +1559,12 @@ void EegSeparationWorkspace::refreshPlots() {
         if (spectrumOutput_ != output || spectrumComponent_ != component) {
             spectrumOutput_ = output;
             spectrumComponent_ = component;
-            // A live gap is a boundary, never zero-filled or passed to Welch.
-            const auto& trace = output->sources[component];
-            auto begin = trace.begin(), end = trace.begin();
-            for (auto it = trace.begin(); it != trace.end();) {
-                if (!std::isfinite(*it)) { ++it; continue; }
-                const auto first = it;
-                while (it != trace.end() && std::isfinite(*it)) ++it;
-                if (it - first >= end - begin) { begin = first; end = it; }
-            }
-            const auto psd = end - begin >= 4
-                ? dsp::computeWelchPsd(std::vector<double>(begin, end), output->fs, 0, false) : dsp::Spectrum{};
-            std::vector<double> values;
-            double maxFrequency = 0;
-            for (std::size_t i = 0; i < psd.frequencies.size(); ++i)
-                if (psd.frequencies[i] <= std::min(100., output->fs / 2)) {
-                    values.push_back(psd.values[i]);
-                    maxFrequency = psd.frequencies[i];
-                }
-            spectrum_->traces = {std::move(values)};
+            // 离线结果和实时帧都交给控制层的无状态适配函数：缺口是边界，
+            // 不补零、不跨缺口；上限频率是显示范围，不是算法的一部分。
+            const auto psd = separationComponentSpectrum(*output, component, kSpectrumMaxFrequency);
+            spectrum_->traces = {psd.values};
             spectrum_->frequency = true;
-            spectrum_->seconds = maxFrequency;
+            spectrum_->seconds = psd.frequencies.empty() ? 0.0 : psd.frequencies.back();
             spectrum_->offset = 0;
             spectrum_->start = 0;
         }
